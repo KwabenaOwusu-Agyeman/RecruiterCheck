@@ -334,6 +334,8 @@ export function NewCheckPage() {
   }
 
   const hasCv = Boolean(cvFileName)
+  const hasJobDescription = jobDescription.trim().length > 0
+  const canCheck = hasCv && hasJobDescription
 
   return (
     <>
@@ -341,7 +343,7 @@ export function NewCheckPage() {
       <div className="mt-3">
         <PageHeader
           title="New Check"
-          description="Add your CV and paste the job description. You'll see your application the way a recruiter would before you apply."
+          description="Add the job and your CV to see your application from a recruiter's perspective before you apply."
         />
       </div>
 
@@ -353,7 +355,7 @@ export function NewCheckPage() {
               id="jobTitle"
               value={jobTitle}
               onChange={(event) => handleJobTitleChange(event.target.value)}
-              placeholder="Product Manager"
+              placeholder="e.g. Product Manager"
             />
           </div>
           <div className="space-y-2">
@@ -362,7 +364,7 @@ export function NewCheckPage() {
               id="companyName"
               value={companyName}
               onChange={(event) => handleCompanyNameChange(event.target.value)}
-              placeholder="Acme Inc."
+              placeholder="e.g. Acme"
             />
           </div>
         </div>
@@ -373,7 +375,7 @@ export function NewCheckPage() {
             id="jobDescription"
             value={jobDescription}
             onChange={(event) => handleJobDescriptionChange(event.target.value)}
-            placeholder="Paste the full job description here..."
+            placeholder="Paste the full job description"
           />
         </div>
 
@@ -392,8 +394,8 @@ export function NewCheckPage() {
             ))}
           </select>
           <p className="text-xs text-text-secondary">
-            Auto detect picks the language from your job description and CV. Choose English or
-            Dutch to lock the feedback and Recruiter Ready Kit to that language.
+            We&rsquo;ll automatically use the language of the job description. You can choose
+            another language if needed.
           </p>
         </div>
 
@@ -430,6 +432,7 @@ export function NewCheckPage() {
 
           {cvInputMode === 'file' ? (
             <>
+              <p className="text-sm text-text-primary">Upload your current CV</p>
               <Input
                 id="cv"
                 type="file"
@@ -437,7 +440,7 @@ export function NewCheckPage() {
                 disabled={uploadingCv}
                 onChange={(event) => void handleFileChange(event.target.files)}
               />
-              <p className="text-xs text-text-secondary">PDF or Word (.docx). Maximum 10 MB.</p>
+              <p className="text-xs text-text-secondary">PDF or DOCX &middot; Maximum 10 MB</p>
             </>
           ) : (
             <>
@@ -477,13 +480,15 @@ export function NewCheckPage() {
             <Button
               type="button"
               size="sm"
-              disabled={!hasCv || analyzing}
+              disabled={!canCheck || analyzing}
               onClick={() => void handleAnalyze()}
             >
-              {analyzing ? 'Submitting...' : 'Submit'}
+              {analyzing ? 'Checking...' : 'Check'}
             </Button>
-            {!hasCv ? (
-              <p className="text-xs text-text-secondary">Attach a CV to continue.</p>
+            {!canCheck ? (
+              <p className="text-xs text-text-secondary">
+                Add your CV and job description to continue.
+              </p>
             ) : null}
           </div>
         </div>
