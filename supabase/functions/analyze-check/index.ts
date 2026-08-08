@@ -9,7 +9,7 @@ const corsHeaders = {
 }
 
 const MAX_CV_CHARS = 15000
-const MAX_ATTEMPTS = 2
+const MAX_ATTEMPTS = 3
 const RATE_LIMIT_PER_HOUR = 5
 // Weekly/monthly tiers only — not a monetization lever, just reinforcing the
 // "quality over quantity" positioning even for paying users. Free tier keeps
@@ -25,9 +25,18 @@ interface RawAnalysis {
   experience_score: number
   skills_score: number
   uvp_score: number
-  strengths: string[]
-  improvements: string[]
-  prospects: string[]
+  strength_1_finding: string
+  strength_1_evidence: string
+  strength_2_finding: string
+  strength_2_evidence: string
+  improvement_1_finding: string
+  improvement_1_evidence: string
+  improvement_2_finding: string
+  improvement_2_evidence: string
+  improvement_3_finding: string
+  improvement_3_evidence: string
+  prospect_1: string
+  prospect_2: string
 }
 
 interface AnalysisResult {
@@ -182,12 +191,15 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Could not generate feedback' }, 502)
     }
 
-    const { error: feedbackError } = await adminClient.from('feedback').upsert({
-      check_id: checkId,
-      strengths: analysis.strengths,
-      improvements: analysis.improvements,
-      prospects: analysis.prospects,
-    })
+    const { error: feedbackError } = await adminClient.from('feedback').upsert(
+      {
+        check_id: checkId,
+        strengths: analysis.strengths,
+        improvements: analysis.improvements,
+        prospects: analysis.prospects,
+      },
+      { onConflict: 'check_id' },
+    )
 
     if (feedbackError) {
       await markFailed(adminClient, checkId, 'Could not save feedback')
@@ -260,18 +272,18 @@ async function generateFeedback(
   jobDescription: string,
   context: { jobTitle: string | null; companyName: string | null; outputLanguage: 'auto' | 'en' | 'nl' },
 ): Promise<AnalysisResult> {
-  let lastError: unknown
+  const attemptErrors: string[] = []
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     try {
       const raw = await callOpenAI(apiKey, cvText, jobDescription, context)
       return normalizeAnalysis(raw, context.outputLanguage)
     } catch (error) {
-      lastError = error
+      attemptErrors.push(error instanceof Error ? error.message : String(error))
     }
   }
 
-  throw lastError instanceof Error ? lastError : new Error('Analysis failed')
+  throw new Error(`All attempts failed: ${JSON.stringify(attemptErrors)}`)
 }
 
 async function callOpenAI(
@@ -302,10 +314,10 @@ Score each dimension 0-100. Score conservatively and critically, the way a skept
 
 ${languageInstruction}
 
-Then write feedback that helps the candidate see their own application the way a recruiter would — direct, specific, evidence-based, technical, and never generic. Provide exactly:
-- 2 strengths: never restate or paraphrase a specific achievement bullet from the CV — the candidate already knows what they wrote, so quoting it back adds nothing. Instead, name the underlying pattern that makes their CV effective, the way a recruiter commenting on craft would, e.g. "Good use of statistics in your most recent role" or "Strong use of action/leader verbs when describing your work." Name which role or section it's most evident in without quoting the sentence itself. Every strength must close with a clause on why that pattern specifically matters to this employer for this role (the Employer Value step of the Evidence → Strength → Employer Value framework), not just that it's a good trait in general, e.g. "...which signals you can own ambiguous, metrics-driven problems the way this role requires." If there's genuinely no quantification anywhere, base strengths on other real craft signals present (e.g. clear ownership/scope language, relevant tools named, well-structured bullets) — never invent a pattern that isn't there.
-- 3 areas to improve: at least one must address quantification — if the CV lacks metrics to support its claims, say so and suggest adding specific stats; if the CV already uses strong statistics throughout, skip this and use a different, still-technical area to improve instead. At least one must push the candidate to elaborate in more depth on whichever single experience entry is most relevant to this specific job — the one a hiring manager would scrutinize most — rather than staying surface-level.
-- 2 prospects: one sentence on why the candidate can still be competitive for this role or closely related roles, and one sentence on which single improvement would most increase interview likelihood.
+Then write feedback that helps the candidate see their own application the way a recruiter would — direct, specific, evidence-based, technical, and never generic. Each strength and area to improve is split into two separate fields: a "_finding" field and an "_evidence" field. Both are required and both must be non empty — never leave an "_evidence" field as a restatement of its "_finding" field or as a near-duplicate; it must add genuinely new information. The "_finding" field is a 2 to 5 word bolded lead-in naming the pattern or action, e.g. "Strong sales performance" or "Quantify your impact" (no trailing period needed, it will be rendered as a heading). The matching "_evidence" field is one full sentence giving the detail behind it, e.g. "Your record of exceeding sales targets directly supports the role's revenue expectations."
+- strength_1_finding / strength_1_evidence and strength_2_finding / strength_2_evidence: the finding names the underlying pattern that makes the CV effective, the way a recruiter commenting on craft would. Never restate or quote a specific achievement bullet from the CV in the finding — the candidate already knows what they wrote, so quoting it back adds nothing. The evidence states why that pattern specifically matters to this employer for this role (the Employer Value step of the Evidence, Strength, Employer Value framework). If there's genuinely no quantification anywhere, base strengths on other real craft signals present (e.g. clear ownership/scope language, relevant tools named, well-structured bullets) — never invent a pattern that isn't there.
+- improvement_1_finding / improvement_1_evidence, improvement_2_finding / improvement_2_evidence, and improvement_3_finding / improvement_3_evidence: the finding is a direct, imperative action, e.g. "Quantify your impact" or "Strengthen leadership evidence." Never hedge with phrasing like "Consider adding", "You may want to", or "It would be helpful to". The evidence states the specific improvement to make, e.g. "Add conversion rates, revenue generated, pipeline value, or targets exceeded." At least one of the three must address quantification — if the CV lacks metrics to support its claims, say so and name the specific stats to add; if the CV already uses strong statistics throughout, skip this and use a different, still-technical area to improve instead. At least one must push the candidate to elaborate in more depth on whichever single experience entry is most relevant to this specific job — the one a hiring manager would scrutinize most — rather than staying surface-level.
+- prospect_1 and prospect_2: plain, concise sentences. One sentence on why the candidate can still be competitive for this role or closely related roles, and one sentence on which single improvement would most increase interview likelihood. Keep both realistic and evidence-based, not generic encouragement.
 
 Never use hyphens, en dashes, or em dashes anywhere in your output text (no "-", "–", or "—", including inside compound words). Write in plain sentences instead, using commas, periods, or separate words (e.g. "well structured" not "well-structured", "data driven" not "data-driven"). In Dutch, prefer natural solid compounds where that is correct Dutch spelling (e.g. "klantgericht" not "klant gericht") rather than forcing a space that would be spelled wrong.`
 
@@ -343,18 +355,36 @@ ${cvText}`
               experience_score: { type: 'integer' },
               skills_score: { type: 'integer' },
               uvp_score: { type: 'integer' },
-              strengths: { type: 'array', items: { type: 'string' } },
-              improvements: { type: 'array', items: { type: 'string' } },
-              prospects: { type: 'array', items: { type: 'string' } },
+              strength_1_finding: { type: 'string' },
+              strength_1_evidence: { type: 'string' },
+              strength_2_finding: { type: 'string' },
+              strength_2_evidence: { type: 'string' },
+              improvement_1_finding: { type: 'string' },
+              improvement_1_evidence: { type: 'string' },
+              improvement_2_finding: { type: 'string' },
+              improvement_2_evidence: { type: 'string' },
+              improvement_3_finding: { type: 'string' },
+              improvement_3_evidence: { type: 'string' },
+              prospect_1: { type: 'string' },
+              prospect_2: { type: 'string' },
             },
             required: [
               'language',
               'experience_score',
               'skills_score',
               'uvp_score',
-              'strengths',
-              'improvements',
-              'prospects',
+              'strength_1_finding',
+              'strength_1_evidence',
+              'strength_2_finding',
+              'strength_2_evidence',
+              'improvement_1_finding',
+              'improvement_1_evidence',
+              'improvement_2_finding',
+              'improvement_2_evidence',
+              'improvement_3_finding',
+              'improvement_3_evidence',
+              'prospect_1',
+              'prospect_2',
             ],
             additionalProperties: false,
           },
@@ -388,9 +418,16 @@ function normalizeAnalysis(raw: RawAnalysis, outputLanguage: 'auto' | 'en' | 'nl
     throw new Error('Feedback language did not match the requested language')
   }
 
-  const strengths = sanitizeStrings(raw.strengths)
-  const improvements = sanitizeStrings(raw.improvements)
-  const prospects = sanitizeStrings(raw.prospects)
+  const strengths = [
+    combineFinding(raw.strength_1_finding, raw.strength_1_evidence),
+    combineFinding(raw.strength_2_finding, raw.strength_2_evidence),
+  ].filter((item): item is string => item !== null)
+  const improvements = [
+    combineFinding(raw.improvement_1_finding, raw.improvement_1_evidence),
+    combineFinding(raw.improvement_2_finding, raw.improvement_2_evidence),
+    combineFinding(raw.improvement_3_finding, raw.improvement_3_evidence),
+  ].filter((item): item is string => item !== null)
+  const prospects = sanitizeStrings([raw.prospect_1, raw.prospect_2])
 
   if (strengths.length !== 2) throw new Error('Expected exactly 2 strengths')
   if (improvements.length !== 3) throw new Error('Expected exactly 3 areas to improve')
@@ -423,6 +460,23 @@ function sanitizeStrings(value: unknown): string[] {
     .filter((item): item is string => typeof item === 'string')
     .map((item) => stripDashes(item.trim()))
     .filter((item) => item.length > 0)
+}
+
+/**
+ * Strengths and areas to improve arrive as separate finding/evidence schema
+ * fields (so the model can't skip the evidence half — see the JSON schema's
+ * required list) and get joined back into a single "Finding. Evidence."
+ * string here, which is what the Feedback page's splitFinding() expects in
+ * order to bold the finding and render the rest as plain text.
+ */
+function combineFinding(finding: unknown, evidence: unknown): string | null {
+  if (typeof finding !== 'string' || typeof evidence !== 'string') return null
+
+  const cleanFinding = stripDashes(finding.trim()).replace(/[.!?]+$/, '')
+  const cleanEvidence = stripDashes(evidence.trim())
+  if (!cleanFinding || !cleanEvidence) return null
+
+  return `${cleanFinding}. ${cleanEvidence}`
 }
 
 /**
