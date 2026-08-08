@@ -12,9 +12,14 @@ const MAX_CV_CHARS = 15000
 const MAX_ATTEMPTS = 3
 const RATE_LIMIT_PER_HOUR = 5
 // Weekly/monthly tiers only — not a monetization lever, just reinforcing the
-// "quality over quantity" positioning even for paying users. Free tier keeps
-// its separate lifetime cap (enforced client-side via getCheckGateReason).
+// "quality over quantity" positioning even for paying users.
 const PAID_TIER_DAILY_LIMIT = 8
+// Mirrors the frontend's FREE_TIER_LIFETIME_LIMIT (src/services/checkService.ts).
+// The frontend gate (getCheckGateReason) already blocks a free user from
+// starting a new draft once this is reached, but that only protects the New
+// Check page UI — anyone calling this function directly bypasses it, so it
+// must be enforced here too, not just client-side.
+const FREE_TIER_LIFETIME_LIMIT = 1
 
 interface AnalyzeRequest {
   checkId: string
@@ -114,7 +119,26 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Profile not found' }, 404)
     }
 
-    if (profile.subscription_tier !== 'free') {
+    if (profile.subscription_tier === 'free') {
+      const { count: completedCount, error: freeLimitError } = await adminClient
+        .from('checks')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('status', 'completed')
+
+      if (freeLimitError) {
+        return jsonResponse({ error: 'Could not verify usage limit' }, 500)
+      }
+
+      if ((completedCount ?? 0) >= FREE_TIER_LIFETIME_LIMIT) {
+        return jsonResponse(
+          {
+            error: `You have used your ${FREE_TIER_LIFETIME_LIMIT} free Recruiter Check. Upgrade to continue.`,
+          },
+          429,
+        )
+      }
+    } else {
       const startOfDayUtc = new Date()
       startOfDayUtc.setUTCHours(0, 0, 0, 0)
 

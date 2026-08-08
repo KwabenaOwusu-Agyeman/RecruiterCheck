@@ -56,7 +56,7 @@ export function BillingPage() {
       <div className="mx-auto mt-1 max-w-2xl text-center">
         <h1 className="text-2xl font-semibold tracking-tight text-text-primary">Choose your plan</h1>
         <p className="mt-2 text-sm text-text-secondary">
-          Get unlimited checks and tailored application documents when you need them.
+          Get more Recruiter Checks and tailored application documents when you need them.
         </p>
       </div>
 

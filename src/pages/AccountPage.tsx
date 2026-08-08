@@ -13,6 +13,8 @@ import { supabase } from '@/lib/supabase'
 import { signOut } from '@/services/authService'
 import {
   deleteAccount,
+  FREE_TIER_LIFETIME_LIMIT,
+  getChecks,
   getSubscription,
   getTodaysCheckCount,
   PAID_TIER_DAILY_LIMIT,
@@ -41,19 +43,34 @@ export function AccountPage() {
   const [error, setError] = useState<string | null>(null)
   const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [todaysCheckCount, setTodaysCheckCount] = useState<number | null>(null)
+  const [freeCheckUsed, setFreeCheckUsed] = useState<boolean | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   useEffect(() => {
     setFullName(profile?.full_name ?? '')
   }, [profile?.full_name])
 
   useEffect(() => {
-    if (!user || profile?.subscription_tier === 'free') {
+    if (!user) return
+
+    if (profile?.subscription_tier === 'free') {
       setSubscription(null)
       setTodaysCheckCount(null)
-      return
+
+      let cancelled = false
+      void getChecks(user.id).then((checks) => {
+        if (cancelled) return
+        const completedCount = checks.filter((check) => check.status === 'completed').length
+        setFreeCheckUsed(completedCount >= FREE_TIER_LIFETIME_LIMIT)
+      })
+      return () => {
+        cancelled = true
+      }
     }
+
+    setFreeCheckUsed(null)
 
     let cancelled = false
     void getSubscription(user.id).then((data) => {
@@ -86,12 +103,23 @@ export function AccountPage() {
     }
   }
 
-  async function handleDeleteAccount() {
-    const confirmed = window.confirm(
-      'Delete your account permanently? This removes your profile, checks, CVs, and generated documents, and cancels any active subscription. This cannot be undone.',
-    )
-    if (!confirmed) return
+  useEffect(() => {
+    if (!confirmingDelete) return
 
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setConfirmingDelete(false)
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = ''
+    }
+  }, [confirmingDelete])
+
+  async function handleConfirmDeleteAccount() {
     setDeleting(true)
     setDeleteError(null)
 
@@ -102,6 +130,7 @@ export function AccountPage() {
     } catch (err) {
       setDeleteError(err instanceof Error ? err.message : 'Could not delete account')
       setDeleting(false)
+      setConfirmingDelete(false)
     }
   }
 
@@ -158,7 +187,7 @@ export function AccountPage() {
               <div className="flex-1" />
 
               <Button type="submit" size="sm" disabled={saving}>
-                {saving ? 'Saving...' : 'Save'}
+                {saving ? 'Saving...' : 'Save Changes'}
               </Button>
             </form>
           </CardContent>
@@ -179,14 +208,19 @@ export function AccountPage() {
               <span className="text-text-secondary">Recruiter Checks</span>
               <span className="font-medium text-text-primary">
                 {isFree
-                  ? 'Limited Recruiter Checks'
+                  ? freeCheckUsed === null
+                    ? '...'
+                    : freeCheckUsed
+                      ? `${FREE_TIER_LIFETIME_LIMIT} of ${FREE_TIER_LIFETIME_LIMIT} used`
+                      : `${FREE_TIER_LIFETIME_LIMIT} total`
                   : `${todaysCheckCount ?? '...'} of ${PAID_TIER_DAILY_LIMIT} used today`}
               </span>
             </div>
             {!isFree ? (
-              <p className="text-xs text-text-secondary">
-                Resets daily. We cap checks so every application gets your full attention.
-              </p>
+              <div className="flex items-center justify-between">
+                <span className="text-text-secondary">Resets</span>
+                <span className="font-medium text-text-primary">Daily</span>
+              </div>
             ) : null}
             {planDateLabel ? (
               <div className="flex items-center justify-between">
@@ -201,7 +235,7 @@ export function AccountPage() {
 
             <Link to="/account/billing">
               <Button variant="secondary" size="sm" className="w-full">
-                {isFree ? 'Upgrade' : 'Manage billing'}
+                {isFree ? 'Upgrade' : 'Manage Billing'}
               </Button>
             </Link>
           </CardContent>
@@ -221,7 +255,7 @@ export function AccountPage() {
               size="sm"
               className="shrink-0 border-error bg-error text-white hover:bg-error/90"
               disabled={deleting}
-              onClick={() => void handleDeleteAccount()}
+              onClick={() => setConfirmingDelete(true)}
             >
               {deleting ? 'Deleting...' : 'Delete Account'}
             </Button>
@@ -233,6 +267,50 @@ export function AccountPage() {
           ) : null}
         </CardContent>
       </Card>
+
+      {confirmingDelete ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#05050D]/50 p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !deleting) setConfirmingDelete(false)
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-account-title"
+            className="w-full max-w-sm rounded-2xl border border-navy bg-surface p-6 shadow-lg"
+          >
+            <h2 id="delete-account-title" className="text-base font-semibold text-text-primary">
+              Delete your account?
+            </h2>
+            <p className="mt-2 text-sm text-text-secondary">
+              Your account, checks, uploaded CVs, generated documents, and associated data will be
+              permanently deleted. This cannot be undone.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={deleting}
+                onClick={() => setConfirmingDelete(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={deleting}
+                onClick={() => void handleConfirmDeleteAccount()}
+                className="!border-error bg-error hover:!bg-error/90"
+              >
+                {deleting ? 'Deleting...' : 'Delete Account'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <nav className="mt-3 flex justify-center gap-4 text-xs text-text-secondary" aria-label="Legal">
         <Link to="/terms" className="transition-colors hover:text-text-primary">

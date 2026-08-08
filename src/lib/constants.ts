@@ -10,7 +10,7 @@ export const FEATURE_FLAGS = {
 import type { PricingPlan } from '@/types'
 
 const PREMIUM_FEATURES = [
-  'Unlimited Recruiter Checks',
+  'Up to 8 Recruiter Checks per day',
   'Interview Probability Score',
   'Recruiter Feedback',
   'Tailored CVs',
@@ -24,7 +24,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     name: 'Free',
     price: '€0',
     description: 'Get started with your first Recruiter Check.',
-    features: ['Limited Recruiter Checks', 'Interview Probability Score', 'Recruiter Feedback'],
+    features: ['1 Recruiter Check', 'Interview Probability Score', 'Recruiter Feedback'],
   },
   {
     id: 'premium_weekly' as const,
@@ -40,7 +40,11 @@ export const PRICING_PLANS: PricingPlan[] = [
     price: '€19.99',
     interval: 'month',
     description: 'Best value for an active job search.',
-    features: ['Everything in Weekly', 'Best value for an active job search.'],
+    features: [
+      'Up to 8 Recruiter Checks per day',
+      'Everything in Weekly',
+      'Best value for an active job search.',
+    ],
     badge: 'Best Value',
     highlighted: true,
   },

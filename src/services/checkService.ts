@@ -139,7 +139,7 @@ export async function getCheckWithFeedback(checkId: string): Promise<CheckWithFe
   }
 }
 
-const FREE_TIER_LIFETIME_LIMIT = 1
+export const FREE_TIER_LIFETIME_LIMIT = 1
 export const PAID_TIER_DAILY_LIMIT = 8
 
 export type CheckGateReason = 'free-tier' | 'daily-limit' | null
