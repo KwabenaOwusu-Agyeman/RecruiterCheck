@@ -8,6 +8,12 @@ import { useAuth } from '@/hooks/useAuth'
 import { createCheckoutSession, createPortalSession } from '@/services/checkService'
 import { cn } from '@/utils/cn'
 
+const TIER_RANK: Record<string, number> = {
+  free: 0,
+  premium_weekly: 1,
+  premium_monthly: 2,
+}
+
 export function BillingPage() {
   const { profile } = useAuth()
   const [searchParams] = useSearchParams()
@@ -48,11 +54,9 @@ export function BillingPage() {
       <BackLink to="/account" />
 
       <div className="mx-auto mt-1 max-w-2xl text-center">
-        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">
-          Ready to see your application through a recruiter&apos;s eyes?
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">Choose your plan</h1>
         <p className="mt-2 text-sm text-text-secondary">
-          Choose the plan that fits your job search.
+          Get unlimited checks and tailored application documents when you need them.
         </p>
       </div>
 
@@ -75,6 +79,13 @@ export function BillingPage() {
           const isCurrent = profile?.subscription_tier === plan.id
           const isPremium = plan.id !== 'free'
           const isHighlighted = Boolean(plan.highlighted)
+
+          // Higher rank = more premium. A plan below the current rank has no
+          // supported CTA yet (no downgrade flow exists), so its button is
+          // hidden rather than mislabeled as "Upgrade" or invented outright.
+          const currentRank = TIER_RANK[profile?.subscription_tier ?? 'free'] ?? 0
+          const planRank = TIER_RANK[plan.id] ?? 0
+          const isDowngrade = !isCurrent && planRank < currentRank
 
           return (
             <div key={plan.id} className="relative pt-2.5">
@@ -148,7 +159,13 @@ export function BillingPage() {
                     >
                       {managingBilling ? 'Opening...' : 'Manage Billing'}
                     </Button>
-                  ) : isPremium ? (
+                  ) : isCurrent ? (
+                    <Button className="w-full" size="sm" variant="secondary" disabled>
+                      Current Plan
+                    </Button>
+                  ) : isDowngrade ? (
+                    <div className="h-8" aria-hidden="true" />
+                  ) : (
                     <Button
                       className="w-full"
                       size="sm"
@@ -158,11 +175,11 @@ export function BillingPage() {
                         void handleUpgrade(plan.id as 'premium_weekly' | 'premium_monthly')
                       }
                     >
-                      {loadingPlan === plan.id ? 'Redirecting...' : 'Upgrade'}
-                    </Button>
-                  ) : (
-                    <Button className="w-full" size="sm" variant="secondary" disabled>
-                      {isCurrent ? 'Current plan' : 'Included'}
+                      {loadingPlan === plan.id
+                        ? 'Redirecting...'
+                        : currentRank === 0
+                          ? `Choose ${plan.name}`
+                          : 'Upgrade'}
                     </Button>
                   )}
                 </div>

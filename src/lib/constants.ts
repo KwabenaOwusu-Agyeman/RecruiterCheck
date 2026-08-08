@@ -11,11 +11,11 @@ import type { PricingPlan } from '@/types'
 
 const PREMIUM_FEATURES = [
   'Unlimited Recruiter Checks',
-  'Interview Probability Scores',
+  'Interview Probability Score',
   'Recruiter Feedback',
-  'Recruiter Tailored CVs',
+  'Tailored CVs',
   'Cover Letters',
-  'Emails for Recruiters',
+  'Recruiter Messages',
 ]
 
 export const PRICING_PLANS: PricingPlan[] = [
@@ -33,15 +33,14 @@ export const PRICING_PLANS: PricingPlan[] = [
     interval: 'week',
     description: 'More checks when you are actively applying.',
     features: PREMIUM_FEATURES,
-    badge: 'Max Flexibility',
   },
   {
     id: 'premium_monthly' as const,
     name: 'Monthly',
     price: '€19.99',
     interval: 'month',
-    description: 'Best value for sustained job search activity.',
-    features: PREMIUM_FEATURES,
+    description: 'Best value for an active job search.',
+    features: ['Everything in Weekly', 'Best value for an active job search.'],
     badge: 'Best Value',
     highlighted: true,
   },
