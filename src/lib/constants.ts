@@ -1,0 +1,55 @@
+export const BRAND = {
+  name: 'RecruiterCheck',
+  tagline: 'Think like a recruiter before you apply.',
+} as const
+
+export const FEATURE_FLAGS = {
+  linkedInAuth: false,
+} as const
+
+import type { PricingPlan } from '@/types'
+
+const PREMIUM_FEATURES = [
+  'Unlimited Recruiter Checks',
+  'Interview Probability Scores',
+  'Recruiter Feedback',
+  'Recruiter Tailored CVs',
+  'Cover Letters',
+  'Emails for Recruiters',
+]
+
+export const PRICING_PLANS: PricingPlan[] = [
+  {
+    id: 'free' as const,
+    name: 'Free',
+    price: '€0',
+    description: 'Get started with your first Recruiter Check.',
+    features: ['Limited Recruiter Checks', 'Interview Probability Score', 'Recruiter Feedback'],
+  },
+  {
+    id: 'premium_weekly' as const,
+    name: 'Weekly',
+    price: '€9.99',
+    interval: 'week',
+    description: 'More checks when you are actively applying.',
+    features: PREMIUM_FEATURES,
+    badge: 'Max Flexibility',
+  },
+  {
+    id: 'premium_monthly' as const,
+    name: 'Monthly',
+    price: '€19.99',
+    interval: 'month',
+    description: 'Best value for sustained job search activity.',
+    features: PREMIUM_FEATURES,
+    badge: 'Best Value',
+    highlighted: true,
+  },
+]
+
+export const ACCEPTED_CV_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+] as const
+
+export const MAX_CV_SIZE_BYTES = 10 * 1024 * 1024

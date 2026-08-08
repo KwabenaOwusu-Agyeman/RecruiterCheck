@@ -1,0 +1,456 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
+import { Buffer } from 'node:buffer'
+import mammoth from 'npm:mammoth@1.8.0'
+import { extractText as extractPdfText, getDocumentProxy } from 'npm:unpdf@0.12.1'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+const MAX_CV_CHARS = 15000
+const MAX_ATTEMPTS = 2
+const RATE_LIMIT_PER_HOUR = 5
+// Weekly/monthly tiers only — not a monetization lever, just reinforcing the
+// "quality over quantity" positioning even for paying users. Free tier keeps
+// its separate lifetime cap (enforced client-side via getCheckGateReason).
+const PAID_TIER_DAILY_LIMIT = 8
+
+interface AnalyzeRequest {
+  checkId: string
+}
+
+interface RawAnalysis {
+  language: 'en' | 'nl'
+  experience_score: number
+  skills_score: number
+  uvp_score: number
+  strengths: string[]
+  improvements: string[]
+  prospects: string[]
+}
+
+interface AnalysisResult {
+  interview_probability_score: number
+  strengths: string[]
+  improvements: string[]
+  prospects: string[]
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  try {
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return jsonResponse({ error: 'Missing authorization header' }, 401)
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
+
+    if (!openaiApiKey) {
+      return jsonResponse({ error: 'Analysis service is not configured' }, 503)
+    }
+
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    })
+
+    const {
+      data: { user },
+      error: userError,
+    } = await userClient.auth.getUser()
+
+    if (userError || !user) {
+      return jsonResponse({ error: 'Unauthorized' }, 401)
+    }
+
+    const { checkId } = (await req.json()) as AnalyzeRequest
+    if (!checkId) {
+      return jsonResponse({ error: 'checkId is required' }, 400)
+    }
+
+    const adminClient = createClient(supabaseUrl, serviceRoleKey)
+
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+    const { count: recentAttempts, error: rateLimitError } = await adminClient
+      .from('analyze_requests')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .gte('created_at', oneHourAgo)
+
+    if (rateLimitError) {
+      return jsonResponse({ error: 'Could not verify rate limit' }, 500)
+    }
+
+    if ((recentAttempts ?? 0) >= RATE_LIMIT_PER_HOUR) {
+      return jsonResponse(
+        { error: 'You have reached the limit of 5 checks per hour. Please try again later.' },
+        429,
+      )
+    }
+
+    const { data: profile, error: profileError } = await adminClient
+      .from('profiles')
+      .select('subscription_tier')
+      .eq('id', user.id)
+      .single()
+
+    if (profileError || !profile) {
+      return jsonResponse({ error: 'Profile not found' }, 404)
+    }
+
+    if (profile.subscription_tier !== 'free') {
+      const startOfDayUtc = new Date()
+      startOfDayUtc.setUTCHours(0, 0, 0, 0)
+
+      const { count: todaysCount, error: dailyLimitError } = await adminClient
+        .from('checks')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .neq('status', 'draft')
+        .gte('created_at', startOfDayUtc.toISOString())
+
+      if (dailyLimitError) {
+        return jsonResponse({ error: 'Could not verify daily limit' }, 500)
+      }
+
+      if ((todaysCount ?? 0) >= PAID_TIER_DAILY_LIMIT) {
+        return jsonResponse(
+          {
+            error: `You have reached today's limit of ${PAID_TIER_DAILY_LIMIT} checks. Please try again tomorrow.`,
+          },
+          429,
+        )
+      }
+    }
+
+    await adminClient.from('analyze_requests').insert({ user_id: user.id })
+
+    const { data: check, error: checkError } = await adminClient
+      .from('checks')
+      .select('*')
+      .eq('id', checkId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (checkError || !check) {
+      return jsonResponse({ error: 'Check not found' }, 404)
+    }
+
+    if (check.job_description.trim().length < 50) {
+      return jsonResponse({ error: 'Job description is too short to analyze' }, 400)
+    }
+
+    await adminClient
+      .from('checks')
+      .update({ status: 'processing', error_message: null })
+      .eq('id', checkId)
+
+    const { data: cvFile, error: downloadError } = await adminClient.storage
+      .from('cvs')
+      .download(check.cv_storage_path)
+
+    if (downloadError || !cvFile) {
+      await markFailed(adminClient, checkId, 'Could not read CV file')
+      return jsonResponse({ error: 'Could not read CV file' }, 400)
+    }
+
+    let cvText: string
+    try {
+      cvText = await extractText(cvFile, check.cv_file_name)
+    } catch {
+      await markFailed(adminClient, checkId, 'Could not read text from this CV file')
+      return jsonResponse({ error: 'Could not read text from this CV file' }, 400)
+    }
+
+    let analysis: AnalysisResult
+    try {
+      analysis = await generateFeedback(openaiApiKey, cvText, check.job_description, {
+        jobTitle: check.job_title,
+        companyName: check.company_name,
+        outputLanguage: (check.output_language ?? 'auto') as 'auto' | 'en' | 'nl',
+      })
+    } catch (error) {
+      console.error('analyze-check: analysis failed after retry', error)
+      await markFailed(adminClient, checkId, 'Could not generate feedback. Please retry.')
+      return jsonResponse({ error: 'Could not generate feedback' }, 502)
+    }
+
+    const { error: feedbackError } = await adminClient.from('feedback').upsert({
+      check_id: checkId,
+      strengths: analysis.strengths,
+      improvements: analysis.improvements,
+      prospects: analysis.prospects,
+    })
+
+    if (feedbackError) {
+      await markFailed(adminClient, checkId, 'Could not save feedback')
+      return jsonResponse({ error: 'Could not save feedback' }, 500)
+    }
+
+    await adminClient
+      .from('checks')
+      .update({
+        status: 'completed',
+        interview_probability_score: analysis.interview_probability_score,
+        error_message: null,
+      })
+      .eq('id', checkId)
+
+    return jsonResponse({ success: true, checkId })
+  } catch (error) {
+    console.error('analyze-check error:', error)
+    return jsonResponse({ error: 'Internal server error' }, 500)
+  }
+})
+
+async function markFailed(
+  client: ReturnType<typeof createClient>,
+  checkId: string,
+  message: string,
+) {
+  await client
+    .from('checks')
+    .update({ status: 'failed', error_message: message })
+    .eq('id', checkId)
+}
+
+async function extractText(file: Blob, fileName: string): Promise<string> {
+  const lowerName = fileName.toLowerCase()
+  const arrayBuffer = await file.arrayBuffer()
+
+  let text: string
+
+  if (lowerName.endsWith('.pdf')) {
+    const pdf = await getDocumentProxy(new Uint8Array(arrayBuffer))
+    const result = await extractPdfText(pdf, { mergePages: true })
+    text = Array.isArray(result.text) ? result.text.join('\n') : result.text
+  } else if (lowerName.endsWith('.docx')) {
+    const result = await mammoth.extractRawText({ buffer: Buffer.from(arrayBuffer) })
+    text = result.value
+  } else if (lowerName.endsWith('.txt')) {
+    // Pasted-CV path: the client saves pasted text as a plain-text file.
+    text = new TextDecoder('utf-8').decode(arrayBuffer)
+  } else {
+    throw new Error('Unsupported file type')
+  }
+
+  const cleaned = text.replace(/\s+/g, ' ').trim()
+  if (cleaned.length < 50) {
+    throw new Error('Extracted text is too short')
+  }
+
+  return cleaned.slice(0, MAX_CV_CHARS)
+}
+
+/**
+ * Structured JSON output, schema-validated, retry once on failure per the
+ * locked spec. Never returns (or lets the caller persist) malformed results —
+ * both attempts must pass validateAnalysis or this throws.
+ */
+async function generateFeedback(
+  apiKey: string,
+  cvText: string,
+  jobDescription: string,
+  context: { jobTitle: string | null; companyName: string | null; outputLanguage: 'auto' | 'en' | 'nl' },
+): Promise<AnalysisResult> {
+  let lastError: unknown
+
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
+    try {
+      const raw = await callOpenAI(apiKey, cvText, jobDescription, context)
+      return normalizeAnalysis(raw, context.outputLanguage)
+    } catch (error) {
+      lastError = error
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('Analysis failed')
+}
+
+async function callOpenAI(
+  apiKey: string,
+  cvText: string,
+  jobDescription: string,
+  context: { jobTitle: string | null; companyName: string | null; outputLanguage: 'auto' | 'en' | 'nl' },
+): Promise<RawAnalysis> {
+  // The user can explicitly pick a language on the New Check form instead of
+  // trusting auto detection (added after auto detection guessed wrong on a
+  // real English application). When they have, this instruction replaces
+  // detection entirely rather than just hinting at it, so the model can't
+  // second guess the job description's own language back into the output.
+  const languageInstruction =
+    context.outputLanguage === 'en'
+      ? 'The language field must be exactly "en". The user has explicitly chosen English for this application, regardless of what language the job description or CV are written in. Write every strength, improvement, and prospect entirely in English, using natural, professional wording a native speaker recruiter would actually write.'
+      : context.outputLanguage === 'nl'
+        ? 'The language field must be exactly "nl". The user has explicitly chosen Dutch for this application, regardless of what language the job description or CV are written in. Write every strength, improvement, and prospect entirely in Dutch, using natural, professional wording a native speaker recruiter would actually write, not a literal translation.'
+        : 'First, determine the language field: read the job description primarily to decide which language this application is in; if the job description doesn\'t make it clear, fall back to the language of the original CV. Output exactly "en" for English or "nl" for Dutch, this app supports no other languages. Write every strength, improvement, and prospect entirely in that language, using natural, professional wording a native speaker recruiter would actually write, not a literal translation of the English guidance below.'
+
+  const systemPrompt = `You are an experienced, technically rigorous recruiter screening a candidate's application. Evaluate the CV against the job description using this internal rubric, without naming or restating it in your output:
+
+- Experience (weight 40%): how well the candidate's work history matches the role's seniority, scope, and domain.
+- Skills (weight 35%): how well the candidate's stated skills and tools match the role's requirements.
+- Unique Value Proposition (weight 25%): apply an Evidence → Strength → Employer Value framework — find concrete evidence in the CV, translate it into a genuine strength, and explain the value it offers this specific employer.
+
+Score each dimension 0-100. Score conservatively and critically, the way a skeptical recruiter who reviews hundreds of CVs would — most candidates, even strong ones, should land in the 40-75 range per dimension. Reserve 80+ only for a genuinely exceptional, near-perfect match on that dimension with no notable gaps; scores above 80 must be rare, never a default. Do not inflate scores to be encouraging — flag real gaps honestly.
+
+${languageInstruction}
+
+Then write feedback that helps the candidate see their own application the way a recruiter would — direct, specific, evidence-based, technical, and never generic. Provide exactly:
+- 2 strengths: never restate or paraphrase a specific achievement bullet from the CV — the candidate already knows what they wrote, so quoting it back adds nothing. Instead, name the underlying pattern that makes their CV effective, the way a recruiter commenting on craft would, e.g. "Good use of statistics in your most recent role" or "Strong use of action/leader verbs when describing your work." Name which role or section it's most evident in without quoting the sentence itself. Every strength must close with a clause on why that pattern specifically matters to this employer for this role (the Employer Value step of the Evidence → Strength → Employer Value framework), not just that it's a good trait in general, e.g. "...which signals you can own ambiguous, metrics-driven problems the way this role requires." If there's genuinely no quantification anywhere, base strengths on other real craft signals present (e.g. clear ownership/scope language, relevant tools named, well-structured bullets) — never invent a pattern that isn't there.
+- 3 areas to improve: at least one must address quantification — if the CV lacks metrics to support its claims, say so and suggest adding specific stats; if the CV already uses strong statistics throughout, skip this and use a different, still-technical area to improve instead. At least one must push the candidate to elaborate in more depth on whichever single experience entry is most relevant to this specific job — the one a hiring manager would scrutinize most — rather than staying surface-level.
+- 2 prospects: one sentence on why the candidate can still be competitive for this role or closely related roles, and one sentence on which single improvement would most increase interview likelihood.
+
+Never use hyphens, en dashes, or em dashes anywhere in your output text (no "-", "–", or "—", including inside compound words). Write in plain sentences instead, using commas, periods, or separate words (e.g. "well structured" not "well-structured", "data driven" not "data-driven"). In Dutch, prefer natural solid compounds where that is correct Dutch spelling (e.g. "klantgericht" not "klant gericht") rather than forcing a space that would be spelled wrong.`
+
+  const userPrompt = `Job title: ${context.jobTitle ?? 'Not specified'}
+Company: ${context.companyName ?? 'Not specified'}
+
+Job description:
+${jobDescription}
+
+CV:
+${cvText}`
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      temperature: 0.4,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      response_format: {
+        type: 'json_schema',
+        json_schema: {
+          name: 'recruiter_check_feedback',
+          strict: true,
+          schema: {
+            type: 'object',
+            properties: {
+              language: { type: 'string', enum: ['en', 'nl'] },
+              experience_score: { type: 'integer' },
+              skills_score: { type: 'integer' },
+              uvp_score: { type: 'integer' },
+              strengths: { type: 'array', items: { type: 'string' } },
+              improvements: { type: 'array', items: { type: 'string' } },
+              prospects: { type: 'array', items: { type: 'string' } },
+            },
+            required: [
+              'language',
+              'experience_score',
+              'skills_score',
+              'uvp_score',
+              'strengths',
+              'improvements',
+              'prospects',
+            ],
+            additionalProperties: false,
+          },
+        },
+      },
+    }),
+  })
+
+  if (!response.ok) {
+    const body = await response.text()
+    throw new Error(`OpenAI API error: ${response.status} ${body}`)
+  }
+
+  const payload = (await response.json()) as {
+    choices?: Array<{ message?: { content?: string } }>
+  }
+  const rawText = payload.choices?.[0]?.message?.content
+
+  if (!rawText) {
+    throw new Error('Empty response from analysis service')
+  }
+
+  return JSON.parse(rawText) as RawAnalysis
+}
+
+function normalizeAnalysis(raw: RawAnalysis, outputLanguage: 'auto' | 'en' | 'nl'): AnalysisResult {
+  // If the user explicitly picked a language, reject and retry rather than
+  // silently accepting output in the wrong one — this is a user-facing
+  // promise ("give me this in English"), not just a quality nicety.
+  if (outputLanguage !== 'auto' && raw.language !== outputLanguage) {
+    throw new Error('Feedback language did not match the requested language')
+  }
+
+  const strengths = sanitizeStrings(raw.strengths)
+  const improvements = sanitizeStrings(raw.improvements)
+  const prospects = sanitizeStrings(raw.prospects)
+
+  if (strengths.length !== 2) throw new Error('Expected exactly 2 strengths')
+  if (improvements.length !== 3) throw new Error('Expected exactly 3 areas to improve')
+  if (prospects.length !== 2) throw new Error('Expected exactly 2 prospects')
+
+  if (
+    !isFiniteNumber(raw.experience_score) ||
+    !isFiniteNumber(raw.skills_score) ||
+    !isFiniteNumber(raw.uvp_score)
+  ) {
+    throw new Error('Missing or invalid scores')
+  }
+
+  const weighted =
+    0.4 * clampScore(raw.experience_score) +
+    0.35 * clampScore(raw.skills_score) +
+    0.25 * clampScore(raw.uvp_score)
+
+  return {
+    interview_probability_score: Math.round(weighted),
+    strengths,
+    improvements,
+    prospects,
+  }
+}
+
+function sanitizeStrings(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => stripDashes(item.trim()))
+    .filter((item) => item.length > 0)
+}
+
+/**
+ * The "never use hyphens" prompt rule isn't reliable on its own (gpt-4o-mini
+ * still slips into compounds like "data-analyse" in Dutch), so this mirrors
+ * the deterministic sanitizer used in generate-documents rather than relying
+ * on prompt wording alone.
+ */
+function stripDashes(text: string): string {
+  return text
+    .replace(/(\w)[-–—](?=\w)/g, '$1 ')
+    .replace(/\s*[-–—]\s*/g, ', ')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/ ,/g, ',')
+    .trim()
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+function clampScore(value: number): number {
+  return Math.max(0, Math.min(100, value))
+}
+
+function jsonResponse(body: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
+}
