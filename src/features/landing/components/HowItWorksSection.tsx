@@ -3,18 +3,18 @@ import { Container } from '@/components/ui/Container'
 const steps = [
   {
     number: '01',
-    title: 'Upload your CV and job description',
-    description: 'Add your CV and the job description you are applying for.',
+    title: 'Add your application',
+    description: 'Upload your CV and paste the job description.',
   },
   {
     number: '02',
-    title: 'Get recruiter feedback and your score',
-    description: 'Receive recruiter style feedback and an interview probability score.',
+    title: 'See what a recruiter sees',
+    description: 'Get your Interview Probability Score, strengths, areas to improve, and prospects.',
   },
   {
     number: '03',
-    title: 'Download your recruiter tailored documents',
-    description: 'Get a recruiter tailored CV, cover letter, and email to apply with confidence.',
+    title: 'Improve before you apply',
+    description: 'Get a tailored CV, cover letter, and recruiter message ready to send.',
   },
 ] as const
 
@@ -27,7 +27,7 @@ export function HowItWorksSection() {
             How it works
           </h2>
           <p className="mt-3 text-text-secondary">
-            A straightforward process designed to mirror how recruiters review applications.
+            See your application the way a recruiter would, then improve it before you apply.
           </p>
         </div>
 
