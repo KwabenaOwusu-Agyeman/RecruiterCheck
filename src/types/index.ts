@@ -10,6 +10,12 @@ export interface Profile {
   subscription_tier: SubscriptionTier
   subscription_status: SubscriptionStatus
   stripe_customer_id: string | null
+  // Durable usage counters (see migration durable_usage_counters) — the
+  // authoritative source of truth for allowance checks, never derived by
+  // counting `checks` rows, and never decremented by deleting a check.
+  lifetime_checks_consumed: number
+  daily_checks_consumed: number
+  daily_checks_reset_at: string | null
   created_at: string
   updated_at: string
 }
@@ -24,6 +30,9 @@ export interface Check {
   cv_file_name: string
   status: CheckStatus
   interview_probability_score: number | null
+  experience_score: number | null
+  skills_score: number | null
+  uvp_score: number | null
   error_message: string | null
   output_language: OutputLanguage
   detected_language: string | null

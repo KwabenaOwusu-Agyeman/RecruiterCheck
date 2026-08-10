@@ -75,6 +75,7 @@ interface RawDocuments {
   tailored_cv: TailoredCv
   cover_letter: CoverLetter
   recruiter_message: RecruiterMessage
+  new_claims_introduced: string[]
 }
 
 Deno.serve(async (req) => {
@@ -344,7 +345,7 @@ Every document must be usable exactly as generated — the candidate should be a
    - This CV must fit on a single printed page — be ruthlessly concise and omit anything not relevant to this job. Prioritize relevance over completeness.
 2. cover_letter: a premium, professional cover letter for this role, written by the candidate, to the company, in the candidate's own voice. Write in clear, direct, plain language, no jargon and no filler, confident and positive throughout, exactly what a recruiter wants to read. This is the single most important rule for this document: write every sentence in the first person ("I", "my", "me"), exactly as the candidate would write it themselves. Never refer to the candidate by name or in the third person anywhere in intro_paragraph, body_paragraphs, or conclusion_paragraph (wrong: "Maya is excited to apply... She has..."; right: "I am excited to apply... I have..."). Structured as:
    - company_location: read the entire job description carefully, including the very start and end and any line near the job title or company name, for any statement of the company's location, such as "based in Berlin", "our Amsterdam office", "Remote, Netherlands", a city name next to the job title, or a full address line. If a location is found, extract it: format as "City, Country" when both are given, or just the city (or just the country) when only one is given. Only use an empty string if the job description truly contains no location information anywhere, after a careful full read. Do not invent a location that is not actually stated in the job description.
-   - salutation: the natural formal greeting for a cover letter in the target language, addressed to the company's hiring team, with the real company name substituted in — never leave the company name as a placeholder (e.g. "Dear <Company> Hiring Team," in English).
+   - salutation: the natural formal greeting for a cover letter in the target language, addressed to the company's hiring team. The company name provided below (see "Company:" in the context) may be empty if it could not be determined from the job description — when it is empty, use a generic greeting to the hiring team with no company name in it (e.g. "Dear Hiring Team," in English); when a company name is provided, substitute it in naturally. Never write a bracketed placeholder like "Dear <Company> Hiring Team," and never invent a company name that was not provided.
    - intro_paragraph: first person opening stating who I am and the role I'm applying for — a strong, direct hook.
    - body_paragraphs: exactly 3 short first person paragraphs, always in this order:
      1. Specific fit for this job's requirements, drawing on one real piece of experience and a concrete result or outcome from the CV.
@@ -364,7 +365,9 @@ Every document must be usable exactly as generated — the candidate should be a
    - closing_line: a brief, warm closing sentence in the target language looking forward to hearing back (e.g. "I look forward to hearing from you." in English).
    - sign_off: the natural formal sign off used to close a short message in the target language (e.g. "Kind regards," in English) — the candidate's name is added separately as the signature on the next line, so do not include it here.
 
-Never use hyphens, en dashes, or em dashes anywhere in any of the three documents (no "-", "–", or "—"). This is an absolute rule with no exceptions. This includes dates ("2020-2023"), job titles, and compound words and phrases that would default to a hyphen in English (such as "well-known", "data-driven", "problem-solving", "self-motivated", "detail-oriented", "cross-functional", "well-being", "ad-hoc", "up-to-date") — always write these as two separate words instead (e.g. "well known", "data driven", "problem solving"), and use a comma or the target language's natural word for "to" in date ranges (e.g. "2020 to 2023" in English). In languages, like Dutch and German, where compound words are conventionally written as a single solid word, use that correct solid spelling instead of an English style hyphenated or space separated version. Before finalizing your answer, reread every sentence you wrote and remove any hyphen, en dash, or em dash you find.`
+Never use hyphens, en dashes, or em dashes anywhere in any of the three documents (no "-", "–", or "—"). This is an absolute rule with no exceptions. This includes dates ("2020-2023"), job titles, and compound words and phrases that would default to a hyphen in English (such as "well-known", "data-driven", "problem-solving", "self-motivated", "detail-oriented", "cross-functional", "well-being", "ad-hoc", "up-to-date") — always write these as two separate words instead (e.g. "well known", "data driven", "problem solving"), and use a comma or the target language's natural word for "to" in date ranges (e.g. "2020 to 2023" in English). In languages, like Dutch and German, where compound words are conventionally written as a single solid word, use that correct solid spelling instead of an English style hyphenated or space separated version. Before finalizing your answer, reread every sentence you wrote and remove any hyphen, en dash, or em dash you find.
+
+Finally, self check your own output and populate new_claims_introduced: a JSON array of every number, percentage, currency amount, count, timeframe, employer name, job title, certification, or skill that appears anywhere in the tailored_cv, cover_letter, or recruiter_message above but is not a direct restatement, reordering, or rephrasing of something that actually appears in the original CV text provided below. This is an honest self audit, not a formality — go back through every bullet, every sentence, and every figure you wrote and verify it against the original CV. If you are not certain a specific detail traces back to the original CV, include it here rather than omitting it. Return an empty array only if, after this careful check, truly nothing you wrote goes beyond what the original CV actually states.`
 
   const userPrompt = `Job title: ${context.jobTitle ?? 'Not specified'}
 Company: ${context.companyName ?? 'Not specified'}
@@ -496,8 +499,20 @@ ${cvText}`
                 required: ['greeting', 'body', 'closing_line', 'sign_off'],
                 additionalProperties: false,
               },
+              new_claims_introduced: {
+                type: 'array',
+                items: { type: 'string' },
+                description:
+                  'Every number, employer, date, credential, or skill in the three documents above that does not trace back to the original CV. Empty array only if none.',
+              },
             },
-            required: ['language', 'tailored_cv', 'cover_letter', 'recruiter_message'],
+            required: [
+              'language',
+              'tailored_cv',
+              'cover_letter',
+              'recruiter_message',
+              'new_claims_introduced',
+            ],
             additionalProperties: false,
           },
         },
@@ -542,6 +557,17 @@ function validateDocuments(raw: RawDocuments): RawDocuments {
   const cv = raw.tailored_cv
   const letter = raw.cover_letter
   const message = raw.recruiter_message
+
+  // The model self-reports any fact it introduced beyond the original CV
+  // (new_claims_introduced, required by the schema). Rather than trusting the
+  // "never invent a metric" prompt instructions alone, a non-empty report is
+  // treated as a failed generation and retried — see generateDocuments' loop.
+  const newClaims = Array.isArray(raw.new_claims_introduced)
+    ? raw.new_claims_introduced.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    : []
+  if (newClaims.length > 0) {
+    throw new Error(`Model reported unverified claims not present in the original CV: ${JSON.stringify(newClaims)}`)
+  }
 
   // Detection should never block a result — if the model returns something
   // that isn't a plausible ISO 639-1 code, fall back to English rather than

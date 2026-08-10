@@ -11,6 +11,9 @@ export interface Database {
           subscription_tier: 'free' | 'premium_weekly' | 'premium_monthly'
           subscription_status: 'active' | 'cancelled' | 'past_due' | 'trialing'
           stripe_customer_id: string | null
+          lifetime_checks_consumed: number
+          daily_checks_consumed: number
+          daily_checks_reset_at: string | null
           created_at: string
           updated_at: string
         }
@@ -21,6 +24,9 @@ export interface Database {
           subscription_tier?: 'free' | 'premium_weekly' | 'premium_monthly'
           subscription_status?: 'active' | 'cancelled' | 'past_due' | 'trialing'
           stripe_customer_id?: string | null
+          lifetime_checks_consumed?: number
+          daily_checks_consumed?: number
+          daily_checks_reset_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -38,6 +44,9 @@ export interface Database {
           cv_file_name: string
           status: 'draft' | 'processing' | 'completed' | 'failed'
           interview_probability_score: number | null
+          experience_score: number | null
+          skills_score: number | null
+          uvp_score: number | null
           error_message: string | null
           output_language: 'auto' | 'en' | 'nl'
           detected_language: string | null
@@ -54,6 +63,9 @@ export interface Database {
           cv_file_name: string
           status?: 'draft' | 'processing' | 'completed' | 'failed'
           interview_probability_score?: number | null
+          experience_score?: number | null
+          skills_score?: number | null
+          uvp_score?: number | null
           error_message?: string | null
           output_language?: 'auto' | 'en' | 'nl'
           detected_language?: string | null

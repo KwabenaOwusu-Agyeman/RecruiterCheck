@@ -104,8 +104,13 @@ export function BillingPage() {
 
               <div
                 className={cn(
-                  'flex h-full flex-col rounded-2xl border border-navy bg-surface p-2.5',
-                  plan.badge ? 'pt-5' : '',
+                  // pt-5 applies to every card regardless of whether it has a
+                  // badge, so the badge space reserved by the outer wrapper's
+                  // pt-2.5 doesn't push just one card's internal content
+                  // (name/price/features/CTA) lower than the others — all
+                  // three must start their content at the same offset to
+                  // align horizontally.
+                  'flex h-full flex-col rounded-2xl border border-navy bg-surface p-2.5 pt-5',
                   isHighlighted ? 'border-2 shadow-lg' : 'shadow-sm',
                 )}
               >

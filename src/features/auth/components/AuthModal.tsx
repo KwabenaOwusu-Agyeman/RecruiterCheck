@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useState } from 'react'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
@@ -14,9 +14,13 @@ import {
   signUpWithPassword,
 } from '@/services/authService'
 
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
 export function AuthModal() {
   const { mode, close, setMode } = useAuthModal()
   const navigate = useNavigate()
+  const dialogRef = useRef<HTMLDivElement>(null)
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -35,11 +39,43 @@ export function AuthModal() {
     setLoadingProvider(null)
   }, [mode])
 
+  // Focus trap: Tab/Shift+Tab cycle within the dialog instead of escaping to
+  // background content, and the first focusable element gets focus on open
+  // so keyboard/screen-reader users land inside the dialog immediately.
   useEffect(() => {
     if (!mode) return
 
+    // Focus the email field rather than whatever is first in DOM order (the
+    // close button) — that's where a user opening this dialog actually wants
+    // to start typing.
+    const initialFocusTarget =
+      dialogRef.current?.querySelector<HTMLElement>('#auth-modal-email') ??
+      dialogRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR)
+    initialFocusTarget?.focus()
+
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') close()
+      if (event.key === 'Escape') {
+        close()
+        return
+      }
+
+      if (event.key !== 'Tab' || !dialogRef.current) return
+
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+      )
+      if (focusable.length === 0) return
+
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
     }
 
     document.addEventListener('keydown', handleKeyDown)
@@ -107,7 +143,7 @@ export function AuthModal() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#05050D]/50 p-4 sm:p-6"
+      className="fixed inset-0 z-50 overflow-y-auto bg-[#05050D]/50 p-4 sm:p-6"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
           close()
@@ -115,12 +151,22 @@ export function AuthModal() {
         }
       }}
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="auth-modal-title"
-        className="relative w-full max-w-sm rounded-2xl border border-navy bg-surface p-6 shadow-lg"
-      >
+      {/* Centering lives on this inner, non-scrolling wrapper rather than on
+          the scroll container itself — flex `items-center` + `overflow-y-auto`
+          on the same element clips content taller than the viewport (the
+          overflow above the centered item is never reachable by scrolling,
+          a known Flexbox behavior), which was cutting off the top of this
+          modal on short mobile viewports. `min-h-full` lets this wrapper grow
+          past the viewport when the dialog is tall, so the outer container's
+          natural scrollable area starts at the true top of the content. */}
+      <div className="flex min-h-full items-center justify-center">
+        <div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="auth-modal-title"
+          className="relative w-full max-w-sm rounded-2xl border border-navy bg-surface p-6 shadow-lg"
+        >
         <button
           type="button"
           aria-label="Close"
@@ -128,7 +174,7 @@ export function AuthModal() {
             close()
             void navigate('/', { replace: true })
           }}
-          className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-lg border border-navy text-text-secondary transition-colors hover:bg-background hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue"
+          className="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded-lg border border-navy text-text-secondary transition-colors hover:bg-background hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue"
         >
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <path
@@ -140,7 +186,7 @@ export function AuthModal() {
           </svg>
         </button>
 
-        <div className="mb-6 pr-8">
+        <div className="mb-6 pr-12">
           <h1 id="auth-modal-title" className="text-2xl font-bold tracking-tight text-text-primary">
             {title}
           </h1>
@@ -259,6 +305,7 @@ export function AuthModal() {
             {alternateLabel}
           </button>
         </p>
+        </div>
       </div>
     </div>
   )

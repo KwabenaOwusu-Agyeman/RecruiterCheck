@@ -182,50 +182,44 @@ export type CheckGateReason = 'free-tier' | 'daily-limit' | null
  * Free tier: 1 completed check ever, per the locked spec. Premium tiers
  * (weekly/monthly) are capped at 8 checks per UTC day — not a monetization
  * lever, just reinforcing the "quality over quantity" positioning even for
- * paying users. Draft AND failed checks never count toward either allowance
- * — a failed/timed-out attempt must not permanently burn the user's slot, so
- * only 'processing' (reserved, in flight) and 'completed' count. This is a
- * client-side pre-check only, for UI gating before the user even starts a
- * draft; the authoritative, atomic enforcement lives server-side in the
- * reserve_check_analysis Postgres function, which this mirrors.
+ * paying users. This reads the durable counters on the profile row
+ * (lifetime_checks_consumed / daily_checks_consumed / daily_checks_reset_at,
+ * see migration durable_usage_counters) rather than counting `checks` rows —
+ * counting rows would let a deleted completed check silently restore the
+ * allowance, which is exactly what the durable counters exist to prevent.
+ * This is a client-side pre-check only, for UI gating before the user even
+ * starts a draft; the authoritative, atomic enforcement lives server-side in
+ * the reserve_check_analysis Postgres function, which this mirrors.
  */
-export function getCheckGateReason(profile: Profile, checks: Check[]): CheckGateReason {
-  const countsTowardAllowance = (check: Check) =>
-    check.status === 'completed' || check.status === 'processing'
-
+export function getCheckGateReason(profile: Profile): CheckGateReason {
   if (profile.subscription_tier === 'free') {
-    const usedCount = checks.filter(countsTowardAllowance).length
-    return usedCount < FREE_TIER_LIFETIME_LIMIT ? null : 'free-tier'
+    return profile.lifetime_checks_consumed >= FREE_TIER_LIFETIME_LIMIT ? 'free-tier' : null
   }
 
-  const startOfDayUtc = new Date()
-  startOfDayUtc.setUTCHours(0, 0, 0, 0)
-  const todaysCount = checks.filter(
-    (check) => countsTowardAllowance(check) && new Date(check.created_at) >= startOfDayUtc,
-  ).length
-  return todaysCount < PAID_TIER_DAILY_LIMIT ? null : 'daily-limit'
+  const consumedToday = isDailyCounterCurrent(profile) ? profile.daily_checks_consumed : 0
+  return consumedToday < PAID_TIER_DAILY_LIMIT ? null : 'daily-limit'
 }
 
 /**
- * Count-only query (no rows fetched) for showing "X of 8 today" in the
- * account UI, so paid-tier users can see the daily cap before they hit it
- * instead of discovering it only when blocked. Matches reserve_check_analysis:
- * only 'processing'/'completed' count, so a failed attempt doesn't inflate
- * the displayed usage.
+ * daily_checks_reset_at is a plain `date` column (UTC), so it comes back as
+ * "YYYY-MM-DD" — compared directly against today's UTC date string rather
+ * than parsing into a Date, avoiding any local-timezone drift.
  */
-export async function getTodaysCheckCount(userId: string): Promise<number> {
-  const startOfDayUtc = new Date()
-  startOfDayUtc.setUTCHours(0, 0, 0, 0)
+function isDailyCounterCurrent(profile: Profile): boolean {
+  if (!profile.daily_checks_reset_at) return false
+  const todayUtc = new Date().toISOString().slice(0, 10)
+  return profile.daily_checks_reset_at === todayUtc
+}
 
-  const { count, error } = await supabase
-    .from('checks')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .in('status', ['processing', 'completed'])
-    .gte('created_at', startOfDayUtc.toISOString())
-
-  if (error) throw error
-  return count ?? 0
+/**
+ * Reads today's usage straight off the profile's durable counter (no query)
+ * for showing "X of 8 today" in the account UI, so paid-tier users can see
+ * the daily cap before they hit it instead of discovering it only when
+ * blocked. A stale reset date (counter last touched on an earlier UTC day)
+ * reads as 0 rather than a leftover count from a previous day.
+ */
+export function getTodaysCheckCount(profile: Profile): number {
+  return isDailyCounterCurrent(profile) ? profile.daily_checks_consumed : 0
 }
 
 export async function getCheck(checkId: string): Promise<Check | null> {

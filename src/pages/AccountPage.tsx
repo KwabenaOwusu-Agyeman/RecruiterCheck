@@ -14,7 +14,6 @@ import { signOut } from '@/services/authService'
 import {
   deleteAccount,
   FREE_TIER_LIFETIME_LIMIT,
-  getChecks,
   getSubscription,
   getTodaysCheckCount,
   PAID_TIER_DAILY_LIMIT,
@@ -52,37 +51,31 @@ export function AccountPage() {
     setFullName(profile?.full_name ?? '')
   }, [profile?.full_name])
 
+  // Usage counts read straight off the profile's durable counters (see
+  // migration durable_usage_counters) rather than counting `checks` rows —
+  // counting rows would let a deleted completed check make this page show
+  // "free check available" when the server would still reject a new one.
   useEffect(() => {
-    if (!user) return
+    if (!user || !profile) return
 
-    if (profile?.subscription_tier === 'free') {
+    if (profile.subscription_tier === 'free') {
       setSubscription(null)
       setTodaysCheckCount(null)
-
-      let cancelled = false
-      void getChecks(user.id).then((checks) => {
-        if (cancelled) return
-        const completedCount = checks.filter((check) => check.status === 'completed').length
-        setFreeCheckUsed(completedCount >= FREE_TIER_LIFETIME_LIMIT)
-      })
-      return () => {
-        cancelled = true
-      }
+      setFreeCheckUsed(profile.lifetime_checks_consumed >= FREE_TIER_LIFETIME_LIMIT)
+      return
     }
 
     setFreeCheckUsed(null)
+    setTodaysCheckCount(getTodaysCheckCount(profile))
 
     let cancelled = false
     void getSubscription(user.id).then((data) => {
       if (!cancelled) setSubscription(data)
     })
-    void getTodaysCheckCount(user.id).then((count) => {
-      if (!cancelled) setTodaysCheckCount(count)
-    })
     return () => {
       cancelled = true
     }
-  }, [user, profile?.subscription_tier])
+  }, [user, profile])
 
   async function handleSave(event: FormEvent) {
     event.preventDefault()

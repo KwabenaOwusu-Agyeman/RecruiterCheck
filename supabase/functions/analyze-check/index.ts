@@ -26,6 +26,8 @@ interface AnalyzeRequest {
 
 interface RawAnalysis {
   language: string
+  job_title: string
+  company_name: string
   experience_score: number
   skills_score: number
   uvp_score: number
@@ -35,20 +37,29 @@ interface RawAnalysis {
   strength_2_evidence: string
   improvement_1_finding: string
   improvement_1_evidence: string
+  improvement_1_example: string
   improvement_2_finding: string
   improvement_2_evidence: string
+  improvement_2_example: string
   improvement_3_finding: string
   improvement_3_evidence: string
+  improvement_3_example: string
   prospect_1: string
   prospect_2: string
+  new_claims_introduced: string[]
 }
 
 interface AnalysisResult {
   interview_probability_score: number
+  experience_score: number
+  skills_score: number
+  uvp_score: number
   strengths: string[]
   improvements: string[]
   prospects: string[]
   detected_language: string
+  job_title: string | null
+  company_name: string | null
 }
 
 Deno.serve(async (req) => {
@@ -213,18 +224,29 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Could not save feedback' }, 500)
     }
 
-    await adminClient
-      .from('checks')
-      .update({
-        status: 'completed',
-        interview_probability_score: analysis.interview_probability_score,
-        error_message: null,
-        // Stored so generate-documents reuses this exact value instead of
-        // re-detecting from a separate model call, which could otherwise
-        // drift onto a different language for the same check.
-        detected_language: analysis.detected_language,
+    // Marks the check completed and records usage in one atomic, idempotent
+    // step (see migration durable_usage_counters) — usage is a durable
+    // counter on profiles, never derived from counting `checks` rows, so
+    // deleting a completed check afterward can never restore this slot.
+    const { error: completeError } = await adminClient.rpc('complete_check_analysis', {
+      p_check_id: checkId,
+      p_user_id: user.id,
+      p_score: analysis.interview_probability_score,
+      p_detected_language: analysis.detected_language,
+      p_job_title: analysis.job_title,
+      p_company_name: analysis.company_name,
+      p_experience_score: analysis.experience_score,
+      p_skills_score: analysis.skills_score,
+      p_uvp_score: analysis.uvp_score,
+    })
+
+    if (completeError) {
+      console.error('analyze-check: complete_check_analysis failed', {
+        checkId,
+        message: completeError.message,
       })
-      .eq('id', checkId)
+      return jsonResponse({ error: 'Could not save analysis result' }, 500)
+    }
 
     return jsonResponse({ success: true, checkId })
   } catch (error) {
@@ -317,14 +339,22 @@ async function callOpenAI(
 
 Score each dimension 0-100. Score conservatively and critically, the way a skeptical recruiter who reviews hundreds of CVs would — most candidates, even strong ones, should land in the 40-75 range per dimension. Reserve 80+ only for a genuinely exceptional, near-perfect match on that dimension with no notable gaps; scores above 80 must be rare, never a default. Do not inflate scores to be encouraging — flag real gaps honestly.
 
+Also populate job_title and company_name: ${
+    context.jobTitle || context.companyName
+      ? `these are already known (job_title: ${context.jobTitle ?? 'unknown'}, company_name: ${context.companyName ?? 'unknown'}) — return them back exactly as given for whichever one is known; only extract the other one yourself if it says "unknown" above.`
+      : 'extract both directly from the job description text.'
+  } job_title is the specific role title as literally stated in the job description (e.g. "Senior Backend Engineer"), not a paraphrase. company_name is the hiring company's name as literally stated. If the job description genuinely does not state one of these clearly (e.g. a confidential/blind posting with no company named, or phrasing too generic to name a specific title), return an empty string for that field rather than guessing or inventing a plausible-sounding value — an empty string is always safer than a wrong guess here.
+
 ${languageInstruction}
 
 Whatever language you determined above, EVERY field below (strength_1_finding, strength_1_evidence, strength_2_finding, strength_2_evidence, improvement_1_finding, improvement_1_evidence, improvement_2_finding, improvement_2_evidence, improvement_3_finding, improvement_3_evidence, prospect_1, prospect_2) must be written entirely in that same language, with zero English sentences slipped in, even if that language is less common. Do not default to English once you reach this part.
 
 Then write feedback that helps the candidate see their own application the way a recruiter would — direct, specific, evidence-based, technical, and never generic. Each strength and area to improve is split into two separate fields: a "_finding" field and an "_evidence" field. Both are required and both must be non empty — never leave an "_evidence" field as a restatement of its "_finding" field or as a near-duplicate; it must add genuinely new information. The "_finding" field is a 2 to 5 word bolded lead-in naming the pattern or action, e.g. "Strong sales performance" or "Quantify your impact" (no trailing period needed, it will be rendered as a heading). The matching "_evidence" field is one full sentence giving the detail behind it, e.g. "Your record of exceeding sales targets directly supports the role's revenue expectations."
 - strength_1_finding / strength_1_evidence and strength_2_finding / strength_2_evidence: the finding names the underlying pattern that makes the CV effective, the way a recruiter commenting on craft would. Never restate or quote a specific achievement bullet from the CV in the finding — the candidate already knows what they wrote, so quoting it back adds nothing. The evidence states why that pattern specifically matters to this employer for this role (the Employer Value step of the Evidence, Strength, Employer Value framework). If there's genuinely no quantification anywhere, base strengths on other real craft signals present (e.g. clear ownership/scope language, relevant tools named, well-structured bullets) — never invent a pattern that isn't there.
-- improvement_1_finding / improvement_1_evidence, improvement_2_finding / improvement_2_evidence, and improvement_3_finding / improvement_3_evidence: the finding is a direct, imperative action, e.g. "Quantify your impact" or "Strengthen leadership evidence." Never hedge with phrasing like "Consider adding", "You may want to", or "It would be helpful to". The evidence states the specific improvement to make, e.g. "Add conversion rates, revenue generated, pipeline value, or targets exceeded." At least one of the three must address quantification — if the CV lacks metrics to support its claims, say so and name the specific stats to add; if the CV already uses strong statistics throughout, skip this and use a different, still-technical area to improve instead. At least one must push the candidate to elaborate in more depth on whichever single experience entry is most relevant to this specific job — the one a hiring manager would scrutinize most — rather than staying surface-level.
+- improvement_1_finding / improvement_1_evidence / improvement_1_example, improvement_2_finding / improvement_2_evidence / improvement_2_example, and improvement_3_finding / improvement_3_evidence / improvement_3_example: the finding is a direct, imperative action, e.g. "Quantify your impact" or "Strengthen leadership evidence." Never hedge with phrasing like "Consider adding", "You may want to", or "It would be helpful to". The evidence states the specific improvement to make, e.g. "Add conversion rates, revenue generated, pipeline value, or targets exceeded." At least one of the three must address quantification — if the CV lacks metrics to support its claims, say so and name the kind of stats to add; if the CV already uses strong statistics throughout, skip this and use a different, still-technical area to improve instead. At least one must push the candidate to elaborate in more depth on whichever single experience entry is most relevant to this specific job — the one a hiring manager would scrutinize most — rather than staying surface-level. The example field is optional (use an empty string when a worked example would not add value) but should be filled in whenever it would concretely show the candidate what a better bullet looks like, especially for the quantification-focused item: a short example sentence in the style of a CV bullet demonstrating the change, e.g. "Designed and implemented a new workflow that increased profit by X%." You do not know the candidate's actual numbers, so any figure inside an example must always be a generic placeholder such as X%, €X, X customers, or X hours, never a specific invented number — this is an absolute rule, since a plausible sounding fabricated number is worse than no example at all.
 - prospect_1 and prospect_2: plain, concise sentences. One sentence on why the candidate can still be competitive for this role or closely related roles, and one sentence on which single improvement would most increase interview likelihood. Keep both realistic and evidence-based, not generic encouragement.
+
+Finally, self check your own output and populate new_claims_introduced: a JSON array of any specific fact (a metric, employer name, date, credential, or achievement) that you stated about the candidate anywhere in strengths, improvements, or prospects that is not actually present in the original CV text. Placeholder values like "X%" are never claims and must never appear in this list. If, after careful review, you introduced no such fact, return an empty array.
 
 Never use hyphens, en dashes, or em dashes anywhere in your output text (no "-", "–", or "—", including inside compound words). Write in plain sentences instead, using commas, periods, or separate words (e.g. "well structured" not "well-structured", "data driven" not "data-driven"). In Dutch, prefer natural solid compounds where that is correct Dutch spelling (e.g. "klantgericht" not "klant gericht") rather than forcing a space that would be spelled wrong.`
 
@@ -362,6 +392,14 @@ ${cvText}`
                 type: 'string',
                 description: 'Lowercase ISO 639-1 two-letter language code of the job description, e.g. en, nl, de, fr, es.',
               },
+              job_title: {
+                type: 'string',
+                description: 'The role title as literally stated in the job description, or an empty string if not clearly stated.',
+              },
+              company_name: {
+                type: 'string',
+                description: "The hiring company's name as literally stated in the job description, or an empty string if not clearly stated.",
+              },
               experience_score: { type: 'integer' },
               skills_score: { type: 'integer' },
               uvp_score: { type: 'integer' },
@@ -371,15 +409,26 @@ ${cvText}`
               strength_2_evidence: { type: 'string' },
               improvement_1_finding: { type: 'string' },
               improvement_1_evidence: { type: 'string' },
+              improvement_1_example: { type: 'string' },
               improvement_2_finding: { type: 'string' },
               improvement_2_evidence: { type: 'string' },
+              improvement_2_example: { type: 'string' },
               improvement_3_finding: { type: 'string' },
               improvement_3_evidence: { type: 'string' },
+              improvement_3_example: { type: 'string' },
               prospect_1: { type: 'string' },
               prospect_2: { type: 'string' },
+              new_claims_introduced: {
+                type: 'array',
+                items: { type: 'string' },
+                description:
+                  'Any specific fact about the candidate stated in strengths/improvements/prospects that is not present in the original CV. Empty array if none.',
+              },
             },
             required: [
               'language',
+              'job_title',
+              'company_name',
               'experience_score',
               'skills_score',
               'uvp_score',
@@ -389,12 +438,16 @@ ${cvText}`
               'strength_2_evidence',
               'improvement_1_finding',
               'improvement_1_evidence',
+              'improvement_1_example',
               'improvement_2_finding',
               'improvement_2_evidence',
+              'improvement_2_example',
               'improvement_3_finding',
               'improvement_3_evidence',
+              'improvement_3_example',
               'prospect_1',
               'prospect_2',
+              'new_claims_introduced',
             ],
             additionalProperties: false,
           },
@@ -447,9 +500,9 @@ function normalizeAnalysis(raw: RawAnalysis): AnalysisResult {
     combineFinding(raw.strength_2_finding, raw.strength_2_evidence),
   ].filter((item): item is string => item !== null)
   const improvements = [
-    combineFinding(raw.improvement_1_finding, raw.improvement_1_evidence),
-    combineFinding(raw.improvement_2_finding, raw.improvement_2_evidence),
-    combineFinding(raw.improvement_3_finding, raw.improvement_3_evidence),
+    combineFinding(raw.improvement_1_finding, raw.improvement_1_evidence, raw.improvement_1_example),
+    combineFinding(raw.improvement_2_finding, raw.improvement_2_evidence, raw.improvement_2_example),
+    combineFinding(raw.improvement_3_finding, raw.improvement_3_evidence, raw.improvement_3_example),
   ].filter((item): item is string => item !== null)
   const prospects = sanitizeStrings([raw.prospect_1, raw.prospect_2])
 
@@ -461,6 +514,17 @@ function normalizeAnalysis(raw: RawAnalysis): AnalysisResult {
     throw new Error(`Content language did not match detected language "${detectedLanguage}"`)
   }
 
+  // The model self-reports any candidate fact it introduced beyond the
+  // original CV (new_claims_introduced, required by the schema). A non-empty
+  // report is treated as a failed generation and retried, rather than
+  // trusting the "do not invent" prompt instructions alone.
+  const newClaims = Array.isArray(raw.new_claims_introduced)
+    ? raw.new_claims_introduced.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    : []
+  if (newClaims.length > 0) {
+    throw new Error(`Model reported unverified claims not present in the original CV: ${JSON.stringify(newClaims)}`)
+  }
+
   if (
     !isFiniteNumber(raw.experience_score) ||
     !isFiniteNumber(raw.skills_score) ||
@@ -469,17 +533,22 @@ function normalizeAnalysis(raw: RawAnalysis): AnalysisResult {
     throw new Error('Missing or invalid scores')
   }
 
-  const weighted =
-    0.4 * clampScore(raw.experience_score) +
-    0.35 * clampScore(raw.skills_score) +
-    0.25 * clampScore(raw.uvp_score)
+  const experienceScore = clampScore(raw.experience_score)
+  const skillsScore = clampScore(raw.skills_score)
+  const uvpScore = clampScore(raw.uvp_score)
+  const weighted = 0.4 * experienceScore + 0.35 * skillsScore + 0.25 * uvpScore
 
   return {
     interview_probability_score: Math.round(weighted),
+    experience_score: experienceScore,
+    skills_score: skillsScore,
+    uvp_score: uvpScore,
     strengths,
     improvements,
     prospects,
     detected_language: detectedLanguage,
+    job_title: typeof raw.job_title === 'string' && raw.job_title.trim() ? raw.job_title.trim() : null,
+    company_name: typeof raw.company_name === 'string' && raw.company_name.trim() ? raw.company_name.trim() : null,
   }
 }
 
@@ -492,20 +561,26 @@ function sanitizeStrings(value: unknown): string[] {
 }
 
 /**
- * Strengths and areas to improve arrive as separate finding/evidence schema
- * fields (so the model can't skip the evidence half — see the JSON schema's
- * required list) and get joined back into a single "Finding. Evidence."
- * string here, which is what the Feedback page's splitFinding() expects in
- * order to bold the finding and render the rest as plain text.
+ * Strengths and areas to improve arrive as separate finding/evidence(/example)
+ * schema fields (so the model can't skip the evidence half — see the JSON
+ * schema's required list) and get joined back into a single
+ * "Finding. Evidence. Example: ..." string here, which is what the Feedback
+ * page's splitFinding() expects in order to bold the finding and render the
+ * rest (evidence and, when present, the example) as plain text.
  */
-function combineFinding(finding: unknown, evidence: unknown): string | null {
+function combineFinding(finding: unknown, evidence: unknown, example?: unknown): string | null {
   if (typeof finding !== 'string' || typeof evidence !== 'string') return null
 
   const cleanFinding = stripDashes(finding.trim()).replace(/[.!?]+$/, '')
   const cleanEvidence = stripDashes(evidence.trim())
   if (!cleanFinding || !cleanEvidence) return null
 
-  return `${cleanFinding}. ${cleanEvidence}`
+  const cleanExample = typeof example === 'string' ? stripDashes(example.trim()) : ''
+  const evidenceSentence = cleanEvidence.match(/[.!?]$/) ? cleanEvidence : `${cleanEvidence}.`
+
+  return cleanExample
+    ? `${cleanFinding}. ${evidenceSentence} Example: ${cleanExample}`
+    : `${cleanFinding}. ${cleanEvidence}`
 }
 
 /**

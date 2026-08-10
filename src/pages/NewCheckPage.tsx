@@ -99,7 +99,10 @@ export function NewCheckPage() {
   const cvSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Gate fresh drafts only — a check already in progress may be resumed
-  // regardless of plan, per the locked spec.
+  // regardless of plan, per the locked spec. Reads straight off the
+  // profile's durable usage counters (no query needed) rather than counting
+  // `checks` rows, so this can never say "allowed" right after a delete that
+  // the server will then reject.
   useEffect(() => {
     if (id) {
       setGateChecked(true)
@@ -107,24 +110,8 @@ export function NewCheckPage() {
     }
     if (!user || !profile) return
 
-    let cancelled = false
-
-    async function checkGate() {
-      try {
-        const checks = await getChecks(user!.id)
-        if (cancelled) return
-        setGateReason(getCheckGateReason(profile!, checks))
-      } catch {
-        if (!cancelled) setGateReason(null)
-      } finally {
-        if (!cancelled) setGateChecked(true)
-      }
-    }
-
-    void checkGate()
-    return () => {
-      cancelled = true
-    }
+    setGateReason(getCheckGateReason(profile))
+    setGateChecked(true)
   }, [id, user, profile])
 
   // Load an existing draft when editing.
@@ -238,16 +225,6 @@ export function NewCheckPage() {
       if (cvSaveTimeoutRef.current) clearTimeout(cvSaveTimeoutRef.current)
     }
   }, [])
-
-  function handleJobTitleChange(value: string) {
-    setJobTitle(value)
-    scheduleAutosave({ jobTitle: value })
-  }
-
-  function handleCompanyNameChange(value: string) {
-    setCompanyName(value)
-    scheduleAutosave({ companyName: value })
-  }
 
   function handleJobDescriptionChange(value: string) {
     setJobDescription(value)
@@ -415,20 +392,15 @@ export function NewCheckPage() {
         </div>
         <div className="mx-auto max-w-md rounded-xl border border-navy bg-surface p-8 text-center">
           <h2 className="text-base font-semibold text-text-primary">
-            You've used your free Recruiter Check
+            You've used your free Check
           </h2>
           <p className="mt-2 text-sm text-text-secondary">
-            Upgrade to continue checking more applications.
+            Upgrade to continue checking applications and unlock your Recruiter Ready Kit.
           </p>
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <Link to="/account/billing">
-              <Button variant="secondary" size="sm" className="w-full sm:w-auto">
-                Weekly Premium
-              </Button>
-            </Link>
+          <div className="mt-6 flex justify-center">
             <Link to="/account/billing">
               <Button size="sm" className="w-full sm:w-auto">
-                Monthly Premium
+                Upgrade
               </Button>
             </Link>
           </div>
@@ -449,8 +421,7 @@ export function NewCheckPage() {
             You've reached today's check limit
           </h2>
           <p className="mt-2 text-sm text-text-secondary">
-            We cap checks at 8 a day so every application gets your full attention, not a rushed
-            once over.
+            We cap checks at 8 a day so every application gets your full attention.
           </p>
           <p className="mt-3 text-xs text-text-secondary">{formatResetTime()}</p>
         </div>
@@ -474,27 +445,6 @@ export function NewCheckPage() {
 
       <div className="mx-auto max-w-2xl space-y-6 rounded-xl border border-navy bg-surface p-6">
         {captureError ? <Alert variant="error">{captureError}</Alert> : null}
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="jobTitle">Job title</Label>
-            <Input
-              id="jobTitle"
-              value={jobTitle}
-              onChange={(event) => handleJobTitleChange(event.target.value)}
-              placeholder="e.g. Product Manager"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="companyName">Company</Label>
-            <Input
-              id="companyName"
-              value={companyName}
-              onChange={(event) => handleCompanyNameChange(event.target.value)}
-              placeholder="e.g. Acme"
-            />
-          </div>
-        </div>
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
