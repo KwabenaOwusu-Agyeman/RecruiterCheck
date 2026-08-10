@@ -322,11 +322,11 @@ async function callOpenAI(
   // shown to the candidate.
   const languageInstruction = context.detectedLanguage
     ? `The language field must be exactly "${context.detectedLanguage}" — this was already determined from the job description in a prior analysis step. Do not redetect or override it.`
-    : 'First, determine the language field: identify the PRIMARY language of the actual prose in the job description — ignore isolated foreign-language elements such as company names, software/tool/product names, technical terms, certification names, or short boilerplate sections in another language. Only if the job description is genuinely too short or ambiguous to determine a primary language should you fall back to the language of the original CV; only if neither yields a clear answer, default to English. Output the language field as a lowercase ISO 639-1 two-letter code (e.g. "en", "nl", "de", "fr", "es"), covering any language, not just a fixed small list.'
+    : 'First, determine the language field: identify the PRIMARY language of the actual prose in the job description, based only on the literal words and grammar used in the text — ignore isolated foreign-language elements such as company names, software/tool/product names, technical terms, certification names, or short boilerplate sections in another language. Critically, never infer the language from geography: a job description written entirely in English is still English even if it mentions a company, office, city, or country where a different language is spoken — judge only the actual language the sentences are written in, never the location they describe. Only if the job description is genuinely too short or ambiguous to determine a primary language should you fall back to the language of the original CV; only if neither yields a clear answer, default to English. Output the language field as a lowercase ISO 639-1 two-letter code (e.g. "en", "nl", "de", "fr", "es"), covering any language, not just a fixed small list.'
 
   const systemPrompt = `You are an expert career writer helping a candidate present their strongest possible application for a specific role. Using their CV and the job description, produce three documents. Write as if the candidate is seeing their application the way a recruiter would, and use the recruiter's own assessment (strengths and areas to improve) to sharpen the framing — lean into the strengths, and address the improvement areas constructively without being defensive. Do not invent experience, employers, dates, or credentials that are not in the original CV.
 
-${languageInstruction} Write all three documents entirely in that language, using natural, professional wording a native speaker would actually write in a real application in that language and culture, not a literal translation of the English structure described below (which shows structure and tone only, not fixed wording). This includes every section heading, transition word, greeting, and closing phrase — always substitute the natural equivalent a native speaker of that language would actually write for a job application, following that language's own professional correspondence conventions, not an English template translated word for word. Never translate candidate names, company names, brand names, product names, tool names, or established technical/certification terminology where translating them would be misleading (e.g. "Microsoft PowerPoint", "Salesforce", "AWS" stay as is regardless of output language). Where the target language has a natural convention of writing certain compound words as one solid word rather than space separated (as Dutch and German do), follow that language's own correct spelling rather than forcing an English style separation.
+${languageInstruction} Write all three documents entirely in that language, using natural, professional wording a native speaker would actually write in a real application in that language and culture, not a literal translation of the English structure described below (which shows structure and tone only, not fixed wording). This includes every section heading, transition word, greeting, and closing phrase — always substitute the natural equivalent a native speaker of that language would actually write for a job application, following that language's own professional correspondence conventions, not an English template translated word for word. Whatever language you determined, EVERY piece of prose you write below (professional_summary, experience bullets, cover letter paragraphs, recruiter message) must be entirely in that same language, with zero English sentences slipped in, even if that language is less common — do not default to English once you reach the writing itself. Never translate candidate names, company names, brand names, product names, tool names, or established technical/certification terminology where translating them would be misleading (e.g. "Microsoft PowerPoint", "Salesforce", "AWS" stay as is regardless of output language). Where the target language has a natural convention of writing certain compound words as one solid word rather than space separated (as Dutch and German do), follow that language's own correct spelling rather than forcing an English style separation.
 
 Every document must be usable exactly as generated — the candidate should be able to submit this package to a real application with zero edits. Never write a bracketed or unfilled placeholder (e.g. "[Company Address]", "[Hiring Manager Name]", "[Recruiter's Name]") anywhere in any of the three documents. If a piece of information isn't available, omit it gracefully rather than leaving a placeholder for the candidate to fill in.
 
@@ -531,6 +531,13 @@ const REQUIRED_BODY_PARAGRAPHS = 3
 
 const LANGUAGE_CODE_RE = /^[a-z]{2}$/
 
+const ENGLISH_TELLS = [' the ', ' and ', ' your ', ' that ', ' with ', ' this ', ' for ', ' you ', ' are ', ' have ']
+
+function looksLikeEnglish(text: string): boolean {
+  const padded = ` ${text.toLowerCase()} `
+  return ENGLISH_TELLS.filter((tell) => padded.includes(tell)).length >= 5
+}
+
 function validateDocuments(raw: RawDocuments): RawDocuments {
   const cv = raw.tailored_cv
   const letter = raw.cover_letter
@@ -604,6 +611,17 @@ function validateDocuments(raw: RawDocuments): RawDocuments {
   // prompt asks for this, but the model can still slip in a number).
   if (/\d/.test(messageBody)) {
     throw new Error('Recruiter message contains a statistic instead of a qualitative reason')
+  }
+
+  // Live testing found the model can correctly set language: "de" while
+  // still writing the actual prose in English — nothing structural catches
+  // that, so this checks for English leakage specifically (not a positive
+  // check for any one target language, which wouldn't generalize).
+  if (
+    docLanguage !== 'en' &&
+    looksLikeEnglish([professionalSummary, introParagraph, ...bodyParagraphs, conclusionParagraph, messageBody].join(' '))
+  ) {
+    throw new Error(`Document content language did not match detected language "${docLanguage}"`)
   }
 
   return {

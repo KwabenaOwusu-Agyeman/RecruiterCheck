@@ -307,7 +307,7 @@ async function callOpenAI(
   // language. No user override exists anywhere in this app — the CV's own
   // language must never win, and this is never surfaced as a setting.
   const languageInstruction =
-    'First, determine the language field: identify the PRIMARY language of the actual prose in the job description — ignore isolated foreign-language elements such as company names, software/tool/product names, technical terms, certification names, or short boilerplate sections in another language (e.g. a Dutch job description that mentions "Salesforce", "Project Management", or "Microsoft PowerPoint" is still a Dutch job description). Only if the job description is genuinely too short or ambiguous to determine a primary language should you fall back to the language of the original CV; only if neither yields a clear answer, default to English. Output the language field as a lowercase ISO 639-1 two-letter code (e.g. "en", "nl", "de", "fr", "es", "it", "pt", "pl"), covering any language, not just a fixed small list. Write every strength, improvement, and prospect entirely in that language, using natural, professional wording a native speaker recruiter would actually write, not a literal translation of the English guidance below. Never translate candidate names, company names, brand names, product names, tool names, or established technical/certification terminology where translating them would be misleading (e.g. "Microsoft PowerPoint", "Salesforce", "AWS" stay as is regardless of output language).'
+    'First, determine the language field: identify the PRIMARY language of the actual prose in the job description, based only on the literal words and grammar used in the text — ignore isolated foreign-language elements such as company names, software/tool/product names, technical terms, certification names, or short boilerplate sections in another language (e.g. a Dutch job description that mentions "Salesforce", "Project Management", or "Microsoft PowerPoint" is still a Dutch job description). Critically, never infer the language from geography: a job description written entirely in English is still English even if it mentions a company, office, city, or country where a different language is spoken (e.g. "based in our Amsterdam office" or "Berlin, Germany" inside an English sentence does not make the job description Dutch or German) — judge only the actual language the sentences are written in, never the location they describe. Only if the job description is genuinely too short or ambiguous to determine a primary language should you fall back to the language of the original CV; only if neither yields a clear answer, default to English. Output the language field as a lowercase ISO 639-1 two-letter code (e.g. "en", "nl", "de", "fr", "es", "it", "pt", "pl"), covering any language, not just a fixed small list. Write every strength, improvement, and prospect entirely in that language, using natural, professional wording a native speaker recruiter would actually write, not a literal translation of the English guidance below. Never translate candidate names, company names, brand names, product names, tool names, or established technical/certification terminology where translating them would be misleading (e.g. "Microsoft PowerPoint", "Salesforce", "AWS" stay as is regardless of output language).'
 
   const systemPrompt = `You are an experienced, technically rigorous recruiter screening a candidate's application. Evaluate the CV against the job description using this internal rubric, without naming or restating it in your output:
 
@@ -318,6 +318,8 @@ async function callOpenAI(
 Score each dimension 0-100. Score conservatively and critically, the way a skeptical recruiter who reviews hundreds of CVs would — most candidates, even strong ones, should land in the 40-75 range per dimension. Reserve 80+ only for a genuinely exceptional, near-perfect match on that dimension with no notable gaps; scores above 80 must be rare, never a default. Do not inflate scores to be encouraging — flag real gaps honestly.
 
 ${languageInstruction}
+
+Whatever language you determined above, EVERY field below (strength_1_finding, strength_1_evidence, strength_2_finding, strength_2_evidence, improvement_1_finding, improvement_1_evidence, improvement_2_finding, improvement_2_evidence, improvement_3_finding, improvement_3_evidence, prospect_1, prospect_2) must be written entirely in that same language, with zero English sentences slipped in, even if that language is less common. Do not default to English once you reach this part.
 
 Then write feedback that helps the candidate see their own application the way a recruiter would — direct, specific, evidence-based, technical, and never generic. Each strength and area to improve is split into two separate fields: a "_finding" field and an "_evidence" field. Both are required and both must be non empty — never leave an "_evidence" field as a restatement of its "_finding" field or as a near-duplicate; it must add genuinely new information. The "_finding" field is a 2 to 5 word bolded lead-in naming the pattern or action, e.g. "Strong sales performance" or "Quantify your impact" (no trailing period needed, it will be rendered as a heading). The matching "_evidence" field is one full sentence giving the detail behind it, e.g. "Your record of exceeding sales targets directly supports the role's revenue expectations."
 - strength_1_finding / strength_1_evidence and strength_2_finding / strength_2_evidence: the finding names the underlying pattern that makes the CV effective, the way a recruiter commenting on craft would. Never restate or quote a specific achievement bullet from the CV in the finding — the candidate already knows what they wrote, so quoting it back adds nothing. The evidence states why that pattern specifically matters to this employer for this role (the Employer Value step of the Evidence, Strength, Employer Value framework). If there's genuinely no quantification anywhere, base strengths on other real craft signals present (e.g. clear ownership/scope language, relevant tools named, well-structured bullets) — never invent a pattern that isn't there.
@@ -423,6 +425,20 @@ ${cvText}`
 // fail the whole analysis over a formatting slip in one internal field.
 const LANGUAGE_CODE_RE = /^[a-z]{2}$/
 
+// Live testing found a real failure mode: the model can correctly set
+// language: "de" while still writing the actual prose in English (it
+// nails detection but doesn't follow through on generation for a
+// less-common target language). Nothing structural catches that, so this
+// checks for English leakage specifically — not a positive check for any
+// particular target language (which wouldn't generalize), just "did this
+// suspiciously read as English when it wasn't supposed to."
+const ENGLISH_TELLS = [' the ', ' and ', ' your ', ' that ', ' with ', ' this ', ' for ', ' you ', ' are ', ' have ']
+
+function looksLikeEnglish(text: string): boolean {
+  const padded = ` ${text.toLowerCase()} `
+  return ENGLISH_TELLS.filter((tell) => padded.includes(tell)).length >= 5
+}
+
 function normalizeAnalysis(raw: RawAnalysis): AnalysisResult {
   const detectedLanguage = LANGUAGE_CODE_RE.test(raw.language ?? '') ? raw.language : 'en'
 
@@ -440,6 +456,10 @@ function normalizeAnalysis(raw: RawAnalysis): AnalysisResult {
   if (strengths.length !== 2) throw new Error('Expected exactly 2 strengths')
   if (improvements.length !== 3) throw new Error('Expected exactly 3 areas to improve')
   if (prospects.length !== 2) throw new Error('Expected exactly 2 prospects')
+
+  if (detectedLanguage !== 'en' && looksLikeEnglish([...strengths, ...improvements, ...prospects].join(' '))) {
+    throw new Error(`Content language did not match detected language "${detectedLanguage}"`)
+  }
 
   if (
     !isFiniteNumber(raw.experience_score) ||
