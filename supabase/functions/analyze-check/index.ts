@@ -25,7 +25,7 @@ interface AnalyzeRequest {
 }
 
 interface RawAnalysis {
-  language: 'en' | 'nl'
+  language: string
   experience_score: number
   skills_score: number
   uvp_score: number
@@ -48,6 +48,7 @@ interface AnalysisResult {
   strengths: string[]
   improvements: string[]
   prospects: string[]
+  detected_language: string
 }
 
 Deno.serve(async (req) => {
@@ -190,7 +191,6 @@ Deno.serve(async (req) => {
       analysis = await generateFeedback(openaiApiKey, cvText, check.job_description, {
         jobTitle: check.job_title,
         companyName: check.company_name,
-        outputLanguage: (check.output_language ?? 'auto') as 'auto' | 'en' | 'nl',
       })
     } catch (error) {
       console.error('analyze-check: analysis failed after retry', error)
@@ -219,6 +219,10 @@ Deno.serve(async (req) => {
         status: 'completed',
         interview_probability_score: analysis.interview_probability_score,
         error_message: null,
+        // Stored so generate-documents reuses this exact value instead of
+        // re-detecting from a separate model call, which could otherwise
+        // drift onto a different language for the same check.
+        detected_language: analysis.detected_language,
       })
       .eq('id', checkId)
 
@@ -277,14 +281,14 @@ async function generateFeedback(
   apiKey: string,
   cvText: string,
   jobDescription: string,
-  context: { jobTitle: string | null; companyName: string | null; outputLanguage: 'auto' | 'en' | 'nl' },
+  context: { jobTitle: string | null; companyName: string | null },
 ): Promise<AnalysisResult> {
   const attemptErrors: string[] = []
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     try {
       const raw = await callOpenAI(apiKey, cvText, jobDescription, context)
-      return normalizeAnalysis(raw, context.outputLanguage)
+      return normalizeAnalysis(raw)
     } catch (error) {
       attemptErrors.push(error instanceof Error ? error.message : String(error))
     }
@@ -297,19 +301,13 @@ async function callOpenAI(
   apiKey: string,
   cvText: string,
   jobDescription: string,
-  context: { jobTitle: string | null; companyName: string | null; outputLanguage: 'auto' | 'en' | 'nl' },
+  context: { jobTitle: string | null; companyName: string | null },
 ): Promise<RawAnalysis> {
-  // The user can explicitly pick a language on the New Check form instead of
-  // trusting auto detection (added after auto detection guessed wrong on a
-  // real English application). When they have, this instruction replaces
-  // detection entirely rather than just hinting at it, so the model can't
-  // second guess the job description's own language back into the output.
+  // Locked product rule: the job description is the sole authority on output
+  // language. No user override exists anywhere in this app — the CV's own
+  // language must never win, and this is never surfaced as a setting.
   const languageInstruction =
-    context.outputLanguage === 'en'
-      ? 'The language field must be exactly "en". The user has explicitly chosen English for this application, regardless of what language the job description or CV are written in. Write every strength, improvement, and prospect entirely in English, using natural, professional wording a native speaker recruiter would actually write.'
-      : context.outputLanguage === 'nl'
-        ? 'The language field must be exactly "nl". The user has explicitly chosen Dutch for this application, regardless of what language the job description or CV are written in. Write every strength, improvement, and prospect entirely in Dutch, using natural, professional wording a native speaker recruiter would actually write, not a literal translation.'
-        : 'First, determine the language field: read the job description primarily to decide which language this application is in; if the job description doesn\'t make it clear, fall back to the language of the original CV. Output exactly "en" for English or "nl" for Dutch, this app supports no other languages. Write every strength, improvement, and prospect entirely in that language, using natural, professional wording a native speaker recruiter would actually write, not a literal translation of the English guidance below.'
+    'First, determine the language field: identify the PRIMARY language of the actual prose in the job description — ignore isolated foreign-language elements such as company names, software/tool/product names, technical terms, certification names, or short boilerplate sections in another language (e.g. a Dutch job description that mentions "Salesforce", "Project Management", or "Microsoft PowerPoint" is still a Dutch job description). Only if the job description is genuinely too short or ambiguous to determine a primary language should you fall back to the language of the original CV; only if neither yields a clear answer, default to English. Output the language field as a lowercase ISO 639-1 two-letter code (e.g. "en", "nl", "de", "fr", "es", "it", "pt", "pl"), covering any language, not just a fixed small list. Write every strength, improvement, and prospect entirely in that language, using natural, professional wording a native speaker recruiter would actually write, not a literal translation of the English guidance below. Never translate candidate names, company names, brand names, product names, tool names, or established technical/certification terminology where translating them would be misleading (e.g. "Microsoft PowerPoint", "Salesforce", "AWS" stay as is regardless of output language).'
 
   const systemPrompt = `You are an experienced, technically rigorous recruiter screening a candidate's application. Evaluate the CV against the job description using this internal rubric, without naming or restating it in your output:
 
@@ -358,7 +356,10 @@ ${cvText}`
           schema: {
             type: 'object',
             properties: {
-              language: { type: 'string', enum: ['en', 'nl'] },
+              language: {
+                type: 'string',
+                description: 'Lowercase ISO 639-1 two-letter language code of the job description, e.g. en, nl, de, fr, es.',
+              },
               experience_score: { type: 'integer' },
               skills_score: { type: 'integer' },
               uvp_score: { type: 'integer' },
@@ -417,13 +418,13 @@ ${cvText}`
   return JSON.parse(rawText) as RawAnalysis
 }
 
-function normalizeAnalysis(raw: RawAnalysis, outputLanguage: 'auto' | 'en' | 'nl'): AnalysisResult {
-  // If the user explicitly picked a language, reject and retry rather than
-  // silently accepting output in the wrong one — this is a user-facing
-  // promise ("give me this in English"), not just a quality nicety.
-  if (outputLanguage !== 'auto' && raw.language !== outputLanguage) {
-    throw new Error('Feedback language did not match the requested language')
-  }
+// Detection should never block a result — if the model returns something
+// that isn't a plausible ISO 639-1 code, fall back to English rather than
+// fail the whole analysis over a formatting slip in one internal field.
+const LANGUAGE_CODE_RE = /^[a-z]{2}$/
+
+function normalizeAnalysis(raw: RawAnalysis): AnalysisResult {
+  const detectedLanguage = LANGUAGE_CODE_RE.test(raw.language ?? '') ? raw.language : 'en'
 
   const strengths = [
     combineFinding(raw.strength_1_finding, raw.strength_1_evidence),
@@ -458,6 +459,7 @@ function normalizeAnalysis(raw: RawAnalysis, outputLanguage: 'auto' | 'en' | 'nl
     strengths,
     improvements,
     prospects,
+    detected_language: detectedLanguage,
   }
 }
 

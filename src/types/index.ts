@@ -26,6 +26,7 @@ export interface Check {
   interview_probability_score: number | null
   error_message: string | null
   output_language: OutputLanguage
+  detected_language: string | null
   created_at: string
   updated_at: string
 }

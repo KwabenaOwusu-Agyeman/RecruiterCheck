@@ -26,15 +26,8 @@ import {
   updateDraftCheck,
   type CheckGateReason,
 } from '@/services/checkService'
-import type { OutputLanguage } from '@/types'
 import { cn } from '@/utils/cn'
 import { categorizeUrlDomain, trackEvent } from '@/lib/analytics'
-
-const OUTPUT_LANGUAGE_OPTIONS: { value: OutputLanguage; label: string }[] = [
-  { value: 'auto', label: 'Auto detect' },
-  { value: 'en', label: 'English' },
-  { value: 'nl', label: 'Dutch' },
-]
 
 const PASTED_CV_FILE_NAME = 'cv.txt'
 const MIN_PASTED_CV_LENGTH = 50
@@ -63,7 +56,6 @@ export function NewCheckPage() {
   const [jobTitle, setJobTitle] = useState('')
   const [companyName, setCompanyName] = useState('')
   const [jobDescription, setJobDescription] = useState('')
-  const [outputLanguage, setOutputLanguage] = useState<OutputLanguage>('auto')
   const [cvFileName, setCvFileName] = useState<string | null>(null)
   const [cvInputMode, setCvInputMode] = useState<CvInputMode>('file')
   const [cvPastedText, setCvPastedText] = useState('')
@@ -135,7 +127,6 @@ export function NewCheckPage() {
         setJobTitle(existing.job_title ?? '')
         setCompanyName(existing.company_name ?? '')
         setJobDescription(existing.job_description)
-        setOutputLanguage(existing.output_language)
         setCvFileName(existing.cv_file_name)
         if (existing.cv_file_name === PASTED_CV_FILE_NAME) {
           setCvInputMode('paste')
@@ -205,7 +196,6 @@ export function NewCheckPage() {
       jobTitle?: string
       companyName?: string
       jobDescription?: string
-      outputLanguage?: OutputLanguage
     }) => {
       if (!checkIdRef.current) return
 
@@ -294,11 +284,6 @@ export function NewCheckPage() {
     }
   }
 
-  function handleOutputLanguageChange(value: OutputLanguage) {
-    setOutputLanguage(value)
-    scheduleAutosave({ outputLanguage: value })
-  }
-
   async function saveCvFile(file: File) {
     if (!user) return
 
@@ -315,8 +300,8 @@ export function NewCheckPage() {
         // draft-loading effect, which re-fetches the check from the DB; if
         // that fetch races ahead of this write, it reads the still-empty
         // row and clobbers what the user just typed into local state.
-        if (jobTitle || companyName || jobDescription || outputLanguage !== 'auto') {
-          await updateDraftCheck(created.id, { jobTitle, companyName, jobDescription, outputLanguage })
+        if (jobTitle || companyName || jobDescription) {
+          await updateDraftCheck(created.id, { jobTitle, companyName, jobDescription })
         }
 
         setCvFileName(created.cv_file_name)
@@ -383,7 +368,7 @@ export function NewCheckPage() {
 
     try {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-      await updateDraftCheck(checkId, { jobTitle, companyName, jobDescription, outputLanguage })
+      await updateDraftCheck(checkId, { jobTitle, companyName, jobDescription })
       await analyzeCheck(checkId)
       navigate(`/checks/${checkId}`)
     } catch (err) {
@@ -626,26 +611,6 @@ export function NewCheckPage() {
               {jobFileError ? <Alert variant="error">{jobFileError}</Alert> : null}
             </>
           )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="outputLanguage">Language</Label>
-          <select
-            id="outputLanguage"
-            value={outputLanguage}
-            onChange={(event) => handleOutputLanguageChange(event.target.value as OutputLanguage)}
-            className="h-7 w-28 rounded-md border border-border bg-background px-1.5 text-xs text-text-primary focus:border-navy focus:outline-none"
-          >
-            {OUTPUT_LANGUAGE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-text-secondary">
-            We&rsquo;ll automatically use the language of the job description. You can choose
-            another language if needed.
-          </p>
         </div>
 
         <div className="space-y-2">

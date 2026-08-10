@@ -3,7 +3,6 @@ import type {
   Check,
   CheckWithFeedback,
   Feedback,
-  OutputLanguage,
   Profile,
   ProductFeedback,
   Subscription,
@@ -49,7 +48,6 @@ export interface DraftCheckUpdate {
   jobTitle?: string
   companyName?: string
   jobDescription?: string
-  outputLanguage?: OutputLanguage
 }
 
 function mapProfile(row: Profile): Profile {
@@ -284,12 +282,10 @@ export async function updateDraftCheck(
     job_title?: string | null
     company_name?: string | null
     job_description?: string
-    output_language?: OutputLanguage
   } = {}
   if (updates.jobTitle !== undefined) payload.job_title = updates.jobTitle.trim() || null
   if (updates.companyName !== undefined) payload.company_name = updates.companyName.trim() || null
   if (updates.jobDescription !== undefined) payload.job_description = updates.jobDescription
-  if (updates.outputLanguage !== undefined) payload.output_language = updates.outputLanguage
 
   const { data, error } = await supabase
     .from('checks')
