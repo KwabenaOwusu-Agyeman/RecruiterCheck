@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "RecruiterCheck — Job Capture",
+  "short_name": "RecruiterCheck",
+  "version": "0.1.0",
+  "description": "Send the job posting you're viewing straight into RecruiterCheck for a recruiter's-eye check.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": ["storage", "activeTab", "scripting", "identity"],
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  }
+}

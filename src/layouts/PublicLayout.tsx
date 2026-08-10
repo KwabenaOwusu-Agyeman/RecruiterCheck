@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { AuthModal } from '@/features/auth/components/AuthModal'
 import { AuthModalProvider, useAuthModal } from '@/features/auth/context/AuthModalContext'
+import { storePostAuthRedirect } from '@/features/auth/postAuthRedirect'
 import { PublicFooter } from '@/features/landing/components/PublicFooter'
 import { PublicHeader } from '@/features/landing/components/PublicHeader'
 
@@ -12,13 +13,17 @@ function PublicLayoutContent() {
 
   useEffect(() => {
     if (location.pathname === '/sign-in') {
+      const from = (location.state as { from?: string } | null)?.from
+      if (from) storePostAuthRedirect(from)
       open('sign-in')
       navigate('/', { replace: true, state: undefined })
     } else if (location.pathname === '/sign-up') {
+      const from = (location.state as { from?: string } | null)?.from
+      if (from) storePostAuthRedirect(from)
       open('sign-up')
       navigate('/', { replace: true, state: undefined })
     }
-  }, [location.pathname, open, navigate])
+  }, [location.pathname, location.state, open, navigate])
 
   return (
     <div className="flex min-h-screen flex-col bg-surface">

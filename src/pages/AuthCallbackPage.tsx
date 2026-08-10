@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Alert } from '@/components/ui/Alert'
 import { Container } from '@/components/ui/Container'
 import { Logo } from '@/components/ui/Logo'
+import { consumePostAuthRedirect } from '@/features/auth/postAuthRedirect'
 import { supabase } from '@/lib/supabase'
 
 export function AuthCallbackPage() {
@@ -17,7 +18,7 @@ export function AuthCallbackPage() {
         return
       }
 
-      navigate('/checks', { replace: true })
+      navigate(consumePostAuthRedirect(), { replace: true })
     }
 
     void handleCallback()

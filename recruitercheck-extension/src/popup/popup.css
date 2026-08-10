@@ -1,0 +1,168 @@
+/* Mirrors the RecruiterCheck web app's Tailwind tokens (tailwind.config.js)
+   so the extension visually belongs to the product rather than looking like
+   a generic browser-extension template. */
+:root {
+  --navy: #020c38;
+  --blue: #194a9f;
+  --surface: #ffffff;
+  --background: #f7f8fc;
+  --border: #eef0f5;
+  --text-primary: #05050d;
+  --text-secondary: #3a4a6b;
+  --success: #0ea063;
+  --error: #91151a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif;
+  background: var(--background);
+  color: var(--text-primary);
+}
+
+.popup {
+  width: 380px;
+  padding: 16px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--navy);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.brand-name {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--navy);
+}
+
+.content {
+  border: 1px solid var(--navy);
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.tagline {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0 0 16px;
+  line-height: 1.4;
+}
+
+.field-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary);
+  margin: 0 0 2px;
+}
+
+.job-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.job-company {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: -6px 0 14px;
+}
+
+.status-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--success);
+  margin-bottom: 16px;
+}
+
+.status-line.error {
+  color: var(--error);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.btn {
+  width: 100%;
+  height: 36px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid var(--navy);
+  transition: opacity 0.15s ease;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn-primary {
+  background: var(--navy);
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--background);
+}
+
+.error-box {
+  border: 1px solid rgba(145, 21, 26, 0.2);
+  background: #fcefef;
+  color: var(--error);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+
+.center-text {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 4px 0 16px;
+  line-height: 1.4;
+}

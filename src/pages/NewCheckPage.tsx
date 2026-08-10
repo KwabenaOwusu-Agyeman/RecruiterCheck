@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Alert } from '@/components/ui/Alert'
 import { BackLink } from '@/components/ui/BackLink'
 import { Button } from '@/components/ui/Button'
@@ -19,6 +19,7 @@ import {
   createDraftCheck,
   extractJobDescriptionFromFile,
   extractJobDescriptionFromUrl,
+  fetchJobCapture,
   getChecks,
   getCheckGateReason,
   replaceDraftCv,
@@ -27,6 +28,7 @@ import {
 } from '@/services/checkService'
 import type { OutputLanguage } from '@/types'
 import { cn } from '@/utils/cn'
+import { categorizeUrlDomain, trackEvent } from '@/lib/analytics'
 
 const OUTPUT_LANGUAGE_OPTIONS: { value: OutputLanguage; label: string }[] = [
   { value: 'auto', label: 'Auto detect' },
@@ -48,6 +50,7 @@ type JobInputMode = 'paste' | 'url' | 'upload'
 export function NewCheckPage() {
   const { id } = useParams<{ id?: string }>()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { user, profile } = useAuth()
 
   const [gateChecked, setGateChecked] = useState(false)
@@ -55,6 +58,7 @@ export function NewCheckPage() {
 
   const [loadingDraft, setLoadingDraft] = useState(Boolean(id))
   const [notFound, setNotFound] = useState(false)
+  const [captureError, setCaptureError] = useState<string | null>(null)
 
   const [jobTitle, setJobTitle] = useState('')
   const [companyName, setCompanyName] = useState('')
@@ -149,6 +153,53 @@ export function NewCheckPage() {
     }
   }, [id, user])
 
+  // Extension hand-off: /checks/new?capture=<opaque-id>. Only applies to a
+  // fresh draft — an existing draft being resumed (:id/edit) never carries
+  // this param. The capture is single-use server-side, so this effect must
+  // not re-fire on its own re-render; clearing the param from the URL is
+  // what prevents that.
+  useEffect(() => {
+    if (id || !user) return
+    const captureId = searchParams.get('capture')
+    if (!captureId) return
+
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete('capture')
+        return next
+      },
+      { replace: true },
+    )
+
+    let cancelled = false
+
+    async function loadCapture(idToFetch: string) {
+      try {
+        const capture = await fetchJobCapture(idToFetch)
+        if (cancelled) return
+        setJobTitle(capture.jobTitle ?? '')
+        setCompanyName(capture.companyName ?? '')
+        setJobDescription(capture.jobDescription)
+        trackEvent('extension_opened_new_check')
+      } catch (err) {
+        if (!cancelled) {
+          setCaptureError(
+            err instanceof Error
+              ? err.message
+              : 'This capture is no longer available. Paste, use a URL, or upload instead.',
+          )
+        }
+      }
+    }
+
+    void loadCapture(captureId)
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, user])
+
   const scheduleAutosave = useCallback(
     (updates: {
       jobTitle?: string
@@ -201,14 +252,12 @@ export function NewCheckPage() {
 
     try {
       const extracted = await extractJobDescriptionFromUrl(trimmedUrl)
+      trackEvent('job_input_url_extract_succeeded')
       handleJobDescriptionChange(extracted)
       setJobInputMode('paste')
-    } catch (err) {
-      setJobUrlError(
-        err instanceof Error
-          ? err.message
-          : "We couldn't read this job posting. Paste the job description instead.",
-      )
+    } catch {
+      trackEvent('job_input_url_extract_failed', categorizeUrlDomain(trimmedUrl))
+      setJobUrlError("We couldn't read this job posting.")
     } finally {
       setExtractingJobUrl(false)
     }
@@ -417,6 +466,8 @@ export function NewCheckPage() {
       </div>
 
       <div className="mx-auto max-w-2xl space-y-6 rounded-xl border border-navy bg-surface p-6">
+        {captureError ? <Alert variant="error">{captureError}</Alert> : null}
+
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="jobTitle">Job title</Label>
@@ -450,7 +501,10 @@ export function NewCheckPage() {
             <div className="inline-flex rounded-lg border border-border p-0.5">
               <button
                 type="button"
-                onClick={() => setJobInputMode('paste')}
+                onClick={() => {
+                  if (jobInputMode !== 'paste') trackEvent('job_input_paste_selected')
+                  setJobInputMode('paste')
+                }}
                 className={cn(
                   'rounded-md px-3 py-1 text-xs font-medium transition-colors',
                   jobInputMode === 'paste'
@@ -462,7 +516,10 @@ export function NewCheckPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setJobInputMode('url')}
+                onClick={() => {
+                  if (jobInputMode !== 'url') trackEvent('job_input_url_selected')
+                  setJobInputMode('url')
+                }}
                 className={cn(
                   'rounded-md px-3 py-1 text-xs font-medium transition-colors',
                   jobInputMode === 'url'
@@ -474,7 +531,10 @@ export function NewCheckPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setJobInputMode('upload')}
+                onClick={() => {
+                  if (jobInputMode !== 'upload') trackEvent('job_input_upload_selected')
+                  setJobInputMode('upload')
+                }}
                 className={cn(
                   'rounded-md px-3 py-1 text-xs font-medium transition-colors',
                   jobInputMode === 'upload'
@@ -518,7 +578,35 @@ export function NewCheckPage() {
                 </Button>
               </div>
               <p className="text-xs text-text-secondary">Paste a link to a public job posting.</p>
-              {jobUrlError ? <Alert variant="error">{jobUrlError}</Alert> : null}
+              {jobUrlError ? (
+                <Alert variant="error">
+                  <p>{jobUrlError}</p>
+                  <div className="mt-2 flex gap-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        setJobUrlError(null)
+                        setJobInputMode('paste')
+                      }}
+                    >
+                      Paste Job Description
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        setJobUrlError(null)
+                        setJobInputMode('upload')
+                      }}
+                    >
+                      Upload Job Description
+                    </Button>
+                  </div>
+                </Alert>
+              ) : null}
             </>
           ) : (
             <>

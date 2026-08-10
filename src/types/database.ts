@@ -125,6 +125,24 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['product_feedback']['Insert']>
         Relationships: []
       }
+      analytics_events: {
+        Row: {
+          id: string
+          user_id: string
+          event_type: string
+          domain_category: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string
+          event_type: string
+          domain_category?: string | null
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['analytics_events']['Insert']>
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

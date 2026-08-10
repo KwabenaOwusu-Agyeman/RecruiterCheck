@@ -423,3 +423,46 @@ export async function deleteCheck(checkId: string): Promise<void> {
   if (error) throw await resolveFunctionError(error)
   if (data?.error) throw new Error(String(data.error))
 }
+
+/**
+ * Mints a short-lived, single-use code the signed-in web session can hand
+ * off to the browser extension so it can establish its own independent
+ * session — no password, no shared storage, no service-role key ever
+ * reaches the extension.
+ */
+export async function createExtensionConnectCode(): Promise<string> {
+  const { data, error } = await supabase.functions.invoke('create-extension-connect-code', {
+    body: {},
+  })
+
+  if (error) throw await resolveFunctionError(error)
+  if (data?.error) throw new Error(String(data.error))
+  return String(data.code)
+}
+
+export interface JobCapture {
+  jobTitle: string | null
+  companyName: string | null
+  jobDescription: string
+  jobUrl: string | null
+}
+
+/**
+ * Fetches a job captured by the browser extension. Single-use: the server
+ * deletes the capture as it's read, so this can only ever populate one New
+ * Check.
+ */
+export async function fetchJobCapture(captureId: string): Promise<JobCapture> {
+  const { data, error } = await supabase.functions.invoke('get-job-capture', {
+    body: { captureId },
+  })
+
+  if (error) throw await resolveFunctionError(error)
+  if (data?.error) throw new Error(String(data.error))
+  return {
+    jobTitle: data.jobTitle ?? null,
+    companyName: data.companyName ?? null,
+    jobDescription: String(data.jobDescription),
+    jobUrl: data.jobUrl ?? null,
+  }
+}

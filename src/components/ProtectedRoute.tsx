@@ -14,7 +14,7 @@ export function ProtectedRoute() {
   }
 
   if (!session) {
-    return <Navigate to="/sign-in" replace state={{ from: location.pathname }} />
+    return <Navigate to="/sign-in" replace state={{ from: location.pathname + location.search }} />
   }
 
   return <Outlet />

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { useAuthModal } from '@/features/auth/context/AuthModalContext'
+import { consumePostAuthRedirect } from '@/features/auth/postAuthRedirect'
 import { FEATURE_FLAGS } from '@/lib/constants'
 import {
   signInWithGoogle,
@@ -84,12 +85,12 @@ export function AuthModal() {
           setMessage('Check your email to confirm your account.')
         } else {
           close()
-          navigate('/checks')
+          navigate(consumePostAuthRedirect())
         }
       } else {
         await signInWithPassword(email.trim(), password)
         close()
-        navigate('/checks')
+        navigate(consumePostAuthRedirect())
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not complete sign in')

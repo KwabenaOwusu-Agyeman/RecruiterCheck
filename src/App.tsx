@@ -7,6 +7,7 @@ import { AccountPage } from '@/pages/AccountPage'
 import { AuthCallbackPage } from '@/pages/AuthCallbackPage'
 import { BillingPage } from '@/pages/BillingPage'
 import { DisclaimerPage } from '@/pages/DisclaimerPage'
+import { ExtensionConnectPage } from '@/pages/ExtensionConnectPage'
 import { FeedbackPage } from '@/pages/FeedbackPage'
 import { LandingPage } from '@/pages/LandingPage'
 import { MyChecksPage } from '@/pages/MyChecksPage'
@@ -38,6 +39,7 @@ export function App() {
               <Route path="checks/:id" element={<FeedbackPage />} />
               <Route path="account" element={<AccountPage />} />
               <Route path="account/billing" element={<BillingPage />} />
+              <Route path="extension/connect" element={<ExtensionConnectPage />} />
             </Route>
           </Route>
 
