@@ -55,8 +55,10 @@ export async function connect(): Promise<void> {
   // Redeeming the token_hash is what actually establishes this extension's
   // own session — the exchange call above only proved the code was valid
   // and returned a one-time verification value, never a ready-made session.
+  // GoTrue rejects the request if `email` is passed alongside `token_hash`
+  // ("Only the token_hash and type should be provided") — token_hash alone
+  // already identifies the user server-side.
   const { error } = await supabase.auth.verifyOtp({
-    email: exchangeBody.email,
     token_hash: exchangeBody.tokenHash,
     type: 'magiclink',
   })
