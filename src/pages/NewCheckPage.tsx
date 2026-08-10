@@ -36,6 +36,27 @@ function textToCvFile(text: string): File {
   return new File([text], PASTED_CV_FILE_NAME, { type: 'text/plain' })
 }
 
+/**
+ * The daily allowance resets at UTC midnight (matches reserve_check_analysis's
+ * own day boundary), so this is computed from wall-clock time rather than
+ * stored anywhere — it's only ever off by the seconds since the page loaded.
+ */
+function formatResetTime(): string {
+  const now = new Date()
+  const nextMidnightUtc = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1),
+  )
+  const totalMinutes = Math.max(1, Math.round((nextMidnightUtc.getTime() - now.getTime()) / 60000))
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+
+  const hourPart = hours > 0 ? `${hours} hour${hours === 1 ? '' : 's'}` : ''
+  const minutePart = minutes > 0 ? `${minutes} minute${minutes === 1 ? '' : 's'}` : ''
+
+  if (hourPart && minutePart) return `Resets in ${hourPart} ${minutePart}`
+  return `Resets in ${hourPart || minutePart}`
+}
+
 type SaveState = 'idle' | 'saving' | 'saved' | 'error'
 type CvInputMode = 'file' | 'paste'
 type JobInputMode = 'paste' | 'url' | 'upload'
@@ -431,6 +452,7 @@ export function NewCheckPage() {
             We cap checks at 8 a day so every application gets your full attention, not a rushed
             once over. Come back tomorrow for more.
           </p>
+          <p className="mt-3 text-xs text-text-secondary">{formatResetTime()}</p>
         </div>
       </>
     )
