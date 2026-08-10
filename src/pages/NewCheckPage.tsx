@@ -7,11 +7,18 @@ import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { PageHeader } from '@/components/ui/Badge'
 import { Textarea } from '@/components/ui/Textarea'
-import { ACCEPTED_CV_TYPES, MAX_CV_SIZE_BYTES } from '@/lib/constants'
+import {
+  ACCEPTED_CV_TYPES,
+  ACCEPTED_JOB_FILE_TYPES,
+  MAX_CV_SIZE_BYTES,
+  MAX_JOB_FILE_SIZE_BYTES,
+} from '@/lib/constants'
 import { useAuth } from '@/hooks/useAuth'
 import {
   analyzeCheck,
   createDraftCheck,
+  extractJobDescriptionFromFile,
+  extractJobDescriptionFromUrl,
   getChecks,
   getCheckGateReason,
   replaceDraftCv,
@@ -36,6 +43,7 @@ function textToCvFile(text: string): File {
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error'
 type CvInputMode = 'file' | 'paste'
+type JobInputMode = 'paste' | 'url' | 'upload'
 
 export function NewCheckPage() {
   const { id } = useParams<{ id?: string }>()
@@ -55,6 +63,14 @@ export function NewCheckPage() {
   const [cvFileName, setCvFileName] = useState<string | null>(null)
   const [cvInputMode, setCvInputMode] = useState<CvInputMode>('file')
   const [cvPastedText, setCvPastedText] = useState('')
+
+  const [jobInputMode, setJobInputMode] = useState<JobInputMode>('paste')
+  const [jobUrl, setJobUrl] = useState('')
+  const [extractingJobUrl, setExtractingJobUrl] = useState(false)
+  const [jobUrlError, setJobUrlError] = useState<string | null>(null)
+  const [extractingJobFile, setExtractingJobFile] = useState(false)
+  const [jobFileError, setJobFileError] = useState<string | null>(null)
+  const [jobFileName, setJobFileName] = useState<string | null>(null)
 
   const [uploadingCv, setUploadingCv] = useState(false)
   const [saveState, setSaveState] = useState<SaveState>('idle')
@@ -174,6 +190,59 @@ export function NewCheckPage() {
   function handleJobDescriptionChange(value: string) {
     setJobDescription(value)
     scheduleAutosave({ jobDescription: value })
+  }
+
+  async function handleExtractJobUrl() {
+    const trimmedUrl = jobUrl.trim()
+    if (!trimmedUrl) return
+
+    setJobUrlError(null)
+    setExtractingJobUrl(true)
+
+    try {
+      const extracted = await extractJobDescriptionFromUrl(trimmedUrl)
+      handleJobDescriptionChange(extracted)
+      setJobInputMode('paste')
+    } catch (err) {
+      setJobUrlError(
+        err instanceof Error
+          ? err.message
+          : "We couldn't read this job posting. Paste the job description instead.",
+      )
+    } finally {
+      setExtractingJobUrl(false)
+    }
+  }
+
+  async function handleJobFileChange(fileList: FileList | null) {
+    const file = fileList?.[0]
+    if (!file) return
+
+    if (!ACCEPTED_JOB_FILE_TYPES.includes(file.type as (typeof ACCEPTED_JOB_FILE_TYPES)[number])) {
+      setJobFileError('Please upload a PDF, Word (.docx), or plain text file.')
+      return
+    }
+
+    if (file.size > MAX_JOB_FILE_SIZE_BYTES) {
+      setJobFileError('File must be 10 MB or smaller.')
+      return
+    }
+
+    setJobFileError(null)
+    setExtractingJobFile(true)
+
+    try {
+      const extracted = await extractJobDescriptionFromFile(file)
+      setJobFileName(file.name)
+      handleJobDescriptionChange(extracted)
+      setJobInputMode('paste')
+    } catch (err) {
+      setJobFileError(
+        err instanceof Error ? err.message : 'Could not read this file. Paste the job description instead.',
+      )
+    } finally {
+      setExtractingJobFile(false)
+    }
   }
 
   function handleOutputLanguageChange(value: OutputLanguage) {
@@ -370,13 +439,105 @@ export function NewCheckPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="jobDescription">Job description</Label>
-          <Textarea
-            id="jobDescription"
-            value={jobDescription}
-            onChange={(event) => handleJobDescriptionChange(event.target.value)}
-            placeholder="Paste the full job description"
-          />
+          <div className="flex items-center justify-between">
+            <Label
+              htmlFor={
+                jobInputMode === 'paste' ? 'jobDescription' : jobInputMode === 'url' ? 'jobUrl' : 'jobFile'
+              }
+            >
+              Job description
+            </Label>
+            <div className="inline-flex rounded-lg border border-border p-0.5">
+              <button
+                type="button"
+                onClick={() => setJobInputMode('paste')}
+                className={cn(
+                  'rounded-md px-3 py-1 text-xs font-medium transition-colors',
+                  jobInputMode === 'paste'
+                    ? 'bg-background text-text-primary'
+                    : 'text-text-secondary hover:text-text-primary',
+                )}
+              >
+                Paste
+              </button>
+              <button
+                type="button"
+                onClick={() => setJobInputMode('url')}
+                className={cn(
+                  'rounded-md px-3 py-1 text-xs font-medium transition-colors',
+                  jobInputMode === 'url'
+                    ? 'bg-background text-text-primary'
+                    : 'text-text-secondary hover:text-text-primary',
+                )}
+              >
+                URL
+              </button>
+              <button
+                type="button"
+                onClick={() => setJobInputMode('upload')}
+                className={cn(
+                  'rounded-md px-3 py-1 text-xs font-medium transition-colors',
+                  jobInputMode === 'upload'
+                    ? 'bg-background text-text-primary'
+                    : 'text-text-secondary hover:text-text-primary',
+                )}
+              >
+                Upload
+              </button>
+            </div>
+          </div>
+
+          {jobInputMode === 'paste' ? (
+            <Textarea
+              id="jobDescription"
+              value={jobDescription}
+              onChange={(event) => handleJobDescriptionChange(event.target.value)}
+              placeholder="Paste the full job description"
+            />
+          ) : jobInputMode === 'url' ? (
+            <>
+              <div className="flex gap-2">
+                <Input
+                  id="jobUrl"
+                  type="url"
+                  value={jobUrl}
+                  disabled={extractingJobUrl}
+                  onChange={(event) => setJobUrl(event.target.value)}
+                  placeholder="https://company.com/careers/job-posting"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="shrink-0"
+                  disabled={!jobUrl.trim() || extractingJobUrl}
+                  onClick={() => void handleExtractJobUrl()}
+                >
+                  {extractingJobUrl ? 'Reading...' : 'Extract'}
+                </Button>
+              </div>
+              <p className="text-xs text-text-secondary">Paste a link to a public job posting.</p>
+              {jobUrlError ? <Alert variant="error">{jobUrlError}</Alert> : null}
+            </>
+          ) : (
+            <>
+              <Input
+                id="jobFile"
+                type="file"
+                accept=".pdf,.docx,.txt"
+                disabled={extractingJobFile}
+                onChange={(event) => void handleJobFileChange(event.target.files)}
+              />
+              <p className="text-xs text-text-secondary">PDF, DOCX, or TXT &middot; Maximum 10 MB</p>
+              {extractingJobFile ? (
+                <p className="text-sm text-text-secondary">Reading file...</p>
+              ) : jobFileName ? (
+                <p className="text-sm text-text-secondary">Selected: {jobFileName}</p>
+              ) : null}
+              {jobFileError ? <Alert variant="error">{jobFileError}</Alert> : null}
+            </>
+          )}
         </div>
 
         <div className="space-y-2">

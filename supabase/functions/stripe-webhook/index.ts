@@ -36,6 +36,24 @@ Deno.serve(async (req) => {
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   const adminClient = createClient(supabaseUrl, serviceRoleKey)
 
+  // Stripe retries delivery at-least-once on any non-2xx response or
+  // timeout, so the same event.id can arrive more than once. Recording it
+  // first (unique constraint) lets a replayed delivery be skipped instead of
+  // reapplying the same profile/subscription update twice.
+  const { error: dedupeError } = await adminClient
+    .from('stripe_webhook_events')
+    .insert({ id: event.id })
+
+  if (dedupeError) {
+    if (dedupeError.code === '23505') {
+      return new Response(JSON.stringify({ received: true, duplicate: true }), {
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+    console.error(`stripe-webhook: could not record event ${event.id}`, dedupeError)
+    return new Response('Could not record event', { status: 500 })
+  }
+
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
@@ -55,11 +73,19 @@ Deno.serve(async (req) => {
         )
         break
       }
+      case 'invoice.payment_failed': {
+        await handleInvoicePaymentFailed(adminClient, event.data.object as Stripe.Invoice)
+        break
+      }
+      case 'invoice.payment_succeeded': {
+        await handleInvoicePaymentSucceeded(adminClient, stripe, event.data.object as Stripe.Invoice)
+        break
+      }
       default:
         break
     }
   } catch (error) {
-    console.error(`stripe-webhook: failed to handle ${event.type}`, error)
+    console.error(`stripe-webhook: failed to handle ${event.type} (${event.id})`, error)
     return new Response('Webhook handler error', { status: 500 })
   }
 
@@ -147,6 +173,65 @@ async function handleSubscriptionChange(
     await adminClient.from('profiles').update(profileUpdate).eq('stripe_customer_id', customerId)
   } else {
     console.error('stripe-webhook: subscription event missing user_id and customer id')
+  }
+}
+
+/**
+ * Fires immediately on a failed charge, ahead of (and more reliably than)
+ * waiting for customer.subscription.updated to eventually reflect a status
+ * transition — Smart Retries can keep the subscription 'active' for days
+ * during the retry schedule before it ever moves to past_due/unpaid.
+ */
+async function handleInvoicePaymentFailed(
+  adminClient: ReturnType<typeof createClient>,
+  invoice: Stripe.Invoice,
+) {
+  const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id
+  if (!customerId) {
+    console.error('stripe-webhook: invoice.payment_failed missing customer id')
+    return
+  }
+
+  await adminClient
+    .from('profiles')
+    .update({ subscription_status: 'past_due' })
+    .eq('stripe_customer_id', customerId)
+}
+
+/**
+ * Confirms/restores active status the moment a payment succeeds (covers
+ * both a normal renewal and recovery after a past_due retry), and refreshes
+ * current_period_end so the Account page's "Next billing date" stays accurate.
+ */
+async function handleInvoicePaymentSucceeded(
+  adminClient: ReturnType<typeof createClient>,
+  stripe: Stripe,
+  invoice: Stripe.Invoice,
+) {
+  const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id
+  if (!customerId) {
+    console.error('stripe-webhook: invoice.payment_succeeded missing customer id')
+    return
+  }
+
+  await adminClient
+    .from('profiles')
+    .update({ subscription_status: 'active' })
+    .eq('stripe_customer_id', customerId)
+
+  const subscriptionId =
+    typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id
+
+  if (!subscriptionId) return
+
+  try {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+    await adminClient
+      .from('subscriptions')
+      .update({ status: 'active', current_period_end: extractCurrentPeriodEnd(subscription) })
+      .eq('stripe_subscription_id', subscriptionId)
+  } catch (error) {
+    console.error('stripe-webhook: could not refresh subscription after payment success', error)
   }
 }
 

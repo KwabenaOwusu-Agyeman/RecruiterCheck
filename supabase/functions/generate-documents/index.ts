@@ -13,6 +13,7 @@ const corsHeaders = {
 const MAX_CV_CHARS = 15000
 const MAX_ATTEMPTS = 3
 const SIGNED_URL_TTL_SECONDS = 300
+const OPENAI_TIMEOUT_MS = 45000
 
 // Brand blue (tailwind.config.js `blue`), reused so generated PDFs match the app.
 const BLUE = rgb(0x19 / 255, 0x4a / 255, 0x9f / 255)
@@ -139,10 +140,21 @@ Deno.serve(async (req) => {
       .download(check.cv_storage_path)
 
     if (downloadError || !cvFile) {
+      console.error('generate-documents: CV download failed', { checkId, message: downloadError?.message })
       return jsonResponse({ error: 'Could not read CV file' }, 400)
     }
 
-    const cvText = await extractText(cvFile, check.cv_file_name)
+    let cvText: string
+    try {
+      cvText = await extractText(cvFile, check.cv_file_name)
+    } catch (error) {
+      console.error('generate-documents: CV parsing failed', {
+        checkId,
+        fileName: check.cv_file_name,
+        message: error instanceof Error ? error.message : String(error),
+      })
+      return jsonResponse({ error: 'Could not read text from this CV file' }, 400)
+    }
 
     const docs = await generateDocuments(openaiApiKey, cvText, check.job_description, {
       jobTitle: check.job_title,
@@ -258,18 +270,18 @@ async function generateDocuments(
     outputLanguage: 'auto' | 'en' | 'nl'
   },
 ): Promise<RawDocuments> {
-  let lastError: unknown
+  const attemptErrors: string[] = []
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     try {
       const raw = await callOpenAI(apiKey, cvText, jobDescription, context)
       return validateDocuments(raw, context.outputLanguage)
     } catch (error) {
-      lastError = error
+      attemptErrors.push(error instanceof Error ? error.message : String(error))
     }
   }
 
-  throw lastError instanceof Error ? lastError : new Error('Document generation failed')
+  throw new Error(`All attempts failed: ${JSON.stringify(attemptErrors)}`)
 }
 
 async function callOpenAI(
@@ -350,7 +362,7 @@ ${context.improvements.map((item) => `- ${item}`).join('\n')}
 Original CV:
 ${cvText}`
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -1158,4 +1170,25 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
+}
+
+/**
+ * A hung OpenAI request would otherwise be caught only by the platform's own
+ * hard timeout, at an unpredictable point. Aborting deterministically at
+ * OPENAI_TIMEOUT_MS lets this fail into the normal retry path instead.
+ */
+async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), OPENAI_TIMEOUT_MS)
+
+  try {
+    return await fetch(url, { ...init, signal: controller.signal })
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`OpenAI request timed out after ${OPENAI_TIMEOUT_MS}ms`)
+    }
+    throw error
+  } finally {
+    clearTimeout(timeout)
+  }
 }

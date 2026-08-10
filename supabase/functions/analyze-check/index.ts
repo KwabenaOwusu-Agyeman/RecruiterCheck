@@ -11,14 +11,13 @@ const corsHeaders = {
 const MAX_CV_CHARS = 15000
 const MAX_ATTEMPTS = 3
 const RATE_LIMIT_PER_HOUR = 5
-// Weekly/monthly tiers only — not a monetization lever, just reinforcing the
-// "quality over quantity" positioning even for paying users.
+const OPENAI_TIMEOUT_MS = 45000
+// Actual enforcement of both limits lives in the reserve_check_analysis
+// Postgres function (see migration add_reserve_check_analysis_rpc), which
+// atomically checks and reserves a slot under a row lock — these constants
+// exist here only to build the matching user-facing error messages; keep
+// them in sync with the limits hardcoded in that function.
 const PAID_TIER_DAILY_LIMIT = 8
-// Mirrors the frontend's FREE_TIER_LIFETIME_LIMIT (src/services/checkService.ts).
-// The frontend gate (getCheckGateReason) already blocks a free user from
-// starting a new draft once this is reached, but that only protects the New
-// Check page UI — anyone calling this function directly bypasses it, so it
-// must be enforced here too, not just client-side.
 const FREE_TIER_LIFETIME_LIMIT = 1
 
 interface AnalyzeRequest {
@@ -109,62 +108,6 @@ Deno.serve(async (req) => {
       )
     }
 
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('subscription_tier')
-      .eq('id', user.id)
-      .single()
-
-    if (profileError || !profile) {
-      return jsonResponse({ error: 'Profile not found' }, 404)
-    }
-
-    if (profile.subscription_tier === 'free') {
-      const { count: completedCount, error: freeLimitError } = await adminClient
-        .from('checks')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('status', 'completed')
-
-      if (freeLimitError) {
-        return jsonResponse({ error: 'Could not verify usage limit' }, 500)
-      }
-
-      if ((completedCount ?? 0) >= FREE_TIER_LIFETIME_LIMIT) {
-        return jsonResponse(
-          {
-            error: `You have used your ${FREE_TIER_LIFETIME_LIMIT} free Recruiter Check. Upgrade to continue.`,
-          },
-          429,
-        )
-      }
-    } else {
-      const startOfDayUtc = new Date()
-      startOfDayUtc.setUTCHours(0, 0, 0, 0)
-
-      const { count: todaysCount, error: dailyLimitError } = await adminClient
-        .from('checks')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .neq('status', 'draft')
-        .gte('created_at', startOfDayUtc.toISOString())
-
-      if (dailyLimitError) {
-        return jsonResponse({ error: 'Could not verify daily limit' }, 500)
-      }
-
-      if ((todaysCount ?? 0) >= PAID_TIER_DAILY_LIMIT) {
-        return jsonResponse(
-          {
-            error: `You have reached today's limit of ${PAID_TIER_DAILY_LIMIT} checks. Please try again tomorrow.`,
-          },
-          429,
-        )
-      }
-    }
-
-    await adminClient.from('analyze_requests').insert({ user_id: user.id })
-
     const { data: check, error: checkError } = await adminClient
       .from('checks')
       .select('*')
@@ -180,16 +123,51 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Job description is too short to analyze' }, 400)
     }
 
-    await adminClient
-      .from('checks')
-      .update({ status: 'processing', error_message: null })
-      .eq('id', checkId)
+    // Atomically checks the free/paid usage allowance and flips this check to
+    // 'processing' in one transaction (row-locked on the user's profile), so
+    // two concurrent requests (two tabs, a double submit) can't both read
+    // "under limit" before either has committed. See the migration for full
+    // reasoning; this must stay a single RPC call, not separate count+update
+    // steps, or the atomicity guarantee is lost.
+    const { data: reservation, error: reservationError } = await adminClient.rpc(
+      'reserve_check_analysis',
+      { p_check_id: checkId, p_user_id: user.id },
+    )
+
+    if (reservationError) {
+      console.error('analyze-check: reserve_check_analysis failed', reservationError)
+      return jsonResponse({ error: 'Could not verify usage limit' }, 500)
+    }
+
+    const reason = reservation?.[0]?.reason as string | undefined
+    if (!reservation?.[0]?.allowed) {
+      console.error('analyze-check: usage limit denied', { userId: user.id, checkId, reason })
+      if (reason === 'free_tier_limit') {
+        return jsonResponse(
+          { error: `You have used your ${FREE_TIER_LIFETIME_LIMIT} free Recruiter Check. Upgrade to continue.` },
+          429,
+        )
+      }
+      if (reason === 'daily_limit') {
+        return jsonResponse(
+          { error: `You have reached today's limit of ${PAID_TIER_DAILY_LIMIT} checks. Please try again tomorrow.` },
+          429,
+        )
+      }
+      if (reason === 'already_processing' || reason === 'already_completed') {
+        return jsonResponse({ error: 'This check is already being processed' }, 409)
+      }
+      return jsonResponse({ error: 'Could not start this check' }, 400)
+    }
+
+    await adminClient.from('analyze_requests').insert({ user_id: user.id })
 
     const { data: cvFile, error: downloadError } = await adminClient.storage
       .from('cvs')
       .download(check.cv_storage_path)
 
     if (downloadError || !cvFile) {
+      console.error('analyze-check: CV download failed', { checkId, message: downloadError?.message })
       await markFailed(adminClient, checkId, 'Could not read CV file')
       return jsonResponse({ error: 'Could not read CV file' }, 400)
     }
@@ -197,7 +175,12 @@ Deno.serve(async (req) => {
     let cvText: string
     try {
       cvText = await extractText(cvFile, check.cv_file_name)
-    } catch {
+    } catch (error) {
+      console.error('analyze-check: CV parsing failed', {
+        checkId,
+        fileName: check.cv_file_name,
+        message: error instanceof Error ? error.message : String(error),
+      })
       await markFailed(adminClient, checkId, 'Could not read text from this CV file')
       return jsonResponse({ error: 'Could not read text from this CV file' }, 400)
     }
@@ -354,7 +337,7 @@ ${jobDescription}
 CV:
 ${cvText}`
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -531,4 +514,26 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
+}
+
+/**
+ * A hung OpenAI request would otherwise be caught only by the platform's own
+ * hard timeout, at an unpredictable point that may not leave time for
+ * markFailed to run. Aborting deterministically at OPENAI_TIMEOUT_MS lets
+ * this fail into the normal retry/markFailed path instead.
+ */
+async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), OPENAI_TIMEOUT_MS)
+
+  try {
+    return await fetch(url, { ...init, signal: controller.signal })
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`OpenAI request timed out after ${OPENAI_TIMEOUT_MS}ms`)
+    }
+    throw error
+  } finally {
+    clearTimeout(timeout)
+  }
 }

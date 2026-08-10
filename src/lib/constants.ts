@@ -56,3 +56,11 @@ export const ACCEPTED_CV_TYPES = [
 ] as const
 
 export const MAX_CV_SIZE_BYTES = 10 * 1024 * 1024
+
+export const ACCEPTED_JOB_FILE_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain',
+] as const
+
+export const MAX_JOB_FILE_SIZE_BYTES = 10 * 1024 * 1024

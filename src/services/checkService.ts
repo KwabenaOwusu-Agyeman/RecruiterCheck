@@ -9,6 +9,42 @@ import type {
   Subscription,
 } from '@/types'
 
+/**
+ * Storage path extensions are derived from the browser-reported MIME type,
+ * not the user-supplied filename — a filename like "cv.pdf.exe" would
+ * otherwise land its literal ".exe" extension in the storage path. The
+ * bucket's own MIME allowlist (pdf/docx/text, enforced server-side) already
+ * rejects anything else at upload time, so this only needs to cover those.
+ */
+function extensionForMimeType(mimeType: string): string {
+  if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+    return 'docx'
+  }
+  if (mimeType === 'text/plain') return 'txt'
+  return 'pdf'
+}
+
+/**
+ * supabase-js throws a generic FunctionsHttpError ("Edge Function returned a
+ * non-2xx status code") for any non-2xx response — the actual JSON error
+ * body our functions return (e.g. "You have used your 1 free Recruiter
+ * Check...") is only reachable via `error.context`, a Response object that
+ * nothing here was reading, so every specific server-side message was being
+ * silently replaced by that generic string. This recovers it.
+ */
+async function resolveFunctionError(error: unknown): Promise<Error> {
+  const context = (error as { context?: unknown } | null)?.context
+  if (context instanceof Response) {
+    try {
+      const body = (await context.clone().json()) as { error?: unknown }
+      if (body?.error) return new Error(String(body.error))
+    } catch {
+      // Body wasn't JSON (or already consumed) — fall through.
+    }
+  }
+  return error instanceof Error ? error : new Error('Something went wrong')
+}
+
 export interface DraftCheckUpdate {
   jobTitle?: string
   companyName?: string
@@ -102,7 +138,7 @@ export async function submitProductFeedback(
 export async function deleteAccount(): Promise<void> {
   const { data, error } = await supabase.functions.invoke('delete-account', { body: {} })
 
-  if (error) throw error
+  if (error) throw await resolveFunctionError(error)
   if (data?.error) throw new Error(String(data.error))
 }
 
@@ -148,20 +184,26 @@ export type CheckGateReason = 'free-tier' | 'daily-limit' | null
  * Free tier: 1 completed check ever, per the locked spec. Premium tiers
  * (weekly/monthly) are capped at 8 checks per UTC day — not a monetization
  * lever, just reinforcing the "quality over quantity" positioning even for
- * paying users. Draft checks never count toward either allowance; the free
- * tier only counts completed ones, the daily cap counts anything submitted
- * (draft excluded) since it's meant to limit submission volume, not outcomes.
+ * paying users. Draft AND failed checks never count toward either allowance
+ * — a failed/timed-out attempt must not permanently burn the user's slot, so
+ * only 'processing' (reserved, in flight) and 'completed' count. This is a
+ * client-side pre-check only, for UI gating before the user even starts a
+ * draft; the authoritative, atomic enforcement lives server-side in the
+ * reserve_check_analysis Postgres function, which this mirrors.
  */
 export function getCheckGateReason(profile: Profile, checks: Check[]): CheckGateReason {
+  const countsTowardAllowance = (check: Check) =>
+    check.status === 'completed' || check.status === 'processing'
+
   if (profile.subscription_tier === 'free') {
-    const completedCount = checks.filter((check) => check.status === 'completed').length
-    return completedCount < FREE_TIER_LIFETIME_LIMIT ? null : 'free-tier'
+    const usedCount = checks.filter(countsTowardAllowance).length
+    return usedCount < FREE_TIER_LIFETIME_LIMIT ? null : 'free-tier'
   }
 
   const startOfDayUtc = new Date()
   startOfDayUtc.setUTCHours(0, 0, 0, 0)
   const todaysCount = checks.filter(
-    (check) => check.status !== 'draft' && new Date(check.created_at) >= startOfDayUtc,
+    (check) => countsTowardAllowance(check) && new Date(check.created_at) >= startOfDayUtc,
   ).length
   return todaysCount < PAID_TIER_DAILY_LIMIT ? null : 'daily-limit'
 }
@@ -169,7 +211,9 @@ export function getCheckGateReason(profile: Profile, checks: Check[]): CheckGate
 /**
  * Count-only query (no rows fetched) for showing "X of 8 today" in the
  * account UI, so paid-tier users can see the daily cap before they hit it
- * instead of discovering it only when blocked.
+ * instead of discovering it only when blocked. Matches reserve_check_analysis:
+ * only 'processing'/'completed' count, so a failed attempt doesn't inflate
+ * the displayed usage.
  */
 export async function getTodaysCheckCount(userId: string): Promise<number> {
   const startOfDayUtc = new Date()
@@ -179,7 +223,7 @@ export async function getTodaysCheckCount(userId: string): Promise<number> {
     .from('checks')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', userId)
-    .neq('status', 'draft')
+    .in('status', ['processing', 'completed'])
     .gte('created_at', startOfDayUtc.toISOString())
 
   if (error) throw error
@@ -203,7 +247,7 @@ export async function getCheck(checkId: string): Promise<Check | null> {
  * may still be empty at this point — the draft is filled in via updateDraftCheck.
  */
 export async function createDraftCheck(userId: string, cvFile: File): Promise<Check> {
-  const fileExt = cvFile.name.split('.').pop() ?? 'pdf'
+  const fileExt = extensionForMimeType(cvFile.type)
   const checkId = crypto.randomUUID()
   const storagePath = `${userId}/${checkId}.${fileExt}`
 
@@ -264,7 +308,7 @@ export async function replaceDraftCv(
   userId: string,
   cvFile: File,
 ): Promise<Check> {
-  const fileExt = cvFile.name.split('.').pop() ?? 'pdf'
+  const fileExt = extensionForMimeType(cvFile.type)
   const storagePath = `${userId}/${checkId}-${Date.now()}.${fileExt}`
 
   const { error: uploadError } = await supabase.storage
@@ -293,8 +337,42 @@ export async function analyzeCheck(checkId: string): Promise<void> {
     body: { checkId },
   })
 
-  if (error) throw error
+  if (error) throw await resolveFunctionError(error)
   if (data?.error) throw new Error(String(data.error))
+}
+
+/**
+ * Attempts a server-side fetch + extraction of the job description from a
+ * public job posting URL. The edge function returns the exact user-facing
+ * fallback message on any failure (blocked/private URL, non-HTML response,
+ * extraction too short, etc.), so callers can show it directly.
+ */
+export async function extractJobDescriptionFromUrl(url: string): Promise<string> {
+  const { data, error } = await supabase.functions.invoke('extract-job-url', {
+    body: { url },
+  })
+
+  if (error) throw await resolveFunctionError(error)
+  if (data?.error) throw new Error(String(data.error))
+  return String(data.jobDescription)
+}
+
+/**
+ * Uploads a PDF/DOCX/TXT job-description file for server-side text
+ * extraction. Nothing is persisted to storage — the file is parsed and
+ * discarded within the request.
+ */
+export async function extractJobDescriptionFromFile(file: File): Promise<string> {
+  const form = new FormData()
+  form.append('file', file)
+
+  const { data, error } = await supabase.functions.invoke('extract-job-file', {
+    body: form,
+  })
+
+  if (error) throw await resolveFunctionError(error)
+  if (data?.error) throw new Error(String(data.error))
+  return String(data.jobDescription)
 }
 
 export interface GeneratedDocuments {
@@ -309,7 +387,7 @@ export async function generateDocuments(checkId: string): Promise<GeneratedDocum
     body: { checkId },
   })
 
-  if (error) throw error
+  if (error) throw await resolveFunctionError(error)
   if (data?.error) throw new Error(String(data.error))
   return data as GeneratedDocuments
 }
@@ -321,7 +399,7 @@ export async function createCheckoutSession(
     body: { plan },
   })
 
-  if (error) throw error
+  if (error) throw await resolveFunctionError(error)
   if (!data?.url) throw new Error('Could not start checkout')
   return data.url as string
 }
@@ -331,7 +409,7 @@ export async function createPortalSession(): Promise<string> {
     body: {},
   })
 
-  if (error) throw error
+  if (error) throw await resolveFunctionError(error)
   if (data?.error) throw new Error(String(data.error))
   if (!data?.url) throw new Error('Could not open billing portal')
   return data.url as string
@@ -342,6 +420,6 @@ export async function deleteCheck(checkId: string): Promise<void> {
     body: { checkId },
   })
 
-  if (error) throw error
+  if (error) throw await resolveFunctionError(error)
   if (data?.error) throw new Error(String(data.error))
 }
