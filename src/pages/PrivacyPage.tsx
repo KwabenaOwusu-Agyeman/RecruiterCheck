@@ -128,6 +128,31 @@ export function PrivacyPage() {
           .
         </p>
       </Section>
+
+      <Section title="14. Browser Extension">
+        <p>
+          The RecruiterCheck browser extension reads the job posting on the page you are currently
+          viewing only when you explicitly click "Capture this job." It never runs in the background
+          and never scans pages you have not asked it to read.
+        </p>
+        <p>The extension captures, at most:</p>
+        <ul className="list-disc space-y-1 pl-5">
+          <li>The job title, company name, and job description text visible on the page;</li>
+          <li>The URL of the page you captured the job from.</li>
+        </ul>
+        <p>The extension never collects:</p>
+        <ul className="list-disc space-y-1 pl-5">
+          <li>Your browsing history, cookies, passwords, or clipboard;</li>
+          <li>Your LinkedIn profile, connections, messages, or any social/networking data;</li>
+          <li>Any content from pages other than the one you explicitly capture.</li>
+        </ul>
+        <p>
+          The extension maintains its own sign-in, separate from your browser session on this
+          website — connecting it does not give it access to your password. A captured job is
+          stored temporarily (for up to 48 hours, or until you use it to start a Recruiter Check,
+          whichever is sooner) and is then permanently deleted.
+        </p>
+      </Section>
     </LegalLayout>
   )
 }
