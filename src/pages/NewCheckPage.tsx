@@ -450,7 +450,7 @@ export function NewCheckPage() {
           </h2>
           <p className="mt-2 text-sm text-text-secondary">
             We cap checks at 8 a day so every application gets your full attention, not a rushed
-            once over. Come back tomorrow for more.
+            once over.
           </p>
           <p className="mt-3 text-xs text-text-secondary">{formatResetTime()}</p>
         </div>
