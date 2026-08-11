@@ -255,19 +255,30 @@ async function signedUrl(client: ReturnType<typeof createClient>, path: string):
 }
 
 async function extractText(file: Blob, fileName: string): Promise<string> {
-  const lowerName = fileName.toLowerCase()
   const arrayBuffer = await file.arrayBuffer()
+
+  // Dispatch on the downloaded blob's own Content-Type (set by Supabase
+  // Storage from the mimetype it recorded at upload, which the "cvs" bucket
+  // already restricts via allowed_mime_types) rather than the client-supplied
+  // file name — see the matching comment in analyze-check/index.ts.
+  const mimeType = file.type
+  const lowerName = fileName.toLowerCase()
+  const isPdf = mimeType === 'application/pdf' || (!mimeType && lowerName.endsWith('.pdf'))
+  const isDocx =
+    mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+    (!mimeType && lowerName.endsWith('.docx'))
+  const isTxt = mimeType === 'text/plain' || (!mimeType && lowerName.endsWith('.txt'))
 
   let text: string
 
-  if (lowerName.endsWith('.pdf')) {
+  if (isPdf) {
     const pdf = await getDocumentProxy(new Uint8Array(arrayBuffer))
     const result = await extractPdfText(pdf, { mergePages: true })
     text = Array.isArray(result.text) ? result.text.join('\n') : result.text
-  } else if (lowerName.endsWith('.docx')) {
+  } else if (isDocx) {
     const result = await mammoth.extractRawText({ buffer: Buffer.from(arrayBuffer) })
     text = result.value
-  } else if (lowerName.endsWith('.txt')) {
+  } else if (isTxt) {
     text = new TextDecoder('utf-8').decode(arrayBuffer)
   } else {
     throw new Error('Unsupported file type')

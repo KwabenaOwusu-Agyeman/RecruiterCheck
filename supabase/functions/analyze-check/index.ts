@@ -267,19 +267,33 @@ async function markFailed(
 }
 
 async function extractText(file: Blob, fileName: string): Promise<string> {
-  const lowerName = fileName.toLowerCase()
   const arrayBuffer = await file.arrayBuffer()
+
+  // Dispatch on the downloaded blob's own Content-Type (set by Supabase
+  // Storage from the mimetype it recorded at upload, which the "cvs" bucket
+  // already restricts via allowed_mime_types) rather than the client-supplied
+  // file name — a direct API call could otherwise set cv_file_name to
+  // anything to steer this to the wrong parser. Only fall back to the file
+  // name suffix if the blob genuinely has no type (older rows uploaded
+  // before content type was always set).
+  const mimeType = file.type
+  const lowerName = fileName.toLowerCase()
+  const isPdf = mimeType === 'application/pdf' || (!mimeType && lowerName.endsWith('.pdf'))
+  const isDocx =
+    mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+    (!mimeType && lowerName.endsWith('.docx'))
+  const isTxt = mimeType === 'text/plain' || (!mimeType && lowerName.endsWith('.txt'))
 
   let text: string
 
-  if (lowerName.endsWith('.pdf')) {
+  if (isPdf) {
     const pdf = await getDocumentProxy(new Uint8Array(arrayBuffer))
     const result = await extractPdfText(pdf, { mergePages: true })
     text = Array.isArray(result.text) ? result.text.join('\n') : result.text
-  } else if (lowerName.endsWith('.docx')) {
+  } else if (isDocx) {
     const result = await mammoth.extractRawText({ buffer: Buffer.from(arrayBuffer) })
     text = result.value
-  } else if (lowerName.endsWith('.txt')) {
+  } else if (isTxt) {
     // Pasted-CV path: the client saves pasted text as a plain-text file.
     text = new TextDecoder('utf-8').decode(arrayBuffer)
   } else {
