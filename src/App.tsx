@@ -7,7 +7,9 @@ import { AccountPage } from '@/pages/AccountPage'
 import { AuthCallbackPage } from '@/pages/AuthCallbackPage'
 import { BillingPage } from '@/pages/BillingPage'
 import { DisclaimerPage } from '@/pages/DisclaimerPage'
+import { ExampleCheckPage } from '@/pages/ExampleCheckPage'
 import { ExtensionConnectPage } from '@/pages/ExtensionConnectPage'
+import { FaqPage } from '@/pages/FaqPage'
 import { FeedbackPage } from '@/pages/FeedbackPage'
 import { LandingPage } from '@/pages/LandingPage'
 import { MyChecksPage } from '@/pages/MyChecksPage'
@@ -25,6 +27,7 @@ export function App() {
             <Route index element={<LandingPage />} />
             <Route path="sign-in" element={<LandingPage />} />
             <Route path="sign-up" element={<LandingPage />} />
+            <Route path="example-check" element={<ExampleCheckPage />} />
           </Route>
 
           <Route path="auth/callback" element={<AuthCallbackPage />} />
@@ -32,6 +35,7 @@ export function App() {
           <Route path="terms" element={<TermsPage />} />
           <Route path="privacy" element={<PrivacyPage />} />
           <Route path="disclaimer" element={<DisclaimerPage />} />
+          <Route path="faq" element={<FaqPage />} />
 
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>

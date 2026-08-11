@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { useAuthModal } from '@/features/auth/context/AuthModalContext'
 import { consumePostAuthRedirect } from '@/features/auth/postAuthRedirect'
+import { trackEvent } from '@/lib/analytics'
 import { FEATURE_FLAGS } from '@/lib/constants'
 import {
   resetPasswordForEmail,
@@ -138,6 +139,7 @@ export function AuthModal() {
     try {
       if (mode === 'sign-up') {
         const needsConfirmation = await signUpWithPassword(email.trim(), password)
+        trackEvent('signup_completed')
         if (needsConfirmation) {
           setMessage('Check your email to confirm your account.')
         } else {

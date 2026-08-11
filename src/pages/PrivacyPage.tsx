@@ -1,7 +1,14 @@
 import { Link } from 'react-router-dom'
 import { LegalLayout, Section } from '@/components/legal/LegalLayout'
+import { usePageMeta } from '@/hooks/usePageMeta'
 
 export function PrivacyPage() {
+  usePageMeta({
+    title: 'Privacy Policy — RecruiterCheck',
+    description: 'How RecruiterCheck collects, uses, and protects your data.',
+    path: '/privacy',
+  })
+
   return (
     <LegalLayout title="Privacy Policy" updated="7 August 2026">
       <Section title="1. Who We Are">

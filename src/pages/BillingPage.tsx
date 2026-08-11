@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Alert } from '@/components/ui/Alert'
 import { BackLink } from '@/components/ui/BackLink'
 import { Button } from '@/components/ui/Button'
 import { PRICING_PLANS } from '@/lib/constants'
+import { trackEvent } from '@/lib/analytics'
 import { useAuth } from '@/hooks/useAuth'
 import { createCheckoutSession, createPortalSession } from '@/services/checkService'
 import { cn } from '@/utils/cn'
@@ -23,9 +24,14 @@ export function BillingPage() {
 
   const checkoutStatus = searchParams.get('status')
 
+  useEffect(() => {
+    if (checkoutStatus === 'success') trackEvent('subscription_completed')
+  }, [checkoutStatus])
+
   async function handleUpgrade(plan: 'premium_weekly' | 'premium_monthly') {
     setLoadingPlan(plan)
     setError(null)
+    trackEvent('upgrade_started')
 
     try {
       const url = await createCheckoutSession(plan)

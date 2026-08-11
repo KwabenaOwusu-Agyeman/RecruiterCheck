@@ -98,6 +98,11 @@ export function NewCheckPage() {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const cvSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  useEffect(() => {
+    if (!id) trackEvent('new_check_opened')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Gate fresh drafts only — a check already in progress may be resumed
   // regardless of plan, per the locked spec. Reads straight off the
   // profile's durable usage counters (no query needed) rather than counting
@@ -368,6 +373,7 @@ export function NewCheckPage() {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
       await updateDraftCheck(checkId, { jobTitle, companyName, jobDescription })
       await analyzeCheck(checkId)
+      trackEvent('check_submitted')
       navigate(`/checks/${checkId}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not analyze this check')

@@ -142,7 +142,7 @@ export interface Database {
       analytics_events: {
         Row: {
           id: string
-          user_id: string
+          user_id: string | null
           event_type: string
           domain_category: string | null
           created_at: string

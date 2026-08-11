@@ -5,6 +5,7 @@ import { AuthModalProvider, useAuthModal } from '@/features/auth/context/AuthMod
 import { storePostAuthRedirect } from '@/features/auth/postAuthRedirect'
 import { PublicFooter } from '@/features/landing/components/PublicFooter'
 import { PublicHeader } from '@/features/landing/components/PublicHeader'
+import { StickyMobileCta } from '@/features/landing/components/StickyMobileCta'
 
 function PublicLayoutContent() {
   const location = useLocation()
@@ -26,12 +27,13 @@ function PublicLayoutContent() {
   }, [location.pathname, location.state, open, navigate])
 
   return (
-    <div className="flex min-h-screen flex-col bg-surface">
+    <div className="flex min-h-screen flex-col bg-surface pb-16 sm:pb-0">
       <PublicHeader />
       <main className="flex-1">
         <Outlet />
       </main>
       <PublicFooter />
+      <StickyMobileCta />
       <AuthModal />
     </div>
   )

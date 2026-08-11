@@ -1,7 +1,14 @@
 import { Link } from 'react-router-dom'
 import { LegalLayout, Section } from '@/components/legal/LegalLayout'
+import { usePageMeta } from '@/hooks/usePageMeta'
 
 export function TermsPage() {
+  usePageMeta({
+    title: 'Terms of Service — RecruiterCheck',
+    description: 'The terms that govern your use of RecruiterCheck.',
+    path: '/terms',
+  })
+
   return (
     <LegalLayout title="Terms of Service" updated="7 August 2026">
       <Section title="1. Introduction">

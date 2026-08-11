@@ -1,6 +1,13 @@
 import { LegalLayout, Section } from '@/components/legal/LegalLayout'
+import { usePageMeta } from '@/hooks/usePageMeta'
 
 export function DisclaimerPage() {
+  usePageMeta({
+    title: 'Disclaimer — RecruiterCheck',
+    description: 'What RecruiterCheck does and does not claim to do.',
+    path: '/disclaimer',
+  })
+
   return (
     <LegalLayout title="Disclaimer" updated="8 August 2026">
       <Section title="A recruiter's perspective, not a guarantee">

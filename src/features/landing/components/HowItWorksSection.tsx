@@ -21,7 +21,7 @@ const steps = [
 export function HowItWorksSection() {
   return (
     <section id="how-it-works" className="border-b border-border bg-surface">
-      <Container className="py-16">
+      <Container className="py-12">
         <div className="mx-auto max-w-xl text-center">
           <h2 className="text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl">
             How it works
@@ -31,11 +31,11 @@ export function HowItWorksSection() {
           </p>
         </div>
 
-        <ol className="mx-auto mt-10 grid max-w-4xl gap-8 sm:grid-cols-3">
+        <ol className="mx-auto mt-8 grid max-w-4xl gap-6 sm:grid-cols-3">
           {steps.map((step) => (
             <li
               key={step.number}
-              className="rounded-xl border-2 border-navy bg-background p-6 shadow-lg"
+              className="rounded-xl border-2 border-navy bg-background p-5 shadow-lg"
             >
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-navy text-lg font-bold text-white">
                 {Number(step.number)}

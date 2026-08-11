@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
+import { trackEvent } from '@/lib/analytics'
 
 export type AuthModalMode = 'sign-in' | 'sign-up'
 
@@ -14,7 +15,10 @@ const AuthModalContext = createContext<AuthModalContextValue | undefined>(undefi
 export function AuthModalProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<AuthModalMode | null>(null)
 
-  const open = useCallback((nextMode: AuthModalMode) => setMode(nextMode), [])
+  const open = useCallback((nextMode: AuthModalMode) => {
+    if (nextMode === 'sign-up') trackEvent('signup_started')
+    setMode(nextMode)
+  }, [])
   const close = useCallback(() => setMode(null), [])
 
   const value = useMemo(() => ({ mode, open, close, setMode }), [mode, open, close])

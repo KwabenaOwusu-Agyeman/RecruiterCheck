@@ -7,6 +7,15 @@ export type AnalyticsEventType =
   | 'job_input_url_extract_succeeded'
   | 'job_input_url_extract_failed'
   | 'extension_opened_new_check'
+  | 'landing_view'
+  | 'signup_started'
+  | 'signup_completed'
+  | 'new_check_opened'
+  | 'check_submitted'
+  | 'feedback_viewed'
+  | 'recruiter_ready_kit_accessed'
+  | 'upgrade_started'
+  | 'subscription_completed'
 
 export type DomainCategory = 'linkedin' | 'indeed' | 'greenhouse' | 'lever' | 'workday' | 'other'
 

@@ -4,8 +4,10 @@ import { Alert } from '@/components/ui/Alert'
 import { StatusBadge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
+import { FeedbackBullet, getVerdictColor, splitFinding } from '@/components/feedback/FeedbackBullet'
 import { useAuth } from '@/hooks/useAuth'
 import { getScoreLabel } from '@/lib/scoring'
+import { trackEvent } from '@/lib/analytics'
 import {
   analyzeCheck,
   generateDocuments,
@@ -14,36 +16,6 @@ import {
 } from '@/services/checkService'
 import type { CheckWithFeedback } from '@/types'
 import { cn } from '@/utils/cn'
-
-function getVerdictColor(score: number): string {
-  if (score >= 80) return 'text-success'
-  if (score >= 50) return 'text-warning'
-  return 'text-error'
-}
-
-/**
- * Strengths and areas to improve are written server side as a short
- * finding/action, then evidence, then (for some areas to improve) a
- * trailing " Example: ..." clause. This pulls the example out first, then
- * splits the remaining text on the first sentence boundary so the finding
- * can render bold, the evidence as normal text, and the example as its own
- * visually separated line (the Tell -> Show structure). Decimal points
- * (e.g. "7.2%") are protected first so a stat never gets mistaken for a
- * sentence break.
- */
-function splitFinding(text: string): { title: string; evidence: string; example: string } {
-  const DECIMAL_MARK = '@@DECIMAL@@'
-  const protectedText = text.replace(/(\d)\.(\d)/g, `$1${DECIMAL_MARK}$2`)
-  const restore = (value: string) => value.split(DECIMAL_MARK).join('.')
-
-  const exampleMatch = protectedText.match(/^([\s\S]*?)\s*Example:\s*([\s\S]*)$/)
-  const mainText = exampleMatch ? exampleMatch[1] : protectedText
-  const example = exampleMatch ? restore(exampleMatch[2].trim()) : ''
-
-  const match = mainText.match(/^([^.!?]+[.!?])\s*([\s\S]*)$/)
-  if (!match) return { title: restore(mainText.trim()), evidence: '', example }
-  return { title: restore(match[1].trim()), evidence: restore(match[2].trim()), example }
-}
 
 function lowerFirstClause(text: string): string {
   const trimmed = text.trim().replace(/[.!?]+$/, '')
@@ -80,22 +52,6 @@ function buildSummarySentence(score: number, improvements: string[]): string {
     : 'This role is a stretch right now. A few key improvements would strengthen your chances.'
 }
 
-function FeedbackBullet({ text }: { text: string }) {
-  const { title, evidence, example } = splitFinding(text)
-  return (
-    <li className="flex gap-2">
-      <span className="text-blue" aria-hidden="true">
-        •
-      </span>
-      <span className="text-sm leading-snug text-text-secondary">
-        <span className="font-semibold text-text-primary">{title}</span>
-        {evidence ? ` ${evidence}` : null}
-        {example ? <span className="block mt-1 italic">Example: &quot;{example}&quot;</span> : null}
-      </span>
-    </li>
-  )
-}
-
 export function FeedbackPage() {
   const { id } = useParams<{ id: string }>()
   const { profile } = useAuth()
@@ -118,6 +74,7 @@ export function FeedbackPage() {
           return
         }
         setCheck(data)
+        if (data.feedback) trackEvent('feedback_viewed')
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Could not load feedback')
       } finally {
@@ -148,6 +105,7 @@ export function FeedbackPage() {
     if (!id) return
     setGeneratingDocs(true)
     setDocumentsError(null)
+    trackEvent('recruiter_ready_kit_accessed')
 
     try {
       const result = await generateDocuments(id)

@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /checks
+Disallow: /account
+Disallow: /extension
+Disallow: /auth
+
+Sitemap: https://recruitercheck.app/sitemap.xml
