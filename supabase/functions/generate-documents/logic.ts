@@ -1,0 +1,272 @@
+// Pure, network-free logic split out of index.ts so it can be unit tested
+// (via `npx tsx`/Deno test) without needing the OpenAI call or Deno runtime.
+
+export interface ExperienceEntry {
+  title: string
+  company_location: string
+  dates: string
+  bullets: string[]
+}
+
+export interface EducationEntry {
+  degree: string
+  institution: string
+  dates: string
+}
+
+export interface SectionLabels {
+  summary: string
+  experience: string
+  education: string
+  languages: string
+}
+
+export interface TailoredCv {
+  full_name: string
+  contact_line: string
+  professional_summary: string
+  experience: ExperienceEntry[]
+  education: EducationEntry[]
+  languages: string[]
+  section_labels: SectionLabels
+}
+
+export interface CoverLetter {
+  company_location: string
+  salutation: string
+  intro_paragraph: string
+  body_paragraphs: string[]
+  conclusion_paragraph: string
+  thank_you_line: string
+  closing_phrase: string
+}
+
+export interface RecruiterMessage {
+  greeting: string
+  body: string
+  closing_line: string
+  sign_off: string
+}
+
+export interface RawDocuments {
+  tailored_cv: TailoredCv
+  cover_letter: CoverLetter
+  recruiter_message: RecruiterMessage
+  new_claims_introduced: string[]
+}
+
+// Defensive caps on top of the prompt's own instructions, so the shrink-to-fit
+// pass in renderCvPdf/renderCoverLetterPdf can reliably keep each to a single page.
+export const MAX_EXPERIENCE_ENTRIES = 4
+export const MAX_BULLETS_PER_ENTRY = 4
+export const MAX_EDUCATION_ENTRIES = 2
+export const REQUIRED_BODY_PARAGRAPHS = 3
+
+export const ENGLISH_TELLS = [' the ', ' and ', ' your ', ' that ', ' with ', ' this ', ' for ', ' you ', ' are ', ' have ']
+
+export function looksLikeEnglish(text: string): boolean {
+  const padded = ` ${text.toLowerCase()} `
+  return ENGLISH_TELLS.filter((tell) => padded.includes(tell)).length >= 5
+}
+
+/**
+ * Splits text into sentences on ., !, or ?. Decimal points inside numbers
+ * (e.g. "7.2%") are protected first so a stat like that never gets split
+ * into two fragments ("7." and "2%") — a real bug this app hit, since CVs
+ * routinely cite decimal metrics and the naive split would corrupt them.
+ */
+export function splitSentences(text: string): string[] {
+  const DECIMAL_MARK = '@@DECIMAL@@'
+  const protectedText = text.replace(/(\d)\.(\d)/g, `$1${DECIMAL_MARK}$2`)
+  return (protectedText.match(/[^.!?]+[.!?]+(\s+|$)/g) ?? [protectedText])
+    .map((sentence) => sentence.trim().split(DECIMAL_MARK).join('.'))
+    .filter(Boolean)
+}
+
+/**
+ * Checks whether any name part (first, last, etc, each 3+ letters to avoid
+ * false positives on short/common words) from fullName appears as a whole
+ * word inside text — a signal the letter was written about the candidate in
+ * the third person instead of in their own first-person voice.
+ */
+export function containsName(text: string, fullName: string): boolean {
+  const nameParts = fullName.split(/\s+/).filter((part) => part.length >= 3)
+  return nameParts.some((part) => {
+    const escaped = part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    return new RegExp(`\\b${escaped}\\b`, 'i').test(text)
+  })
+}
+
+/**
+ * Removes every hyphen, en dash, and em dash from model-composed prose — a
+ * hard rule for this app. The prompt already asks for this, but the model
+ * still slips on common compounds (e.g. "problem-solving"), so this sanitizes
+ * the text deterministically instead of relying on reject-and-retry, which
+ * could otherwise fail the whole generation if the model keeps repeating it.
+ */
+export function stripDashes(text: string): string {
+  return text
+    // Date ranges like "2020-2023" or "2020 - 2023" -> "2020 to 2023".
+    .replace(/\b(\d{4})\s*[-–—]\s*(\d{4})\b/g, '$1 to $2')
+    // Compound words: a dash directly between two word characters -> space
+    // (e.g. "ad-hoc" -> "ad hoc", "self-motivated" -> "self motivated").
+    .replace(/(\w)[-–—](?=\w)/g, '$1 ')
+    // Any remaining dash (used as a clause separator) -> comma.
+    .replace(/\s*[-–—]\s*/g, ', ')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/ ,/g, ',')
+    .trim()
+}
+
+// Placeholder patterns that are only ever legitimate inside a feedback
+// "Example: ..." clause, never in a final generated document — this catches
+// the model reusing an illustrative placeholder (e.g. "X%", "X months")
+// straight out of the recruiter identified areas to improve instead of
+// either using a real figure from the CV or omitting it.
+const PLACEHOLDER_PATTERN = /\bX\s?%|\bX\s?(percent|months?|years?|customers?|clients?|hours?|days?|weeks?)\b|\[(number|metric|percentage|team size|product|amount|figure)\]|€\s?X\b|\$\s?X\b/i
+
+export function containsPlaceholder(text: string): boolean {
+  return PLACEHOLDER_PATTERN.test(text)
+}
+
+export function validateDocuments(raw: RawDocuments): RawDocuments {
+  const cv = raw.tailored_cv
+  const letter = raw.cover_letter
+  const message = raw.recruiter_message
+
+  // The model self-reports any fact it introduced beyond the original CV
+  // (new_claims_introduced, required by the schema). Rather than trusting the
+  // "never invent a metric" prompt instructions alone, a non-empty report is
+  // treated as a failed generation and retried — see generateDocuments' loop.
+  const newClaims = Array.isArray(raw.new_claims_introduced)
+    ? raw.new_claims_introduced.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    : []
+  if (newClaims.length > 0) {
+    throw new Error(`Model reported unverified claims not present in the original CV: ${JSON.stringify(newClaims)}`)
+  }
+
+  const sectionLabels: SectionLabels = {
+    summary: (cv?.section_labels?.summary ?? '').trim() || 'Professional Summary',
+    experience: (cv?.section_labels?.experience ?? '').trim() || 'Work Experience',
+    education: (cv?.section_labels?.education ?? '').trim() || 'Education',
+    languages: (cv?.section_labels?.languages ?? '').trim() || 'Languages',
+  }
+
+  const greeting = stripDashes((message?.greeting ?? '').trim())
+  const messageBody = stripDashes((message?.body ?? '').trim())
+  const closingLine = stripDashes((message?.closing_line ?? '').trim())
+  const signOff = (message?.sign_off ?? '').trim() || 'Kind regards,'
+
+  const fullName = (cv?.full_name ?? '').trim()
+  const contactLine = (cv?.contact_line ?? '').trim()
+  // Cap at 3 sentences regardless of what the model returns (the prompt asks
+  // for exactly 3 via the Evidence, Strength, Employer Value framework, but
+  // this guarantees it deterministically rather than trusting compliance).
+  const professionalSummary = splitSentences(
+    stripDashes((cv?.professional_summary ?? '').trim()),
+  )
+    .slice(0, 3)
+    .join(' ')
+  const experience = Array.isArray(cv?.experience) ? cv.experience : []
+  const education = Array.isArray(cv?.education) ? cv.education : []
+
+  const introParagraph = stripDashes((letter?.intro_paragraph ?? '').trim())
+  const conclusionParagraph = stripDashes((letter?.conclusion_paragraph ?? '').trim())
+  const thankYouLine = stripDashes((letter?.thank_you_line ?? '').trim())
+  const bodyParagraphs = (Array.isArray(letter?.body_paragraphs) ? letter.body_paragraphs : [])
+    .map((paragraph) => stripDashes(paragraph.trim()))
+    .filter(Boolean)
+  const salutation = (letter?.salutation ?? '').trim()
+  const closingPhrase = (letter?.closing_phrase ?? '').trim() || 'Yours sincerely,'
+
+  if (!fullName) throw new Error('Tailored CV is missing a name')
+  if (!professionalSummary) throw new Error('Tailored CV is missing a professional summary')
+  if (experience.length === 0) throw new Error('Tailored CV is missing experience')
+  if (!salutation) throw new Error('Cover letter is missing a salutation')
+  if (!introParagraph) throw new Error('Cover letter is missing an introduction')
+  if (bodyParagraphs.length !== REQUIRED_BODY_PARAGRAPHS) {
+    throw new Error('Cover letter must have exactly 3 body paragraphs')
+  }
+  if (!conclusionParagraph) throw new Error('Cover letter is missing a conclusion')
+  if (!thankYouLine) throw new Error('Cover letter is missing a thank you line')
+  if (!greeting) throw new Error('Recruiter message is missing a greeting')
+  if (messageBody.length < 20) throw new Error('Recruiter message output is too short')
+  if (!closingLine) throw new Error('Recruiter message is missing a closing line')
+
+  // The letter must be written in the candidate's own first-person voice, not
+  // a third-person recommendation about them — reject and retry if the model
+  // slipped into naming the candidate anywhere in the letter body.
+  const letterBody = `${introParagraph} ${bodyParagraphs.join(' ')} ${conclusionParagraph}`
+  if (containsName(letterBody, fullName)) {
+    throw new Error('Cover letter is written in third person instead of first person')
+  }
+  if (containsName(messageBody, fullName)) {
+    throw new Error('Recruiter message is written in third person instead of first person')
+  }
+
+  // The recruiter message must stay qualitative, not cite statistics (the
+  // prompt asks for this, but the model can still slip in a number).
+  if (/\d/.test(messageBody)) {
+    throw new Error('Recruiter message contains a statistic instead of a qualitative reason')
+  }
+
+  // This app is English only — a job description or CV in another language
+  // can still pull the model's output toward that language, so verify the
+  // model actually complied rather than trusting the prompt instruction alone.
+  const combinedDocContent = [professionalSummary, introParagraph, ...bodyParagraphs, conclusionParagraph, messageBody].join(' ')
+  if (!looksLikeEnglish(combinedDocContent)) {
+    throw new Error('Document content did not look like English')
+  }
+
+  // A "X%"/"[metric]" style placeholder is only ever legitimate inside a
+  // feedback example, never in a final document the candidate submits
+  // as is — catch the model carrying one over verbatim from the areas to
+  // improve context instead of either using a real CV figure or omitting it.
+  const experienceBulletsText = experience.flatMap((entry) => (Array.isArray(entry.bullets) ? entry.bullets : [])).join(' ')
+  const placeholderCheckText = [professionalSummary, experienceBulletsText, introParagraph, ...bodyParagraphs, conclusionParagraph, messageBody].join(' ')
+  if (containsPlaceholder(placeholderCheckText)) {
+    throw new Error('Document contains an unfilled example placeholder (e.g. "X%") instead of real or omitted content')
+  }
+
+  return {
+    new_claims_introduced: [],
+    tailored_cv: {
+      full_name: fullName,
+      contact_line: contactLine,
+      section_labels: sectionLabels,
+      professional_summary: professionalSummary,
+      experience: experience.slice(0, MAX_EXPERIENCE_ENTRIES).map((entry) => ({
+        title: stripDashes((entry.title ?? '').trim()),
+        company_location: (entry.company_location ?? '').trim(),
+        dates: (entry.dates ?? '').trim(),
+        bullets: (Array.isArray(entry.bullets) ? entry.bullets : [])
+          .map((bullet) => stripDashes(bullet.trim()))
+          .filter(Boolean)
+          .slice(0, MAX_BULLETS_PER_ENTRY),
+      })),
+      education: education.slice(0, MAX_EDUCATION_ENTRIES).map((entry) => ({
+        degree: (entry.degree ?? '').trim(),
+        institution: (entry.institution ?? '').trim(),
+        dates: (entry.dates ?? '').trim(),
+      })),
+      languages: (Array.isArray(cv.languages) ? cv.languages : [])
+        .map((language) => language.trim())
+        .filter(Boolean),
+    },
+    cover_letter: {
+      company_location: (letter?.company_location ?? '').trim(),
+      salutation,
+      intro_paragraph: introParagraph,
+      body_paragraphs: bodyParagraphs,
+      conclusion_paragraph: conclusionParagraph,
+      thank_you_line: thankYouLine,
+      closing_phrase: closingPhrase,
+    },
+    recruiter_message: {
+      greeting,
+      body: messageBody,
+      closing_line: closingLine,
+      sign_off: signOff,
+    },
+  }
+}
