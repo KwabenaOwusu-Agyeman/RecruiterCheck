@@ -10,9 +10,8 @@ const corsHeaders = {
 
 const MAX_CV_CHARS = 15000
 const MAX_ATTEMPTS = 3
-const RATE_LIMIT_PER_HOUR = 5
 const OPENAI_TIMEOUT_MS = 45000
-// Actual enforcement of both limits lives in the reserve_check_analysis
+// Actual enforcement of the daily limit lives in the reserve_check_analysis
 // Postgres function (see migration add_reserve_check_analysis_rpc), which
 // atomically checks and reserves a slot under a row lock — these constants
 // exist here only to build the matching user-facing error messages; keep
@@ -102,24 +101,6 @@ Deno.serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey)
 
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
-    const { count: recentAttempts, error: rateLimitError } = await adminClient
-      .from('analyze_requests')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .gte('created_at', oneHourAgo)
-
-    if (rateLimitError) {
-      return jsonResponse({ error: 'Could not verify rate limit' }, 500)
-    }
-
-    if ((recentAttempts ?? 0) >= RATE_LIMIT_PER_HOUR) {
-      return jsonResponse(
-        { error: 'You have reached the limit of 5 checks per hour. Please try again later.' },
-        429,
-      )
-    }
-
     const { data: check, error: checkError } = await adminClient
       .from('checks')
       .select('*')
@@ -171,8 +152,6 @@ Deno.serve(async (req) => {
       }
       return jsonResponse({ error: 'Could not start this check' }, 400)
     }
-
-    await adminClient.from('analyze_requests').insert({ user_id: user.id })
 
     const { data: cvFile, error: downloadError } = await adminClient.storage
       .from('cvs')
@@ -319,12 +298,20 @@ async function generateFeedback(
   jobDescription: string,
   context: { jobTitle: string | null; companyName: string | null },
 ): Promise<AnalysisResult> {
+  // Detected in its own call that never sees the CV at all — live testing
+  // showed the model would defer to the CV's language when asked to judge
+  // language and write feedback in the same call the CV was present in, even
+  // with explicit prompt instructions telling it not to. Making the CV
+  // structurally absent from this call removes that failure mode entirely,
+  // rather than relying on prompt wording to suppress it.
+  const detectedLanguage = await detectJobDescriptionLanguage(apiKey, jobDescription)
+
   const attemptErrors: string[] = []
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     try {
-      const raw = await callOpenAI(apiKey, cvText, jobDescription, context)
-      return normalizeAnalysis(raw)
+      const raw = await callOpenAI(apiKey, cvText, jobDescription, context, detectedLanguage)
+      return normalizeAnalysis(raw, detectedLanguage)
     } catch (error) {
       attemptErrors.push(error instanceof Error ? error.message : String(error))
     }
@@ -333,17 +320,85 @@ async function generateFeedback(
   throw new Error(`All attempts failed: ${JSON.stringify(attemptErrors)}`)
 }
 
+/**
+ * Determines the job description's language from the job description text
+ * alone — the CV is never included in this call's context, so the model has
+ * no way to defer to the CV's language even accidentally.
+ */
+async function detectJobDescriptionLanguage(apiKey: string, jobDescription: string): Promise<string> {
+  const systemPrompt =
+    'Identify the PRIMARY language of the actual prose in the job description text provided, based only on the literal words and grammar used in the text — ignore isolated foreign-language elements such as company names, software/tool/product names, technical terms, certification names, or short boilerplate sections in another language (e.g. a Dutch job description that mentions "Salesforce", "Project Management", or "Microsoft PowerPoint" is still a Dutch job description). Critically, never infer the language from geography: a job description written entirely in English is still English even if it mentions a company, office, city, or country where a different language is spoken (e.g. "based in our Amsterdam office" or "Berlin, Germany" inside an English sentence does not make the job description Dutch or German) — judge only the actual language the sentences are written in, never the location they describe. Only fall back to a default if the text is genuinely too short (a few words) or is itself a mix of multiple languages with no single clear primary language; in that case, and only that case, return "en". Output a lowercase ISO 639-1 two-letter code (e.g. "en", "nl", "de", "fr", "es", "it", "pt", "pl"), covering any language, not just a fixed small list.'
+
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          temperature: 0,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: `Job description:\n${jobDescription}` },
+          ],
+          response_format: {
+            type: 'json_schema',
+            json_schema: {
+              name: 'job_description_language',
+              strict: true,
+              schema: {
+                type: 'object',
+                properties: {
+                  language: {
+                    type: 'string',
+                    description: 'Lowercase ISO 639-1 two-letter language code of the job description prose, e.g. en, nl, de, fr, es.',
+                  },
+                },
+                required: ['language'],
+                additionalProperties: false,
+              },
+            },
+          },
+        }),
+      })
+
+      if (!response.ok) continue
+
+      const payload = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> }
+      const rawText = payload.choices?.[0]?.message?.content
+      if (!rawText) continue
+
+      const parsed = JSON.parse(rawText) as { language?: string }
+      if (LANGUAGE_CODE_RE.test(parsed.language ?? '')) {
+        return parsed.language as string
+      }
+    } catch {
+      // fall through to next attempt
+    }
+  }
+
+  // Detection should never block the whole analysis — default to English
+  // rather than fail the check over a transient detection-call issue.
+  return 'en'
+}
+
 async function callOpenAI(
   apiKey: string,
   cvText: string,
   jobDescription: string,
   context: { jobTitle: string | null; companyName: string | null },
+  detectedLanguage: string,
 ): Promise<RawAnalysis> {
   // Locked product rule: the job description is the sole authority on output
   // language. No user override exists anywhere in this app — the CV's own
   // language must never win, and this is never surfaced as a setting.
-  const languageInstruction =
-    'First, determine the language field: identify the PRIMARY language of the actual prose in the job description, based only on the literal words and grammar used in the text — ignore isolated foreign-language elements such as company names, software/tool/product names, technical terms, certification names, or short boilerplate sections in another language (e.g. a Dutch job description that mentions "Salesforce", "Project Management", or "Microsoft PowerPoint" is still a Dutch job description). Critically, never infer the language from geography: a job description written entirely in English is still English even if it mentions a company, office, city, or country where a different language is spoken (e.g. "based in our Amsterdam office" or "Berlin, Germany" inside an English sentence does not make the job description Dutch or German) — judge only the actual language the sentences are written in, never the location they describe. The CV being written in a different language than the job description does NOT make the job description ambiguous, no matter how different the two languages are — a job description of a full paragraph or more, clearly written in one consistent language, is never ambiguous regardless of what language the CV happens to be in. For example, an English job description paired with a Dutch CV is still an English job description, and the output language must be English, never Dutch, in that case. Only fall back to the language of the original CV if the job description itself is genuinely too short (a few words) or is itself a mix of multiple languages with no single clear primary language; only if neither yields a clear answer, default to English. Output the language field as a lowercase ISO 639-1 two-letter code (e.g. "en", "nl", "de", "fr", "es", "it", "pt", "pl"), covering any language, not just a fixed small list. Write every strength, improvement, and prospect entirely in that language, using natural, professional wording a native speaker recruiter would actually write, not a literal translation of the English guidance below. Never translate candidate names, company names, brand names, product names, tool names, or established technical/certification terminology where translating them would be misleading (e.g. "Microsoft PowerPoint", "Salesforce", "AWS" stay as is regardless of output language).'
+  // The language itself was already determined in detectJobDescriptionLanguage
+  // (which never saw the CV), so this is a fixed instruction, not a
+  // redetection — this call only needs to write in that language.
+  const languageInstruction = `The language field must be exactly "${detectedLanguage}" — this was already determined from the job description alone, before the CV was even read, so it cannot have been influenced by the CV's language. Do not redetect or override it, no matter what language the CV below is written in.`
 
   const systemPrompt = `You are an experienced, technically rigorous recruiter screening a candidate's application. Evaluate the CV against the job description using this internal rubric, without naming or restating it in your output:
 
@@ -361,7 +416,7 @@ Also populate job_title and company_name: ${
 
 ${languageInstruction}
 
-Whatever language you determined above, EVERY field below (strength_1_finding, strength_1_evidence, strength_2_finding, strength_2_evidence, improvement_1_finding, improvement_1_evidence, improvement_2_finding, improvement_2_evidence, improvement_3_finding, improvement_3_evidence, prospect_1, prospect_2) must be written entirely in that same language, with zero English sentences slipped in, even if that language is less common. Do not default to English once you reach this part.
+The language given to you above ("${detectedLanguage}") is fixed and final, not a suggestion — EVERY field below (strength_1_finding, strength_1_evidence, strength_2_finding, strength_2_evidence, improvement_1_finding, improvement_1_evidence, improvement_2_finding, improvement_2_evidence, improvement_3_finding, improvement_3_evidence, prospect_1, prospect_2) must be written entirely in that language, with zero sentences slipped in from any other language, including the CV's own language when it differs from "${detectedLanguage}". This is the single most commonly violated rule in this task, so re-read every field you write and confirm it is actually in "${detectedLanguage}" before finalizing your answer.
 
 Then write feedback that helps the candidate see their own application the way a recruiter would — direct, specific, evidence-based, technical, and never generic. Each strength and area to improve is split into two separate fields: a "_finding" field and an "_evidence" field. Both are required and both must be non empty — never leave an "_evidence" field as a restatement of its "_finding" field or as a near-duplicate; it must add genuinely new information. The "_finding" field is a 2 to 5 word bolded lead-in naming the pattern or action, e.g. "Strong sales performance" or "Quantify your impact" (no trailing period needed, it will be rendered as a heading). The matching "_evidence" field is one full sentence giving the detail behind it, e.g. "Your record of exceeding sales targets directly supports the role's revenue expectations."
 - strength_1_finding / strength_1_evidence and strength_2_finding / strength_2_evidence: the finding names the underlying pattern that makes the CV effective, the way a recruiter commenting on craft would. Never restate or quote a specific achievement bullet from the CV in the finding — the candidate already knows what they wrote, so quoting it back adds nothing. The evidence states why that pattern specifically matters to this employer for this role (the Employer Value step of the Evidence, Strength, Employer Value framework). If there's genuinely no quantification anywhere, base strengths on other real craft signals present (e.g. clear ownership/scope language, relevant tools named, well-structured bullets) — never invent a pattern that isn't there.
@@ -506,9 +561,7 @@ function looksLikeEnglish(text: string): boolean {
   return ENGLISH_TELLS.filter((tell) => padded.includes(tell)).length >= 5
 }
 
-function normalizeAnalysis(raw: RawAnalysis): AnalysisResult {
-  const detectedLanguage = LANGUAGE_CODE_RE.test(raw.language ?? '') ? raw.language : 'en'
-
+function normalizeAnalysis(raw: RawAnalysis, detectedLanguage: string): AnalysisResult {
   const strengths = [
     combineFinding(raw.strength_1_finding, raw.strength_1_evidence),
     combineFinding(raw.strength_2_finding, raw.strength_2_evidence),
@@ -524,8 +577,19 @@ function normalizeAnalysis(raw: RawAnalysis): AnalysisResult {
   if (improvements.length !== 3) throw new Error('Expected exactly 3 areas to improve')
   if (prospects.length !== 2) throw new Error('Expected exactly 2 prospects')
 
-  if (detectedLanguage !== 'en' && looksLikeEnglish([...strengths, ...improvements, ...prospects].join(' '))) {
-    throw new Error(`Content language did not match detected language "${detectedLanguage}"`)
+  const combinedContent = [...strengths, ...improvements, ...prospects].join(' ')
+  // Two-directional check: catches English leaking into a non-English target
+  // (the original failure mode) and, just as importantly, catches the CV's
+  // own language leaking into English output when detectedLanguage is "en"
+  // (found live: the model was told the language field must be "en" but
+  // still wrote the content in the CV's language, e.g. Dutch, ignoring the
+  // fixed instruction). Both directions are real, observed failure modes,
+  // not hypothetical.
+  if (detectedLanguage !== 'en' && looksLikeEnglish(combinedContent)) {
+    throw new Error(`Content language did not match detected language "${detectedLanguage}" (content looked like English)`)
+  }
+  if (detectedLanguage === 'en' && !looksLikeEnglish(combinedContent)) {
+    throw new Error('Content language did not match detected language "en" (content did not look like English)')
   }
 
   // The model self-reports any candidate fact it introduced beyond the
