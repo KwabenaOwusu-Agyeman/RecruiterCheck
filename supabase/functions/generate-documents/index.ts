@@ -71,7 +71,6 @@ interface RecruiterMessage {
 }
 
 interface RawDocuments {
-  language: string
   tailored_cv: TailoredCv
   cover_letter: CoverLetter
   recruiter_message: RecruiterMessage
@@ -178,10 +177,6 @@ Deno.serve(async (req) => {
       companyName: check.company_name,
       strengths: feedbackRow.strengths as string[],
       improvements: feedbackRow.improvements as string[],
-      // Reuse the language analyze-check already determined for this same
-      // check rather than re-detecting — the two calls must never disagree.
-      // Only checks completed before this feature shipped will lack it.
-      detectedLanguage: check.detected_language,
     })
 
     const cvPdf = await renderCvPdf(docs.tailored_cv)
@@ -189,7 +184,6 @@ Deno.serve(async (req) => {
       docs.cover_letter,
       docs.tailored_cv,
       check.company_name,
-      docs.language,
     )
     const emailForRecruiterPdf = await renderRecruiterEmailPdf(
       docs.recruiter_message,
@@ -297,7 +291,6 @@ async function generateDocuments(
     companyName: string | null
     strengths: string[]
     improvements: string[]
-    detectedLanguage: string | null
   },
 ): Promise<RawDocuments> {
   const attemptErrors: string[] = []
@@ -323,32 +316,20 @@ async function callOpenAI(
     companyName: string | null
     strengths: string[]
     improvements: string[]
-    detectedLanguage: string | null
   },
 ): Promise<RawDocuments> {
-  // Locked product rule: the job description is the sole authority on output
-  // language, exactly as in analyze-check — no user override exists. When a
-  // language was already determined for this check (the normal case), it is
-  // passed through as a fixed instruction rather than redetected, so this
-  // call can never land on a different language than the Feedback already
-  // shown to the candidate.
-  const resolvedLanguage = context.detectedLanguage
-  const languageInstruction = resolvedLanguage
-    ? `The language field must be exactly "${resolvedLanguage}" — this was already determined from the job description in a prior analysis step. Do not redetect or override it, no matter what language the CV below is written in.`
-    : 'First, determine the language field: identify the PRIMARY language of the actual prose in the job description, based only on the literal words and grammar used in the text — ignore isolated foreign-language elements such as company names, software/tool/product names, technical terms, certification names, or short boilerplate sections in another language. Critically, never infer the language from geography: a job description written entirely in English is still English even if it mentions a company, office, city, or country where a different language is spoken — judge only the actual language the sentences are written in, never the location they describe. The CV being written in a different language than the job description does NOT make the job description ambiguous — a job description of a full paragraph or more, clearly written in one consistent language, is never ambiguous regardless of what language the CV happens to be in (e.g. an English job description paired with a Dutch CV is still English, never Dutch). Only fall back to the language of the original CV if the job description itself is genuinely too short or is itself a mix of multiple languages with no single clear primary language; only if neither yields a clear answer, default to English. Output the language field as a lowercase ISO 639-1 two-letter code (e.g. "en", "nl", "de", "fr", "es"), covering any language, not just a fixed small list.'
-
   const systemPrompt = `You are an expert career writer helping a candidate present their strongest possible application for a specific role. Using their CV and the job description, produce three documents. Write as if the candidate is seeing their application the way a recruiter would, and use the recruiter's own assessment (strengths and areas to improve) to sharpen the framing — lean into the strengths, and address the improvement areas constructively without being defensive. Do not invent experience, employers, dates, or credentials that are not in the original CV.
 
-${languageInstruction} Write all three documents entirely in that language, using natural, professional wording a native speaker would actually write in a real application in that language and culture, not a literal translation of the English structure described below (which shows structure and tone only, not fixed wording). This includes every section heading, transition word, greeting, and closing phrase — always substitute the natural equivalent a native speaker of that language would actually write for a job application, following that language's own professional correspondence conventions, not an English template translated word for word. ${resolvedLanguage ? `The language is fixed to "${resolvedLanguage}", not a suggestion` : 'Whatever language you determined'} — EVERY piece of prose you write below (professional_summary, experience bullets, cover letter paragraphs, recruiter message) must be entirely in that language, with zero sentences slipped in from any other language, including the CV's own language when it differs from the target language. This is the single most commonly violated rule in this task, so re-read every piece of prose you write and confirm it is actually in the target language before finalizing your answer — do not default to English once you reach the writing itself. Never translate candidate names, company names, brand names, product names, tool names, or established technical/certification terminology where translating them would be misleading (e.g. "Microsoft PowerPoint", "Salesforce", "AWS" stay as is regardless of output language). Where the target language has a natural convention of writing certain compound words as one solid word rather than space separated (as Dutch and German do), follow that language's own correct spelling rather than forcing an English style separation.
+Write all three documents entirely in English, regardless of what language the job description or CV are written in.
 
 Every document must be usable exactly as generated — the candidate should be able to submit this package to a real application with zero edits. Never write a bracketed or unfilled placeholder (e.g. "[Company Address]", "[Hiring Manager Name]", "[Recruiter's Name]") anywhere in any of the three documents. If a piece of information isn't available, omit it gracefully rather than leaving a placeholder for the candidate to fill in.
 
 1. tailored_cv: a structured, tailored CV for this specific role.
    - full_name: extract exactly from the original CV.
    - contact_line: build this from only the details that actually appear in the original CV (city/country, email, phone, LinkedIn URL), joined with " • ". Never insert a generic label like "LinkedIn URL", "Phone Number", or "Email" as a stand in for a value that is not present. If only some of these details exist in the original CV, include only those and omit the rest entirely.
-   - section_labels: the four standard resume section headings ("Professional Summary", "Work Experience", "Education", "Languages" in English), translated into natural, conventional resume headings in the target language — the words a native speaker actually uses on a real resume in that language, not a literal word for word translation.
+   - section_labels: the four standard resume section headings: "Professional Summary", "Work Experience", "Education", "Languages".
    - professional_summary: required, never empty, and never more than exactly 3 sentences, written in third person without "I". This is entirely about the candidate, never the employer, so never mention the company name or reference "this role" or "this employer" anywhere in it. Follow an Evidence, Strength, Value framework: sentence 1 states concrete evidence of who the candidate is and their relevant experience (role, years, domain); sentence 2 names the core strength or pattern that evidence demonstrates; sentence 3 states the broader professional value or impact that strength delivers, described generically (e.g. "driving measurable revenue growth" or "building trusted client relationships"), not tied to any specific company. Keep each sentence short and direct.
-   - experience: include up to 4 roles from the original CV, most relevant/recent first, favoring relevance to this job but leaning toward including more roles rather than fewer so the page fills out properly, the way a real one page resume does. If the candidate's original CV only has 2 or 3 roles total, include all of them (never invent a role that is not in the original CV) and instead add more depth: more bullets per entry (up to the 4 bullet limit) and more concrete detail drawn from the original CV, so the page still reads as full and substantive rather than sparse. Each entry needs a concise, tailored title, "company, location" (comma separated, not a dash), "dates" (preserve month and year exactly as given in the original CV when the original CV includes the month, e.g. "January 2023 to Present", written naturally in the target language, not just the year), and 3-4 short bullets rewritten to foreground what matters for this role.
+   - experience: include up to 4 roles from the original CV, most relevant/recent first, favoring relevance to this job but leaning toward including more roles rather than fewer so the page fills out properly, the way a real one page resume does. If the candidate's original CV only has 2 or 3 roles total, include all of them (never invent a role that is not in the original CV) and instead add more depth: more bullets per entry (up to the 4 bullet limit) and more concrete detail drawn from the original CV, so the page still reads as full and substantive rather than sparse. Each entry needs a concise, tailored title, "company, location" (comma separated, not a dash), "dates" (preserve month and year exactly as given in the original CV when the original CV includes the month, e.g. "January 2023 to Present", not just the year), and 3-4 short bullets rewritten to foreground what matters for this role.
    - Absolute rule, more important than filling space: every fact in every bullet, including every number, percentage, dollar amount, count, or timeframe, must be traceable to something actually stated in the original CV. When you add depth or an extra bullet to make an entry richer, that added material must be a rephrasing, reprioritization, or elaboration of details already in the original CV text, e.g. surfacing a scope word like "team of 4" or a tool name that was mentioned but not emphasized. It must never be a new number or outcome you composed to sound more impressive, even a plausible sounding one like "achieving a 25% conversion rate" that was never in the source. If the original CV genuinely has no more real detail to draw out for a bullet, keep that bullet as is rather than padding it with an invented figure.
    - Use the recruiter identified areas to improve provided below to actively guide how you rewrite the experience bullets, not just as background context: if an area to improve calls for more quantification, rework the relevant bullets to lead with whatever metrics, numbers, or concrete outcomes already exist in the original CV instead of burying them; if it calls for elaborating on a specific experience entry, give that entry more depth, more bullets (up to the 4 bullet limit), and more concrete detail than the others, drawing out relevant specifics from the original CV that were previously omitted or compressed. The goal is a fuller, richer looking entry for whichever role the feedback points to, not just a reworded one. Never invent a metric, outcome, or detail that is not actually present in the original CV — only re-prioritize, re-word, expand on, and bring forward what is already true.
    - education: only the most relevant 1-2 entries, with "dates" preserving month and year exactly as given in the original CV when the original CV includes the month.
@@ -357,27 +338,27 @@ Every document must be usable exactly as generated — the candidate should be a
    - This CV must fit on a single printed page — be ruthlessly concise and omit anything not relevant to this job. Prioritize relevance over completeness.
 2. cover_letter: a premium, professional cover letter for this role, written by the candidate, to the company, in the candidate's own voice. Write in clear, direct, plain language, no jargon and no filler, confident and positive throughout, exactly what a recruiter wants to read. This is the single most important rule for this document: write every sentence in the first person ("I", "my", "me"), exactly as the candidate would write it themselves. Never refer to the candidate by name or in the third person anywhere in intro_paragraph, body_paragraphs, or conclusion_paragraph (wrong: "Maya is excited to apply... She has..."; right: "I am excited to apply... I have..."). Structured as:
    - company_location: read the entire job description carefully, including the very start and end and any line near the job title or company name, for any statement of the company's location, such as "based in Berlin", "our Amsterdam office", "Remote, Netherlands", a city name next to the job title, or a full address line. If a location is found, extract it: format as "City, Country" when both are given, or just the city (or just the country) when only one is given. Only use an empty string if the job description truly contains no location information anywhere, after a careful full read. Do not invent a location that is not actually stated in the job description.
-   - salutation: the natural formal greeting for a cover letter in the target language, addressed to the company's hiring team. The company name provided below (see "Company:" in the context) may be empty if it could not be determined from the job description — when it is empty, use a generic greeting to the hiring team with no company name in it (e.g. "Dear Hiring Team," in English); when a company name is provided, substitute it in naturally. Never write a bracketed placeholder like "Dear <Company> Hiring Team," and never invent a company name that was not provided.
+   - salutation: a natural formal greeting for a cover letter, addressed to the company's hiring team. The company name provided below (see "Company:" in the context) may be empty if it could not be determined from the job description — when it is empty, use a generic greeting to the hiring team with no company name in it (e.g. "Dear Hiring Team,"); when a company name is provided, substitute it in naturally. Never write a bracketed placeholder like "Dear <Company> Hiring Team," and never invent a company name that was not provided.
    - intro_paragraph: first person opening stating who I am and the role I'm applying for — a strong, direct hook.
    - body_paragraphs: exactly 3 short first person paragraphs, always in this order:
      1. Specific fit for this job's requirements, drawing on one real piece of experience and a concrete result or outcome from the CV.
-     2. A second, different piece of specific fit evidence: another real skill, experience, or quantifiable result from the CV relevant to this job's requirements. Do not repeat the first paragraph's example. Start this paragraph with a natural transition word or phrase in the target language.
-     3. Soft skills and working style, written as genuine, confident personal qualities relevant to being a good hire, for example collaborating well in a team while also working independently, strong time management with a habit of delivering ahead of schedule, and enthusiasm for contributing to team or company culture. Keep this authentic and specific, not generic corporate language. Start this paragraph with a natural transition word or phrase in the target language.
+     2. A second, different piece of specific fit evidence: another real skill, experience, or quantifiable result from the CV relevant to this job's requirements. Do not repeat the first paragraph's example. Start this paragraph with a natural transition word or phrase.
+     3. Soft skills and working style, written as genuine, confident personal qualities relevant to being a good hire, for example collaborating well in a team while also working independently, strong time management with a habit of delivering ahead of schedule, and enthusiasm for contributing to team or company culture. Keep this authentic and specific, not generic corporate language. Start this paragraph with a natural transition word or phrase.
    - conclusion_paragraph: a short, confident closing paragraph with a clear call to action, expressing enthusiasm to discuss the role further. Do not include a final thank you sentence here — that goes in thank_you_line below.
-   - thank_you_line: a single, natural sentence in the target language thanking them for considering the application (e.g. "Thank you for considering my application." in English) — kept separate from conclusion_paragraph so it always renders as its own closing line.
-   - closing_phrase: the natural formal sign off used to close a letter in the target language (e.g. "Yours sincerely," in English) — the candidate's name is added separately as the signature on the next line, so do not include it here.
+   - thank_you_line: a single, natural sentence thanking them for considering the application (e.g. "Thank you for considering my application.") — kept separate from conclusion_paragraph so it always renders as its own closing line.
+   - closing_phrase: a natural formal sign off used to close a letter (e.g. "Yours sincerely,") — the candidate's name is added separately as the signature on the next line, so do not include it here.
    - The letter has no header block (no name, contact details, or address at the top) — it begins directly with the date. Do not include a return address or salutation-block contact info.
    - The whole letter (intro + exactly 3 body paragraphs + conclusion + thank_you_line) must always fit on a single printed page, no exceptions — be concise in every paragraph.
 3. recruiter_message: a short outreach message from the candidate to a recruiter or hiring manager for this role (e.g. via LinkedIn or email), written entirely in the first person ("I"), never referring to the candidate by name or in the third person, split into these separate fields:
-   - greeting: a short greeting in the target language, on its own (e.g. "Hi," in English) — never a bracketed placeholder like "[Recruiter's Name]", since the recruiter's actual name isn't known.
+   - greeting: a short greeting, on its own (e.g. "Hi,") — never a bracketed placeholder like "[Recruiter's Name]", since the recruiter's actual name isn't known.
    - body: exactly 3 short sentences as one block of text, in this order:
      a. State I have applied for this specific role.
      b. Convey genuine high interest, passion, and positivity for the role and company, tied to a real detail from the job description (not generic enthusiasm).
      c. Give exactly one specific, tangible reason I am the right fit, pulled fresh from the original CV and job description. Describe this in qualitative, text only terms, such as a concrete skill combination, relevant domain experience, or a genuine alignment with the company's mission or values. Never cite a number, percentage, or other statistic here, even if the CV has one (numbers belong in the CV itself, not this message). This sentence must be a fresh angle, not a restatement or paraphrase of anything in the recruiter identified strengths provided below — the goal is to make the recruiter want to open the attached CV, not repeat feedback they already have.
-   - closing_line: a brief, warm closing sentence in the target language looking forward to hearing back (e.g. "I look forward to hearing from you." in English).
-   - sign_off: the natural formal sign off used to close a short message in the target language (e.g. "Kind regards," in English) — the candidate's name is added separately as the signature on the next line, so do not include it here.
+   - closing_line: a brief, warm closing sentence looking forward to hearing back (e.g. "I look forward to hearing from you.").
+   - sign_off: a natural formal sign off used to close a short message (e.g. "Kind regards,") — the candidate's name is added separately as the signature on the next line, so do not include it here.
 
-Never use hyphens, en dashes, or em dashes anywhere in any of the three documents (no "-", "–", or "—"). This is an absolute rule with no exceptions. This includes dates ("2020-2023"), job titles, and compound words and phrases that would default to a hyphen in English (such as "well-known", "data-driven", "problem-solving", "self-motivated", "detail-oriented", "cross-functional", "well-being", "ad-hoc", "up-to-date") — always write these as two separate words instead (e.g. "well known", "data driven", "problem solving"), and use a comma or the target language's natural word for "to" in date ranges (e.g. "2020 to 2023" in English). In languages, like Dutch and German, where compound words are conventionally written as a single solid word, use that correct solid spelling instead of an English style hyphenated or space separated version. Before finalizing your answer, reread every sentence you wrote and remove any hyphen, en dash, or em dash you find.
+Never use hyphens, en dashes, or em dashes anywhere in any of the three documents (no "-", "–", or "—"). This is an absolute rule with no exceptions. This includes dates ("2020-2023"), job titles, and compound words and phrases that would default to a hyphen in English (such as "well-known", "data-driven", "problem-solving", "self-motivated", "detail-oriented", "cross-functional", "well-being", "ad-hoc", "up-to-date") — always write these as two separate words instead (e.g. "well known", "data driven", "problem solving"), and use a comma or "to" in date ranges (e.g. "2020 to 2023"). Before finalizing your answer, reread every sentence you wrote and remove any hyphen, en dash, or em dash you find.
 
 Finally, self check your own output and populate new_claims_introduced: a JSON array of every number, percentage, currency amount, count, timeframe, employer name, job title, certification, or skill that appears anywhere in the tailored_cv, cover_letter, or recruiter_message above but is not a direct restatement, reordering, or rephrasing of something that actually appears in the original CV text provided below. This is an honest self audit, not a formality — go back through every bullet, every sentence, and every figure you wrote and verify it against the original CV. If you are not certain a specific detail traces back to the original CV, include it here rather than omitting it. Return an empty array only if, after this careful check, truly nothing you wrote goes beyond what the original CV actually states.`
 
@@ -417,10 +398,6 @@ ${cvText}`
           schema: {
             type: 'object',
             properties: {
-              language: {
-                type: 'string',
-                description: 'Lowercase ISO 639-1 two-letter language code these documents are written in, e.g. en, nl, de, fr, es.',
-              },
               tailored_cv: {
                 type: 'object',
                 properties: {
@@ -519,7 +496,6 @@ ${cvText}`
               },
             },
             required: [
-              'language',
               'tailored_cv',
               'cover_letter',
               'recruiter_message',
@@ -556,8 +532,6 @@ const MAX_BULLETS_PER_ENTRY = 4
 const MAX_EDUCATION_ENTRIES = 2
 const REQUIRED_BODY_PARAGRAPHS = 3
 
-const LANGUAGE_CODE_RE = /^[a-z]{2}$/
-
 const ENGLISH_TELLS = [' the ', ' and ', ' your ', ' that ', ' with ', ' this ', ' for ', ' you ', ' are ', ' have ']
 
 function looksLikeEnglish(text: string): boolean {
@@ -581,11 +555,6 @@ function validateDocuments(raw: RawDocuments): RawDocuments {
     throw new Error(`Model reported unverified claims not present in the original CV: ${JSON.stringify(newClaims)}`)
   }
 
-  // Detection should never block a result — if the model returns something
-  // that isn't a plausible ISO 639-1 code, fall back to English rather than
-  // let an invalid value propagate into the rendering paths below.
-  const docLanguage = LANGUAGE_CODE_RE.test(raw.language ?? '') ? raw.language : 'en'
-
   const sectionLabels: SectionLabels = {
     summary: (cv?.section_labels?.summary ?? '').trim() || 'Professional Summary',
     experience: (cv?.section_labels?.experience ?? '').trim() || 'Work Experience',
@@ -593,9 +562,9 @@ function validateDocuments(raw: RawDocuments): RawDocuments {
     languages: (cv?.section_labels?.languages ?? '').trim() || 'Languages',
   }
 
-  const greeting = stripDashes((message?.greeting ?? '').trim(), docLanguage)
-  const messageBody = stripDashes((message?.body ?? '').trim(), docLanguage)
-  const closingLine = stripDashes((message?.closing_line ?? '').trim(), docLanguage)
+  const greeting = stripDashes((message?.greeting ?? '').trim())
+  const messageBody = stripDashes((message?.body ?? '').trim())
+  const closingLine = stripDashes((message?.closing_line ?? '').trim())
   const signOff = (message?.sign_off ?? '').trim() || 'Kind regards,'
 
   const fullName = (cv?.full_name ?? '').trim()
@@ -604,18 +573,18 @@ function validateDocuments(raw: RawDocuments): RawDocuments {
   // for exactly 3 via the Evidence, Strength, Employer Value framework, but
   // this guarantees it deterministically rather than trusting compliance).
   const professionalSummary = splitSentences(
-    stripDashes((cv?.professional_summary ?? '').trim(), docLanguage),
+    stripDashes((cv?.professional_summary ?? '').trim()),
   )
     .slice(0, 3)
     .join(' ')
   const experience = Array.isArray(cv?.experience) ? cv.experience : []
   const education = Array.isArray(cv?.education) ? cv.education : []
 
-  const introParagraph = stripDashes((letter?.intro_paragraph ?? '').trim(), docLanguage)
-  const conclusionParagraph = stripDashes((letter?.conclusion_paragraph ?? '').trim(), docLanguage)
-  const thankYouLine = stripDashes((letter?.thank_you_line ?? '').trim(), docLanguage)
+  const introParagraph = stripDashes((letter?.intro_paragraph ?? '').trim())
+  const conclusionParagraph = stripDashes((letter?.conclusion_paragraph ?? '').trim())
+  const thankYouLine = stripDashes((letter?.thank_you_line ?? '').trim())
   const bodyParagraphs = (Array.isArray(letter?.body_paragraphs) ? letter.body_paragraphs : [])
-    .map((paragraph) => stripDashes(paragraph.trim(), docLanguage))
+    .map((paragraph) => stripDashes(paragraph.trim()))
     .filter(Boolean)
   const salutation = (letter?.salutation ?? '').trim()
   const closingPhrase = (letter?.closing_phrase ?? '').trim() || 'Yours sincerely,'
@@ -651,33 +620,26 @@ function validateDocuments(raw: RawDocuments): RawDocuments {
     throw new Error('Recruiter message contains a statistic instead of a qualitative reason')
   }
 
-  // Two-directional check. Live testing found two distinct failure modes:
-  // the model can correctly set language: "de" while still writing the
-  // actual prose in English, and separately (when the CV is in a different
-  // language than the job description) it can be told the language is fixed
-  // to "en" yet still write the prose in the CV's own language. Both are
-  // real, observed bugs, not hypothetical.
+  // This app is English only — a job description or CV in another language
+  // can still pull the model's output toward that language, so verify the
+  // model actually complied rather than trusting the prompt instruction alone.
   const combinedDocContent = [professionalSummary, introParagraph, ...bodyParagraphs, conclusionParagraph, messageBody].join(' ')
-  if (docLanguage !== 'en' && looksLikeEnglish(combinedDocContent)) {
-    throw new Error(`Document content language did not match detected language "${docLanguage}" (content looked like English)`)
-  }
-  if (docLanguage === 'en' && !looksLikeEnglish(combinedDocContent)) {
-    throw new Error('Document content language did not match detected language "en" (content did not look like English)')
+  if (!looksLikeEnglish(combinedDocContent)) {
+    throw new Error('Document content did not look like English')
   }
 
   return {
-    language: docLanguage,
     tailored_cv: {
       full_name: fullName,
       contact_line: contactLine,
       section_labels: sectionLabels,
       professional_summary: professionalSummary,
       experience: experience.slice(0, MAX_EXPERIENCE_ENTRIES).map((entry) => ({
-        title: stripDashes((entry.title ?? '').trim(), docLanguage),
+        title: stripDashes((entry.title ?? '').trim()),
         company_location: (entry.company_location ?? '').trim(),
         dates: (entry.dates ?? '').trim(),
         bullets: (Array.isArray(entry.bullets) ? entry.bullets : [])
-          .map((bullet) => stripDashes(bullet.trim(), docLanguage))
+          .map((bullet) => stripDashes(bullet.trim()))
           .filter(Boolean)
           .slice(0, MAX_BULLETS_PER_ENTRY),
       })),
@@ -743,16 +705,10 @@ function containsName(text: string, fullName: string): boolean {
  * the text deterministically instead of relying on reject-and-retry, which
  * could otherwise fail the whole generation if the model keeps repeating it.
  */
-function stripDashes(text: string, language = 'en'): string {
-  // "to" is a reasonable universal fallback for this rare backstop path (the
-  // model is instructed to avoid hyphenated date ranges entirely in the
-  // target language already) — "tot" is kept as a small, harmless accommodation
-  // for Dutch specifically, not a restriction on which languages are supported.
-  const rangeConnector = language === 'nl' ? 'tot' : 'to'
+function stripDashes(text: string): string {
   return text
-    // Date ranges like "2020-2023" or "2020 - 2023" -> "2020 to 2023" (or
-    // "2020 tot 2023" in Dutch).
-    .replace(/\b(\d{4})\s*[-–—]\s*(\d{4})\b/g, `$1 ${rangeConnector} $2`)
+    // Date ranges like "2020-2023" or "2020 - 2023" -> "2020 to 2023".
+    .replace(/\b(\d{4})\s*[-–—]\s*(\d{4})\b/g, '$1 to $2')
     // Compound words: a dash directly between two word characters -> space
     // (e.g. "ad-hoc" -> "ad hoc", "self-motivated" -> "self motivated").
     .replace(/(\w)[-–—](?=\w)/g, '$1 ')
@@ -805,10 +761,6 @@ function layoutCv(
   margin: number,
   scale: number,
 ): { lines: DrawLine[]; totalHeight: number } {
-  // Section headings come from the model itself (translated into the
-  // detected language as part of the same structured response), rather than
-  // a hardcoded lookup table — this is what lets the CV render correctly in
-  // any language the model supports, not just a fixed small list.
   const labels = cv.section_labels
   const maxWidth = pageWidth - margin * 2
   const nameSize = 22 * scale
@@ -938,11 +890,8 @@ async function renderCvPdf(cv: TailoredCv): Promise<Uint8Array> {
   return pdfDoc.save()
 }
 
-function formatLetterDate(language = 'en'): string {
-  // Intl.DateTimeFormat accepts a bare ISO 639-1 language tag directly (it
-  // picks a sensible default region) — no need for a hardcoded per-language
-  // locale table, which is what let this only ever support English/Dutch.
-  return new Intl.DateTimeFormat(language, { day: 'numeric', month: 'long', year: 'numeric' }).format(
+function formatLetterDate(): string {
+  return new Intl.DateTimeFormat('en', { day: 'numeric', month: 'long', year: 'numeric' }).format(
     new Date(),
   )
 }
@@ -956,7 +905,6 @@ function layoutCoverLetter(
   letter: CoverLetter,
   cv: TailoredCv,
   companyName: string | null,
-  language: string,
   fonts: { regular: PDFFont; bold: PDFFont },
   pageWidth: number,
   margin: number,
@@ -1038,7 +986,7 @@ function layoutCoverLetter(
   }
 
   const hasCompanyBlock = Boolean(companyName || letter.company_location)
-  addRight(formatLetterDate(language), metaSize, fonts.regular, BLACK, hasCompanyBlock ? gapHeader : gapMedium, false)
+  addRight(formatLetterDate(), metaSize, fonts.regular, BLACK, hasCompanyBlock ? gapHeader : gapMedium, false)
 
   // Recipient address block: company name, then city and country each on
   // their own line with no blank lines between them (standard block-letter
@@ -1059,9 +1007,8 @@ function layoutCoverLetter(
   addParagraph(letter.intro_paragraph, bodySize, fonts.regular, BLACK, gapSmall)
   letter.body_paragraphs.forEach((paragraph) => addParagraph(paragraph, bodySize, fonts.regular, BLACK, gapSmall))
 
-  // thank_you_line is its own field from the model (in the target language),
-  // not parsed out of conclusion_paragraph via a language-specific regex —
-  // it always renders as its own closing line.
+  // thank_you_line is its own field from the model, not parsed out of
+  // conclusion_paragraph — it always renders as its own closing line.
   addParagraph(letter.conclusion_paragraph, bodySize, fonts.regular, BLACK, gapSmall)
   addParagraph(letter.thank_you_line, bodySize, fonts.regular, BLACK, gapMedium)
 
@@ -1077,7 +1024,6 @@ async function renderCoverLetterPdf(
   letter: CoverLetter,
   cv: TailoredCv,
   companyName: string | null,
-  language: string,
 ): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create()
   const regular = await pdfDoc.embedFont(StandardFonts.Helvetica)
@@ -1094,7 +1040,6 @@ async function renderCoverLetterPdf(
     letter,
     cv,
     companyName,
-    language,
     { regular, bold },
     pageWidth,
     margin,
@@ -1106,7 +1051,6 @@ async function renderCoverLetterPdf(
       letter,
       cv,
       companyName,
-      language,
       { regular, bold },
       pageWidth,
       margin,
@@ -1134,7 +1078,6 @@ async function renderCoverLetterPdf(
         letter,
         cv,
         companyName,
-        language,
         { regular, bold },
         pageWidth,
         margin,
@@ -1150,7 +1093,6 @@ async function renderCoverLetterPdf(
         letter,
         cv,
         companyName,
-        language,
         { regular, bold },
         pageWidth,
         margin,
@@ -1180,11 +1122,7 @@ async function renderCoverLetterPdf(
 
 /**
  * Renders as an actual email/message would read: flush-left, no title
- * heading inside the document. Every piece of text (greeting, body, closing
- * line, sign off) is its own field from the model already in the target
- * language — nothing here is parsed out of a single string via a
- * language-specific pattern, so this works for any language the model
- * supports, not just English/Dutch.
+ * heading inside the document.
  */
 async function renderRecruiterEmailPdf(message: RecruiterMessage, fullName: string): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create()
