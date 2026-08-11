@@ -4,7 +4,7 @@ import mammoth from 'npm:mammoth@1.8.0'
 import { extractText as extractPdfText, getDocumentProxy } from 'npm:unpdf@0.12.1'
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://recruitercheck.vercel.app',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
@@ -16,6 +16,7 @@ const ACCEPTED_TYPES = [
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024
 const MAX_EXTRACTED_CHARS = 15000
 const MIN_EXTRACTED_CHARS = 50
+const PARSE_TIMEOUT_MS = 15000
 const COULD_NOT_READ_MESSAGE = 'Could not read this file. Paste the job description instead.'
 
 Deno.serve(async (req) => {
@@ -86,17 +87,67 @@ Deno.serve(async (req) => {
   }
 })
 
+/**
+ * Checks the file's actual leading bytes against its declared MIME type
+ * rather than trusting the browser-reported Content-Type alone — a renamed
+ * or relabeled file (e.g. an arbitrary binary uploaded with a spoofed
+ * application/pdf type) would otherwise reach the PDF/DOCX parser
+ * unvalidated. text/plain has no reliable signature, so it's skipped.
+ */
+function hasValidMagicBytes(bytes: Uint8Array, mimeType: string): boolean {
+  if (mimeType === 'application/pdf') {
+    // "%PDF-"
+    return (
+      bytes.length >= 5 &&
+      bytes[0] === 0x25 &&
+      bytes[1] === 0x50 &&
+      bytes[2] === 0x44 &&
+      bytes[3] === 0x46 &&
+      bytes[4] === 0x2d
+    )
+  }
+  if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+    // DOCX is a zip archive: local file header "PK\x03\x04"
+    return (
+      bytes.length >= 4 &&
+      bytes[0] === 0x50 &&
+      bytes[1] === 0x4b &&
+      bytes[2] === 0x03 &&
+      bytes[3] === 0x04
+    )
+  }
+  return true
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs),
+    ),
+  ])
+}
+
 async function extractText(file: File, mimeType: string): Promise<string> {
   const arrayBuffer = await file.arrayBuffer()
+  const bytes = new Uint8Array(arrayBuffer)
+
+  if (!hasValidMagicBytes(bytes, mimeType)) {
+    throw new Error('File content does not match its declared type')
+  }
 
   let text: string
 
   if (mimeType === 'application/pdf') {
-    const pdf = await getDocumentProxy(new Uint8Array(arrayBuffer))
-    const result = await extractPdfText(pdf, { mergePages: true })
+    const pdf = await withTimeout(getDocumentProxy(bytes), PARSE_TIMEOUT_MS, 'PDF parsing')
+    const result = await withTimeout(extractPdfText(pdf, { mergePages: true }), PARSE_TIMEOUT_MS, 'PDF text extraction')
     text = Array.isArray(result.text) ? result.text.join('\n') : result.text
   } else if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-    const result = await mammoth.extractRawText({ buffer: Buffer.from(arrayBuffer) })
+    const result = await withTimeout(
+      mammoth.extractRawText({ buffer: Buffer.from(arrayBuffer) }),
+      PARSE_TIMEOUT_MS,
+      'DOCX parsing',
+    )
     text = result.value
   } else {
     text = new TextDecoder('utf-8').decode(arrayBuffer)

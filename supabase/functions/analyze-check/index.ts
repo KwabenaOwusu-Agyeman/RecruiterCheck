@@ -4,13 +4,14 @@ import mammoth from 'npm:mammoth@1.8.0'
 import { extractText as extractPdfText, getDocumentProxy } from 'npm:unpdf@0.12.1'
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://recruitercheck.vercel.app',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
 const MAX_CV_CHARS = 15000
 const MAX_ATTEMPTS = 3
 const OPENAI_TIMEOUT_MS = 45000
+const PARSE_TIMEOUT_MS = 15000
 // Actual enforcement of the daily limit lives in the reserve_check_analysis
 // Postgres function (see migration add_reserve_check_analysis_rpc), which
 // atomically checks and reserves a slot under a row lock — these constants
@@ -244,8 +245,42 @@ async function markFailed(
     .eq('id', checkId)
 }
 
+/**
+ * Checks the downloaded blob's actual leading bytes against the type
+ * extractText is about to dispatch on — defense in depth on top of the
+ * bucket's own allowed_mime_types restriction, in case a row was ever
+ * uploaded with a mismatched declared type. text/plain has no reliable
+ * signature, so it's skipped.
+ */
+function hasValidMagicBytes(bytes: Uint8Array, isPdf: boolean, isDocx: boolean): boolean {
+  if (isPdf) {
+    return (
+      bytes.length >= 5 &&
+      bytes[0] === 0x25 &&
+      bytes[1] === 0x50 &&
+      bytes[2] === 0x44 &&
+      bytes[3] === 0x46 &&
+      bytes[4] === 0x2d
+    )
+  }
+  if (isDocx) {
+    return bytes.length >= 4 && bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04
+  }
+  return true
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs),
+    ),
+  ])
+}
+
 async function extractText(file: Blob, fileName: string): Promise<string> {
   const arrayBuffer = await file.arrayBuffer()
+  const bytes = new Uint8Array(arrayBuffer)
 
   // Dispatch on the downloaded blob's own Content-Type (set by Supabase
   // Storage from the mimetype it recorded at upload, which the "cvs" bucket
@@ -262,14 +297,22 @@ async function extractText(file: Blob, fileName: string): Promise<string> {
     (!mimeType && lowerName.endsWith('.docx'))
   const isTxt = mimeType === 'text/plain' || (!mimeType && lowerName.endsWith('.txt'))
 
+  if (!hasValidMagicBytes(bytes, isPdf, isDocx)) {
+    throw new Error('File content does not match its declared type')
+  }
+
   let text: string
 
   if (isPdf) {
-    const pdf = await getDocumentProxy(new Uint8Array(arrayBuffer))
-    const result = await extractPdfText(pdf, { mergePages: true })
+    const pdf = await withTimeout(getDocumentProxy(bytes), PARSE_TIMEOUT_MS, 'PDF parsing')
+    const result = await withTimeout(extractPdfText(pdf, { mergePages: true }), PARSE_TIMEOUT_MS, 'PDF text extraction')
     text = Array.isArray(result.text) ? result.text.join('\n') : result.text
   } else if (isDocx) {
-    const result = await mammoth.extractRawText({ buffer: Buffer.from(arrayBuffer) })
+    const result = await withTimeout(
+      mammoth.extractRawText({ buffer: Buffer.from(arrayBuffer) }),
+      PARSE_TIMEOUT_MS,
+      'DOCX parsing',
+    )
     text = result.value
   } else if (isTxt) {
     // Pasted-CV path: the client saves pasted text as a plain-text file.

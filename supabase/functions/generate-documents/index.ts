@@ -6,7 +6,7 @@ import { PDFDocument, PDFFont, StandardFonts, rgb } from 'npm:pdf-lib@1.17.1'
 import { extractText as extractPdfText, getDocumentProxy } from 'npm:unpdf@0.12.1'
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://recruitercheck.vercel.app',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
@@ -14,6 +14,10 @@ const MAX_CV_CHARS = 15000
 const MAX_ATTEMPTS = 3
 const SIGNED_URL_TTL_SECONDS = 300
 const OPENAI_TIMEOUT_MS = 45000
+const PARSE_TIMEOUT_MS = 15000
+const RATE_LIMIT_BUCKET = 'generate-documents'
+const RATE_LIMIT_MAX = 10
+const RATE_LIMIT_WINDOW_SECONDS = 3600
 
 // Brand blue (tailwind.config.js `blue`), reused so generated PDFs match the app.
 const BLUE = rgb(0x19 / 255, 0x4a / 255, 0x9f / 255)
@@ -116,6 +120,29 @@ Deno.serve(async (req) => {
     }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey)
+
+    // Each call re-runs a full OpenAI generation and re-parses the CV, so an
+    // unbounded number of calls per user is a real cost/availability
+    // concern, not just a theoretical one — cap it before doing any of that
+    // work.
+    const { data: rateLimitAllowed, error: rateLimitError } = await adminClient.rpc(
+      'check_and_record_rate_limit',
+      {
+        p_user_id: user.id,
+        p_bucket: RATE_LIMIT_BUCKET,
+        p_limit: RATE_LIMIT_MAX,
+        p_window_seconds: RATE_LIMIT_WINDOW_SECONDS,
+      },
+    )
+
+    if (rateLimitError) {
+      console.error('generate-documents: rate limit check failed', rateLimitError)
+      return jsonResponse({ error: 'Could not process this request. Please try again.' }, 500)
+    }
+
+    if (!rateLimitAllowed) {
+      return jsonResponse({ error: 'Too many document generation requests. Please try again later.' }, 429)
+    }
 
     const { data: profile, error: profileError } = await adminClient
       .from('profiles')
@@ -248,8 +275,41 @@ async function signedUrl(client: ReturnType<typeof createClient>, path: string):
   return data.signedUrl
 }
 
+/**
+ * Checks the downloaded blob's actual leading bytes against the type
+ * extractText is about to dispatch on — see the matching comment in
+ * analyze-check/index.ts. text/plain has no reliable signature, so it's
+ * skipped.
+ */
+function hasValidMagicBytes(bytes: Uint8Array, isPdf: boolean, isDocx: boolean): boolean {
+  if (isPdf) {
+    return (
+      bytes.length >= 5 &&
+      bytes[0] === 0x25 &&
+      bytes[1] === 0x50 &&
+      bytes[2] === 0x44 &&
+      bytes[3] === 0x46 &&
+      bytes[4] === 0x2d
+    )
+  }
+  if (isDocx) {
+    return bytes.length >= 4 && bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04
+  }
+  return true
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs),
+    ),
+  ])
+}
+
 async function extractText(file: Blob, fileName: string): Promise<string> {
   const arrayBuffer = await file.arrayBuffer()
+  const bytes = new Uint8Array(arrayBuffer)
 
   // Dispatch on the downloaded blob's own Content-Type (set by Supabase
   // Storage from the mimetype it recorded at upload, which the "cvs" bucket
@@ -263,14 +323,22 @@ async function extractText(file: Blob, fileName: string): Promise<string> {
     (!mimeType && lowerName.endsWith('.docx'))
   const isTxt = mimeType === 'text/plain' || (!mimeType && lowerName.endsWith('.txt'))
 
+  if (!hasValidMagicBytes(bytes, isPdf, isDocx)) {
+    throw new Error('File content does not match its declared type')
+  }
+
   let text: string
 
   if (isPdf) {
-    const pdf = await getDocumentProxy(new Uint8Array(arrayBuffer))
-    const result = await extractPdfText(pdf, { mergePages: true })
+    const pdf = await withTimeout(getDocumentProxy(bytes), PARSE_TIMEOUT_MS, 'PDF parsing')
+    const result = await withTimeout(extractPdfText(pdf, { mergePages: true }), PARSE_TIMEOUT_MS, 'PDF text extraction')
     text = Array.isArray(result.text) ? result.text.join('\n') : result.text
   } else if (isDocx) {
-    const result = await mammoth.extractRawText({ buffer: Buffer.from(arrayBuffer) })
+    const result = await withTimeout(
+      mammoth.extractRawText({ buffer: Buffer.from(arrayBuffer) }),
+      PARSE_TIMEOUT_MS,
+      'DOCX parsing',
+    )
     text = result.value
   } else if (isTxt) {
     text = new TextDecoder('utf-8').decode(arrayBuffer)

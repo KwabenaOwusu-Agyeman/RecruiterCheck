@@ -1,7 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://recruitercheck.vercel.app',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
@@ -36,8 +36,13 @@ Deno.serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey)
 
-    // Best-effort: cancel any active Stripe subscription before wiping the
-    // local record of it, so the user isn't billed after deleting their account.
+    // Cancel any active Stripe subscription before wiping the local record
+    // of it, so the user isn't billed after deleting their account. This
+    // must block deletion on a genuine failure — silently deleting the
+    // account while a subscription is still active would leave it billing
+    // an account the user can no longer access or manage. A 404
+    // (resource_missing — already cancelled, or never existed) is not a
+    // failure and does not block deletion.
     if (stripeSecretKey) {
       const { data: subscription } = await adminClient
         .from('subscriptions')
@@ -46,8 +51,9 @@ Deno.serve(async (req) => {
         .maybeSingle()
 
       if (subscription?.stripe_subscription_id) {
+        let stripeResponse: Response
         try {
-          await fetch(
+          stripeResponse = await fetch(
             `https://api.stripe.com/v1/subscriptions/${subscription.stripe_subscription_id}`,
             {
               method: 'DELETE',
@@ -55,7 +61,31 @@ Deno.serve(async (req) => {
             },
           )
         } catch (stripeError) {
-          console.error('Could not cancel Stripe subscription:', stripeError)
+          console.error('delete-account: Stripe cancellation request failed', {
+            userId: user.id,
+            message: stripeError instanceof Error ? stripeError.message : String(stripeError),
+          })
+          return jsonResponse(
+            { error: 'Could not cancel your subscription. Please try again or contact support.' },
+            502,
+          )
+        }
+
+        if (!stripeResponse.ok) {
+          const errorBody = await stripeResponse.json().catch(() => null)
+          const isAlreadyGone =
+            stripeResponse.status === 404 || errorBody?.error?.code === 'resource_missing'
+
+          if (!isAlreadyGone) {
+            console.error('delete-account: Stripe cancellation failed', {
+              userId: user.id,
+              status: stripeResponse.status,
+            })
+            return jsonResponse(
+              { error: 'Could not cancel your subscription. Please try again or contact support.' },
+              502,
+            )
+          }
         }
       }
     }

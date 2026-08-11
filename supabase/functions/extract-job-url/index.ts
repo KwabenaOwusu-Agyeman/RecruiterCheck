@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 import { parseHTML } from 'npm:linkedom@0.16.11'
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://recruitercheck.vercel.app',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
@@ -11,6 +11,9 @@ const MAX_RESPONSE_BYTES = 3 * 1024 * 1024
 const MAX_EXTRACTED_CHARS = 15000
 const MIN_EXTRACTED_CHARS = 100
 const MAX_REDIRECTS = 5
+const RATE_LIMIT_BUCKET = 'extract-job-url'
+const RATE_LIMIT_MAX = 20
+const RATE_LIMIT_WINDOW_SECONDS = 3600
 const COULD_NOT_READ_MESSAGE =
   "We couldn't read this job posting. Paste the job description instead."
 
@@ -31,6 +34,7 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
@@ -43,6 +47,30 @@ Deno.serve(async (req) => {
 
     if (userError || !user) {
       return jsonResponse({ error: 'Unauthorized' }, 401)
+    }
+
+    const adminClient = createClient(supabaseUrl, serviceRoleKey)
+
+    // Each call fetches an arbitrary external URL server-side — bound how
+    // often one user can trigger that (bandwidth, and it's the one path
+    // that reaches out to the open internet on the user's behalf).
+    const { data: rateLimitAllowed, error: rateLimitError } = await adminClient.rpc(
+      'check_and_record_rate_limit',
+      {
+        p_user_id: user.id,
+        p_bucket: RATE_LIMIT_BUCKET,
+        p_limit: RATE_LIMIT_MAX,
+        p_window_seconds: RATE_LIMIT_WINDOW_SECONDS,
+      },
+    )
+
+    if (rateLimitError) {
+      console.error('extract-job-url: rate limit check failed', rateLimitError)
+      return jsonResponse({ error: COULD_NOT_READ_MESSAGE }, 500)
+    }
+
+    if (!rateLimitAllowed) {
+      return jsonResponse({ error: 'Too many requests. Please try again later.' }, 429)
     }
 
     const { url: rawUrl } = (await req.json()) as ExtractRequest
