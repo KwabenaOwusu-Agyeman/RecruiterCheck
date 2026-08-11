@@ -13,6 +13,7 @@ import { LandingPage } from '@/pages/LandingPage'
 import { MyChecksPage } from '@/pages/MyChecksPage'
 import { NewCheckPage } from '@/pages/NewCheckPage'
 import { PrivacyPage } from '@/pages/PrivacyPage'
+import { ResetPasswordPage } from '@/pages/ResetPasswordPage'
 import { TermsPage } from '@/pages/TermsPage'
 
 export function App() {
@@ -27,6 +28,7 @@ export function App() {
           </Route>
 
           <Route path="auth/callback" element={<AuthCallbackPage />} />
+          <Route path="auth/reset-password" element={<ResetPasswordPage />} />
           <Route path="terms" element={<TermsPage />} />
           <Route path="privacy" element={<PrivacyPage />} />
           <Route path="disclaimer" element={<DisclaimerPage />} />

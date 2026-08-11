@@ -57,7 +57,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
+      // A PASSWORD_RECOVERY session lets the user call updateUser() to set a
+      // new password — it must not grant access to the rest of the app via
+      // ProtectedRoute before they've actually done that. ResetPasswordPage
+      // has its own listener to pick this session up for that one purpose.
+      if (event === 'PASSWORD_RECOVERY') return
+
       setSession(nextSession)
 
       if (nextSession?.user.id) {
