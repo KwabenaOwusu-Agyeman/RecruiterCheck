@@ -10,6 +10,7 @@ const FETCH_TIMEOUT_MS = 10000
 const MAX_RESPONSE_BYTES = 3 * 1024 * 1024
 const MAX_EXTRACTED_CHARS = 15000
 const MIN_EXTRACTED_CHARS = 100
+const MAX_REDIRECTS = 5
 const COULD_NOT_READ_MESSAGE =
   "We couldn't read this job posting. Paste the job description instead."
 
@@ -57,20 +58,7 @@ Deno.serve(async (req) => {
 
     let response: Response
     try {
-      response = await fetchWithTimeout(
-        safeUrl.toString(),
-        {
-          // A plain, honest identification — not spoofing a real browser to
-          // get around bot detection. If a site blocks this, that's a
-          // legitimate failure, not something to work around.
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (compatible; RecruiterCheckBot/1.0; +https://recruitercheck.vercel.app)',
-            Accept: 'text/html',
-          },
-          redirect: 'follow',
-        },
-        FETCH_TIMEOUT_MS,
-      )
+      response = await fetchWithSsrfGuard(safeUrl, FETCH_TIMEOUT_MS)
     } catch (error) {
       console.error('extract-job-url: fetch failed', {
         message: error instanceof Error ? error.message : String(error),
@@ -117,8 +105,13 @@ Deno.serve(async (req) => {
  * Validates the URL is http/https and not pointed at a private, loopback, or
  * link-local address (including the common cloud metadata endpoint) — basic
  * SSRF protection for a function that fetches an arbitrary user-supplied
- * URL server-side. This is a reasonable baseline, not exhaustive protection
- * against every DNS-rebinding technique.
+ * URL server-side. Checks both A and AAAA records (a hostname resolving only
+ * to a private IPv6 address previously slipped through, since only A records
+ * were resolved) and unwraps IPv4-mapped IPv6 literals (::ffff:a.b.c.d)
+ * before applying the same private/reserved-range check used for plain IPv4.
+ * This is a reasonable baseline, not exhaustive protection against every
+ * DNS-rebinding technique — see fetchWithSsrfGuard for why a single
+ * resolve-then-fetch isn't enough on its own.
  */
 async function resolveSafeUrl(rawUrl: string): Promise<URL | null> {
   let url: URL
@@ -140,7 +133,11 @@ async function resolveSafeUrl(rawUrl: string): Promise<URL | null> {
   }
 
   try {
-    const records = await Deno.resolveDns(hostname, 'A')
+    const [aRecords, aaaaRecords] = await Promise.all([
+      Deno.resolveDns(hostname, 'A').catch(() => []),
+      Deno.resolveDns(hostname, 'AAAA').catch(() => []),
+    ])
+    const records = [...aRecords, ...aaaaRecords]
     if (records.length === 0 || records.some((ip) => isPrivateOrReservedIp(ip))) {
       return null
     }
@@ -157,8 +154,39 @@ function isLiteralIpAddress(host: string): boolean {
   return /^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.includes(':')
 }
 
-function isPrivateOrReservedIp(host: string): boolean {
-  if (host === '::1') return true
+/**
+ * URL.hostname wraps a literal IPv6 address in brackets (e.g. "[::1]"), but
+ * DNS-resolved addresses from Deno.resolveDns come back bare (e.g. "::1") —
+ * this function is called with both shapes, so every comparison below needs
+ * the bracket-free, lowercased form or a bracketed literal like "[fe80::1]"
+ * silently never matches any of the checks and sails through as "safe".
+ */
+function stripBrackets(host: string): string {
+  const lower = host.toLowerCase()
+  return lower.startsWith('[') && lower.endsWith(']') ? lower.slice(1, -1) : lower
+}
+
+function isPrivateOrReservedIp(rawHost: string): boolean {
+  const host = stripBrackets(rawHost)
+
+  // IPv4-mapped IPv6, either dotted-decimal (::ffff:169.254.169.254) or the
+  // hex-group form the platform's URL/DNS implementations actually produce
+  // (::ffff:a9fe:a9fe) — unwrap either to the embedded IPv4 address and
+  // re-check that, so this can't be used to smuggle a private IPv4 target
+  // past the IPv6-shaped checks below.
+  const mappedDotted = host.match(/^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/)
+  if (mappedDotted) {
+    return isPrivateOrReservedIp(mappedDotted[1])
+  }
+  const mappedHex = host.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/)
+  if (mappedHex) {
+    const hi = parseInt(mappedHex[1], 16)
+    const lo = parseInt(mappedHex[2], 16)
+    const ipv4 = `${(hi >> 8) & 0xff}.${hi & 0xff}.${(lo >> 8) & 0xff}.${lo & 0xff}`
+    return isPrivateOrReservedIp(ipv4)
+  }
+
+  if (host === '::1' || host === '::') return true
   if (host.startsWith('fe80:') || host.startsWith('fc') || host.startsWith('fd')) return true
 
   const parts = host.split('.').map(Number)
@@ -172,8 +200,74 @@ function isPrivateOrReservedIp(host: string): boolean {
   if (a === 172 && b >= 16 && b <= 31) return true
   if (a === 192 && b === 168) return true
   if (a === 169 && b === 254) return true
+  if (a === 100 && b >= 64 && b <= 127) return true // carrier-grade NAT, RFC 6598
   if (a === 0) return true
   return false
+}
+
+/**
+ * Fetches with the same SSRF guard applied to every hop, not just the
+ * initial URL: a public URL that itself passes resolveSafeUrl could still
+ * 3xx-redirect to an internal address (e.g. the cloud metadata endpoint),
+ * and `redirect: 'follow'` would previously have followed it unchecked.
+ * Manually walks the redirect chain instead, re-resolving and
+ * re-validating each Location header before fetching it, capped at
+ * MAX_REDIRECTS hops and a single overall deadline shared across every hop
+ * (rather than a fresh per-hop timeout, which a long redirect chain could
+ * otherwise use to multiply the effective time budget).
+ */
+async function fetchWithSsrfGuard(initialUrl: URL, timeoutMs: number): Promise<Response> {
+  const deadline = Date.now() + timeoutMs
+  let currentUrl = initialUrl
+
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
+    const remaining = deadline - Date.now()
+    if (remaining <= 0) {
+      throw new Error(`Request timed out after ${timeoutMs}ms`)
+    }
+
+    const response = await fetchWithTimeout(
+      currentUrl.toString(),
+      {
+        headers: {
+          // A plain, honest identification — not spoofing a real browser to
+          // get around bot detection. If a site blocks this, that's a
+          // legitimate failure, not something to work around.
+          'User-Agent': 'Mozilla/5.0 (compatible; RecruiterCheckBot/1.0; +https://recruitercheck.vercel.app)',
+          Accept: 'text/html',
+        },
+        redirect: 'manual',
+      },
+      remaining,
+    )
+
+    const isRedirect = response.status >= 300 && response.status < 400
+    const location = response.headers.get('location')
+
+    if (!isRedirect || !location) {
+      return response
+    }
+
+    // Body of a redirect response is never used — discard it so the
+    // underlying connection can be released before the next hop.
+    await response.body?.cancel()
+
+    let nextUrl: URL
+    try {
+      nextUrl = new URL(location, currentUrl)
+    } catch {
+      throw new Error('Redirect target is not a valid URL')
+    }
+
+    const safeNextUrl = await resolveSafeUrl(nextUrl.toString())
+    if (!safeNextUrl) {
+      throw new Error('Redirect target rejected by SSRF guard')
+    }
+
+    currentUrl = safeNextUrl
+  }
+
+  throw new Error(`Too many redirects (max ${MAX_REDIRECTS})`)
 }
 
 async function fetchWithTimeout(
