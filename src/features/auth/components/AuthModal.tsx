@@ -166,7 +166,7 @@ export function AuthModal() {
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-[#05050D]/50 p-[16px] sm:p-[24px]"
+      className="fixed inset-0 z-50 overflow-y-auto bg-[#05050D]/50 px-[12px] py-[16px] sm:p-[24px]"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
           close()
@@ -188,7 +188,7 @@ export function AuthModal() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="auth-modal-title"
-          className="relative flex max-h-[calc(100vh-2rem)] w-full max-w-[400px] flex-col overflow-y-auto rounded-2xl border border-navy bg-surface p-[22px] shadow-lg sm:p-[26px]"
+          className="relative flex max-h-[calc(100vh-2rem)] w-full max-w-[400px] flex-col overflow-y-auto rounded-2xl border border-navy bg-surface p-[16px] shadow-lg sm:p-[26px]"
         >
         <button
           type="button"
@@ -209,11 +209,14 @@ export function AuthModal() {
           </svg>
         </button>
 
-        <div className="mb-[24px] pr-12">
-          <h1 id="auth-modal-title" className="text-2xl font-bold tracking-tight text-text-primary">
+        <div className="mb-[16px] pr-12 sm:mb-[24px]">
+          <h1
+            id="auth-modal-title"
+            className="text-[20px] font-bold tracking-tight text-text-primary sm:text-2xl"
+          >
             {title}
           </h1>
-          <p className="mt-[6px] text-sm text-text-secondary">
+          <p className="mt-[6px] text-[13px] text-text-secondary sm:text-sm">
             {mode === 'sign-up'
               ? 'Create your free account to start running recruiter checks.'
               : 'Welcome back. Continue where you left off.'}
@@ -224,7 +227,7 @@ export function AuthModal() {
           <Button
             type="button"
             variant="secondary"
-            className="!h-12 w-full gap-2.5 !rounded-full text-base font-semibold"
+            className="h-[44px] w-full gap-2.5 !rounded-full text-base font-semibold sm:!h-12"
             disabled={loadingProvider !== null}
             onClick={() => void handleOAuth('google', signInWithGoogle)}
           >
@@ -236,7 +239,7 @@ export function AuthModal() {
             <Button
               type="button"
               variant="secondary"
-              className="!h-12 w-full gap-2.5 !rounded-full text-base font-semibold"
+              className="h-[44px] w-full gap-2.5 !rounded-full text-base font-semibold sm:!h-12"
               disabled={loadingProvider !== null}
               onClick={() => void handleOAuth('linkedin', signInWithLinkedIn)}
             >
@@ -246,7 +249,7 @@ export function AuthModal() {
           ) : null}
         </div>
 
-        <div className="mb-[20px] mt-[24px] flex items-center gap-3">
+        <div className="mb-[14px] mt-[16px] flex items-center gap-3 sm:mb-[20px] sm:mt-[24px]">
           <div className="h-px flex-1 bg-border" />
           <span className="text-xs font-semibold tracking-wide text-text-secondary">
             OR CONTINUE WITH EMAIL
@@ -254,7 +257,7 @@ export function AuthModal() {
           <div className="h-px flex-1 bg-border" />
         </div>
 
-        <form onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-[16px]">
+        <form onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-[14px] sm:gap-[16px]">
           <div className="space-y-[6px]">
             <Label htmlFor="auth-modal-email">Email address</Label>
             <div className="relative">
@@ -269,7 +272,7 @@ export function AuthModal() {
                 placeholder="you@example.com"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                className="!h-12 pl-10"
+                className="h-[44px] pl-10 text-base sm:!h-12 sm:text-sm"
               />
             </div>
           </div>
@@ -297,7 +300,7 @@ export function AuthModal() {
               placeholder="••••••••"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="!h-12"
+              className="h-[44px] text-base sm:!h-12 sm:text-sm"
             />
           </div>
 
@@ -313,14 +316,14 @@ export function AuthModal() {
                 placeholder="••••••••"
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
-                className="!h-12"
+                className="h-[44px] text-base sm:!h-12 sm:text-sm"
               />
             </div>
           ) : null}
 
           <Button
             type="submit"
-            className="mt-[4px] !h-12 w-full !rounded-full text-base font-semibold"
+            className="mt-[4px] h-[44px] w-full !rounded-full text-base font-semibold sm:!h-12"
             disabled={loadingProvider !== null || !email.trim() || !password}
           >
             {loadingProvider === 'email' ? submitLoadingLabel : submitLabel}
@@ -330,7 +333,7 @@ export function AuthModal() {
         {message ? <Alert variant="success" className="mt-3">{message}</Alert> : null}
         {error ? <Alert variant="error" className="mt-3">{error}</Alert> : null}
 
-        <p className="mt-[18px] text-center text-sm text-text-secondary">
+        <p className="mt-[14px] text-center text-[13px] text-text-secondary sm:mt-[18px] sm:text-sm">
           {mode === 'sign-in' ? "Don't have an account?" : 'Already have an account?'}{' '}
           <button
             type="button"

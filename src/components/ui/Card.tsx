@@ -15,9 +15,13 @@ export function Card({ children, className }: CardProps) {
 }
 
 export function CardHeader({ children, className }: CardProps) {
-  return <div className={cn('border-b border-border px-6 py-4', className)}>{children}</div>
+  return (
+    <div className={cn('border-b border-border px-[16px] py-[12px] sm:px-6 sm:py-4', className)}>
+      {children}
+    </div>
+  )
 }
 
 export function CardContent({ children, className }: CardProps) {
-  return <div className={cn('px-6 py-5', className)}>{children}</div>
+  return <div className={cn('px-[16px] py-[14px] sm:px-6 sm:py-5', className)}>{children}</div>
 }

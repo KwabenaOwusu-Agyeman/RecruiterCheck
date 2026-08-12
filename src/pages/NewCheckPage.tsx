@@ -396,7 +396,7 @@ export function NewCheckPage() {
         <div className="mt-3">
           <PageHeader title="New Check" />
         </div>
-        <div className="mx-auto max-w-md rounded-xl border border-navy bg-surface p-8 text-center">
+        <div className="mx-auto max-w-md rounded-xl border border-navy bg-surface p-[20px] text-center sm:p-8">
           <h2 className="text-base font-semibold text-text-primary">
             You've used your free Check
           </h2>
@@ -422,7 +422,7 @@ export function NewCheckPage() {
         <div className="mt-3">
           <PageHeader title="New Check" />
         </div>
-        <div className="mx-auto max-w-md rounded-xl border border-navy bg-surface p-8 text-center">
+        <div className="mx-auto max-w-md rounded-xl border border-navy bg-surface p-[20px] text-center sm:p-8">
           <h2 className="text-base font-semibold text-text-primary">
             You've reached today's check limit
           </h2>
@@ -449,7 +449,7 @@ export function NewCheckPage() {
         />
       </div>
 
-      <div className="mx-auto max-w-2xl space-y-6 rounded-xl border border-navy bg-surface p-6">
+      <div className="mx-auto max-w-2xl space-y-[16px] rounded-xl border border-navy bg-surface p-[16px] sm:space-y-6 sm:p-6">
         {captureError ? <Alert variant="error">{captureError}</Alert> : null}
 
         <div className="space-y-2">
@@ -667,7 +667,7 @@ export function NewCheckPage() {
           <p className="text-xs text-error">Could not save your changes</p>
         ) : null}
 
-        <div className="flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-end">
+        <div className="flex flex-col gap-3 border-t border-border pt-[16px] sm:flex-row sm:items-center sm:justify-end sm:pt-6">
           <div className="flex flex-col items-start gap-2 sm:items-end">
             <Button
               type="button"

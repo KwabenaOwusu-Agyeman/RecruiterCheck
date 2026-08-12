@@ -14,22 +14,18 @@ export function ExampleCheckTeaser() {
 
   return (
     <section className="border-b border-border bg-surface">
-      <Container className="py-12">
+      <Container className="py-[32px] sm:py-12">
         <div className="mx-auto max-w-xl text-center">
-          <h2 className="text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl">
+          <h2 className="text-[20px] font-semibold tracking-tight text-text-primary sm:text-3xl">
             See RecruiterCheck in Action
           </h2>
-          <p className="mt-3 text-text-secondary">
+          <p className="mt-3 text-[14px] text-text-secondary sm:text-base">
             See what recruiter-style feedback looks like before checking your own application.
           </p>
         </div>
 
-        <div className="mx-auto mt-8 max-w-2xl">
+        <div className="mx-auto mt-[24px] max-w-2xl sm:mt-8">
           <Card className="relative overflow-hidden shadow-lg">
-            <span className="absolute right-4 top-4 rounded-full border border-navy bg-surface px-2.5 py-1 text-xs font-semibold text-text-secondary">
-              Example
-            </span>
-
             <CardHeader className="px-6 py-4">
               <p className="text-sm font-semibold text-text-primary">{EXAMPLE_JOB_TITLE}</p>
               <p className="text-sm font-semibold text-navy">{EXAMPLE_COMPANY_NAME}</p>
@@ -46,7 +42,7 @@ export function ExampleCheckTeaser() {
                 {getScoreLabel(score)}
               </p>
 
-              <div className="mt-5 grid gap-5 sm:grid-cols-2">
+              <div className="mt-[16px] grid gap-[16px] sm:mt-5 sm:gap-5">
                 <div>
                   <h3 className="text-sm font-semibold text-text-primary">Strengths</h3>
                   <ul className="mt-2 space-y-3">

@@ -272,7 +272,7 @@ export function AccountPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-account-title"
-            className="w-full max-w-sm rounded-2xl border border-navy bg-surface p-6 shadow-lg"
+            className="w-full max-w-sm rounded-2xl border border-navy bg-surface p-[16px] shadow-lg sm:p-6"
           >
             <h2 id="delete-account-title" className="text-base font-semibold text-text-primary">
               Delete your account?
@@ -281,7 +281,7 @@ export function AccountPage() {
               Your account, checks, uploaded CVs, generated documents, and associated data will be
               permanently deleted. This cannot be undone.
             </p>
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="mt-[16px] flex justify-end gap-3 sm:mt-6">
               <Button
                 type="button"
                 variant="secondary"

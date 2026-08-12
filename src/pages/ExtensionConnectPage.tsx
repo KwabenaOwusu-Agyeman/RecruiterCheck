@@ -52,7 +52,7 @@ export function ExtensionConnectPage() {
         description="Let the RecruiterCheck browser extension send job postings you're viewing straight into your account."
       />
 
-      <div className="mt-6 rounded-xl border border-navy bg-surface p-8 text-center">
+      <div className="mt-[16px] rounded-xl border border-navy bg-surface p-[16px] text-center sm:mt-6 sm:p-8">
         {!validRedirect ? (
           <Alert variant="error">
             This connection request is invalid. Please reopen the RecruiterCheck extension and try
@@ -66,7 +66,11 @@ export function ExtensionConnectPage() {
               This will let the extension submit job postings to your RecruiterCheck account. It
               never sees your password.
             </p>
-            <Button className="mt-6" onClick={() => void handleConnect()} disabled={connecting}>
+            <Button
+              className="mt-[16px] sm:mt-6"
+              onClick={() => void handleConnect()}
+              disabled={connecting}
+            >
               {connecting ? 'Connecting...' : 'Connect RecruiterCheck'}
             </Button>
             {error ? (
