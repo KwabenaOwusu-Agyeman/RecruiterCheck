@@ -317,6 +317,9 @@ export function AccountPage() {
         <Link to="/privacy" className="transition-colors hover:text-text-primary">
           Privacy Policy
         </Link>
+        <Link to="/cookies" className="transition-colors hover:text-text-primary">
+          Cookie Policy
+        </Link>
         <Link to="/disclaimer" className="transition-colors hover:text-text-primary">
           Disclaimer
         </Link>

@@ -28,6 +28,9 @@ export function PublicFooter() {
             <Link to="/privacy" className={linkClassName}>
               Privacy Policy
             </Link>
+            <Link to="/cookies" className={linkClassName}>
+              Cookie Policy
+            </Link>
             <Link to="/disclaimer" className={linkClassName}>
               Disclaimer
             </Link>

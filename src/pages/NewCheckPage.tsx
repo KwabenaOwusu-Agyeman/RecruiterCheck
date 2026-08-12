@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { PageHeader } from '@/components/ui/Badge'
 import { Textarea } from '@/components/ui/Textarea'
+import { AutoDeleteNotice } from '@/components/checks/AutoDeleteNotice'
 import {
   ACCEPTED_CV_TYPES,
   ACCEPTED_JOB_FILE_TYPES,
@@ -585,6 +586,7 @@ export function NewCheckPage() {
                 onChange={(event) => void handleJobFileChange(event.target.files)}
               />
               <p className="text-xs text-text-secondary">PDF, DOCX, or TXT &middot; Maximum 10 MB</p>
+              <AutoDeleteNotice />
               {extractingJobFile ? (
                 <p className="text-sm text-text-secondary">Reading file...</p>
               ) : jobFileName ? (
@@ -640,6 +642,7 @@ export function NewCheckPage() {
                 onChange={(event) => void handleFileChange(event.target.files)}
               />
               <p className="text-xs text-text-secondary">PDF or DOCX &middot; Maximum 10 MB</p>
+              <AutoDeleteNotice />
             </>
           ) : (
             <>
@@ -652,6 +655,7 @@ export function NewCheckPage() {
               <p className="text-xs text-text-secondary">
                 Paste your CV as plain text — saves automatically as you type.
               </p>
+              <AutoDeleteNotice />
             </>
           )}
 

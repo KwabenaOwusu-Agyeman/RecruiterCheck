@@ -6,6 +6,7 @@ import { PublicLayout } from '@/layouts/PublicLayout'
 import { AccountPage } from '@/pages/AccountPage'
 import { AuthCallbackPage } from '@/pages/AuthCallbackPage'
 import { BillingPage } from '@/pages/BillingPage'
+import { CookiePage } from '@/pages/CookiePage'
 import { DisclaimerPage } from '@/pages/DisclaimerPage'
 import { ExampleCheckPage } from '@/pages/ExampleCheckPage'
 import { ExtensionConnectPage } from '@/pages/ExtensionConnectPage'
@@ -34,6 +35,7 @@ export function App() {
           <Route path="auth/reset-password" element={<ResetPasswordPage />} />
           <Route path="terms" element={<TermsPage />} />
           <Route path="privacy" element={<PrivacyPage />} />
+          <Route path="cookies" element={<CookiePage />} />
           <Route path="disclaimer" element={<DisclaimerPage />} />
           <Route path="faq" element={<FaqPage />} />
 

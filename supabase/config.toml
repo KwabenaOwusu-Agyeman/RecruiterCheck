@@ -37,3 +37,6 @@ verify_jwt = true
 
 [functions.create-checkout-session]
 verify_jwt = true
+
+[functions.purge-expired-uploads]
+verify_jwt = true
