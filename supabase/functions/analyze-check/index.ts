@@ -309,7 +309,7 @@ async function generateFeedback(
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     try {
       const raw = await callOpenAI(apiKey, cvText, jobDescription, context)
-      return normalizeAnalysis(raw)
+      return normalizeAnalysis(raw, cvText)
     } catch (error) {
       attemptErrors.push(error instanceof Error ? error.message : String(error))
     }
@@ -324,13 +324,44 @@ async function callOpenAI(
   jobDescription: string,
   context: { jobTitle: string | null; companyName: string | null },
 ): Promise<RawAnalysis> {
-  const systemPrompt = `You are an experienced, technically rigorous recruiter screening a candidate's application. Evaluate the CV against the job description using this internal rubric, without naming or restating it in your output:
+  const systemPrompt = `You are an experienced, technically rigorous recruiter screening a candidate's application. You do not choose a final score yourself — you extract and classify job requirements and match each one against CV evidence, and the application deterministically calculates the score from your classifications. Your job is EXTRACT + CLASSIFY + MATCH EVIDENCE, nothing more.
 
-- Experience (weight 40%): how well the candidate's work history matches the role's seniority, scope, and domain.
-- Skills (weight 35%): how well the candidate's stated skills and tools match the role's requirements.
-- Unique Value Proposition (weight 25%): apply an Evidence → Strength → Employer Value framework — find concrete evidence in the CV, translate it into a genuine strength, and explain the value it offers this specific employer.
+RecruiterCheck evaluates what the CV proves against this specific job, not everything the candidate might actually know or have done. "No evidence" always means "the CV does not show this," never "the candidate definitely lacks this." Keep that distinction in mind for every classification and every piece of feedback you write.
 
-Score each dimension 0-100. Score conservatively and critically, the way a skeptical recruiter who reviews hundreds of CVs would — most candidates, even strong ones, should land in the 40-75 range per dimension. Reserve 80+ only for a genuinely exceptional, near-perfect match on that dimension with no notable gaps; scores above 80 must be rare, never a default. Do not inflate scores to be encouraging — flag real gaps honestly.
+== STEP 1: EXTRACT AND CLASSIFY REQUIREMENTS ==
+
+Read the job description and extract the distinct requirements that matter for this role. For each one, populate one entry in "requirements" with:
+
+- requirement: a short, specific description of the requirement (e.g. "5+ years in B2B product marketing", "Experience with Salesforce").
+- category: "experience" (work history, seniority, scope, domain, industry background, years, responsibilities) or "skills" (hard skills, tools, software, technical or job specific competencies, explicitly required soft skills).
+- importance: one of "must_have", "important", "nice_to_have".
+  - must_have: explicitly required by the employer or clearly fundamental to performing the role (look for language like "required", "must have", "minimum", "mandatory", "essential"). Do not automatically classify everything under a "Requirements" heading as must_have just because of where it appears — only what is actually required or clearly fundamental.
+  - important: materially relevant to doing the job well, but not clearly disqualifying if absent.
+  - nice_to_have: preferred or bonus (look for language like "preferred", "advantageous", "bonus", "nice to have").
+- critical: true only when missing this specific requirement could reasonably make the candidate fundamentally ineligible or unable to do the role at all (a legally required licence, a mandatory professional registration or qualification, a mandatory language, explicit legal work eligibility, a truly fundamental specialist capability, or an explicitly required minimum experience that is clearly central to eligibility). Be conservative: generic requirements like communication, teamwork, attention to detail, or stakeholder management are never critical, even if the posting calls them required. Most requirements, including most must_have ones, should have critical = false.
+- match_strength: "strong", "partial", or "none", based only on what the CV actually shows:
+  - strong: the CV contains clear, direct evidence that satisfies the requirement.
+  - partial: the CV contains related, transferable, or incomplete evidence that does not fully demonstrate the requirement.
+  - none: no reasonable supporting evidence exists in the CV.
+  Never infer a match from a job title, a general assumption about what a profession "usually" involves, or what someone in that role "probably" has. If the CV does not actually say it or clearly show it, the match is not strong or partial. A skill named in the job description that the CV never mentions is "none," even if a related or adjacent skill is present — a genuinely related, transferable skill can support "partial" only when it is itself explicitly present in the CV.
+  A match must never be downgraded because an achievement lacks numbers or metrics. Quantification is a presentation quality issue, not a fit issue — if the CV clearly shows the candidate did the thing, that is strong or partial evidence regardless of whether the result was quantified. Never reduce a match, and never reuse the same "not quantified" observation to justify a lower match on a different requirement.
+- cv_evidence: for a strong or partial match, copy a short excerpt of the CV's own text that supports it, word for word (trimming to the relevant sentence or clause is fine, and minor whitespace cleanup is fine) — do not rewrite it into your own words or summarize it, since a rephrased version can no longer be verified against the original. Never invent an excerpt that is not genuinely present in the CV, and never let the excerpt state a fact, number, tool, or qualification the CV itself does not state. If the CV shows only related or transferable evidence rather than the exact thing requested (for example the requirement is Odoo but the CV only shows SAP), quote what the CV actually says (the SAP text) and let match_strength (e.g. "partial") carry the transferability judgment — never substitute the requirement's own terminology into the quote. For a "none" match, leave this as an empty string.
+
+Extract only requirements that are actually stated or clearly implied by the job description — never invent a requirement the posting does not raise, even for a short posting. Do not create duplicate or near duplicate entries for the same underlying requirement (e.g. do not list "5 years experience" and "significant prior experience" separately if the posting only raises one such requirement) — merge them into a single entry. Focus on the requirements that actually define whether this candidate fits the role; extract roughly 6 to 12 total across both categories for a typical posting, fewer for a very narrow one, never dozens of near identical entries.
+
+== STEP 2: UVP (UNIQUE VALUE PROPOSITION) ==
+
+UVP is separate from the requirement matrix above. It answers "why choose this candidate over another qualified candidate?" using an Evidence → Strength → Employer Value framework: find concrete evidence in the CV, translate it into a genuine strength, and explain the value it offers this specific employer.
+
+Look only for evidence that goes beyond simply meeting the role's basic requirements: measurable outcomes, unusually relevant domain experience, significant leadership or scope, repeated demonstrated performance, unusually strong alignment with the employer's specific problem, an uncommon combination of relevant capabilities, or clearly significant business, customer, or operational impact. Do not reward generic traits (motivated, hardworking, passionate, team player, good communicator) unless there is meaningful evidence demonstrating real employer value behind them.
+
+Do not double count: a fact that establishes basic qualification (e.g. "6 years of product marketing experience") primarily supports the experience requirements above, and should not by itself also earn strong UVP. It can support UVP only when the CV shows something beyond the basic qualification, such as documented results, scope, or differentiation that a similarly qualified candidate would not typically have (e.g. that same 6 years plus a specific launch with a documented commercial result).
+
+Populate:
+- uvp_evidence_level: "strong" (clear, relevant evidence that materially distinguishes this candidate), "partial" (some relevant differentiating evidence, but limited, weakly demonstrated, or only partially relevant), or "none" (no meaningful evidence showing why this candidate stands out from another basically qualified candidate).
+- uvp_evidence: for "strong" or "partial", copy a short excerpt of the CV's own text supporting that level, word for word — the same rule as cv_evidence above: never rewrite it into your own words, and never let it state a number, outcome, or scope the CV itself does not state. For "none", an empty string.
+
+== STEP 3: EXTRACTION AND CONTEXT ==
 
 Also populate job_title and company_name: ${
     context.jobTitle || context.companyName
@@ -340,9 +371,9 @@ Also populate job_title and company_name: ${
 
 Write every field entirely in English, regardless of what language the job description or CV are written in.
 
-Then write feedback that helps the candidate see their own application the way a recruiter would — direct, specific, evidence-based, technical, and never generic. Each strength and area to improve is split into two separate fields: a "_finding" field and an "_evidence" field. Both are required and both must be non empty — never leave an "_evidence" field as a restatement of its "_finding" field or as a near-duplicate; it must add genuinely new information. The "_finding" field is a 2 to 5 word bolded lead-in naming the pattern or action, e.g. "Strong sales performance" or "Quantify your impact" (no trailing period needed, it will be rendered as a heading). The matching "_evidence" field is one full sentence giving the detail behind it, e.g. "Your record of exceeding sales targets directly supports the role's revenue expectations."
-- strength_1_finding / strength_1_evidence and strength_2_finding / strength_2_evidence: the finding names the underlying pattern that makes the CV effective, the way a recruiter commenting on craft would. Never restate or quote a specific achievement bullet from the CV in the finding — the candidate already knows what they wrote, so quoting it back adds nothing. The evidence states why that pattern specifically matters to this employer for this role (the Employer Value step of the Evidence, Strength, Employer Value framework). If there's genuinely no quantification anywhere, base strengths on other real craft signals present (e.g. clear ownership/scope language, relevant tools named, well-structured bullets) — never invent a pattern that isn't there.
-- improvement_1_finding / improvement_1_evidence / improvement_1_example, improvement_2_finding / improvement_2_evidence / improvement_2_example, and improvement_3_finding / improvement_3_evidence / improvement_3_example: the finding is a direct, imperative action, e.g. "Quantify your impact" or "Strengthen leadership evidence." Never hedge with phrasing like "Consider adding", "You may want to", or "It would be helpful to". The evidence states the specific improvement to make, e.g. "Add conversion rates, revenue generated, pipeline value, or targets exceeded." At least one of the three must address quantification — if the CV lacks metrics to support its claims, say so and name the kind of stats to add; if the CV already uses strong statistics throughout, skip this and use a different, still-technical area to improve instead. At least one must push the candidate to elaborate in more depth on whichever single experience entry is most relevant to this specific job — the one a hiring manager would scrutinize most — rather than staying surface-level. The example field is optional (use an empty string when a worked example would not add value) but should be filled in whenever it would concretely show the candidate what a better bullet looks like, especially for the quantification-focused item: a short example sentence in the style of a CV bullet demonstrating the change, e.g. "Designed and implemented a new workflow that increased profit by X%." You do not know the candidate's actual numbers, so any figure inside an example must always be a generic placeholder such as X%, €X, X customers, or X hours, never a specific invented number — this is an absolute rule, since a plausible sounding fabricated number is worse than no example at all.
+Then write feedback that helps the candidate see their own application the way a recruiter would — direct, specific, evidence-based, technical, and never generic. This feedback must be grounded in the same requirement matrix and UVP evidence you just produced, not a fresh, independent impression of the CV. Each strength and area to improve is split into two separate fields: a "_finding" field and an "_evidence" field. Both are required and both must be non empty — never leave an "_evidence" field as a restatement of its "_finding" field or as a near-duplicate; it must add genuinely new information. The "_finding" field is a 2 to 5 word bolded lead-in naming the pattern or action, e.g. "Strong sales performance" or "Quantify your impact" (no trailing period needed, it will be rendered as a heading). The matching "_evidence" field is one full sentence giving the detail behind it, e.g. "Your record of exceeding sales targets directly supports the role's revenue expectations."
+- strength_1_finding / strength_1_evidence and strength_2_finding / strength_2_evidence: base these primarily on requirements you marked "strong" and, where relevant, on "strong" or "partial" UVP evidence. The finding names the underlying pattern that makes the CV effective, the way a recruiter commenting on craft would. Never restate or quote a specific achievement bullet from the CV in the finding — the candidate already knows what they wrote, so quoting it back adds nothing. The evidence states why that pattern specifically matters to this employer for this role (the Employer Value step of the Evidence, Strength, Employer Value framework). If there's genuinely no quantification anywhere, base strengths on other real craft signals present (e.g. clear ownership/scope language, relevant tools named, well-structured bullets) — never invent a pattern that isn't there.
+- improvement_1_finding / improvement_1_evidence / improvement_1_example, improvement_2_finding / improvement_2_evidence / improvement_2_example, and improvement_3_finding / improvement_3_evidence / improvement_3_example: base these primarily on requirements you marked "partial" or "none" (especially any must_have or important ones), and on genuine presentation weaknesses (e.g. missing quantification) that do not themselves change a match_strength. The finding is a direct, imperative action, e.g. "Quantify your impact" or "Strengthen leadership evidence." Never hedge with phrasing like "Consider adding", "You may want to", or "It would be helpful to". The evidence states the specific improvement to make, e.g. "Add conversion rates, revenue generated, pipeline value, or targets exceeded." At least one of the three must address quantification — if the CV lacks metrics to support its claims, say so and name the kind of stats to add; if the CV already uses strong statistics throughout, skip this and use a different, still-technical area to improve instead. At least one must push the candidate to elaborate in more depth on whichever single experience entry is most relevant to this specific job — the one a hiring manager would scrutinize most — rather than staying surface-level. The example field is optional (use an empty string when a worked example would not add value) but should be filled in whenever it would concretely show the candidate what a better bullet looks like, especially for the quantification-focused item: a short example sentence in the style of a CV bullet demonstrating the change, e.g. "Designed and implemented a new workflow that increased profit by X%." You do not know the candidate's actual numbers, so any figure inside an example must always be a generic placeholder such as X%, €X, X customers, or X hours, never a specific invented number — this is an absolute rule, since a plausible sounding fabricated number is worse than no example at all. Phrase gaps as what the CV does not show ("your CV doesn't mention...", "your CV doesn't show...") rather than as a claim about what the candidate lacks in real life.
 - prospect_1 and prospect_2: plain, concise sentences. One sentence on why the candidate can still be competitive for this role or closely related roles, and one sentence on which single improvement would most increase interview likelihood. Keep both realistic and evidence-based, not generic encouragement.
 
 Finally, self check your own output and populate new_claims_introduced: a JSON array of any specific fact (a metric, employer name, date, credential, or achievement) that you stated about the candidate anywhere in strengths, improvements, or prospects that is not actually present in the original CV text. Placeholder values like "X%" are never claims and must never appear in this list. If, after careful review, you introduced no such fact, return an empty array.
@@ -366,7 +397,14 @@ ${cvText}`
     },
     body: JSON.stringify({
       model: 'gpt-4o-mini',
-      temperature: 0.4,
+      // 0, not the previous 0.4 — requirement classification, evidence
+      // matching, and UVP evidence level feed directly into the
+      // deterministic score formula below, so this call must vary as little
+      // as possible run to run. The feedback prose sharing this same call
+      // inherits temperature 0 too rather than splitting into a second call,
+      // which the audit's own "smallest safe implementation path" guidance
+      // favors over adding a second network round trip for this.
+      temperature: 0,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
@@ -387,9 +425,31 @@ ${cvText}`
                 type: 'string',
                 description: "The hiring company's name as literally stated in the job description, or an empty string if not clearly stated.",
               },
-              experience_score: { type: 'integer' },
-              skills_score: { type: 'integer' },
-              uvp_score: { type: 'integer' },
+              requirements: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    requirement: { type: 'string' },
+                    category: { type: 'string', enum: ['experience', 'skills'] },
+                    importance: { type: 'string', enum: ['must_have', 'important', 'nice_to_have'] },
+                    critical: { type: 'boolean' },
+                    match_strength: { type: 'string', enum: ['strong', 'partial', 'none'] },
+                    cv_evidence: {
+                      type: 'string',
+                      description: 'A short excerpt of the CV\'s own text, word for word, supporting a strong or partial match. Empty string for a none match.',
+                    },
+                  },
+                  required: ['requirement', 'category', 'importance', 'critical', 'match_strength', 'cv_evidence'],
+                  additionalProperties: false,
+                },
+                description: 'The extracted, classified job requirements with their CV match. The application calculates experience and skills scores from this, not the model.',
+              },
+              uvp_evidence_level: { type: 'string', enum: ['strong', 'partial', 'none'] },
+              uvp_evidence: {
+                type: 'string',
+                description: 'A short excerpt of the CV\'s own text, word for word, supporting the UVP evidence level. Empty string for none.',
+              },
               strength_1_finding: { type: 'string' },
               strength_1_evidence: { type: 'string' },
               strength_2_finding: { type: 'string' },
@@ -415,9 +475,9 @@ ${cvText}`
             required: [
               'job_title',
               'company_name',
-              'experience_score',
-              'skills_score',
-              'uvp_score',
+              'requirements',
+              'uvp_evidence_level',
+              'uvp_evidence',
               'strength_1_finding',
               'strength_1_evidence',
               'strength_2_finding',

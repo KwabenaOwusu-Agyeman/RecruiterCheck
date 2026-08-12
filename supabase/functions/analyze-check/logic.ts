@@ -1,12 +1,26 @@
 // Pure, network-free logic split out of index.ts so it can be unit tested
 // (via `npx tsx`/Deno test) without needing the OpenAI call or Deno runtime.
 
+export type RequirementCategory = 'experience' | 'skills'
+export type RequirementImportance = 'must_have' | 'important' | 'nice_to_have'
+export type MatchStrength = 'strong' | 'partial' | 'none'
+export type UvpEvidenceLevel = 'strong' | 'partial' | 'none'
+
+export interface RawRequirement {
+  requirement: string
+  category: RequirementCategory
+  importance: RequirementImportance
+  critical: boolean
+  match_strength: MatchStrength
+  cv_evidence: string
+}
+
 export interface RawAnalysis {
   job_title: string
   company_name: string
-  experience_score: number
-  skills_score: number
-  uvp_score: number
+  requirements: RawRequirement[]
+  uvp_evidence_level: UvpEvidenceLevel
+  uvp_evidence: string
   strength_1_finding: string
   strength_1_evidence: string
   strength_2_finding: string
@@ -104,7 +118,255 @@ export function clampScore(value: number): number {
   return Math.max(0, Math.min(100, value))
 }
 
-export function normalizeAnalysis(raw: RawAnalysis): AnalysisResult {
+const IMPORTANCE_WEIGHT: Record<RequirementImportance, number> = {
+  must_have: 3,
+  important: 2,
+  nice_to_have: 1,
+}
+
+const MATCH_VALUE: Record<MatchStrength, number> = {
+  strong: 1,
+  partial: 0.5,
+  none: 0,
+}
+
+const UVP_LEVEL_SCORE: Record<UvpEvidenceLevel, number> = {
+  strong: 100,
+  partial: 50,
+  none: 0,
+}
+
+// No requirement was extracted for this category (e.g. a purely skills-led
+// posting with nothing that reads as an experience requirement, or vice
+// versa). There is nothing to divide by, and treating an empty category as
+// either 0 or 100 would be an invented judgement the model never made — so
+// this falls back to a documented neutral midpoint rather than a computed
+// extreme.
+const NEUTRAL_CATEGORY_FALLBACK = 50
+
+/**
+ * Deterministic category score: each requirement contributes its importance
+ * weight (must_have=3, important=2, nice_to_have=1) multiplied by its match
+ * value (strong=1, partial=0.5, none=0). The LLM only classifies and
+ * matches; this function does all of the arithmetic.
+ */
+export function calculateCategoryScore(requirements: RawRequirement[], category: RequirementCategory): number {
+  const filtered = requirements.filter((r) => r.category === category)
+  if (filtered.length === 0) return NEUTRAL_CATEGORY_FALLBACK
+
+  let matched = 0
+  let max = 0
+  for (const r of filtered) {
+    const weight = IMPORTANCE_WEIGHT[r.importance]
+    max += weight
+    matched += weight * MATCH_VALUE[r.match_strength]
+  }
+  if (max === 0) return NEUTRAL_CATEGORY_FALLBACK
+
+  return clampScore(Math.round((matched / max) * 100))
+}
+
+export function calculateUvpScore(level: UvpEvidenceLevel): number {
+  return UVP_LEVEL_SCORE[level]
+}
+
+/**
+ * A requirement missing a genuinely critical must-have (a licence, mandatory
+ * registration, legal eligibility, etc — never a generic soft skill) caps
+ * the final score below the "Needs Improvement" band regardless of how well
+ * every other requirement matched, because that single gap can make the
+ * candidate fundamentally ineligible. This never runs on a normal missing
+ * must-have (critical=false) — that already pulls its category score down
+ * through the weighting above, nothing more.
+ */
+const CRITICAL_GAP_CAP = 49
+
+export function applyCriticalGapCap(score: number, requirements: RawRequirement[]): number {
+  const hasCriticalGap = requirements.some(
+    (r) => r.importance === 'must_have' && r.critical === true && r.match_strength === 'none',
+  )
+  return hasCriticalGap ? Math.min(score, CRITICAL_GAP_CAP) : score
+}
+
+// ---------------------------------------------------------------------------
+// Evidence grounding
+//
+// Live validation of the previous, overlap-only design found a confirmed
+// false positive: a fabricated "$10M annual revenue" claim passed because
+// enough real, generic words (managed, enterprise, budgets, team,
+// coordination...) rode along with it. Percentage-overlap alone cannot tell
+// "this is the same fact in different words" apart from "this shares some
+// vocabulary but invents a specific detail" — so it is no longer the primary
+// check. The design below is source-anchoring first: an excerpt that is
+// (after light normalization) literally present in the CV cannot, by
+// construction, contain a fact the CV doesn't. Only when evidence is NOT a
+// source-anchored excerpt does it fall through to explicit checks for
+// invented numbers/money and invented named tools/qualifications — and it
+// must clear BOTH before the old overlap heuristic is even consulted, now
+// only as a narrow, last-resort sanity check that can no longer single
+// handedly wave through a fabricated specific claim.
+// ---------------------------------------------------------------------------
+
+const STOPWORD_TOKENS = new Set([
+  'that', 'this', 'with', 'from', 'have', 'been', 'were', 'their', 'they',
+  'your', 'you', 'which', 'into', 'over', 'than', 'then', 'also', 'across',
+  'role', 'years', 'year', 'about', 'when', 'where', 'while', 'during',
+  'each', 'these', 'those', 'such', 'more', 'most', 'some', 'only', 'just',
+])
+
+function significantWords(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter((word) => word.length >= 4 && !STOPWORD_TOKENS.has(word))
+}
+
+// Loose enough to tolerate the punctuation/casing differences the brief
+// explicitly asks for (a quote copied with a trailing period trimmed, or
+// re-cased, still counts), strict enough that it is a genuine substring
+// check, not a similarity score.
+function normalizeForMatch(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9%€$£.\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+// Primary check: is this evidence an actual excerpt of the CV, not a
+// generated paraphrase? A source anchored excerpt cannot introduce a fact
+// that isn't in the CV, because it IS the CV's own text.
+function isSourceAnchored(evidence: string, cvText: string): boolean {
+  const normalizedEvidence = normalizeForMatch(evidence)
+  if (!normalizedEvidence) return false
+  return normalizeForMatch(cvText).includes(normalizedEvidence)
+}
+
+const CURRENCY_SUFFIX: Record<string, string> = {
+  thousand: 'k', million: 'm', billion: 'b', k: 'k', m: 'm', b: 'b',
+}
+
+// Canonical, comparable forms for the quantified claims a piece of text
+// makes, so "15 percent" and "15%" (or "€1.5 million" and "€1.5M") compare
+// equal. Deliberately narrow — percentages and currency shorthand — rather
+// than a general number parser.
+export function extractQuantifiedClaims(text: string): Set<string> {
+  const lower = text.toLowerCase()
+  const claims = new Set<string>()
+
+  for (const m of lower.matchAll(/(\d+(?:\.\d+)?)\s?(%|percent)/g)) {
+    claims.add(`${m[1]}%`)
+  }
+  for (const m of lower.matchAll(/([€$£])\s?(\d+(?:\.\d+)?)\s?(k|m|b|thousand|million|billion)?/g)) {
+    const suffix = m[3] ? CURRENCY_SUFFIX[m[3]] : ''
+    claims.add(`${m[1]}${m[2]}${suffix}`)
+  }
+  return claims
+}
+
+// Catches spelled out amounts ("ten million dollars in annual revenue") that
+// the digit based patterns above can't parse into a comparable value — this
+// is the exact shape of the confirmed false positive from live validation.
+// Blunt on purpose: if evidence uses any money/percentage language at all
+// and the CV uses none anywhere, the evidence is presumed unsupported rather
+// than attempting full numeric parsing of spelled out figures.
+const FINANCIAL_LANGUAGE = /[$€£]|%|\bpercent\b|\bdollars?\b|\beuros?\b|\bpounds?\b|\brevenue\b|\bmillion\b|\bbillion\b|\bthousand\b/i
+
+export function hasUnsupportedNumericClaim(evidence: string, cvText: string): boolean {
+  const evidenceClaims = extractQuantifiedClaims(evidence)
+  const cvClaims = extractQuantifiedClaims(cvText)
+  for (const claim of evidenceClaims) {
+    if (!cvClaims.has(claim)) return true
+  }
+  return FINANCIAL_LANGUAGE.test(evidence) && !FINANCIAL_LANGUAGE.test(cvText)
+}
+
+// A named tool, qualification, certification, language level, or similar
+// proper noun introduced in evidence must actually appear in the CV.
+// Acronyms (SAP, PMP, AWS, B2) are checked in any position; Title Case words
+// are checked everywhere except the sentence-initial token, since a capital
+// first letter is just English sentence casing, not evidence of a proper
+// noun — but an acronym in that same position (e.g. "PMP certified...") is
+// still checked, since acronyms don't get capitalized by sentence position.
+export function extractNamedEntityCandidates(text: string): string[] {
+  const tokens = [...text.matchAll(/[A-Za-z]+/g)].map((m) => m[0])
+  const candidates: string[] = []
+  tokens.forEach((token, index) => {
+    if (/^[A-Z]{2,5}$/.test(token)) {
+      candidates.push(token)
+      return
+    }
+    if (index > 0 && /^[A-Z][a-z]{2,}$/.test(token)) {
+      candidates.push(token)
+    }
+  })
+  return candidates
+}
+
+export function hasUnsupportedNamedEntity(evidence: string, cvText: string): boolean {
+  const cvLower = cvText.toLowerCase()
+  return extractNamedEntityCandidates(evidence).some((candidate) => !cvLower.includes(candidate.toLowerCase()))
+}
+
+// Secondary heuristic only, reached solely when evidence is neither source
+// anchored nor rejected by the specific-fact checks above — so a fabricated
+// number, currency figure, or named tool can no longer independently ride
+// through on shared generic vocabulary the way the previous overlap-only
+// design allowed.
+const FALLBACK_OVERLAP_THRESHOLD = 0.4
+
+export function isGroundedInCv(evidence: string, cvText: string): boolean {
+  const trimmed = evidence.trim()
+  if (!trimmed) return true
+
+  if (isSourceAnchored(trimmed, cvText)) return true
+
+  if (hasUnsupportedNumericClaim(trimmed, cvText)) return false
+  if (hasUnsupportedNamedEntity(trimmed, cvText)) return false
+
+  const words = significantWords(trimmed)
+  if (words.length === 0) return true
+  const cvWords = new Set(significantWords(cvText))
+  const matched = words.filter((word) => cvWords.has(word)).length
+  return matched / words.length >= FALLBACK_OVERLAP_THRESHOLD
+}
+
+// A model that over-fragments a JD into many near identical requirements
+// would otherwise silently distort the weighted category formula (each extra
+// entry adds real weight). The prompt asks for roughly 6 to 12 requirements
+// and forbids near duplicates, but nothing upstream enforces that — this is
+// the deterministic backstop. Rather than reject the whole analysis (and
+// burn a retry) for an over-eager but not malicious extraction, it keeps the
+// highest-signal entries: must_have first, then important, then
+// nice_to_have, preserving original order within each tier.
+const MAX_REQUIREMENTS = 20
+
+export function capRequirements(requirements: RawRequirement[]): RawRequirement[] {
+  if (requirements.length <= MAX_REQUIREMENTS) return requirements
+  const tierOrder: Record<RequirementImportance, number> = { must_have: 0, important: 1, nice_to_have: 2 }
+  return [...requirements]
+    .map((r, index) => ({ r, index }))
+    .sort((a, b) => tierOrder[a.r.importance] - tierOrder[b.r.importance] || a.index - b.index)
+    .slice(0, MAX_REQUIREMENTS)
+    .map(({ r }) => r)
+}
+
+function isValidRequirement(value: unknown): value is RawRequirement {
+  if (typeof value !== 'object' || value === null) return false
+  const r = value as Record<string, unknown>
+  return (
+    typeof r.requirement === 'string' &&
+    r.requirement.trim().length > 0 &&
+    (r.category === 'experience' || r.category === 'skills') &&
+    (r.importance === 'must_have' || r.importance === 'important' || r.importance === 'nice_to_have') &&
+    typeof r.critical === 'boolean' &&
+    (r.match_strength === 'strong' || r.match_strength === 'partial' || r.match_strength === 'none') &&
+    typeof r.cv_evidence === 'string'
+  )
+}
+
+export function normalizeAnalysis(raw: RawAnalysis, cvText: string): AnalysisResult {
   const strengths = [
     combineFinding(raw.strength_1_finding, raw.strength_1_evidence),
     combineFinding(raw.strength_2_finding, raw.strength_2_evidence),
@@ -136,21 +398,80 @@ export function normalizeAnalysis(raw: RawAnalysis): AnalysisResult {
     throw new Error(`Model reported unverified claims not present in the original CV: ${JSON.stringify(newClaims)}`)
   }
 
-  if (
-    !isFiniteNumber(raw.experience_score) ||
-    !isFiniteNumber(raw.skills_score) ||
-    !isFiniteNumber(raw.uvp_score)
-  ) {
-    throw new Error('Missing or invalid scores')
+  if (!Array.isArray(raw.requirements) || raw.requirements.length === 0) {
+    throw new Error('Expected a non empty requirement matrix')
+  }
+  if (!raw.requirements.every(isValidRequirement)) {
+    throw new Error('Requirement matrix contains an invalid entry')
   }
 
-  const experienceScore = clampScore(raw.experience_score)
-  const skillsScore = clampScore(raw.skills_score)
-  const uvpScore = clampScore(raw.uvp_score)
+  // Every strong/partial match must be grounded in a quoted or paraphrased
+  // piece of CV evidence — a bare assertion with no evidence field filled in
+  // is exactly the "the model just felt like 78" failure mode this schema
+  // exists to prevent. A "none" match is allowed to have empty evidence
+  // (there is nothing to quote), but never rejected for including a note.
+  const ungroundedMatch = raw.requirements.find(
+    (r) => (r.match_strength === 'strong' || r.match_strength === 'partial') && r.cv_evidence.trim().length === 0,
+  )
+  if (ungroundedMatch) {
+    throw new Error(`Requirement "${ungroundedMatch.requirement}" has a match with no supporting CV evidence`)
+  }
+
+  if (
+    raw.uvp_evidence_level !== 'strong' &&
+    raw.uvp_evidence_level !== 'partial' &&
+    raw.uvp_evidence_level !== 'none'
+  ) {
+    throw new Error('Missing or invalid uvp_evidence_level')
+  }
+  if (raw.uvp_evidence_level !== 'none' && raw.uvp_evidence.trim().length === 0) {
+    throw new Error('UVP evidence level requires supporting CV evidence')
+  }
+
+  // A non-empty evidence field is necessary but not sufficient — this checks
+  // that a strong/partial match's evidence is source anchored in (or, for a
+  // genuine paraphrase, free of any invented number/money/named-entity
+  // claim relative to) the CV the model was given, rather than a plausible
+  // sounding but fabricated quote (which the non-empty check above cannot
+  // catch on its own, and which new_claims_introduced never sees since it
+  // only scans the feedback prose fields, not cv_evidence/uvp_evidence).
+  const fabricatedMatch = raw.requirements.find(
+    (r) => (r.match_strength === 'strong' || r.match_strength === 'partial') && !isGroundedInCv(r.cv_evidence, cvText),
+  )
+  if (fabricatedMatch) {
+    throw new Error(
+      `Requirement "${fabricatedMatch.requirement}" has evidence that does not appear to be grounded in the CV text`,
+    )
+  }
+  if (raw.uvp_evidence_level !== 'none' && !isGroundedInCv(raw.uvp_evidence, cvText)) {
+    throw new Error('UVP evidence does not appear to be grounded in the CV text')
+  }
+
+  // Deduplicate exact-text duplicate requirements (case/whitespace
+  // insensitive) as a safety net against a model that restates the same
+  // requirement twice — the prompt also asks it not to, but this keeps the
+  // arithmetic correct even if it slips. Genuine semantic near-duplicates
+  // (different wording, same underlying requirement) are the prompt's
+  // responsibility, not something this can reliably detect.
+  const seen = new Set<string>()
+  const dedupedRequirements = capRequirements(
+    raw.requirements.filter((r) => {
+      const key = `${r.category}::${r.requirement.trim().toLowerCase()}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    }),
+  )
+
+  const experienceScore = calculateCategoryScore(dedupedRequirements, 'experience')
+  const skillsScore = calculateCategoryScore(dedupedRequirements, 'skills')
+  const uvpScore = calculateUvpScore(raw.uvp_evidence_level)
+
   const weighted = 0.4 * experienceScore + 0.35 * skillsScore + 0.25 * uvpScore
+  const finalScore = applyCriticalGapCap(clampScore(Math.round(weighted)), dedupedRequirements)
 
   return {
-    interview_probability_score: Math.round(weighted),
+    interview_probability_score: finalScore,
     experience_score: experienceScore,
     skills_score: skillsScore,
     uvp_score: uvpScore,

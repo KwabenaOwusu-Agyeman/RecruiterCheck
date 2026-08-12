@@ -1,5 +1,5 @@
 export function getScoreLabel(score: number): string {
-  if (score >= 80) return 'Ready to Apply'
-  if (score >= 50) return 'Ready with Improvements'
-  return 'Better Fit Role Recommended'
+  if (score >= 85) return 'Strong Match'
+  if (score >= 50) return 'Needs Improvement'
+  return 'Not a Fit'
 }

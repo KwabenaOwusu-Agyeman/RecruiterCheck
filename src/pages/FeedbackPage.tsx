@@ -31,7 +31,7 @@ function lowerFirstClause(text: string): string {
 function buildSummarySentence(score: number, improvements: string[]): string {
   const findings = improvements.map((item) => lowerFirstClause(splitFinding(item).title))
 
-  if (score >= 80) {
+  if (score >= 85) {
     return 'Your application is strong and ready to submit as is.'
   }
 

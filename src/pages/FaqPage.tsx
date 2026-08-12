@@ -7,7 +7,7 @@ const FAQ_ITEMS = [
   {
     question: 'How does RecruiterCheck evaluate my application?',
     answer:
-      "RecruiterCheck compares your CV against the specific job description you provide and evaluates the match the way a recruiter would. You get an Interview Probability, along with Strengths, Areas to Improve, and Prospects based only on what's in your CV and the job posting.",
+      "RecruiterCheck compares your CV against the specific job description you provide and evaluates the match the way a recruiter would. You get an Interview Probability, along with Strengths, Areas to Improve, and Prospects based only on what's in your CV and the job posting. Interview Probability is an estimate based on how strongly your CV matches the job requirements. It is not a guarantee of an interview.",
   },
   {
     question: 'Does RecruiterCheck guarantee an interview?',
