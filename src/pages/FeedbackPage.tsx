@@ -134,12 +134,12 @@ export function FeedbackPage() {
   const firstName = profile?.full_name?.trim().split(/\s+/)[0]
 
   return (
-    <>
-      <div className="mb-6">
+    <div className="lg:mx-auto lg:max-w-[1000px]">
+      <div className="mb-6 rounded-2xl border border-navy bg-surface p-[16px] sm:mb-8 sm:rounded-[16px] sm:border-border-soft sm:bg-gradient-surface sm:p-8 sm:shadow-card">
         <p className="text-sm font-semibold text-text-primary">
           {firstName ? `Hi ${firstName},` : 'Hi,'}
         </p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-text-primary">
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-text-primary sm:text-[28px]">
           {check.job_title || 'Recruiter Feedback'}
         </h1>
         {check.company_name ? (
@@ -148,26 +148,26 @@ export function FeedbackPage() {
         <div className="mt-2">
           <StatusBadge status={check.status} />
         </div>
-      </div>
 
-      {score !== null ? (
-        <div className="mb-8">
-          <p className="text-4xl font-bold tracking-tight text-navy sm:text-5xl">
-            {score}%{' '}
-            <span className="text-lg font-semibold text-text-secondary sm:text-xl">
-              Interview Probability
-            </span>
-          </p>
-          <p className={cn('mt-2 text-lg font-semibold', getVerdictColor(score))}>
-            {getScoreLabel(score)}
-          </p>
-          {feedback ? (
-            <p className="mt-2 max-w-xl text-sm text-text-secondary">
-              {buildSummarySentence(score, feedback.improvements)}
+        {score !== null ? (
+          <div className="mt-6 border-t border-border pt-6">
+            <p className="text-4xl font-bold tracking-tight text-navy sm:text-5xl">
+              {score}%{' '}
+              <span className="text-lg font-semibold text-text-secondary sm:text-xl">
+                Interview Probability
+              </span>
             </p>
-          ) : null}
-        </div>
-      ) : null}
+            <p className={cn('mt-2 text-lg font-semibold', getVerdictColor(score))}>
+              {getScoreLabel(score)}
+            </p>
+            {feedback ? (
+              <p className="mt-2 max-w-xl text-sm text-text-secondary">
+                {buildSummarySentence(score, feedback.improvements)}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
 
       {check.status === 'failed' ? (
         <Alert variant="error" className="mb-6">
@@ -242,8 +242,8 @@ export function FeedbackPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="px-5 py-3">
+          <Card className="sm:border-navy/15 sm:bg-navy-tint/40">
+            <CardHeader className="border-b-navy/10 px-5 py-3">
               <h2 className="text-base font-semibold text-text-primary">Recruiter Ready Kit</h2>
               <p className="mt-1 text-xs text-text-secondary">
                 A tailored CV, cover letter, and recruiter message based on your feedback.
@@ -311,6 +311,6 @@ export function FeedbackPage() {
       ) : check.status === 'completed' ? (
         <Alert variant="info">Feedback is not available for this check.</Alert>
       ) : null}
-    </>
+    </div>
   )
 }

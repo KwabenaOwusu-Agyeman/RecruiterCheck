@@ -9,6 +9,10 @@ export default {
         surface: '#FFFFFF',
         background: '#F7F8FC',
         border: '#EEF0F5',
+        'border-strong': '#DDE2EC',
+        'border-soft': '#E8EBF2',
+        'surface-muted': '#F2F4F8',
+        'navy-tint': '#F1F3FA',
         'text-primary': '#05050D',
         'text-secondary': '#3A4A6B',
         success: '#0EA063',
@@ -17,6 +21,15 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
+      boxShadow: {
+        card: '0 1px 2px rgba(2,12,56,0.04), 0 8px 24px rgba(2,12,56,0.05)',
+        elevated: '0 20px 60px rgba(2,12,56,0.14)',
+        hover: '0 12px 32px rgba(2,12,56,0.09)',
+      },
+      backgroundImage: {
+        'gradient-hero': 'linear-gradient(135deg, #F7F8FC 0%, #EEF2FA 100%)',
+        'gradient-surface': 'linear-gradient(180deg, #FFFFFF 0%, #F7F8FC 100%)',
       },
       spacing: {
         1: '0.5rem',

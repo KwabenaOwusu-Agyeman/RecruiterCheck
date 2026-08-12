@@ -64,13 +64,13 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, action }: PageHeaderProps) {
   return (
-    <div className="mb-[20px] flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-start sm:justify-between">
+    <div className="mb-[20px] flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-start sm:justify-between lg:mb-[32px]">
       <div>
-        <h1 className="text-[22px] font-semibold tracking-tight text-text-primary sm:text-2xl">
+        <h1 className="text-[22px] font-semibold tracking-tight text-text-primary sm:text-[30px] lg:text-[32px]">
           {title}
         </h1>
         {description ? (
-          <p className="mt-2 max-w-2xl text-sm text-text-secondary">{description}</p>
+          <p className="mt-2 max-w-2xl text-sm text-text-secondary sm:text-base">{description}</p>
         ) : null}
       </div>
       {action ? <div className="w-full shrink-0 sm:w-auto">{action}</div> : null}

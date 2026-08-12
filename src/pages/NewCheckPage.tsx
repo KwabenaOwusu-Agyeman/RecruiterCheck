@@ -396,7 +396,7 @@ export function NewCheckPage() {
         <div className="mt-3">
           <PageHeader title="New Check" />
         </div>
-        <div className="mx-auto max-w-md rounded-2xl border border-navy bg-surface sm:rounded-xl p-[20px] text-center sm:p-8">
+        <div className="mx-auto max-w-md rounded-2xl border border-navy bg-surface p-[20px] text-center sm:rounded-[16px] sm:border-border-soft sm:p-8 sm:shadow-card">
           <h2 className="text-base font-semibold text-text-primary">
             You've used your free Check
           </h2>
@@ -422,7 +422,7 @@ export function NewCheckPage() {
         <div className="mt-3">
           <PageHeader title="New Check" />
         </div>
-        <div className="mx-auto max-w-md rounded-2xl border border-navy bg-surface sm:rounded-xl p-[20px] text-center sm:p-8">
+        <div className="mx-auto max-w-md rounded-2xl border border-navy bg-surface p-[20px] text-center sm:rounded-[16px] sm:border-border-soft sm:p-8 sm:shadow-card">
           <h2 className="text-base font-semibold text-text-primary">
             You've reached today's check limit
           </h2>
@@ -449,12 +449,16 @@ export function NewCheckPage() {
         />
       </div>
 
-      <div className="mx-auto max-w-2xl space-y-[16px] rounded-2xl border border-navy bg-surface sm:rounded-xl p-[16px] sm:space-y-6 sm:p-6">
+      <div className="mx-auto max-w-2xl space-y-[16px] rounded-2xl border border-navy bg-surface p-[16px] sm:space-y-6 sm:rounded-[16px] sm:border-border-soft sm:p-6 sm:shadow-card lg:max-w-[800px] lg:space-y-[32px] lg:p-[32px]">
         {captureError ? <Alert variant="error">{captureError}</Alert> : null}
 
         <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
+            Job description
+          </p>
           <div className="flex items-center justify-between">
             <Label
+              className="sr-only"
               htmlFor={
                 jobInputMode === 'paste' ? 'jobDescription' : jobInputMode === 'url' ? 'jobUrl' : 'jobFile'
               }
@@ -469,9 +473,9 @@ export function NewCheckPage() {
                   setJobInputMode('paste')
                 }}
                 className={cn(
-                  'rounded-md px-3 py-1 text-xs font-medium transition-colors',
+                  'rounded-md px-3 py-1 text-xs font-medium transition-colors duration-150',
                   jobInputMode === 'paste'
-                    ? 'bg-background text-text-primary'
+                    ? 'bg-navy text-white shadow-sm'
                     : 'text-text-secondary hover:text-text-primary',
                 )}
               >
@@ -484,9 +488,9 @@ export function NewCheckPage() {
                   setJobInputMode('url')
                 }}
                 className={cn(
-                  'rounded-md px-3 py-1 text-xs font-medium transition-colors',
+                  'rounded-md px-3 py-1 text-xs font-medium transition-colors duration-150',
                   jobInputMode === 'url'
-                    ? 'bg-background text-text-primary'
+                    ? 'bg-navy text-white shadow-sm'
                     : 'text-text-secondary hover:text-text-primary',
                 )}
               >
@@ -499,9 +503,9 @@ export function NewCheckPage() {
                   setJobInputMode('upload')
                 }}
                 className={cn(
-                  'rounded-md px-3 py-1 text-xs font-medium transition-colors',
+                  'rounded-md px-3 py-1 text-xs font-medium transition-colors duration-150',
                   jobInputMode === 'upload'
-                    ? 'bg-background text-text-primary'
+                    ? 'bg-navy text-white shadow-sm'
                     : 'text-text-secondary hover:text-text-primary',
                 )}
               >
@@ -591,17 +595,20 @@ export function NewCheckPage() {
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 border-t border-border pt-[16px] sm:pt-6 lg:pt-8">
+          <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">CV</p>
           <div className="flex items-center justify-between">
-            <Label htmlFor={cvInputMode === 'file' ? 'cv' : 'cvText'}>CV</Label>
+            <Label className="sr-only" htmlFor={cvInputMode === 'file' ? 'cv' : 'cvText'}>
+              CV
+            </Label>
             <div className="inline-flex rounded-lg border border-border p-0.5">
               <button
                 type="button"
                 onClick={() => setCvInputMode('file')}
                 className={cn(
-                  'rounded-md px-3 py-1 text-xs font-medium transition-colors',
+                  'rounded-md px-3 py-1 text-xs font-medium transition-colors duration-150',
                   cvInputMode === 'file'
-                    ? 'bg-background text-text-primary'
+                    ? 'bg-navy text-white shadow-sm'
                     : 'text-text-secondary hover:text-text-primary',
                 )}
               >
@@ -611,9 +618,9 @@ export function NewCheckPage() {
                 type="button"
                 onClick={() => setCvInputMode('paste')}
                 className={cn(
-                  'rounded-md px-3 py-1 text-xs font-medium transition-colors',
+                  'rounded-md px-3 py-1 text-xs font-medium transition-colors duration-150',
                   cvInputMode === 'paste'
-                    ? 'bg-background text-text-primary'
+                    ? 'bg-navy text-white shadow-sm'
                     : 'text-text-secondary hover:text-text-primary',
                 )}
               >
@@ -667,11 +674,12 @@ export function NewCheckPage() {
           <p className="text-xs text-error">Could not save your changes</p>
         ) : null}
 
-        <div className="flex flex-col gap-3 border-t border-border pt-[16px] sm:flex-row sm:items-center sm:justify-end sm:pt-6">
-          <div className="flex flex-col items-start gap-2 sm:items-end">
+        <div className="flex flex-col gap-3 border-t border-border pt-[16px] sm:flex-row sm:items-center sm:justify-end sm:pt-6 lg:pt-8">
+          <div className="flex w-full flex-col items-start gap-2 sm:w-auto sm:items-end">
             <Button
               type="button"
               size="sm"
+              className="w-full sm:!h-12 sm:w-auto sm:px-8 sm:text-base"
               disabled={!canCheck || analyzing}
               onClick={() => void handleAnalyze()}
             >

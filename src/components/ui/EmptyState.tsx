@@ -12,7 +12,8 @@ export function EmptyState({ title, description, action, className }: EmptyState
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center rounded-xl border border-dashed border-navy/40 px-6 py-16 text-center',
+        'flex flex-col items-center justify-center rounded-xl border border-dashed border-navy/40 bg-surface px-6 py-16 text-center',
+        'sm:rounded-[16px] sm:border-border-strong sm:bg-gradient-surface sm:py-20',
         className,
       )}
     >

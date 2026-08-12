@@ -154,12 +154,12 @@ export function AccountPage() {
         />
       </div>
 
-      <div className="grid items-stretch gap-3 lg:grid-cols-2">
+      <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-2 lg:gap-[24px]">
         <Card className="flex h-full flex-col">
-          <CardHeader className="py-2.5">
-            <h2 className="text-base font-semibold text-text-primary">Profile</h2>
+          <CardHeader className="py-2.5 sm:py-4">
+            <h2 className="text-base font-semibold text-text-primary sm:text-lg">Profile</h2>
           </CardHeader>
-          <CardContent className="flex flex-1 flex-col py-3">
+          <CardContent className="flex flex-1 flex-col py-3 sm:py-5">
             <form
               onSubmit={(event) => void handleSave(event)}
               className="flex flex-1 flex-col space-y-2"
@@ -192,10 +192,10 @@ export function AccountPage() {
         </Card>
 
         <Card className="flex h-full flex-col">
-          <CardHeader className="py-2.5">
-            <h2 className="text-base font-semibold text-text-primary">Plan</h2>
+          <CardHeader className="py-2.5 sm:py-4">
+            <h2 className="text-base font-semibold text-text-primary sm:text-lg">Plan</h2>
           </CardHeader>
-          <CardContent className="flex flex-1 flex-col space-y-1.5 py-3 text-sm">
+          <CardContent className="flex flex-1 flex-col space-y-1.5 py-3 text-sm sm:space-y-2.5 sm:py-5">
             <div className="flex items-center justify-between">
               <span className="text-text-secondary">Current plan</span>
               <span className="font-medium text-text-primary">
@@ -240,11 +240,11 @@ export function AccountPage() {
         </Card>
       </div>
 
-      <Card className="mt-3">
-        <CardHeader className="py-2.5">
-          <h2 className="text-base font-semibold text-text-primary">Danger Zone</h2>
+      <Card className="mt-3 border-error/25 sm:mt-6 sm:border-error/20 sm:bg-[#FCEFEF]/30 sm:shadow-none">
+        <CardHeader className="border-b-error/10 py-2.5 sm:py-4">
+          <h2 className="text-base font-semibold text-text-primary sm:text-lg">Danger Zone</h2>
         </CardHeader>
-        <CardContent className="py-3">
+        <CardContent className="py-3 sm:py-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-text-secondary">
               Permanently delete your account and all associated data. This cannot be undone.
@@ -277,7 +277,7 @@ export function AccountPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-account-title"
-            className="w-full max-w-sm rounded-2xl border border-navy bg-surface p-[16px] shadow-lg sm:p-6"
+            className="w-full max-w-sm rounded-2xl border border-navy bg-surface p-[16px] shadow-lg sm:rounded-[20px] sm:border-border-soft sm:p-6 sm:shadow-elevated"
           >
             <h2 id="delete-account-title" className="text-base font-semibold text-text-primary">
               Delete your account?

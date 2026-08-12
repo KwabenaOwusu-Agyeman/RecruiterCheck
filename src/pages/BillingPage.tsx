@@ -59,9 +59,11 @@ export function BillingPage() {
     <>
       <BackLink to="/account" />
 
-      <div className="mx-auto mt-1 max-w-2xl text-center">
-        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">Choose your plan</h1>
-        <p className="mt-2 text-sm text-text-secondary">
+      <div className="mx-auto mt-1 max-w-2xl text-center lg:max-w-[1080px]">
+        <h1 className="text-2xl font-semibold tracking-tight text-text-primary sm:text-[30px]">
+          Choose your plan
+        </h1>
+        <p className="mt-2 text-sm text-text-secondary sm:text-base">
           Get more Recruiter Checks and tailored application documents when you need them.
         </p>
       </div>
@@ -80,7 +82,7 @@ export function BillingPage() {
 
       {error ? <Alert variant="error" className="mx-auto mt-6 max-w-2xl">{error}</Alert> : null}
 
-      <div className="mt-4 grid gap-6 md:grid-cols-3">
+      <div className="mx-auto mt-4 grid gap-6 md:grid-cols-3 lg:max-w-[1080px] lg:gap-[24px]">
         {PRICING_PLANS.map((plan) => {
           const isCurrent = profile?.subscription_tier === plan.id
           const isPremium = plan.id !== 'free'
@@ -116,8 +118,10 @@ export function BillingPage() {
                   // (name/price/features/CTA) lower than the others — all
                   // three must start their content at the same offset to
                   // align horizontally.
-                  'flex h-full flex-col rounded-2xl border border-navy bg-surface p-2.5 pt-5',
-                  isHighlighted ? 'border-2 shadow-lg' : 'shadow-sm',
+                  'flex h-full flex-col rounded-2xl border border-navy bg-surface p-2.5 pt-5 sm:rounded-[16px] sm:p-[28px] sm:pt-8',
+                  isHighlighted
+                    ? 'border-2 shadow-lg sm:border-navy sm:shadow-elevated'
+                    : 'shadow-sm sm:border-border-soft sm:shadow-card',
                 )}
               >
                 <div className="text-center">
@@ -175,7 +179,7 @@ export function BillingPage() {
                       Current Plan
                     </Button>
                   ) : isDowngrade ? (
-                    <div className="h-8" aria-hidden="true" />
+                    <div className="h-12 sm:h-[36px]" aria-hidden="true" />
                   ) : (
                     <Button
                       className="w-full"

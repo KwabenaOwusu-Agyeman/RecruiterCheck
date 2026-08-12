@@ -114,11 +114,11 @@ export function MyChecksPage() {
       ) : (
         <>
           {/* Desktop table */}
-          <div className="hidden overflow-hidden rounded-xl border border-navy md:block">
+          <div className="hidden overflow-hidden rounded-[16px] border border-border-soft bg-surface shadow-card md:block">
             <table className="min-w-full divide-y divide-border">
-              <thead className="bg-background">
+              <thead className="bg-surface-muted">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-text-secondary">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-text-secondary lg:px-6">
                     Role
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-text-secondary">
@@ -130,15 +130,15 @@ export function MyChecksPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-text-secondary">
                     Date
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-text-secondary">
+                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-text-secondary lg:px-6">
                     Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-surface">
                 {checks.map((check) => (
-                  <tr key={check.id}>
-                    <td className="px-4 py-4">
+                  <tr key={check.id} className="transition-colors duration-150 hover:bg-navy-tint/60">
+                    <td className="px-4 py-4 lg:px-6 lg:py-5">
                       <div className="text-sm font-medium text-text-primary">
                         {check.job_title || 'Untitled role'}
                       </div>
@@ -146,20 +146,20 @@ export function MyChecksPage() {
                         <div className="text-sm text-text-secondary">{check.company_name}</div>
                       ) : null}
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-4 py-4 lg:py-5">
                       <StatusBadge status={check.status} />
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-4 py-4 lg:py-5">
                       <ScoreBadge score={check.interview_probability_score} />
                     </td>
-                    <td className="px-4 py-4 text-sm text-text-secondary">
+                    <td className="px-4 py-4 text-sm text-text-secondary lg:py-5">
                       {formatDate(check.created_at)}
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-4 py-4 lg:px-6 lg:py-5">
                       <div className="flex items-center justify-end gap-4">
                         <Link
                           to={checkActionHref(check)}
-                          className="text-sm font-medium text-blue hover:underline"
+                          className="text-sm font-semibold text-blue hover:underline"
                         >
                           {checkActionLabel(check)}
                         </Link>
@@ -167,7 +167,7 @@ export function MyChecksPage() {
                           type="button"
                           disabled={deletingId === check.id}
                           onClick={() => setPendingDelete(check)}
-                          className="text-sm text-text-secondary hover:text-error hover:underline disabled:opacity-50"
+                          className="text-sm text-text-secondary/70 transition-colors hover:text-error hover:underline disabled:opacity-50"
                         >
                           Delete
                         </button>
@@ -180,7 +180,7 @@ export function MyChecksPage() {
           </div>
 
           {/* Mobile compact list */}
-          <div className="divide-y divide-border rounded-2xl border border-navy bg-surface sm:rounded-xl md:hidden">
+          <div className="divide-y divide-border rounded-2xl border border-navy bg-surface sm:rounded-[16px] sm:border-border-soft sm:shadow-card md:hidden">
             {checks.map((check) => (
               <div key={check.id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <div className="min-w-0">
@@ -234,7 +234,7 @@ export function MyChecksPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-check-title"
-            className="w-full max-w-sm rounded-2xl border border-navy bg-surface p-[16px] shadow-lg sm:p-6"
+            className="w-full max-w-sm rounded-2xl border border-navy bg-surface p-[16px] shadow-lg sm:rounded-[20px] sm:border-border-soft sm:p-6 sm:shadow-elevated"
           >
             <h2 id="delete-check-title" className="text-base font-semibold text-text-primary">
               Delete this check?

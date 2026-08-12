@@ -190,7 +190,7 @@ export function AuthModal() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="auth-modal-title"
-          className="auth-sheet-panel relative flex max-h-[92dvh] w-full max-w-none flex-col overflow-y-auto rounded-t-[24px] border border-navy border-b-0 bg-surface p-[16px] pb-[max(16px,env(safe-area-inset-bottom))] shadow-lg sm:max-h-[calc(100vh-2rem)] sm:max-w-[400px] sm:rounded-2xl sm:border-b sm:p-[26px] sm:pb-[26px]"
+          className="auth-sheet-panel relative flex max-h-[92dvh] w-full max-w-none flex-col overflow-y-auto rounded-t-[24px] border border-navy border-b-0 bg-surface p-[16px] pb-[max(16px,env(safe-area-inset-bottom))] shadow-lg sm:max-h-[calc(100vh-2rem)] sm:max-w-[430px] sm:rounded-[20px] sm:border-border-soft sm:border-b sm:p-[32px] sm:pb-[32px] sm:shadow-elevated"
         >
         <div
           className="mx-auto mb-[10px] h-1.5 w-10 shrink-0 rounded-full bg-border sm:hidden"
@@ -203,7 +203,7 @@ export function AuthModal() {
             close()
             void navigate('/', { replace: true })
           }}
-          className="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded-lg border border-navy text-text-secondary transition-colors hover:bg-background hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue"
+          className="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded-lg border border-navy text-text-secondary transition-colors duration-150 hover:bg-background hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue sm:right-4 sm:top-4 sm:h-9 sm:w-9 sm:border-transparent sm:hover:bg-surface-muted"
         >
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <path
@@ -229,7 +229,7 @@ export function AuthModal() {
           </p>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 sm:space-y-3">
           <Button
             type="button"
             variant="secondary"
