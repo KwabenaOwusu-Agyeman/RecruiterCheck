@@ -1,4 +1,4 @@
-# RecruiterCheck
+# MyRecruiterCheck
 
 Think like a recruiter before you apply.
 

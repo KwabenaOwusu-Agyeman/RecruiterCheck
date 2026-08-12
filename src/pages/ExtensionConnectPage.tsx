@@ -48,14 +48,14 @@ export function ExtensionConnectPage() {
   return (
     <div className="mx-auto max-w-md">
       <PageHeader
-        title="Connect RecruiterCheck"
-        description="Let the RecruiterCheck browser extension send job postings you're viewing straight into your account."
+        title="Connect MyRecruiterCheck"
+        description="Let the MyRecruiterCheck browser extension send job postings you're viewing straight into your account."
       />
 
       <div className="mt-[16px] rounded-2xl border border-navy bg-surface sm:rounded-xl p-[16px] text-center sm:mt-6 sm:p-8">
         {!validRedirect ? (
           <Alert variant="error">
-            This connection request is invalid. Please reopen the RecruiterCheck extension and try
+            This connection request is invalid. Please reopen the MyRecruiterCheck extension and try
             connecting again.
           </Alert>
         ) : connected ? (
@@ -63,7 +63,7 @@ export function ExtensionConnectPage() {
         ) : (
           <>
             <p className="text-sm text-text-secondary">
-              This will let the extension submit job postings to your RecruiterCheck account. It
+              This will let the extension submit job postings to your MyRecruiterCheck account. It
               never sees your password.
             </p>
             <Button
@@ -71,7 +71,7 @@ export function ExtensionConnectPage() {
               onClick={() => void handleConnect()}
               disabled={connecting}
             >
-              {connecting ? 'Connecting...' : 'Connect RecruiterCheck'}
+              {connecting ? 'Connecting...' : 'Connect MyRecruiterCheck'}
             </Button>
             {error ? (
               <div className="mt-4">

@@ -326,7 +326,7 @@ async function callOpenAI(
 ): Promise<RawAnalysis> {
   const systemPrompt = `You are an experienced, technically rigorous recruiter screening a candidate's application. You do not choose a final score yourself — you extract and classify job requirements and match each one against CV evidence, and the application deterministically calculates the score from your classifications. Your job is EXTRACT + CLASSIFY + MATCH EVIDENCE, nothing more.
 
-RecruiterCheck evaluates what the CV proves against this specific job, not everything the candidate might actually know or have done. "No evidence" always means "the CV does not show this," never "the candidate definitely lacks this." Keep that distinction in mind for every classification and every piece of feedback you write.
+MyRecruiterCheck evaluates what the CV proves against this specific job, not everything the candidate might actually know or have done. "No evidence" always means "the CV does not show this," never "the candidate definitely lacks this." Keep that distinction in mind for every classification and every piece of feedback you write.
 
 == STEP 1: EXTRACT AND CLASSIFY REQUIREMENTS ==
 

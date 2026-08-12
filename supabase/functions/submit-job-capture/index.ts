@@ -77,13 +77,13 @@ Deno.serve(async (req) => {
 
     if (error) {
       console.error('submit-job-capture: insert failed', { message: error.message })
-      return jsonResponse({ error: "We couldn't send this job to RecruiterCheck. Try again." }, 500)
+      return jsonResponse({ error: "We couldn't send this job to MyRecruiterCheck. Try again." }, 500)
     }
 
     return jsonResponse({ captureId: data.id })
   } catch (error) {
     console.error('submit-job-capture error:', error)
-    return jsonResponse({ error: "We couldn't send this job to RecruiterCheck. Try again." }, 500)
+    return jsonResponse({ error: "We couldn't send this job to MyRecruiterCheck. Try again." }, 500)
   }
 })
 

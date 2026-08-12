@@ -1,6 +1,10 @@
 export const BRAND = {
-  name: 'RecruiterCheck',
+  name: 'MyRecruiterCheck',
   tagline: 'Think like a recruiter before you apply.',
+  // Production domain not yet provisioned — update once a new domain/Vercel
+  // URL is live, and keep Supabase auth redirect URLs and edge function CORS
+  // origins in sync with it at that time.
+  canonicalUrl: 'https://recruitercheck.app',
 } as const
 
 export const FEATURE_FLAGS = {

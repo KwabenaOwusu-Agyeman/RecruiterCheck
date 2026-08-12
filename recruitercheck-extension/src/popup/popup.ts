@@ -37,7 +37,7 @@ function render(state: ViewState): void {
       root.appendChild(
         buildScreen({
           tagline: "See your application from a recruiter's perspective.",
-          primaryLabel: 'Connect RecruiterCheck',
+          primaryLabel: 'Connect MyRecruiterCheck',
           onPrimary: onConnect,
         }),
       )
@@ -51,7 +51,7 @@ function render(state: ViewState): void {
       root.appendChild(
         buildScreen({
           errorMessage: state.message,
-          primaryLabel: 'Connect RecruiterCheck',
+          primaryLabel: 'Connect MyRecruiterCheck',
           onPrimary: onConnect,
         }),
       )
@@ -113,28 +113,28 @@ function render(state: ViewState): void {
       root.appendChild(
         buildScreen({
           tagline: "We couldn't confidently read this job.",
-          primaryLabel: 'Open RecruiterCheck',
+          primaryLabel: 'Open MyRecruiterCheck',
           onPrimary: onOpenNewCheck,
         }),
       )
       break
 
     case 'submitting':
-      root.appendChild(textNode('Sending to RecruiterCheck…'))
+      root.appendChild(textNode('Sending to MyRecruiterCheck…'))
       break
 
     case 'submit_error':
       root.appendChild(
         buildScreen({
           errorMessage: state.message,
-          primaryLabel: state.reconnect ? 'Reconnect RecruiterCheck' : 'Try again',
+          primaryLabel: state.reconnect ? 'Reconnect MyRecruiterCheck' : 'Try again',
           onPrimary: state.reconnect ? onConnect : onCapture,
         }),
       )
       break
 
     case 'submitted':
-      root.appendChild(textNode('Opened in RecruiterCheck. You can close this popup.'))
+      root.appendChild(textNode('Opened in MyRecruiterCheck. You can close this popup.'))
       break
   }
 }
@@ -216,7 +216,7 @@ async function onSubmit(capture: JobCapture): Promise<void> {
   render({
     kind: 'submit_error',
     message: reconnect
-      ? 'Your RecruiterCheck connection expired.'
+      ? 'Your MyRecruiterCheck connection expired.'
       : response.error,
     reconnect,
   })

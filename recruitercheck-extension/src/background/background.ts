@@ -90,7 +90,7 @@ async function submitCapture(
   } catch (err) {
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "We couldn't send this job to RecruiterCheck. Try again.",
+      error: err instanceof Error ? err.message : "We couldn't send this job to MyRecruiterCheck. Try again.",
     }
   }
 }

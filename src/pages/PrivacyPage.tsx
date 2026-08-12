@@ -4,8 +4,8 @@ import { usePageMeta } from '@/hooks/usePageMeta'
 
 export function PrivacyPage() {
   usePageMeta({
-    title: 'Privacy Policy — RecruiterCheck',
-    description: 'How RecruiterCheck collects, uses, and protects your data.',
+    title: 'Privacy Policy — MyRecruiterCheck',
+    description: 'How MyRecruiterCheck collects, uses, and protects your data.',
     path: '/privacy',
   })
 
@@ -13,7 +13,7 @@ export function PrivacyPage() {
     <LegalLayout title="Privacy Policy" updated="7 August 2026">
       <Section title="1. Who We Are">
         <p>
-          RecruiterCheck ("we", "us") operates from the Netherlands and is the data controller for
+          MyRecruiterCheck ("we", "us") operates from the Netherlands and is the data controller for
           the personal data described in this Privacy Policy, in accordance with the EU General
           Data Protection Regulation (GDPR).
         </p>
@@ -138,7 +138,7 @@ export function PrivacyPage() {
 
       <Section title="14. Browser Extension">
         <p>
-          The RecruiterCheck browser extension reads the job posting on the page you are currently
+          The MyRecruiterCheck browser extension reads the job posting on the page you are currently
           viewing only when you explicitly click "Capture this job." It never runs in the background
           and never scans pages you have not asked it to read.
         </p>

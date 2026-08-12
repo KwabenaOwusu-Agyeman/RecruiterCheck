@@ -17,9 +17,9 @@ import { cn } from '@/utils/cn'
 
 export function ExampleCheckPage() {
   usePageMeta({
-    title: 'Example Recruiter Check — RecruiterCheck',
+    title: 'Example Recruiter Check — MyRecruiterCheck',
     description:
-      'See a fictional example of the recruiter-style feedback RecruiterCheck gives: an Interview Probability, Strengths, Areas to Improve, and Prospects.',
+      'See a fictional example of the recruiter-style feedback MyRecruiterCheck gives: an Interview Probability, Strengths, Areas to Improve, and Prospects.',
     path: '/example-check',
   })
 
@@ -32,7 +32,7 @@ export function ExampleCheckPage() {
 
       <Alert variant="info" className="mt-3">
         This is a fictional example, not a real user&rsquo;s data — it shows the kind of feedback
-        RecruiterCheck gives.
+        MyRecruiterCheck gives.
       </Alert>
 
       <div className="mb-5 mt-3 rounded-2xl border border-navy bg-surface p-[16px] sm:rounded-[16px] sm:border-border-soft sm:bg-gradient-surface sm:p-8 sm:shadow-card">

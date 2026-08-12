@@ -261,7 +261,7 @@ async function fetchWithSsrfGuard(initialUrl: URL, timeoutMs: number): Promise<R
           // A plain, honest identification — not spoofing a real browser to
           // get around bot detection. If a site blocks this, that's a
           // legitimate failure, not something to work around.
-          'User-Agent': 'Mozilla/5.0 (compatible; RecruiterCheckBot/1.0; +https://recruitercheck.vercel.app)',
+          'User-Agent': 'Mozilla/5.0 (compatible; MyRecruiterCheckBot/1.0; +https://recruitercheck.vercel.app)',
           Accept: 'text/html',
         },
         redirect: 'manual',

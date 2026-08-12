@@ -1,6 +1,6 @@
 {
-  "name": "RecruiterCheck",
-  "short_name": "RecruiterCheck",
+  "name": "MyRecruiterCheck",
+  "short_name": "MyRecruiterCheck",
   "display": "standalone",
   "start_url": "/",
   "scope": "/",

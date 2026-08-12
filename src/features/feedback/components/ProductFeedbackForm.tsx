@@ -3,6 +3,7 @@ import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { Textarea } from '@/components/ui/Textarea'
 import { getProductFeedback, submitProductFeedback } from '@/services/checkService'
+import { BRAND } from '@/lib/constants'
 import { cn } from '@/utils/cn'
 
 interface ProductFeedbackFormProps {
@@ -90,7 +91,7 @@ export function ProductFeedbackForm({ userId, email }: ProductFeedbackFormProps)
       <div className="rounded-2xl border border-navy bg-surface sm:rounded-xl p-6 text-center">
         <p className="text-sm font-semibold text-text-primary">Thanks for your feedback!</p>
         <p className="mt-1 text-sm text-text-secondary">
-          It helps us make RecruiterCheck better.
+          It helps us make {BRAND.name} better.
         </p>
       </div>
     )
@@ -100,7 +101,7 @@ export function ProductFeedbackForm({ userId, email }: ProductFeedbackFormProps)
     <div className="rounded-2xl border border-navy bg-surface sm:rounded-xl p-6">
       <h2 className="text-base font-semibold text-text-primary">How was your experience?</h2>
       <p className="mt-1 text-sm text-text-secondary">
-        Rate RecruiterCheck and leave a comment if you like. This only takes a moment.
+        Rate {BRAND.name} and leave a comment if you like. This only takes a moment.
       </p>
 
       <div className="mt-4">

@@ -7,6 +7,7 @@ import {
   EXAMPLE_JOB_TITLE,
 } from '@/features/landing/data/exampleCheck'
 import { getScoreLabel } from '@/lib/scoring'
+import { BRAND } from '@/lib/constants'
 import { cn } from '@/utils/cn'
 
 export function ExampleCheckTeaser() {
@@ -20,7 +21,7 @@ export function ExampleCheckTeaser() {
       <Container className="py-[32px] sm:py-12 lg:py-[96px]">
         <div className="mx-auto max-w-xl text-center">
           <h2 className="text-[20px] font-semibold tracking-tight text-text-primary sm:text-3xl">
-            See RecruiterCheck in Action
+            See {BRAND.name} in Action
           </h2>
           <p className="mt-3 text-[14px] text-text-secondary sm:text-base">
             See what recruiter-style feedback looks like before checking your own application.

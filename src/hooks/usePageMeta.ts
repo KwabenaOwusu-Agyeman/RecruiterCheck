@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
+import { BRAND } from '@/lib/constants'
 
-const SITE_URL = 'https://recruitercheck.app'
+const SITE_URL = BRAND.canonicalUrl
 
 interface PageMetaOptions {
   title: string

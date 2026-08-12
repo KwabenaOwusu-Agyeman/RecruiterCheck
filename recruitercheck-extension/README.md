@@ -1,7 +1,7 @@
-# RecruiterCheck Browser Extension (V1)
+# MyRecruiterCheck Browser Extension (V1)
 
 Captures the job posting the user is currently viewing (LinkedIn, Indeed, or
-a generic company career page) and sends it into their RecruiterCheck
+a generic company career page) and sends it into their MyRecruiterCheck
 account, pre-filling New Check. No CV handling, no job tracking, no
 background scraping — see the main repo conversation history / PR
 description for full V1 scope and constraints.
@@ -22,7 +22,7 @@ Output goes to `dist/`.
 2. Open `chrome://extensions`
 3. Enable **Developer mode** (top-right toggle)
 4. Click **Load unpacked**, select the `dist/` folder
-5. Pin the RecruiterCheck icon to the toolbar for easy access
+5. Pin the MyRecruiterCheck icon to the toolbar for easy access
 
 Reload the extension (the circular arrow icon on its card in
 `chrome://extensions`) after every rebuild.

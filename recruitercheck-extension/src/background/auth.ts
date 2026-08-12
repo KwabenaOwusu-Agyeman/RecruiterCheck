@@ -12,7 +12,7 @@ export async function getSessionInfo(): Promise<SessionInfo> {
 }
 
 /**
- * The "Connect RecruiterCheck" flow: open the web app in a browser-owned
+ * The "Connect MyRecruiterCheck" flow: open the web app in a browser-owned
  * auth popup (the user is already signed in there), let them explicitly
  * authorize the extension, and come back with a one-time code — never a
  * password, never a copied session token, never a read of the web app's own
@@ -49,7 +49,7 @@ export async function connect(): Promise<void> {
   }
 
   if (!exchangeRes.ok || !exchangeBody.tokenHash || !exchangeBody.email) {
-    throw new Error(exchangeBody.error ?? 'Could not connect RecruiterCheck. Try again.')
+    throw new Error(exchangeBody.error ?? 'Could not connect MyRecruiterCheck. Try again.')
   }
 
   // Redeeming the token_hash is what actually establishes this extension's
@@ -64,7 +64,7 @@ export async function connect(): Promise<void> {
   })
 
   if (error) {
-    throw new Error('Could not connect RecruiterCheck. Try again.')
+    throw new Error('Could not connect MyRecruiterCheck. Try again.')
   }
 }
 

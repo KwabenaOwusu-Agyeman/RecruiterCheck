@@ -5,14 +5,14 @@ import { usePageMeta } from '@/hooks/usePageMeta'
 
 const FAQ_ITEMS = [
   {
-    question: 'How does RecruiterCheck evaluate my application?',
+    question: 'How does MyRecruiterCheck evaluate my application?',
     answer:
-      "RecruiterCheck compares your CV against the specific job description you provide and evaluates the match the way a recruiter would. You get an Interview Probability, along with Strengths, Areas to Improve, and Prospects based only on what's in your CV and the job posting. Interview Probability is an estimate based on how strongly your CV matches the job requirements. It is not a guarantee of an interview.",
+      "MyRecruiterCheck compares your CV against the specific job description you provide and evaluates the match the way a recruiter would. You get an Interview Probability, along with Strengths, Areas to Improve, and Prospects based only on what's in your CV and the job posting. Interview Probability is an estimate based on how strongly your CV matches the job requirements. It is not a guarantee of an interview.",
   },
   {
-    question: 'Does RecruiterCheck guarantee an interview?',
+    question: 'Does MyRecruiterCheck guarantee an interview?',
     answer:
-      'No. RecruiterCheck does not guarantee an interview, a job offer, or employment. It gives you an honest, recruiter-style read on your application so you can decide how to strengthen it before you apply.',
+      'No. MyRecruiterCheck does not guarantee an interview, a job offer, or employment. It gives you an honest, recruiter-style read on your application so you can decide how to strengthen it before you apply.',
   },
   {
     question: 'Is my CV and personal information secure?',
@@ -20,9 +20,9 @@ const FAQ_ITEMS = [
       'Yes. Your CV and job descriptions are used only to generate your feedback and are not used to train any models. You can permanently delete your data at any time from Account settings.',
   },
   {
-    question: 'Will RecruiterCheck invent experience or achievements?',
+    question: 'Will MyRecruiterCheck invent experience or achievements?',
     answer:
-      'No. Feedback and generated documents are based only on the experience, skills, and achievements already in your CV. RecruiterCheck never invents employers, qualifications, statistics, or outcomes on your behalf.',
+      'No. Feedback and generated documents are based only on the experience, skills, and achievements already in your CV. MyRecruiterCheck never invents employers, qualifications, statistics, or outcomes on your behalf.',
   },
   {
     question: 'What do I get with a Recruiter Check?',
@@ -54,9 +54,9 @@ function useFaqStructuredData() {
 
 export function FaqPage() {
   usePageMeta({
-    title: 'FAQ — RecruiterCheck',
+    title: 'FAQ — MyRecruiterCheck',
     description:
-      'Answers to common questions about how RecruiterCheck evaluates your application, data security, and what you get with a Recruiter Check.',
+      'Answers to common questions about how MyRecruiterCheck evaluates your application, data security, and what you get with a Recruiter Check.',
     path: '/faq',
   })
   useFaqStructuredData()

@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "RecruiterCheck — Job Capture",
-  "short_name": "RecruiterCheck",
+  "name": "MyRecruiterCheck — Job Capture",
+  "short_name": "MyRecruiterCheck",
   "version": "0.1.0",
-  "description": "Send the job posting you're viewing straight into RecruiterCheck for a recruiter's-eye check.",
+  "description": "Send the job posting you're viewing straight into MyRecruiterCheck for a recruiter's-eye check.",
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

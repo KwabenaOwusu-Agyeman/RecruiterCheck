@@ -11,9 +11,9 @@ export function LandingPage() {
   const location = useLocation()
 
   usePageMeta({
-    title: 'RecruiterCheck — Think like a recruiter before you apply.',
+    title: 'MyRecruiterCheck — Think like a recruiter before you apply.',
     description:
-      'RecruiterCheck compares your CV with a specific job description and gives you recruiter-style feedback — an Interview Probability, Strengths, Areas to Improve, and Prospects — before you apply.',
+      'MyRecruiterCheck compares your CV with a specific job description and gives you recruiter-style feedback — an Interview Probability, Strengths, Areas to Improve, and Prospects — before you apply.',
     path: '/',
   })
 
