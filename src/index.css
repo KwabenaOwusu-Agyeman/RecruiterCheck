@@ -5,13 +5,47 @@
 @layer base {
   html {
     @apply scroll-smooth antialiased;
+    -webkit-text-size-adjust: 100%;
+    min-width: 320px;
   }
 
   body {
     @apply bg-background font-sans text-text-primary antialiased;
+    min-width: 320px;
+    overflow-x: hidden;
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-semibold tracking-tight text-text-primary;
+  }
+
+  a, button, input, textarea, select {
+    touch-action: manipulation;
+  }
+}
+
+/* Mobile auth bottom sheet: slides up from the bottom edge on small
+   screens only, and stays static (no animation) at the sm breakpoint
+   where the auth panel is a centered modal instead. */
+@media (max-width: 639px) {
+  .auth-sheet-panel {
+    animation: auth-sheet-slide-up 220ms ease-out;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-sheet-panel {
+    animation: none;
+  }
+}
+
+@keyframes auth-sheet-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
   }
 }

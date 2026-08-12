@@ -52,7 +52,7 @@ export function ExtensionConnectPage() {
         description="Let the RecruiterCheck browser extension send job postings you're viewing straight into your account."
       />
 
-      <div className="mt-[16px] rounded-xl border border-navy bg-surface p-[16px] text-center sm:mt-6 sm:p-8">
+      <div className="mt-[16px] rounded-2xl border border-navy bg-surface sm:rounded-xl p-[16px] text-center sm:mt-6 sm:p-8">
         {!validRedirect ? (
           <Alert variant="error">
             This connection request is invalid. Please reopen the RecruiterCheck extension and try

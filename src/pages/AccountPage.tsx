@@ -142,7 +142,12 @@ export function AccountPage() {
           title="Account"
           description="Manage your profile and subscription settings."
           action={
-            <Button variant="secondary" size="sm" onClick={() => void signOut()}>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-full sm:w-auto"
+              onClick={() => void signOut()}
+            >
               Sign Out
             </Button>
           }

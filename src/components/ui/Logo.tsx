@@ -12,7 +12,9 @@ export function Logo({ className }: LogoProps) {
       className={cn('inline-flex items-center gap-2.5 text-text-primary', className)}
       aria-label="RecruiterCheck home"
     >
-      <span className="text-xl font-extrabold tracking-tight text-navy">RecruiterCheck</span>
+      <span className="text-[18px] font-extrabold tracking-tight text-navy sm:text-xl">
+        RecruiterCheck
+      </span>
     </Link>
   )
 }

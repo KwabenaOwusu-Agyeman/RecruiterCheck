@@ -87,7 +87,7 @@ export function ProductFeedbackForm({ userId, email }: ProductFeedbackFormProps)
 
   if (submitted) {
     return (
-      <div className="rounded-xl border border-navy bg-surface p-6 text-center">
+      <div className="rounded-2xl border border-navy bg-surface sm:rounded-xl p-6 text-center">
         <p className="text-sm font-semibold text-text-primary">Thanks for your feedback!</p>
         <p className="mt-1 text-sm text-text-secondary">
           It helps us make RecruiterCheck better.
@@ -97,7 +97,7 @@ export function ProductFeedbackForm({ userId, email }: ProductFeedbackFormProps)
   }
 
   return (
-    <div className="rounded-xl border border-navy bg-surface p-6">
+    <div className="rounded-2xl border border-navy bg-surface sm:rounded-xl p-6">
       <h2 className="text-base font-semibold text-text-primary">How was your experience?</h2>
       <p className="mt-1 text-sm text-text-secondary">
         Rate RecruiterCheck and leave a comment if you like. This only takes a moment.

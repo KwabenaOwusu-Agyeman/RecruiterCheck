@@ -89,8 +89,10 @@ export function MyChecksPage() {
         title="My Checks"
         description="View your checks, scores, and feedback in one place."
         action={
-          <Link to="/checks/new">
-            <Button size="sm">New Check</Button>
+          <Link to="/checks/new" className="block w-full sm:inline-block sm:w-auto">
+            <Button size="sm" className="w-full sm:w-auto">
+              New Check
+            </Button>
           </Link>
         }
       />
@@ -178,7 +180,7 @@ export function MyChecksPage() {
           </div>
 
           {/* Mobile compact list */}
-          <div className="divide-y divide-border rounded-xl border border-navy bg-surface md:hidden">
+          <div className="divide-y divide-border rounded-2xl border border-navy bg-surface sm:rounded-xl md:hidden">
             {checks.map((check) => (
               <div key={check.id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <div className="min-w-0">

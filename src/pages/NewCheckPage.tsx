@@ -396,7 +396,7 @@ export function NewCheckPage() {
         <div className="mt-3">
           <PageHeader title="New Check" />
         </div>
-        <div className="mx-auto max-w-md rounded-xl border border-navy bg-surface p-[20px] text-center sm:p-8">
+        <div className="mx-auto max-w-md rounded-2xl border border-navy bg-surface sm:rounded-xl p-[20px] text-center sm:p-8">
           <h2 className="text-base font-semibold text-text-primary">
             You've used your free Check
           </h2>
@@ -422,7 +422,7 @@ export function NewCheckPage() {
         <div className="mt-3">
           <PageHeader title="New Check" />
         </div>
-        <div className="mx-auto max-w-md rounded-xl border border-navy bg-surface p-[20px] text-center sm:p-8">
+        <div className="mx-auto max-w-md rounded-2xl border border-navy bg-surface sm:rounded-xl p-[20px] text-center sm:p-8">
           <h2 className="text-base font-semibold text-text-primary">
             You've reached today's check limit
           </h2>
@@ -449,7 +449,7 @@ export function NewCheckPage() {
         />
       </div>
 
-      <div className="mx-auto max-w-2xl space-y-[16px] rounded-xl border border-navy bg-surface p-[16px] sm:space-y-6 sm:p-6">
+      <div className="mx-auto max-w-2xl space-y-[16px] rounded-2xl border border-navy bg-surface sm:rounded-xl p-[16px] sm:space-y-6 sm:p-6">
         {captureError ? <Alert variant="error">{captureError}</Alert> : null}
 
         <div className="space-y-2">

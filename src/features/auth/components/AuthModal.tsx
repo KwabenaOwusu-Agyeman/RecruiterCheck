@@ -166,7 +166,7 @@ export function AuthModal() {
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-[#05050D]/50 px-[12px] py-[16px] sm:p-[24px]"
+      className="fixed inset-0 z-50 overflow-y-auto bg-[#05050D]/50 sm:p-[24px]"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
           close()
@@ -181,15 +181,21 @@ export function AuthModal() {
           a known Flexbox behavior), which was cutting off the top of this
           modal on short mobile viewports. `min-h-full` lets this wrapper grow
           past the viewport when the dialog is tall, so the outer container's
-          natural scrollable area starts at the true top of the content. */}
-      <div className="flex min-h-full items-center justify-center">
+          natural scrollable area starts at the true top of the content.
+          Below `sm` the panel docks to the bottom edge as a native-style
+          sheet (`items-end`); at `sm` and up it reverts to a centered modal. */}
+      <div className="flex min-h-full items-end justify-center sm:items-center">
         <div
           ref={dialogRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby="auth-modal-title"
-          className="relative flex max-h-[calc(100vh-2rem)] w-full max-w-[400px] flex-col overflow-y-auto rounded-2xl border border-navy bg-surface p-[16px] shadow-lg sm:p-[26px]"
+          className="auth-sheet-panel relative flex max-h-[92dvh] w-full max-w-none flex-col overflow-y-auto rounded-t-[24px] border border-navy border-b-0 bg-surface p-[16px] pb-[max(16px,env(safe-area-inset-bottom))] shadow-lg sm:max-h-[calc(100vh-2rem)] sm:max-w-[400px] sm:rounded-2xl sm:border-b sm:p-[26px] sm:pb-[26px]"
         >
+        <div
+          className="mx-auto mb-[10px] h-1.5 w-10 shrink-0 rounded-full bg-border sm:hidden"
+          aria-hidden="true"
+        />
         <button
           type="button"
           aria-label="Close"
@@ -227,7 +233,7 @@ export function AuthModal() {
           <Button
             type="button"
             variant="secondary"
-            className="h-[44px] w-full gap-2.5 !rounded-full text-base font-semibold sm:!h-12"
+            className="h-[48px] w-full gap-2.5 !rounded-full text-base font-semibold sm:!h-12"
             disabled={loadingProvider !== null}
             onClick={() => void handleOAuth('google', signInWithGoogle)}
           >
@@ -239,7 +245,7 @@ export function AuthModal() {
             <Button
               type="button"
               variant="secondary"
-              className="h-[44px] w-full gap-2.5 !rounded-full text-base font-semibold sm:!h-12"
+              className="h-[48px] w-full gap-2.5 !rounded-full text-base font-semibold sm:!h-12"
               disabled={loadingProvider !== null}
               onClick={() => void handleOAuth('linkedin', signInWithLinkedIn)}
             >
@@ -272,7 +278,7 @@ export function AuthModal() {
                 placeholder="you@example.com"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                className="h-[44px] pl-10 text-base sm:!h-12 sm:text-sm"
+                className="h-[48px] pl-10 text-base sm:!h-12 sm:text-sm"
               />
             </div>
           </div>
@@ -300,7 +306,7 @@ export function AuthModal() {
               placeholder="••••••••"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="h-[44px] text-base sm:!h-12 sm:text-sm"
+              className="h-[48px] text-base sm:!h-12 sm:text-sm"
             />
           </div>
 
@@ -316,14 +322,14 @@ export function AuthModal() {
                 placeholder="••••••••"
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
-                className="h-[44px] text-base sm:!h-12 sm:text-sm"
+                className="h-[48px] text-base sm:!h-12 sm:text-sm"
               />
             </div>
           ) : null}
 
           <Button
             type="submit"
-            className="mt-[4px] h-[44px] w-full !rounded-full text-base font-semibold sm:!h-12"
+            className="mt-[4px] h-[48px] w-full !rounded-full text-base font-semibold sm:!h-12"
             disabled={loadingProvider !== null || !email.trim() || !password}
           >
             {loadingProvider === 'email' ? submitLoadingLabel : submitLabel}
