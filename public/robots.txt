@@ -5,4 +5,4 @@ Disallow: /account
 Disallow: /extension
 Disallow: /auth
 
-Sitemap: https://recruitercheck.app/sitemap.xml
+Sitemap: https://recruitercheck.vercel.app/sitemap.xml
