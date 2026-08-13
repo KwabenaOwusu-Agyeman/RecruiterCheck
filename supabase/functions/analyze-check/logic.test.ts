@@ -384,6 +384,25 @@ test('normalizeAnalysis: a mix of strong/partial/none lands in Needs Improvement
   })
   const label = getScoreLabel(result.interview_probability_score)
   assert.equal(label, 'Needs Improvement')
+  assert.equal(result.improvements.length, 3)
+  assert.ok(result.improvements.every((item) => /Example:/i.test(item)))
+})
+
+test('normalizeAnalysis deterministically completes three Needs Improvement items when the model returns only two', () => {
+  const result = analyze({
+    requirements: [
+      requirement({ requirement: 'Relevant experience', category: 'experience', importance: 'must_have', match_strength: 'strong' }),
+      requirement({ requirement: 'Stakeholder management', category: 'skills', importance: 'important', match_strength: 'partial' }),
+      requirement({ requirement: 'Reporting tools', category: 'skills', importance: 'nice_to_have', match_strength: 'none', cv_evidence: '' }),
+    ],
+    uvp_evidence_level: 'partial',
+    improvement_3_finding: '',
+    improvement_3_evidence: '',
+    improvement_3_example: '',
+  })
+  assert.equal(getScoreLabel(result.interview_probability_score), 'Needs Improvement')
+  assert.equal(result.improvements.length, 3)
+  assert.ok(result.improvements.every((item) => /Example:/i.test(item)))
 })
 
 // TEST 3 — poor candidate
