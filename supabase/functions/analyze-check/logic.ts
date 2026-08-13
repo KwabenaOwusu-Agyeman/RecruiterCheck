@@ -371,18 +371,18 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string): AnalysisRes
     combineFinding(raw.strength_1_finding, raw.strength_1_evidence),
     combineFinding(raw.strength_2_finding, raw.strength_2_evidence),
   ].filter((item): item is string => item !== null)
-  const improvements = [
+  const generatedImprovements = [
     combineFinding(raw.improvement_1_finding, raw.improvement_1_evidence, raw.improvement_1_example),
     combineFinding(raw.improvement_2_finding, raw.improvement_2_evidence, raw.improvement_2_example),
     combineFinding(raw.improvement_3_finding, raw.improvement_3_evidence, raw.improvement_3_example),
   ].filter((item): item is string => item !== null)
   const prospects = sanitizeStrings([raw.prospect_1, raw.prospect_2])
 
-  if (strengths.length !== 2) throw new Error('Expected exactly 2 strengths')
-  if (improvements.length !== 3) throw new Error('Expected exactly 3 areas to improve')
-  if (prospects.length !== 2) throw new Error('Expected exactly 2 prospects')
+  if (strengths.length > 2) throw new Error('Expected at most 2 strengths')
+  if (generatedImprovements.length > 3) throw new Error('Expected at most 3 areas to improve')
+  if (prospects.length > 2) throw new Error('Expected at most 2 prospects')
 
-  const combinedContent = [...strengths, ...improvements, ...prospects].join(' ')
+  const combinedContent = [...strengths, ...generatedImprovements, ...prospects].join(' ')
   if (!looksLikeEnglish(combinedContent)) {
     throw new Error('Content did not look like English')
   }
@@ -469,6 +469,14 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string): AnalysisRes
 
   const weighted = 0.4 * experienceScore + 0.35 * skillsScore + 0.25 * uvpScore
   const finalScore = applyCriticalGapCap(clampScore(Math.round(weighted)), dedupedRequirements)
+  const improvementLimit = finalScore === 100 ? 0 : finalScore >= 85 ? 1 : 3
+  const improvements = generatedImprovements.slice(0, improvementLimit)
+  const scoreAwareProspects = finalScore === 100
+    ? [
+        'Your application shows complete documented alignment with this role.',
+        'Your application is ready to submit, although employer decisions and competition still apply.',
+      ]
+    : prospects
 
   return {
     interview_probability_score: finalScore,
@@ -477,7 +485,7 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string): AnalysisRes
     uvp_score: uvpScore,
     strengths,
     improvements,
-    prospects,
+    prospects: scoreAwareProspects,
     detected_language: 'en',
     job_title: typeof raw.job_title === 'string' && raw.job_title.trim() ? raw.job_title.trim() : null,
     company_name: typeof raw.company_name === 'string' && raw.company_name.trim() ? raw.company_name.trim() : null,

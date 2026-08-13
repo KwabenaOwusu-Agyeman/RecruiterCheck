@@ -23,7 +23,7 @@ export function FreeCvCheckerPage() {
       faqs={[
         { question: 'Is the CV checker free?', answer: 'You can start with a Recruiter Check and review how your CV matches a specific job before deciding whether you need more checks.' },
         { question: 'Does it check my CV against a job description?', answer: 'Yes. The feedback is based on both your CV and the job description, so the result is specific to the application you are preparing.' },
-        { question: 'What feedback will I receive?', answer: 'You receive an Interview Probability, two strengths, three areas to improve and two prospects based on the evidence in your application.' },
+        { question: 'What feedback will I receive?', answer: 'You receive an Interview Probability, two strengths, up to three genuine areas to improve and two prospects based on the evidence in your application.' },
         { question: 'Does a high score guarantee an interview?', answer: 'No. The result is an evidence-based estimate, not a hiring guarantee. Recruiters may consider other candidates and information outside your documents.' },
       ]}
       relatedLinks={[
