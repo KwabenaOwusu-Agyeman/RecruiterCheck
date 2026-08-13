@@ -28,24 +28,24 @@ export function NewsletterSection() {
   }
 
   return (
-    <section className="border-t border-border bg-navy py-12 sm:py-16">
+    <section className="border-t border-border bg-navy py-8 sm:py-10">
       <Container>
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-white/70">The Recruiter Check</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">
-            One practical application improvement every week
+        <div className="mx-auto max-w-xl text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">The Recruiter Check</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+            One recruiter insight every week
           </h2>
-          <p className="mx-auto mt-3 max-w-xl text-white/75">
+          <p className="mx-auto mt-2 text-sm text-white/75 sm:text-base">
             Read it in 15 seconds. Use it before your next application.
           </p>
 
           {status === 'success' ? (
-            <p className="mt-6 rounded-xl bg-white px-5 py-4 font-medium text-navy" role="status">
+            <p className="mt-5 rounded-lg bg-white px-4 py-3 text-sm font-medium text-navy" role="status">
               {message}
             </p>
           ) : (
-            <form className="mx-auto mt-7 max-w-xl text-left" onSubmit={handleSubmit}>
-              <div className="flex flex-col gap-3 sm:flex-row">
+            <form className="mx-auto mt-5 max-w-lg text-left" onSubmit={handleSubmit}>
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <label htmlFor="newsletter-email" className="sr-only">Email address</label>
                 <Input
                   id="newsletter-email"
@@ -58,10 +58,10 @@ export function NewsletterSection() {
                   className="bg-white"
                 />
                 <Button type="submit" variant="secondary" size="md" disabled={status === 'loading' || !email || !consent} className="shrink-0 bg-white">
-                  {status === 'loading' ? 'Subscribing…' : 'Send Me the Next Check'}
+                  {status === 'loading' ? 'Subscribing…' : 'Get the Next Check'}
                 </Button>
               </div>
-              <label className="mt-4 flex cursor-pointer items-start gap-3 text-sm leading-5 text-white/75">
+              <label className="mt-3 flex cursor-pointer items-start gap-2 text-xs leading-4 text-white/75">
                 <input
                   type="checkbox"
                   checked={consent}
