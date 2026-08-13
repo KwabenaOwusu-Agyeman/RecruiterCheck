@@ -36,7 +36,7 @@ export function NewsletterSection() {
             One practical application improvement every week
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-white/75">
-            Read it in three minutes. Use it before your next application.
+            Read it in 15 seconds. Use it before your next application.
           </p>
 
           {status === 'success' ? (
@@ -79,4 +79,3 @@ export function NewsletterSection() {
     </section>
   )
 }
-
