@@ -26,8 +26,7 @@ export function HeroSection() {
             If you were the recruiter, would you invite yourself to an interview?
           </h1>
           <p className="mx-auto mt-[16px] max-w-none text-lg leading-relaxed text-text-secondary sm:mt-5 lg:max-w-[680px] lg:text-xl">
-            See your application from a recruiter&rsquo;s perspective. Get your interview
-            probability, clear feedback, and tailored application documents before you apply.
+            See what recruiters see. Improve your application before you apply.
           </p>
           <div className="mt-[20px] flex flex-col items-center justify-center gap-3 sm:mt-6 sm:flex-row">
             <Button size="md" className="sm:!h-12 sm:px-6 sm:text-base" onClick={handleCheckCta}>

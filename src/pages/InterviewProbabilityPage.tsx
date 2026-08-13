@@ -3,7 +3,7 @@ import { SeoLandingPage } from '@/pages/SeoLandingPage'
 export function InterviewProbabilityPage() {
   return (
     <SeoLandingPage
-      title="Interview Probability Score | MyRecruiterCheck"
+      title="Interview Probability | MyRecruiterCheck"
       description="Estimate how strongly your CV matches a specific job and learn what may improve your chances of getting an interview."
       path="/interview-probability-score"
       eyebrow="Interview Probability"

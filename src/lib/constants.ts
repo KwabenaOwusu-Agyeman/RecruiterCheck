@@ -15,7 +15,7 @@ import type { PricingPlan } from '@/types'
 
 const PREMIUM_FEATURES = [
   'Up to 8 Recruiter Checks per day',
-  'Interview Probability Score',
+  'Interview Probability',
   'Recruiter Feedback',
   'Tailored CVs',
   'Cover Letters',
@@ -28,7 +28,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     name: 'Free',
     price: '€0',
     description: 'Get started with your first Recruiter Check.',
-    features: ['1 Recruiter Check', 'Interview Probability Score', 'Recruiter Feedback'],
+    features: ['1 Recruiter Check', 'Interview Probability', 'Recruiter Feedback'],
   },
   {
     id: 'premium_weekly' as const,

@@ -15,7 +15,7 @@ export function PublicFooter() {
               © {new Date().getFullYear()} {BRAND.name}. All rights reserved.
             </p>
             <p className="mt-0.5 text-xs text-text-secondary/80">
-              See your application from a recruiter&rsquo;s perspective.
+              {BRAND.tagline}
             </p>
           </div>
           <nav className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-text-secondary" aria-label="Site links">
