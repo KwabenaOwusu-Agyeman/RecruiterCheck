@@ -11,8 +11,11 @@ interface SeoLandingPageProps {
   eyebrow: string
   heading: string
   introduction: string
+  directAnswer?: string
   benefits: readonly { title: string; description: string }[]
   steps: readonly string[]
+  faqs?: readonly { question: string; answer: string }[]
+  relatedLinks?: readonly { label: string; to: string }[]
 }
 
 export function SeoLandingPage({
@@ -22,8 +25,11 @@ export function SeoLandingPage({
   eyebrow,
   heading,
   introduction,
+  directAnswer,
   benefits,
   steps,
+  faqs = [],
+  relatedLinks = [],
 }: SeoLandingPageProps) {
   const handleCheckCta = useCheckCta()
   usePageMeta({ title, description, path })
@@ -52,6 +58,19 @@ export function SeoLandingPage({
           </div>
         </Container>
       </section>
+
+      {directAnswer && (
+        <section className="border-b border-border-soft bg-background py-10 sm:py-14">
+          <Container>
+            <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-surface p-6 sm:p-8">
+              <h2 className="text-2xl font-semibold tracking-tight text-text-primary">
+                What does this tool check?
+              </h2>
+              <p className="mt-4 leading-7 text-text-secondary">{directAnswer}</p>
+            </div>
+          </Container>
+        </section>
+      )}
 
       <section className="py-14 sm:py-20">
         <Container>
@@ -86,6 +105,41 @@ export function SeoLandingPage({
           </div>
         </Container>
       </section>
+
+      {faqs.length > 0 && (
+        <section className="py-14 sm:py-20">
+          <Container>
+            <div className="mx-auto max-w-3xl">
+              <h2 className="text-3xl font-semibold tracking-tight text-text-primary">
+                Frequently asked questions
+              </h2>
+              <div className="mt-8 divide-y divide-border rounded-2xl border border-border bg-surface px-6">
+                {faqs.map((faq) => (
+                  <article key={faq.question} className="py-6">
+                    <h3 className="text-lg font-semibold text-text-primary">{faq.question}</h3>
+                    <p className="mt-3 leading-7 text-text-secondary">{faq.answer}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </Container>
+        </section>
+      )}
+
+      {relatedLinks.length > 0 && (
+        <section className="border-t border-border-soft bg-surface py-10">
+          <Container>
+            <nav className="mx-auto flex max-w-3xl flex-wrap items-center gap-3" aria-label="Related tools">
+              <span className="text-sm font-semibold text-text-primary">Related tools:</span>
+              {relatedLinks.map((link) => (
+                <Link key={link.to} to={link.to} className="text-sm font-medium text-blue hover:underline">
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+          </Container>
+        </section>
+      )}
     </main>
   )
 }
