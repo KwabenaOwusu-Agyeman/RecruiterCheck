@@ -397,6 +397,62 @@ function requirementName(requirement: RawRequirement | undefined): string | null
   return requirement.requirement.trim().replace(/[.!?]+$/, '') || null
 }
 
+function withPracticalExample(item: string): string {
+  if (/\bExample:/i.test(item)) return item
+  return `${item.replace(/[.!?]+$/, '')}. Example: Add one truthful CV bullet that shows the relevant action, context, and result.`
+}
+
+function requirementImprovement(requirement: RawRequirement): string {
+  const name = requirementName(requirement) ?? 'this requirement'
+  if (verificationStage(requirement) === 'application') {
+    if (WORK_AUTH_PATTERN.test(requirement.requirement)) {
+      return 'Clarify work authorization. The application does not show your general eligibility to work in the required country. Example: If accurate, add “Authorized to work in the Netherlands” to your professional summary or CV footer. Never include a BSN or permit number.'
+    }
+    return 'Confirm your availability. The application does not confirm your availability for the required shifts. Example: State your availability in the application form or recruiter message.'
+  }
+  if (requirement.match_strength === 'partial') {
+    return `Strengthen evidence for ${name}. Your CV shows related evidence but does not fully demonstrate this requirement. Example: Add a truthful bullet explaining where you used this capability and the result achieved.`
+  }
+  return `Show evidence for ${name}. Your CV does not currently provide verified evidence for this requirement. Example: Add the relevant qualification, skill, or experience only if you genuinely have it.`
+}
+
+function ensureThreeNeedsImprovementItems(
+  generated: string[],
+  requirements: RawRequirement[],
+  uvpLevel: UvpEvidenceLevel,
+): string[] {
+  const candidates = generated.map(withPracticalExample)
+  const gaps = [
+    ...requirements.filter((item) => item.match_strength === 'none' && item.importance === 'must_have'),
+    ...requirements.filter((item) => item.match_strength === 'partial'),
+    ...requirements.filter((item) => item.match_strength === 'none' && item.importance !== 'must_have'),
+  ]
+  for (const gap of gaps) candidates.push(requirementImprovement(gap))
+
+  if (uvpLevel !== 'strong') {
+    candidates.push(
+      'Strengthen your unique value. Your CV does not yet show a strong, role specific reason to choose you over another qualified candidate. Example: Add one truthful achievement using Evidence, Strength, and Employer Value.',
+    )
+  }
+  candidates.push(
+    'Prioritize your closest match. Make the experience most relevant to this job the easiest evidence for a recruiter to find. Example: Move the closest matching role or achievement higher and describe its employer value.',
+    'Make impact easy to scan. Strengthen one relevant achievement with a clear result where accurate. Example: “Improved X by Y% within Z months” using only figures you can verify.',
+  )
+
+  const unique: string[] = []
+  const seen = new Set<string>()
+  for (const candidate of candidates) {
+    const safe = makePrivacySafeImprovement(candidate)
+    if (!safe) continue
+    const key = safe.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+    if (seen.has(key)) continue
+    seen.add(key)
+    unique.push(safe)
+    if (unique.length === 3) break
+  }
+  return unique
+}
+
 function buildScoreAwareProspects(score: number, requirements: RawRequirement[], improvements: string[]): string[] {
   const strongest = requirementName(requirements.find((item) => item.match_strength === 'strong'))
   const gap = requirementName(
@@ -533,8 +589,13 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string): AnalysisRes
 
   const weighted = 0.4 * experienceScore + 0.35 * skillsScore + 0.25 * uvpScore
   const finalScore = applyCriticalGapCap(clampScore(Math.round(weighted)), dedupedRequirements)
-  const improvementLimit = finalScore === 100 ? 0 : finalScore >= 85 ? 1 : 3
-  const improvements = generatedImprovements.slice(0, improvementLimit)
+  const improvements = finalScore === 100
+    ? []
+    : finalScore >= 85
+      ? generatedImprovements.slice(0, 1)
+      : finalScore >= 61
+        ? ensureThreeNeedsImprovementItems(generatedImprovements, dedupedRequirements, evidenceSafeUvpLevel)
+        : generatedImprovements.slice(0, 3)
   const scoreAwareProspects = buildScoreAwareProspects(finalScore, dedupedRequirements, improvements)
 
   return {
