@@ -5,6 +5,7 @@ import { StatusBadge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { FeedbackBullet, getVerdictColor, splitFinding } from '@/components/feedback/FeedbackBullet'
+import { ProductFeedbackForm } from '@/features/feedback/components/ProductFeedbackForm'
 import { useAuth } from '@/hooks/useAuth'
 import { getScoreLabel } from '@/lib/scoring'
 import { trackEvent } from '@/lib/analytics'
@@ -54,7 +55,7 @@ function buildSummarySentence(score: number, improvements: string[]): string {
 
 export function FeedbackPage() {
   const { id } = useParams<{ id: string }>()
-  const { profile } = useAuth()
+  const { user, profile } = useAuth()
   const [check, setCheck] = useState<CheckWithFeedback | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -307,6 +308,16 @@ export function FeedbackPage() {
               ) : null}
             </CardContent>
           </Card>
+
+          {user?.email ? (
+            <ProductFeedbackForm
+              userId={user.id}
+              email={user.email}
+              checkId={check.id}
+              firstName={firstName || null}
+              targetRole={check.job_title}
+            />
+          ) : null}
         </div>
       ) : check.status === 'completed' ? (
         <Alert variant="info">Feedback is not available for this check.</Alert>

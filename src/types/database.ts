@@ -124,16 +124,26 @@ export interface Database {
           id: string
           user_id: string
           email: string
+          check_id: string | null
+          display_name: string | null
+          target_role: string | null
           rating: number
           comment: string | null
+          feature_consent: boolean
+          feature_consent_at: string | null
           created_at: string
         }
         Insert: {
           id?: string
           user_id: string
           email: string
+          check_id?: string | null
+          display_name?: string | null
+          target_role?: string | null
           rating: number
           comment?: string | null
+          feature_consent?: boolean
+          feature_consent_at?: string | null
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['product_feedback']['Insert']>
