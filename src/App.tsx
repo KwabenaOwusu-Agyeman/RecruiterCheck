@@ -4,6 +4,7 @@ import { AuthProvider } from '@/hooks/useAuth'
 import { AppLayout } from '@/layouts/AppLayout'
 import { PublicLayout } from '@/layouts/PublicLayout'
 import { AccountPage } from '@/pages/AccountPage'
+import { AtsResumeCheckerPage } from '@/pages/AtsResumeCheckerPage'
 import { ApplicationCheckerPage } from '@/pages/ApplicationCheckerPage'
 import { AuthCallbackPage } from '@/pages/AuthCallbackPage'
 import { BillingPage } from '@/pages/BillingPage'
@@ -13,6 +14,7 @@ import { ExampleCheckPage } from '@/pages/ExampleCheckPage'
 import { ExtensionConnectPage } from '@/pages/ExtensionConnectPage'
 import { FaqPage } from '@/pages/FaqPage'
 import { FeedbackPage } from '@/pages/FeedbackPage'
+import { FreeCvCheckerPage } from '@/pages/FreeCvCheckerPage'
 import { LandingPage } from '@/pages/LandingPage'
 import { InterviewProbabilityPage } from '@/pages/InterviewProbabilityPage'
 import { MyChecksPage } from '@/pages/MyChecksPage'
@@ -33,6 +35,8 @@ export function App() {
             <Route path="sign-up" element={<LandingPage />} />
             <Route path="example-check" element={<ExampleCheckPage />} />
             <Route path="application-checker" element={<ApplicationCheckerPage />} />
+            <Route path="free-cv-checker" element={<FreeCvCheckerPage />} />
+            <Route path="ats-resume-checker" element={<AtsResumeCheckerPage />} />
             <Route path="resume-job-description-match" element={<ResumeJobMatchPage />} />
             <Route path="interview-probability-score" element={<InterviewProbabilityPage />} />
           </Route>

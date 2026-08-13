@@ -22,6 +22,12 @@ export function PublicFooter() {
             <Link to="/application-checker" className={linkClassName}>
               Application Checker
             </Link>
+            <Link to="/free-cv-checker" className={linkClassName}>
+              Free CV Checker
+            </Link>
+            <Link to="/ats-resume-checker" className={linkClassName}>
+              ATS Checker
+            </Link>
             <Link to="/resume-job-description-match" className={linkClassName}>
               CV Job Match
             </Link>
