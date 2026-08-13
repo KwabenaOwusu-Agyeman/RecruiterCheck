@@ -366,6 +366,79 @@ function isValidRequirement(value: unknown): value is RawRequirement {
   )
 }
 
+const PRIVATE_IDENTIFIER_PATTERN = /\b(?:bsn|citizen service number|burgerservicenummer|passport number|identity card number|id number|residence permit number|work permit number|permit number|tax number|bank account|iban|date of birth|marital status|medical information|full home address)\b/i
+const WORK_AUTH_PATTERN = /\b(?:work permit|work authori[sz]ation|authori[sz]ed to work|eligible to work|right to work|sponsorship)\b/i
+const AVAILABILITY_PATTERN = /\b(?:availability|available|shift|shifts|weekend|weekends|evening|evenings|night|nights|daytime)\b/i
+const EXPLICIT_MANDATORY_PATTERN = /\b(?:mandatory|required|must|essential)\b/i
+
+type VerificationStage = 'cv' | 'application' | 'post_hire'
+
+function verificationStage(requirement: RawRequirement): VerificationStage {
+  if (PRIVATE_IDENTIFIER_PATTERN.test(requirement.requirement)) return 'post_hire'
+  if (WORK_AUTH_PATTERN.test(requirement.requirement) || AVAILABILITY_PATTERN.test(requirement.requirement)) {
+    return 'application'
+  }
+  return 'cv'
+}
+
+function makePrivacySafeImprovement(item: string): string | null {
+  if (AVAILABILITY_PATTERN.test(item)) {
+    return 'Confirm your availability. State your availability for the required shifts in the application form or recruiter message.'
+  }
+  if (PRIVATE_IDENTIFIER_PATTERN.test(item)) {
+    if (!WORK_AUTH_PATTERN.test(item)) return null
+    return 'Clarify work authorization. If accurate, add “Authorized to work in the Netherlands” to your professional summary or CV footer. Never include a BSN or permit number.'
+  }
+  return item
+}
+
+function requirementName(requirement: RawRequirement | undefined): string | null {
+  if (!requirement) return null
+  return requirement.requirement.trim().replace(/[.!?]+$/, '') || null
+}
+
+function buildScoreAwareProspects(score: number, requirements: RawRequirement[], improvements: string[]): string[] {
+  const strongest = requirementName(requirements.find((item) => item.match_strength === 'strong'))
+  const gap = requirementName(
+    requirements.find((item) => item.match_strength === 'none' && item.importance === 'must_have') ??
+      requirements.find((item) => item.match_strength === 'none') ??
+      requirements.find((item) => item.match_strength === 'partial'),
+  )
+
+  if (score === 100) {
+    return [
+      'Your application shows complete documented alignment with this role.',
+      'Your application is ready to submit, although employer decisions and competition still apply.',
+    ]
+  }
+  if (score >= 85) {
+    return [
+      strongest
+        ? `Your CV shows strong documented evidence for ${strongest}.`
+        : 'Your CV shows strong documented alignment with this role.',
+      improvements.length > 0
+        ? 'Addressing the remaining refinement could further strengthen your interview chances.'
+        : 'Your application is ready to submit, although employer decisions and competition still apply.',
+    ]
+  }
+  if (score >= 61) {
+    return [
+      strongest
+        ? `Your CV shows relevant evidence for ${strongest}, but important gaps still need attention.`
+        : 'Your CV shows relevant alignment, but important gaps still need attention.',
+      gap
+        ? `Strengthen or confirm your evidence for ${gap} before applying.`
+        : 'Address the areas above before applying to improve your interview chances.',
+    ]
+  }
+  return [
+    gap
+      ? `Your CV does not yet show enough evidence for ${gap}, which is important for this role.`
+      : 'Your CV does not yet show enough evidence for this specific role.',
+    'Focus on the essential missing requirements before applying or target a more closely aligned role.',
+  ]
+}
+
 export function normalizeAnalysis(raw: RawAnalysis, cvText: string): AnalysisResult {
   const strengths = [
     combineFinding(raw.strength_1_finding, raw.strength_1_evidence),
@@ -375,7 +448,10 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string): AnalysisRes
     combineFinding(raw.improvement_1_finding, raw.improvement_1_evidence, raw.improvement_1_example),
     combineFinding(raw.improvement_2_finding, raw.improvement_2_evidence, raw.improvement_2_example),
     combineFinding(raw.improvement_3_finding, raw.improvement_3_evidence, raw.improvement_3_example),
-  ].filter((item): item is string => item !== null)
+  ]
+    .filter((item): item is string => item !== null)
+    .map(makePrivacySafeImprovement)
+    .filter((item): item is string => item !== null)
   const prospects = sanitizeStrings([raw.prospect_1, raw.prospect_2])
 
   if (strengths.length > 2) throw new Error('Expected at most 2 strengths')
@@ -405,18 +481,6 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string): AnalysisRes
     throw new Error('Requirement matrix contains an invalid entry')
   }
 
-  // Every strong/partial match must be grounded in a quoted or paraphrased
-  // piece of CV evidence — a bare assertion with no evidence field filled in
-  // is exactly the "the model just felt like 78" failure mode this schema
-  // exists to prevent. A "none" match is allowed to have empty evidence
-  // (there is nothing to quote), but never rejected for including a note.
-  const ungroundedMatch = raw.requirements.find(
-    (r) => (r.match_strength === 'strong' || r.match_strength === 'partial') && r.cv_evidence.trim().length === 0,
-  )
-  if (ungroundedMatch) {
-    throw new Error(`Requirement "${ungroundedMatch.requirement}" has a match with no supporting CV evidence`)
-  }
-
   if (
     raw.uvp_evidence_level !== 'strong' &&
     raw.uvp_evidence_level !== 'partial' &&
@@ -424,28 +488,28 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string): AnalysisRes
   ) {
     throw new Error('Missing or invalid uvp_evidence_level')
   }
-  if (raw.uvp_evidence_level !== 'none' && raw.uvp_evidence.trim().length === 0) {
-    throw new Error('UVP evidence level requires supporting CV evidence')
-  }
-
-  // A non-empty evidence field is necessary but not sufficient — this checks
-  // that a strong/partial match's evidence is source anchored in (or, for a
-  // genuine paraphrase, free of any invented number/money/named-entity
-  // claim relative to) the CV the model was given, rather than a plausible
-  // sounding but fabricated quote (which the non-empty check above cannot
-  // catch on its own, and which new_claims_introduced never sees since it
-  // only scans the feedback prose fields, not cv_evidence/uvp_evidence).
-  const fabricatedMatch = raw.requirements.find(
-    (r) => (r.match_strength === 'strong' || r.match_strength === 'partial') && !isGroundedInCv(r.cv_evidence, cvText),
-  )
-  if (fabricatedMatch) {
-    throw new Error(
-      `Requirement "${fabricatedMatch.requirement}" has evidence that does not appear to be grounded in the CV text`,
-    )
-  }
-  if (raw.uvp_evidence_level !== 'none' && !isGroundedInCv(raw.uvp_evidence, cvText)) {
-    throw new Error('UVP evidence does not appear to be grounded in the CV text')
-  }
+  // Never let one disputed evidence match prevent the user from receiving
+  // feedback. A strong or partial classification only earns credit when its
+  // evidence is verifiably grounded in the CV. Otherwise downgrade it to
+  // none and clear the unsupported evidence, then continue conservatively.
+  const evidenceSafeRequirements = raw.requirements
+    .filter((requirement) => verificationStage(requirement) !== 'post_hire')
+    .map((requirement) => {
+    const claimsMatch = requirement.match_strength === 'strong' || requirement.match_strength === 'partial'
+    const availabilityCanBeCritical = requirement.importance === 'must_have' && EXPLICIT_MANDATORY_PATTERN.test(requirement.requirement)
+    const safeCritical = AVAILABILITY_PATTERN.test(requirement.requirement)
+      ? requirement.critical && availabilityCanBeCritical
+      : requirement.critical
+    if (claimsMatch && !isGroundedInCv(requirement.cv_evidence, cvText)) {
+      return { ...requirement, critical: safeCritical, match_strength: 'none' as const, cv_evidence: '' }
+    }
+    return requirement.match_strength === 'none'
+      ? { ...requirement, critical: safeCritical, cv_evidence: '' }
+      : { ...requirement, critical: safeCritical }
+    })
+  const evidenceSafeUvpLevel = raw.uvp_evidence_level !== 'none' && isGroundedInCv(raw.uvp_evidence, cvText)
+    ? raw.uvp_evidence_level
+    : 'none'
 
   // Deduplicate exact-text duplicate requirements (case/whitespace
   // insensitive) as a safety net against a model that restates the same
@@ -455,7 +519,7 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string): AnalysisRes
   // responsibility, not something this can reliably detect.
   const seen = new Set<string>()
   const dedupedRequirements = capRequirements(
-    raw.requirements.filter((r) => {
+    evidenceSafeRequirements.filter((r) => {
       const key = `${r.category}::${r.requirement.trim().toLowerCase()}`
       if (seen.has(key)) return false
       seen.add(key)
@@ -465,18 +529,13 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string): AnalysisRes
 
   const experienceScore = calculateCategoryScore(dedupedRequirements, 'experience')
   const skillsScore = calculateCategoryScore(dedupedRequirements, 'skills')
-  const uvpScore = calculateUvpScore(raw.uvp_evidence_level)
+  const uvpScore = calculateUvpScore(evidenceSafeUvpLevel)
 
   const weighted = 0.4 * experienceScore + 0.35 * skillsScore + 0.25 * uvpScore
   const finalScore = applyCriticalGapCap(clampScore(Math.round(weighted)), dedupedRequirements)
   const improvementLimit = finalScore === 100 ? 0 : finalScore >= 85 ? 1 : 3
   const improvements = generatedImprovements.slice(0, improvementLimit)
-  const scoreAwareProspects = finalScore === 100
-    ? [
-        'Your application shows complete documented alignment with this role.',
-        'Your application is ready to submit, although employer decisions and competition still apply.',
-      ]
-    : prospects
+  const scoreAwareProspects = buildScoreAwareProspects(finalScore, dedupedRequirements, improvements)
 
   return {
     interview_probability_score: finalScore,

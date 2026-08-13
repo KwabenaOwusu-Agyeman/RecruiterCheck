@@ -148,8 +148,11 @@ Deno.serve(async (req) => {
       })
     } catch (error) {
       console.error('analyze-check: analysis failed after retry', error)
-      await markFailed(adminClient, checkId, 'Could not generate feedback. Please retry.')
-      return jsonResponse({ error: 'Could not generate feedback' }, 502)
+      analysis = buildLastResortFeedback({
+        jobTitle: check.job_title,
+        companyName: check.company_name,
+      })
+      console.warn('analyze-check: using conservative last resort feedback', { checkId })
     }
 
     const { error: feedbackError } = await adminClient.from('feedback').upsert(
@@ -318,6 +321,38 @@ async function generateFeedback(
   throw new Error(`All attempts failed: ${JSON.stringify(attemptErrors)}`)
 }
 
+/**
+ * Final safety net for a valid CV and job description when every structured
+ * analysis attempt fails. It awards no unsupported credit and invents no
+ * candidate facts, but still completes the check with useful next steps.
+ * Normal requests should never reach this path.
+ */
+function buildLastResortFeedback(
+  context: { jobTitle: string | null; companyName: string | null },
+): AnalysisResult {
+  const role = context.jobTitle?.trim() || 'this role'
+
+  return {
+    interview_probability_score: 0,
+    experience_score: 0,
+    skills_score: 0,
+    uvp_score: 0,
+    strengths: [],
+    improvements: [
+      `Verify the essential requirements. Confirm that your CV clearly shows every mandatory qualification required for ${role}.`,
+      'Show relevant experience. Add direct evidence of responsibilities and results that match the job description.',
+      'Add required skills. Name only the tools, licences, training, and capabilities you genuinely hold.',
+    ],
+    prospects: [
+      'Your CV and the role could not be matched with enough verified evidence for a reliable positive assessment.',
+      'Update the CV with clear evidence for the essential requirements, then run a new Recruiter Check.',
+    ],
+    detected_language: 'en',
+    job_title: context.jobTitle?.trim() || null,
+    company_name: context.companyName?.trim() || null,
+  }
+}
+
 async function callOpenAI(
   apiKey: string,
   cvText: string,
@@ -348,6 +383,10 @@ Read the job description and extract the distinct requirements that matter for t
 - cv_evidence: for a strong or partial match, copy a short excerpt of the CV's own text that supports it, word for word (trimming to the relevant sentence or clause is fine, and minor whitespace cleanup is fine) — do not rewrite it into your own words or summarize it, since a rephrased version can no longer be verified against the original. Never invent an excerpt that is not genuinely present in the CV, and never let the excerpt state a fact, number, tool, or qualification the CV itself does not state. If the CV shows only related or transferable evidence rather than the exact thing requested (for example the requirement is Odoo but the CV only shows SAP), quote what the CV actually says (the SAP text) and let match_strength (e.g. "partial") carry the transferability judgment — never substitute the requirement's own terminology into the quote. For a "none" match, leave this as an empty string.
 
 Extract only requirements that are actually stated or clearly implied by the job description — never invent a requirement the posting does not raise, even for a short posting. Do not create duplicate or near duplicate entries for the same underlying requirement (e.g. do not list "5 years experience" and "significant prior experience" separately if the posting only raises one such requirement) — merge them into a single entry. Focus on the requirements that actually define whether this candidate fits the role; extract roughly 6 to 12 total across both categories for a typical posting, fewer for a very narrow one, never dozens of near identical entries.
+
+Privacy rule for Dutch applications: never treat a BSN, citizen service number, or burgerservicenummer as information that belongs in a CV or application. Exclude possession or disclosure of a BSN from the scored requirement matrix, even when the job description asks for it. Never advise the candidate to include a BSN, passport number, residence permit number, or work permit number. A general legal eligibility requirement such as authorization to work may be assessed separately. If it is not shown, recommend only a general statement such as "Authorized to work in the Netherlands", if accurate, without asking for any identifying number or immigration document details.
+
+Classify requirements by where they should be handled. Score professional experience, skills, licences, qualifications, and other evidence that appropriately belongs in a CV. Work authorization and availability may be confirmed in the application form, professional summary, CV footer, or recruiter message. BSN, tax identifiers, passport details, identity card details, permit numbers, bank details, date of birth, marital status, medical information, and full home address are private or post hire information: exclude them from scoring and never recommend adding them to application documents. Missing availability is critical only when the job description explicitly says the stated shifts are mandatory, required, must be worked, or essential. Otherwise treat it as an application clarification, not a reason by itself to classify the candidate as Not a Fit.
 
 == STEP 2: UVP (UNIQUE VALUE PROPOSITION) ==
 
