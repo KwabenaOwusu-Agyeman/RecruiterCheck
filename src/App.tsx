@@ -21,6 +21,7 @@ import { InterviewProbabilityPage } from '@/pages/InterviewProbabilityPage'
 import { JobApplicationFeedbackPage } from '@/pages/JobApplicationFeedbackPage'
 import { MyChecksPage } from '@/pages/MyChecksPage'
 import { NewCheckPage } from '@/pages/NewCheckPage'
+import { NewsletterUnsubscribePage } from '@/pages/NewsletterUnsubscribePage'
 import { PrivacyPage } from '@/pages/PrivacyPage'
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage'
 import { RecruiterMessageGeneratorPage } from '@/pages/RecruiterMessageGeneratorPage'
@@ -58,6 +59,7 @@ export function App() {
           <Route path="privacy" element={<PrivacyPage />} />
           <Route path="disclaimer" element={<DisclaimerPage />} />
           <Route path="faq" element={<FaqPage />} />
+          <Route path="newsletter/unsubscribe" element={<NewsletterUnsubscribePage />} />
 
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>

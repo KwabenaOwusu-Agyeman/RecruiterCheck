@@ -5,6 +5,7 @@ import { AuthModalProvider, useAuthModal } from '@/features/auth/context/AuthMod
 import { storePostAuthRedirect } from '@/features/auth/postAuthRedirect'
 import { PublicFooter } from '@/features/landing/components/PublicFooter'
 import { PublicHeader } from '@/features/landing/components/PublicHeader'
+import { NewsletterSection } from '@/features/landing/components/NewsletterSection'
 import { StickyMobileCta } from '@/features/landing/components/StickyMobileCta'
 
 function PublicLayoutContent() {
@@ -32,6 +33,7 @@ function PublicLayoutContent() {
       <main className="flex-1">
         <Outlet />
       </main>
+      <NewsletterSection />
       <PublicFooter />
       <StickyMobileCta />
       <AuthModal />
