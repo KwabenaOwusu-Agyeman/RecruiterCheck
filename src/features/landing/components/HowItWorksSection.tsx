@@ -9,7 +9,7 @@ const steps = [
   {
     number: '02',
     title: 'See what a recruiter sees',
-    description: 'Get your Interview Probability Score, strengths, areas to improve, and prospects.',
+    description: 'Get your Interview Probability, strengths, areas to improve, and prospects.',
   },
   {
     number: '03',
@@ -29,9 +29,6 @@ export function HowItWorksSection() {
           <h2 className="text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl lg:text-[32px]">
             How it works
           </h2>
-          <p className="mt-3 text-text-secondary">
-            See your application the way a recruiter would, then improve it before you apply.
-          </p>
         </div>
 
         <ol className="relative mx-auto mt-[24px] grid max-w-4xl items-stretch gap-[16px] sm:mt-8 sm:gap-6 sm:grid-cols-3 lg:gap-[24px]">
