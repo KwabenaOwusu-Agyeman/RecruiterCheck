@@ -366,17 +366,77 @@ function isValidRequirement(value: unknown): value is RawRequirement {
   )
 }
 
-const BSN_PATTERN = /\b(?:bsn|citizen service number|burgerservicenummer)\b/i
+const PRIVATE_IDENTIFIER_PATTERN = /\b(?:bsn|citizen service number|burgerservicenummer|passport number|identity card number|id number|residence permit number|work permit number|permit number|tax number|bank account|iban|date of birth|marital status|medical information|full home address)\b/i
 const WORK_AUTH_PATTERN = /\b(?:work permit|work authori[sz]ation|authori[sz]ed to work|eligible to work|right to work|sponsorship)\b/i
+const AVAILABILITY_PATTERN = /\b(?:availability|available|shift|shifts|weekend|weekends|evening|evenings|night|nights|daytime)\b/i
+const EXPLICIT_MANDATORY_PATTERN = /\b(?:mandatory|required|must|essential)\b/i
 
-function isBsnRequirement(requirement: RawRequirement): boolean {
-  return BSN_PATTERN.test(requirement.requirement)
+type VerificationStage = 'cv' | 'application' | 'post_hire'
+
+function verificationStage(requirement: RawRequirement): VerificationStage {
+  if (PRIVATE_IDENTIFIER_PATTERN.test(requirement.requirement)) return 'post_hire'
+  if (WORK_AUTH_PATTERN.test(requirement.requirement) || AVAILABILITY_PATTERN.test(requirement.requirement)) {
+    return 'application'
+  }
+  return 'cv'
 }
 
 function makePrivacySafeImprovement(item: string): string | null {
-  if (!BSN_PATTERN.test(item)) return item
-  if (!WORK_AUTH_PATTERN.test(item)) return null
-  return 'Clarify work authorization. If accurate, add “Authorized to work in the Netherlands” to your professional summary or CV footer. Never include your BSN or permit number.'
+  if (AVAILABILITY_PATTERN.test(item)) {
+    return 'Confirm your availability. State your availability for the required shifts in the application form or recruiter message.'
+  }
+  if (PRIVATE_IDENTIFIER_PATTERN.test(item)) {
+    if (!WORK_AUTH_PATTERN.test(item)) return null
+    return 'Clarify work authorization. If accurate, add “Authorized to work in the Netherlands” to your professional summary or CV footer. Never include a BSN or permit number.'
+  }
+  return item
+}
+
+function requirementName(requirement: RawRequirement | undefined): string | null {
+  if (!requirement) return null
+  return requirement.requirement.trim().replace(/[.!?]+$/, '') || null
+}
+
+function buildScoreAwareProspects(score: number, requirements: RawRequirement[], improvements: string[]): string[] {
+  const strongest = requirementName(requirements.find((item) => item.match_strength === 'strong'))
+  const gap = requirementName(
+    requirements.find((item) => item.match_strength === 'none' && item.importance === 'must_have') ??
+      requirements.find((item) => item.match_strength === 'none') ??
+      requirements.find((item) => item.match_strength === 'partial'),
+  )
+
+  if (score === 100) {
+    return [
+      'Your application shows complete documented alignment with this role.',
+      'Your application is ready to submit, although employer decisions and competition still apply.',
+    ]
+  }
+  if (score >= 85) {
+    return [
+      strongest
+        ? `Your CV shows strong documented evidence for ${strongest}.`
+        : 'Your CV shows strong documented alignment with this role.',
+      improvements.length > 0
+        ? 'Addressing the remaining refinement could further strengthen your interview chances.'
+        : 'Your application is ready to submit, although employer decisions and competition still apply.',
+    ]
+  }
+  if (score >= 61) {
+    return [
+      strongest
+        ? `Your CV shows relevant evidence for ${strongest}, but important gaps still need attention.`
+        : 'Your CV shows relevant alignment, but important gaps still need attention.',
+      gap
+        ? `Strengthen or confirm your evidence for ${gap} before applying.`
+        : 'Address the areas above before applying to improve your interview chances.',
+    ]
+  }
+  return [
+    gap
+      ? `Your CV does not yet show enough evidence for ${gap}, which is important for this role.`
+      : 'Your CV does not yet show enough evidence for this specific role.',
+    'Focus on the essential missing requirements before applying or target a more closely aligned role.',
+  ]
 }
 
 export function normalizeAnalysis(raw: RawAnalysis, cvText: string): AnalysisResult {
@@ -432,15 +492,21 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string): AnalysisRes
   // feedback. A strong or partial classification only earns credit when its
   // evidence is verifiably grounded in the CV. Otherwise downgrade it to
   // none and clear the unsupported evidence, then continue conservatively.
-  const evidenceSafeRequirements = raw.requirements.filter((requirement) => !isBsnRequirement(requirement)).map((requirement) => {
+  const evidenceSafeRequirements = raw.requirements
+    .filter((requirement) => verificationStage(requirement) !== 'post_hire')
+    .map((requirement) => {
     const claimsMatch = requirement.match_strength === 'strong' || requirement.match_strength === 'partial'
+    const availabilityCanBeCritical = requirement.importance === 'must_have' && EXPLICIT_MANDATORY_PATTERN.test(requirement.requirement)
+    const safeCritical = AVAILABILITY_PATTERN.test(requirement.requirement)
+      ? requirement.critical && availabilityCanBeCritical
+      : requirement.critical
     if (claimsMatch && !isGroundedInCv(requirement.cv_evidence, cvText)) {
-      return { ...requirement, match_strength: 'none' as const, cv_evidence: '' }
+      return { ...requirement, critical: safeCritical, match_strength: 'none' as const, cv_evidence: '' }
     }
     return requirement.match_strength === 'none'
-      ? { ...requirement, cv_evidence: '' }
-      : requirement
-  })
+      ? { ...requirement, critical: safeCritical, cv_evidence: '' }
+      : { ...requirement, critical: safeCritical }
+    })
   const evidenceSafeUvpLevel = raw.uvp_evidence_level !== 'none' && isGroundedInCv(raw.uvp_evidence, cvText)
     ? raw.uvp_evidence_level
     : 'none'
@@ -469,27 +535,7 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string): AnalysisRes
   const finalScore = applyCriticalGapCap(clampScore(Math.round(weighted)), dedupedRequirements)
   const improvementLimit = finalScore === 100 ? 0 : finalScore >= 85 ? 1 : 3
   const improvements = generatedImprovements.slice(0, improvementLimit)
-  const scoreAwareProspects = finalScore === 100
-    ? [
-        'Your application shows complete documented alignment with this role.',
-        'Your application is ready to submit, although employer decisions and competition still apply.',
-      ]
-    : finalScore >= 85
-      ? [
-          'Your CV shows strong documented alignment with this role.',
-          improvements.length > 0
-            ? 'Addressing the remaining refinement could further strengthen your interview chances.'
-            : 'Your application is ready to submit, although employer decisions and competition still apply.',
-        ]
-      : finalScore >= 61
-        ? [
-            'Your CV shows relevant alignment, but important gaps still need attention.',
-            'Address the areas above before applying to improve your interview chances.',
-          ]
-        : [
-            'Your CV does not yet show enough evidence for this specific role.',
-            'Focus on the essential missing requirements before applying or target a more closely aligned role.',
-          ]
+  const scoreAwareProspects = buildScoreAwareProspects(finalScore, dedupedRequirements, improvements)
 
   return {
     interview_probability_score: finalScore,

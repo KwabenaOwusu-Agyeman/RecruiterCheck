@@ -432,6 +432,56 @@ test('normalizeAnalysis excludes BSN requirements from scoring and removes unsaf
   assert.match(result.improvements[0], /Never include your BSN or permit number/i)
 })
 
+test('normalizeAnalysis excludes other private and post hire identifiers from scoring', () => {
+  const result = analyze({
+    requirements: [
+      requirement({ requirement: 'Passport number required', category: 'skills', importance: 'must_have', critical: true, match_strength: 'none', cv_evidence: '' }),
+      requirement({ requirement: 'Customer service', category: 'skills', importance: 'important', match_strength: 'strong' }),
+    ],
+  })
+  assert.equal(result.skills_score, 100)
+})
+
+test('normalizeAnalysis treats non mandatory availability as an application clarification, not a critical gap', () => {
+  const result = analyze({
+    requirements: [
+      requirement({ requirement: 'Weekend shift availability', category: 'skills', importance: 'important', critical: true, match_strength: 'none', cv_evidence: '' }),
+      requirement({ requirement: 'Customer service', category: 'skills', importance: 'must_have', match_strength: 'strong' }),
+    ],
+    improvement_1_finding: 'Add weekend availability',
+    improvement_1_evidence: 'The application does not confirm your availability for weekend shifts.',
+    improvement_1_example: '',
+  })
+  assert.ok(result.interview_probability_score > 49)
+  assert.match(result.improvements[0], /application form or recruiter message/i)
+})
+
+test('normalizeAnalysis keeps an explicitly mandatory professional licence critical', () => {
+  const result = analyze({
+    requirements: [
+      requirement({ requirement: 'Mandatory commercial pilot licence', category: 'skills', importance: 'must_have', critical: true, match_strength: 'none', cv_evidence: '' }),
+      requirement({ requirement: 'Customer service', category: 'skills', importance: 'important', match_strength: 'strong' }),
+    ],
+  })
+  assert.equal(result.interview_probability_score, 49)
+  assert.equal(getScoreLabel(result.interview_probability_score), 'Not a Fit')
+  assert.match(result.prospects[0], /commercial pilot licence/i)
+  assert.doesNotMatch(result.prospects.join(' '), /competitive candidate/i)
+})
+
+test('normalizeAnalysis keeps likely candidate prospects positive but conditional', () => {
+  const result = analyze({
+    requirements: [
+      requirement({ requirement: 'Customer service', category: 'experience', importance: 'must_have', match_strength: 'strong' }),
+      requirement({ requirement: 'Hospitality operations', category: 'skills', importance: 'must_have', match_strength: 'strong' }),
+    ],
+    uvp_evidence_level: 'partial',
+    uvp_evidence: 'Delivered documented, employer relevant differentiation through repeated successful launches.',
+  })
+  assert.equal(getScoreLabel(result.interview_probability_score), 'Likely Interview Candidate')
+  assert.match(result.prospects[0], /strong documented evidence/i)
+})
+
 // TEST 4 — critical requirement missing overrides an otherwise passing score
 test('normalizeAnalysis: a missing critical must_have caps the final score at 49 even when the raw weighted score is higher', () => {
   const result = analyze({
