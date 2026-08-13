@@ -8,7 +8,8 @@ import { AtsResumeCheckerPage } from '@/pages/AtsResumeCheckerPage'
 import { ApplicationCheckerPage } from '@/pages/ApplicationCheckerPage'
 import { AuthCallbackPage } from '@/pages/AuthCallbackPage'
 import { BillingPage } from '@/pages/BillingPage'
-import { CookiePage } from '@/pages/CookiePage'
+import { CoverLetterGeneratorPage } from '@/pages/CoverLetterGeneratorPage'
+import { CvKeywordCheckerPage } from '@/pages/CvKeywordCheckerPage'
 import { DisclaimerPage } from '@/pages/DisclaimerPage'
 import { ExampleCheckPage } from '@/pages/ExampleCheckPage'
 import { ExtensionConnectPage } from '@/pages/ExtensionConnectPage'
@@ -17,11 +18,15 @@ import { FeedbackPage } from '@/pages/FeedbackPage'
 import { FreeCvCheckerPage } from '@/pages/FreeCvCheckerPage'
 import { LandingPage } from '@/pages/LandingPage'
 import { InterviewProbabilityPage } from '@/pages/InterviewProbabilityPage'
+import { JobApplicationFeedbackPage } from '@/pages/JobApplicationFeedbackPage'
 import { MyChecksPage } from '@/pages/MyChecksPage'
 import { NewCheckPage } from '@/pages/NewCheckPage'
 import { PrivacyPage } from '@/pages/PrivacyPage'
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage'
+import { RecruiterMessageGeneratorPage } from '@/pages/RecruiterMessageGeneratorPage'
+import { ResumeStrengthsWeaknessesPage } from '@/pages/ResumeStrengthsWeaknessesPage'
 import { ResumeJobMatchPage } from '@/pages/ResumeJobMatchPage'
+import { TailorCvToJobPage } from '@/pages/TailorCvToJobPage'
 import { TermsPage } from '@/pages/TermsPage'
 
 export function App() {
@@ -37,6 +42,12 @@ export function App() {
             <Route path="application-checker" element={<ApplicationCheckerPage />} />
             <Route path="free-cv-checker" element={<FreeCvCheckerPage />} />
             <Route path="ats-resume-checker" element={<AtsResumeCheckerPage />} />
+            <Route path="tailor-cv-to-job-description" element={<TailorCvToJobPage />} />
+            <Route path="cv-keyword-checker" element={<CvKeywordCheckerPage />} />
+            <Route path="cover-letter-generator" element={<CoverLetterGeneratorPage />} />
+            <Route path="recruiter-message-generator" element={<RecruiterMessageGeneratorPage />} />
+            <Route path="resume-strengths-and-weaknesses" element={<ResumeStrengthsWeaknessesPage />} />
+            <Route path="job-application-feedback" element={<JobApplicationFeedbackPage />} />
             <Route path="resume-job-description-match" element={<ResumeJobMatchPage />} />
             <Route path="interview-probability-score" element={<InterviewProbabilityPage />} />
           </Route>
@@ -45,7 +56,6 @@ export function App() {
           <Route path="auth/reset-password" element={<ResetPasswordPage />} />
           <Route path="terms" element={<TermsPage />} />
           <Route path="privacy" element={<PrivacyPage />} />
-          <Route path="cookies" element={<CookiePage />} />
           <Route path="disclaimer" element={<DisclaimerPage />} />
           <Route path="faq" element={<FaqPage />} />
 
