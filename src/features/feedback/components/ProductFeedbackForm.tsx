@@ -126,19 +126,18 @@ export function ProductFeedbackForm({ userId, email, checkId, firstName, targetR
 
   if (submitted) {
     return (
-      <div className="rounded-2xl border border-navy bg-surface sm:rounded-xl p-6 text-center">
+      <div className="mx-auto w-full max-w-2xl rounded-xl border border-border bg-surface p-4 text-center sm:p-5">
         <p className="text-sm font-semibold text-text-primary">Thanks for your feedback.</p>
-        <p className="mt-1 text-sm text-text-secondary">It helps us improve MyRecruiterCheck.</p>
         {rating >= 4 ? (
-          <div className="mt-5 border-t border-border pt-5">
-            <p className="text-base font-semibold text-text-primary">Know someone applying for jobs?</p>
-            <p className="mt-1 text-sm text-text-secondary">
-              Help them think like a recruiter before they apply.
-            </p>
-            <Button size="sm" className="mt-3" onClick={() => void handleShare()}>
-              Share
-            </Button>
-            {shareMessage ? <p className="mt-2 text-xs text-text-secondary" role="status">{shareMessage}</p> : null}
+          <div className="mt-4 flex flex-col items-center justify-between gap-3 border-t border-border pt-4 sm:flex-row sm:text-left">
+            <div>
+              <p className="text-sm font-semibold text-text-primary">Know someone applying?</p>
+              <p className="mt-0.5 text-xs text-text-secondary">Help them think like a recruiter.</p>
+            </div>
+            <div className="w-full sm:w-auto">
+              <Button size="sm" className="w-full sm:w-auto" onClick={() => void handleShare()}>Share</Button>
+              {shareMessage ? <p className="mt-1 text-xs text-text-secondary" role="status">{shareMessage}</p> : null}
+            </div>
           </div>
         ) : null}
       </div>
@@ -146,24 +145,21 @@ export function ProductFeedbackForm({ userId, email, checkId, firstName, targetR
   }
 
   return (
-    <div className="rounded-2xl border border-navy bg-surface sm:rounded-xl p-6">
-      <h2 className="text-base font-semibold text-text-primary">How useful was your Recruiter Check?</h2>
-      <p className="mt-1 text-sm text-text-secondary">
-        Your answer helps us improve future Recruiter Checks.
-      </p>
+    <div className="mx-auto w-full max-w-2xl rounded-xl border border-border bg-surface p-4 shadow-sm sm:p-5">
+      <h2 className="text-sm font-semibold text-text-primary">Rate your Recruiter Check</h2>
 
-      <div className="mt-4">
+      <div className="mt-2">
         <StarInput rating={rating} onChange={setRating} />
       </div>
 
       <Textarea
-        className="mt-4 min-h-[100px]"
-        placeholder="What helped most? (optional)"
+        className="mt-3 min-h-[72px]"
+        placeholder="Add a comment (optional)"
         value={comment}
         onChange={(event) => setComment(event.target.value)}
       />
       {comment.trim() && firstName ? (
-        <label className="mt-3 flex cursor-pointer items-start gap-2 text-xs leading-4 text-text-secondary">
+        <label className="mt-2.5 flex cursor-pointer items-start gap-2 text-xs leading-4 text-text-secondary">
           <input
             type="checkbox"
             checked={featureConsent}
@@ -171,12 +167,12 @@ export function ProductFeedbackForm({ userId, email, checkId, firstName, targetR
             className="mt-0.5 h-4 w-4 rounded border-border"
           />
           <span>
-            I agree that MyRecruiterCheck may publish my feedback, first name and job title on its
-            website and social media. I can withdraw permission at any time.
+            I agree that MyRecruiterCheck may publish this feedback with my first name and job title on its
+            website and social media. I can withdraw consent anytime.
           </span>
         </label>
       ) : (
-        <p className="mt-2 text-xs text-text-secondary">Your response stays private.</p>
+        <p className="mt-1.5 text-xs text-text-secondary">Private unless you give permission.</p>
       )}
 
       {error ? (
@@ -187,11 +183,11 @@ export function ProductFeedbackForm({ userId, email, checkId, firstName, targetR
 
       <Button
         size="sm"
-        className="mt-4"
+        className="mt-3 w-full sm:w-auto"
         disabled={submitting}
         onClick={() => void handleSubmit()}
       >
-        {submitting ? 'Sending...' : 'Send Feedback'}
+        {submitting ? 'Sending...' : 'Send'}
       </Button>
     </div>
   )
