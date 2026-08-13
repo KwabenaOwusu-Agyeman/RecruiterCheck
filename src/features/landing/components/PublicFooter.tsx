@@ -18,7 +18,16 @@ export function PublicFooter() {
               See your application from a recruiter&rsquo;s perspective.
             </p>
           </div>
-          <nav className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-text-secondary" aria-label="Legal">
+          <nav className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-text-secondary" aria-label="Site links">
+            <Link to="/application-checker" className={linkClassName}>
+              Application Checker
+            </Link>
+            <Link to="/resume-job-description-match" className={linkClassName}>
+              CV Job Match
+            </Link>
+            <Link to="/interview-probability-score" className={linkClassName}>
+              Interview Probability
+            </Link>
             <Link to="/faq" className={linkClassName}>
               FAQ
             </Link>
