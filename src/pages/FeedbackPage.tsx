@@ -243,6 +243,16 @@ export function FeedbackPage() {
             </CardContent>
           </Card>
 
+          {user?.email ? (
+            <ProductFeedbackForm
+              userId={user.id}
+              email={user.email}
+              checkId={check.id}
+              firstName={firstName || null}
+              targetRole={check.job_title}
+            />
+          ) : null}
+
           <Card className="sm:border-navy/15 sm:bg-navy-tint/40">
             <CardHeader className="border-b-navy/10 px-5 py-3">
               <h2 className="text-base font-semibold text-text-primary">Recruiter Ready Kit</h2>
@@ -309,15 +319,6 @@ export function FeedbackPage() {
             </CardContent>
           </Card>
 
-          {user?.email ? (
-            <ProductFeedbackForm
-              userId={user.id}
-              email={user.email}
-              checkId={check.id}
-              firstName={firstName || null}
-              targetRole={check.job_title}
-            />
-          ) : null}
         </div>
       ) : check.status === 'completed' ? (
         <Alert variant="info">Feedback is not available for this check.</Alert>
