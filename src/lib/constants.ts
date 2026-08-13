@@ -4,7 +4,7 @@ export const BRAND = {
   // Production domain not yet provisioned — update once a new domain/Vercel
   // URL is live, and keep Supabase auth redirect URLs and edge function CORS
   // origins in sync with it at that time.
-  canonicalUrl: 'https://recruitercheck.app',
+  canonicalUrl: 'https://recruitercheck.vercel.app',
 } as const
 
 export const FEATURE_FLAGS = {
