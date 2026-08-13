@@ -23,13 +23,13 @@ jwt_expiry = 3600
 enable_signup = true
 
 [auth.external.google]
-enabled = true
+enabled = false
 
 [auth.external.linkedin_oidc]
-enabled = true
+enabled = false
 
 [storage]
-enabled = true
+enabled = false
 file_size_limit = "10MiB"
 
 [functions.analyze-check]
@@ -38,5 +38,8 @@ verify_jwt = true
 [functions.create-checkout-session]
 verify_jwt = true
 
-[functions.purge-expired-uploads]
-verify_jwt = true
+[functions.newsletter-subscribe]
+verify_jwt = false
+
+[functions.newsletter-unsubscribe]
+verify_jwt = false
