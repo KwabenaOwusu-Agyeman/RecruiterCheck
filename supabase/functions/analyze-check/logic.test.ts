@@ -519,18 +519,16 @@ test('normalizeAnalysis: a requirement the CV never mentions must be recorded as
   assert.equal(result.skills_score, 0)
 })
 
-test('normalizeAnalysis rejects a strong/partial match with no supporting CV evidence (cannot silently invent grounding)', () => {
-  assert.throws(
-    () => analyze({ requirements: [requirement({ requirement: 'Requirement 35', match_strength: 'strong', cv_evidence: '' })] }),
-    /no supporting CV evidence/,
-  )
+test('normalizeAnalysis downgrades a strong or partial match with no supporting CV evidence', () => {
+  const result = analyze({
+    requirements: [requirement({ requirement: 'Requirement 35', category: 'skills', match_strength: 'strong', cv_evidence: '' })],
+  })
+  assert.equal(result.skills_score, 0)
 })
 
-test('normalizeAnalysis rejects a strong/partial UVP level with no supporting evidence', () => {
-  assert.throws(
-    () => analyze({ uvp_evidence_level: 'strong', uvp_evidence: '' }),
-    /UVP evidence level requires supporting CV evidence/,
-  )
+test('normalizeAnalysis gives unsupported UVP evidence no credit', () => {
+  const result = analyze({ uvp_evidence_level: 'strong', uvp_evidence: '' })
+  assert.equal(result.uvp_score, 0)
 })
 
 test('normalizeAnalysis rejects an empty requirement matrix', () => {
@@ -540,31 +538,26 @@ test('normalizeAnalysis rejects an empty requirement matrix', () => {
 // Fabrication guard: a non-empty evidence field that shares nothing with the
 // real CV text must still be rejected, even though it passes the earlier
 // "field is non empty" check.
-test('normalizeAnalysis rejects a strong match whose evidence is not grounded in the CV text', () => {
-  assert.throws(
-    () =>
-      analyze({
-        requirements: [
-          requirement({
-            requirement: 'Locomotive licence',
-            match_strength: 'strong',
-            cv_evidence: 'Certified locomotive engineer with twenty years piloting freight trains nationwide.',
-          }),
-        ],
+test('normalizeAnalysis downgrades a strong match whose evidence is not grounded in the CV text', () => {
+  const result = analyze({
+    requirements: [
+      requirement({
+        requirement: 'Locomotive licence',
+        category: 'skills',
+        match_strength: 'strong',
+        cv_evidence: 'Certified locomotive engineer with twenty years piloting freight trains nationwide.',
       }),
-    /does not appear to be grounded in the CV text/,
-  )
+    ],
+  })
+  assert.equal(result.skills_score, 0)
 })
 
-test('normalizeAnalysis rejects UVP evidence that is not grounded in the CV text', () => {
-  assert.throws(
-    () =>
-      analyze({
-        uvp_evidence_level: 'strong',
-        uvp_evidence: 'Piloted commercial aircraft across six continents for a major airline.',
-      }),
-    /UVP evidence does not appear to be grounded/,
-  )
+test('normalizeAnalysis downgrades UVP evidence that is not grounded in the CV text', () => {
+  const result = analyze({
+    uvp_evidence_level: 'strong',
+    uvp_evidence: 'Piloted commercial aircraft across six continents for a major airline.',
+  })
+  assert.equal(result.uvp_score, 0)
 })
 
 test('normalizeAnalysis deduplicates exact-text duplicate requirements before scoring', () => {

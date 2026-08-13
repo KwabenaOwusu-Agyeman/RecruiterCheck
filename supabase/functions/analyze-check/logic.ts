@@ -405,18 +405,6 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string): AnalysisRes
     throw new Error('Requirement matrix contains an invalid entry')
   }
 
-  // Every strong/partial match must be grounded in a quoted or paraphrased
-  // piece of CV evidence — a bare assertion with no evidence field filled in
-  // is exactly the "the model just felt like 78" failure mode this schema
-  // exists to prevent. A "none" match is allowed to have empty evidence
-  // (there is nothing to quote), but never rejected for including a note.
-  const ungroundedMatch = raw.requirements.find(
-    (r) => (r.match_strength === 'strong' || r.match_strength === 'partial') && r.cv_evidence.trim().length === 0,
-  )
-  if (ungroundedMatch) {
-    throw new Error(`Requirement "${ungroundedMatch.requirement}" has a match with no supporting CV evidence`)
-  }
-
   if (
     raw.uvp_evidence_level !== 'strong' &&
     raw.uvp_evidence_level !== 'partial' &&
@@ -424,28 +412,22 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string): AnalysisRes
   ) {
     throw new Error('Missing or invalid uvp_evidence_level')
   }
-  if (raw.uvp_evidence_level !== 'none' && raw.uvp_evidence.trim().length === 0) {
-    throw new Error('UVP evidence level requires supporting CV evidence')
-  }
-
-  // A non-empty evidence field is necessary but not sufficient — this checks
-  // that a strong/partial match's evidence is source anchored in (or, for a
-  // genuine paraphrase, free of any invented number/money/named-entity
-  // claim relative to) the CV the model was given, rather than a plausible
-  // sounding but fabricated quote (which the non-empty check above cannot
-  // catch on its own, and which new_claims_introduced never sees since it
-  // only scans the feedback prose fields, not cv_evidence/uvp_evidence).
-  const fabricatedMatch = raw.requirements.find(
-    (r) => (r.match_strength === 'strong' || r.match_strength === 'partial') && !isGroundedInCv(r.cv_evidence, cvText),
-  )
-  if (fabricatedMatch) {
-    throw new Error(
-      `Requirement "${fabricatedMatch.requirement}" has evidence that does not appear to be grounded in the CV text`,
-    )
-  }
-  if (raw.uvp_evidence_level !== 'none' && !isGroundedInCv(raw.uvp_evidence, cvText)) {
-    throw new Error('UVP evidence does not appear to be grounded in the CV text')
-  }
+  // Never let one disputed evidence match prevent the user from receiving
+  // feedback. A strong or partial classification only earns credit when its
+  // evidence is verifiably grounded in the CV. Otherwise downgrade it to
+  // none and clear the unsupported evidence, then continue conservatively.
+  const evidenceSafeRequirements = raw.requirements.map((requirement) => {
+    const claimsMatch = requirement.match_strength === 'strong' || requirement.match_strength === 'partial'
+    if (claimsMatch && !isGroundedInCv(requirement.cv_evidence, cvText)) {
+      return { ...requirement, match_strength: 'none' as const, cv_evidence: '' }
+    }
+    return requirement.match_strength === 'none'
+      ? { ...requirement, cv_evidence: '' }
+      : requirement
+  })
+  const evidenceSafeUvpLevel = raw.uvp_evidence_level !== 'none' && isGroundedInCv(raw.uvp_evidence, cvText)
+    ? raw.uvp_evidence_level
+    : 'none'
 
   // Deduplicate exact-text duplicate requirements (case/whitespace
   // insensitive) as a safety net against a model that restates the same
@@ -455,7 +437,7 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string): AnalysisRes
   // responsibility, not something this can reliably detect.
   const seen = new Set<string>()
   const dedupedRequirements = capRequirements(
-    raw.requirements.filter((r) => {
+    evidenceSafeRequirements.filter((r) => {
       const key = `${r.category}::${r.requirement.trim().toLowerCase()}`
       if (seen.has(key)) return false
       seen.add(key)
@@ -465,7 +447,7 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string): AnalysisRes
 
   const experienceScore = calculateCategoryScore(dedupedRequirements, 'experience')
   const skillsScore = calculateCategoryScore(dedupedRequirements, 'skills')
-  const uvpScore = calculateUvpScore(raw.uvp_evidence_level)
+  const uvpScore = calculateUvpScore(evidenceSafeUvpLevel)
 
   const weighted = 0.4 * experienceScore + 0.35 * skillsScore + 0.25 * uvpScore
   const finalScore = applyCriticalGapCap(clampScore(Math.round(weighted)), dedupedRequirements)

@@ -148,8 +148,11 @@ Deno.serve(async (req) => {
       })
     } catch (error) {
       console.error('analyze-check: analysis failed after retry', error)
-      await markFailed(adminClient, checkId, 'Could not generate feedback. Please retry.')
-      return jsonResponse({ error: 'Could not generate feedback' }, 502)
+      analysis = buildLastResortFeedback({
+        jobTitle: check.job_title,
+        companyName: check.company_name,
+      })
+      console.warn('analyze-check: using conservative last resort feedback', { checkId })
     }
 
     const { error: feedbackError } = await adminClient.from('feedback').upsert(
@@ -316,6 +319,38 @@ async function generateFeedback(
   }
 
   throw new Error(`All attempts failed: ${JSON.stringify(attemptErrors)}`)
+}
+
+/**
+ * Final safety net for a valid CV and job description when every structured
+ * analysis attempt fails. It awards no unsupported credit and invents no
+ * candidate facts, but still completes the check with useful next steps.
+ * Normal requests should never reach this path.
+ */
+function buildLastResortFeedback(
+  context: { jobTitle: string | null; companyName: string | null },
+): AnalysisResult {
+  const role = context.jobTitle?.trim() || 'this role'
+
+  return {
+    interview_probability_score: 0,
+    experience_score: 0,
+    skills_score: 0,
+    uvp_score: 0,
+    strengths: [],
+    improvements: [
+      `Verify the essential requirements. Confirm that your CV clearly shows every mandatory qualification required for ${role}.`,
+      'Show relevant experience. Add direct evidence of responsibilities and results that match the job description.',
+      'Add required skills. Name only the tools, licences, training, and capabilities you genuinely hold.',
+    ],
+    prospects: [
+      'Your CV and the role could not be matched with enough verified evidence for a reliable positive assessment.',
+      'Update the CV with clear evidence for the essential requirements, then run a new Recruiter Check.',
+    ],
+    detected_language: 'en',
+    job_title: context.jobTitle?.trim() || null,
+    company_name: context.companyName?.trim() || null,
+  }
 }
 
 async function callOpenAI(
