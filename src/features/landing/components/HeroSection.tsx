@@ -41,9 +41,6 @@ export function HeroSection() {
               Sign In
             </Button>
           </div>
-          <p className="mt-4 text-sm text-text-secondary">
-            Your first Recruiter Check is free — no experience needed to get started.
-          </p>
         </div>
       </Container>
     </section>
