@@ -366,6 +366,19 @@ function isValidRequirement(value: unknown): value is RawRequirement {
   )
 }
 
+const BSN_PATTERN = /\b(?:bsn|citizen service number|burgerservicenummer)\b/i
+const WORK_AUTH_PATTERN = /\b(?:work permit|work authori[sz]ation|authori[sz]ed to work|eligible to work|right to work|sponsorship)\b/i
+
+function isBsnRequirement(requirement: RawRequirement): boolean {
+  return BSN_PATTERN.test(requirement.requirement)
+}
+
+function makePrivacySafeImprovement(item: string): string | null {
+  if (!BSN_PATTERN.test(item)) return item
+  if (!WORK_AUTH_PATTERN.test(item)) return null
+  return 'Clarify work authorization. If accurate, add “Authorized to work in the Netherlands” to your professional summary or CV footer. Never include your BSN or permit number.'
+}
+
 export function normalizeAnalysis(raw: RawAnalysis, cvText: string): AnalysisResult {
   const strengths = [
     combineFinding(raw.strength_1_finding, raw.strength_1_evidence),
@@ -375,7 +388,10 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string): AnalysisRes
     combineFinding(raw.improvement_1_finding, raw.improvement_1_evidence, raw.improvement_1_example),
     combineFinding(raw.improvement_2_finding, raw.improvement_2_evidence, raw.improvement_2_example),
     combineFinding(raw.improvement_3_finding, raw.improvement_3_evidence, raw.improvement_3_example),
-  ].filter((item): item is string => item !== null)
+  ]
+    .filter((item): item is string => item !== null)
+    .map(makePrivacySafeImprovement)
+    .filter((item): item is string => item !== null)
   const prospects = sanitizeStrings([raw.prospect_1, raw.prospect_2])
 
   if (strengths.length > 2) throw new Error('Expected at most 2 strengths')
@@ -416,7 +432,7 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string): AnalysisRes
   // feedback. A strong or partial classification only earns credit when its
   // evidence is verifiably grounded in the CV. Otherwise downgrade it to
   // none and clear the unsupported evidence, then continue conservatively.
-  const evidenceSafeRequirements = raw.requirements.map((requirement) => {
+  const evidenceSafeRequirements = raw.requirements.filter((requirement) => !isBsnRequirement(requirement)).map((requirement) => {
     const claimsMatch = requirement.match_strength === 'strong' || requirement.match_strength === 'partial'
     if (claimsMatch && !isGroundedInCv(requirement.cv_evidence, cvText)) {
       return { ...requirement, match_strength: 'none' as const, cv_evidence: '' }
@@ -458,7 +474,22 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string): AnalysisRes
         'Your application shows complete documented alignment with this role.',
         'Your application is ready to submit, although employer decisions and competition still apply.',
       ]
-    : prospects
+    : finalScore >= 85
+      ? [
+          'Your CV shows strong documented alignment with this role.',
+          improvements.length > 0
+            ? 'Addressing the remaining refinement could further strengthen your interview chances.'
+            : 'Your application is ready to submit, although employer decisions and competition still apply.',
+        ]
+      : finalScore >= 61
+        ? [
+            'Your CV shows relevant alignment, but important gaps still need attention.',
+            'Address the areas above before applying to improve your interview chances.',
+          ]
+        : [
+            'Your CV does not yet show enough evidence for this specific role.',
+            'Focus on the essential missing requirements before applying or target a more closely aligned role.',
+          ]
 
   return {
     interview_probability_score: finalScore,

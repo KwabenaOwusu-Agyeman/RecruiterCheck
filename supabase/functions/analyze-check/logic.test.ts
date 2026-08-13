@@ -401,6 +401,37 @@ test('normalizeAnalysis: most important requirements unmatched lands in Not a Fi
   assert.equal(getScoreLabel(result.interview_probability_score), 'Not a Fit')
 })
 
+test('normalizeAnalysis keeps Not a Fit prospects consistent with the score', () => {
+  const result = analyze({
+    requirements: [
+      requirement({ category: 'experience', importance: 'must_have', match_strength: 'none', cv_evidence: '' }),
+      requirement({ category: 'skills', importance: 'must_have', match_strength: 'none', cv_evidence: '' }),
+    ],
+    uvp_evidence_level: 'none',
+    uvp_evidence: '',
+    prospect_1: 'You are a competitive candidate for this role.',
+  })
+  assert.equal(getScoreLabel(result.interview_probability_score), 'Not a Fit')
+  assert.match(result.prospects[0], /does not yet show enough evidence/i)
+  assert.doesNotMatch(result.prospects.join(' '), /competitive candidate/i)
+})
+
+test('normalizeAnalysis excludes BSN requirements from scoring and removes unsafe BSN advice', () => {
+  const result = analyze({
+    requirements: [
+      requirement({ requirement: 'BSN and work permit required', category: 'skills', importance: 'must_have', critical: true, match_strength: 'none', cv_evidence: '' }),
+      requirement({ requirement: 'Customer service', category: 'skills', importance: 'important', match_strength: 'strong' }),
+    ],
+    improvement_1_finding: 'Include BSN and work permit status',
+    improvement_1_evidence: 'Your CV does not mention your BSN or work permit status.',
+    improvement_1_example: 'Clearly state your BSN and work permit status in your application.',
+  })
+  assert.equal(result.skills_score, 100)
+  assert.match(result.improvements[0], /Authorized to work in the Netherlands/i)
+  assert.doesNotMatch(result.improvements[0], /include your BSN/i)
+  assert.match(result.improvements[0], /Never include your BSN or permit number/i)
+})
+
 // TEST 4 — critical requirement missing overrides an otherwise passing score
 test('normalizeAnalysis: a missing critical must_have caps the final score at 49 even when the raw weighted score is higher', () => {
   const result = analyze({
