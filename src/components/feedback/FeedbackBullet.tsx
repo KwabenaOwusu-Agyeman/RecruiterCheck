@@ -1,6 +1,6 @@
 export function getVerdictColor(score: number): string {
   if (score >= 85) return 'text-success'
-  if (score >= 50) return 'text-warning'
+  if (score >= 61) return 'text-warning'
   return 'text-error'
 }
 

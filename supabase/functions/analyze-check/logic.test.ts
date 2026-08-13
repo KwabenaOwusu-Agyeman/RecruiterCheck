@@ -366,7 +366,9 @@ test('normalizeAnalysis: strong matches across the board produce a high score', 
   assert.equal(result.skills_score, 100)
   assert.equal(result.uvp_score, 100)
   assert.equal(result.interview_probability_score, 100)
-  assert.equal(getScoreLabel(result.interview_probability_score), 'Strong Match')
+  assert.equal(getScoreLabel(result.interview_probability_score), 'Likely Interview Candidate')
+  assert.deepEqual(result.improvements, [])
+  assert.match(result.prospects[0], /complete documented alignment/i)
 })
 
 // TEST 2 — partial candidate
@@ -653,11 +655,11 @@ test('normalizeAnalysis rejects non English content', () => {
 
 test('getScoreLabel: exact score band boundaries have no gaps or overlaps', () => {
   assert.equal(getScoreLabel(0), 'Not a Fit')
-  assert.equal(getScoreLabel(49), 'Not a Fit')
-  assert.equal(getScoreLabel(50), 'Needs Improvement')
+  assert.equal(getScoreLabel(60), 'Not a Fit')
+  assert.equal(getScoreLabel(61), 'Needs Improvement')
   assert.equal(getScoreLabel(84), 'Needs Improvement')
-  assert.equal(getScoreLabel(85), 'Strong Match')
-  assert.equal(getScoreLabel(100), 'Strong Match')
+  assert.equal(getScoreLabel(85), 'Likely Interview Candidate')
+  assert.equal(getScoreLabel(100), 'Likely Interview Candidate')
 })
 
 // getScoreLabel has no clamp of its own — every caller already passes a
@@ -666,7 +668,7 @@ test('getScoreLabel: exact score band boundaries have no gaps or overlaps', () =
 // introducing a second, contradictory clamp inside getScoreLabel itself.
 test('getScoreLabel degrades predictably for out-of-range input without its own clamp', () => {
   assert.equal(getScoreLabel(-5), 'Not a Fit')
-  assert.equal(getScoreLabel(105), 'Strong Match')
+  assert.equal(getScoreLabel(105), 'Likely Interview Candidate')
 })
 
 console.log(`\n${passed} tests passed`)

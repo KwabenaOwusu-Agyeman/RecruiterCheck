@@ -36,7 +36,7 @@ function buildSummarySentence(score: number, improvements: string[]): string {
     return 'Your application is strong and ready to submit as is.'
   }
 
-  if (score >= 50) {
+  if (score >= 61) {
     const [first, second] = findings
     if (first && second) {
       return `Your experience is relevant, but ${first} and ${second} before you apply.`
@@ -133,6 +133,21 @@ export function FeedbackPage() {
   const feedback = check.feedback
   const score = check.interview_probability_score
   const firstName = profile?.full_name?.trim().split(/\s+/)[0]
+  const visibleImprovements = feedback
+    ? score === 100
+      ? []
+      : score !== null && score >= 85
+        ? feedback.improvements.slice(0, 1)
+        : feedback.improvements
+    : []
+  const visibleProspects = feedback
+    ? score === 100
+      ? [
+          'Your application shows complete documented alignment with this role.',
+          'Your application is ready to submit, although employer decisions and competition still apply.',
+        ]
+      : feedback.prospects
+    : []
 
   return (
     <div className="lg:mx-auto lg:max-w-[1000px]">
@@ -163,9 +178,12 @@ export function FeedbackPage() {
             </p>
             {feedback ? (
               <p className="mt-2 max-w-xl text-sm text-text-secondary">
-                {buildSummarySentence(score, feedback.improvements)}
+                {buildSummarySentence(score, visibleImprovements)}
               </p>
             ) : null}
+            <p className="mt-2 max-w-xl text-xs text-text-secondary">
+              Based on the information provided. Hiring decisions and competition may affect the outcome.
+            </p>
           </div>
         ) : null}
       </div>
@@ -195,7 +213,7 @@ export function FeedbackPage() {
       {feedback ? (
         <div className="space-y-5">
           <div className="grid gap-5 md:grid-cols-2">
-            <Card>
+            {feedback.strengths.length > 0 ? <Card>
               <CardHeader className="px-5 py-3">
                 <h2 className="text-base font-semibold text-text-primary">Strengths</h2>
               </CardHeader>
@@ -206,23 +224,33 @@ export function FeedbackPage() {
                   ))}
                 </ul>
               </CardContent>
-            </Card>
+            </Card> : null}
 
             <Card>
               <CardHeader className="px-5 py-3">
-                <h2 className="text-base font-semibold text-text-primary">Areas to Improve</h2>
+                <h2 className="text-base font-semibold text-text-primary">
+                  {score === 100 ? 'Ready to Apply' : 'Areas to Improve'}
+                </h2>
               </CardHeader>
               <CardContent className="px-5 py-4">
-                <ul className="space-y-3">
-                  {feedback.improvements.map((item) => (
-                    <FeedbackBullet key={item} text={item} />
-                  ))}
-                </ul>
+                {visibleImprovements.length > 0 ? (
+                  <ul className="space-y-3">
+                    {visibleImprovements.map((item) => (
+                      <FeedbackBullet key={item} text={item} />
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-text-secondary">
+                    {score === 100
+                      ? 'No material improvements identified.'
+                      : 'No evidence based improvements identified.'}
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
 
-          <Card>
+          {visibleProspects.length > 0 ? <Card>
             <CardHeader className="px-5 py-3">
               <h2 className="text-base font-semibold text-text-primary">Prospects</h2>
               <p className="mt-0.5 text-xs text-text-secondary">
@@ -231,7 +259,7 @@ export function FeedbackPage() {
             </CardHeader>
             <CardContent className="px-5 py-4">
               <ul className="space-y-2">
-                {feedback.prospects.map((item) => (
+                {visibleProspects.map((item) => (
                   <li key={item} className="flex gap-2">
                     <span className="text-blue" aria-hidden="true">
                       •
@@ -241,7 +269,7 @@ export function FeedbackPage() {
                 ))}
               </ul>
             </CardContent>
-          </Card>
+          </Card> : null}
 
           {user?.email ? (
             <ProductFeedbackForm
