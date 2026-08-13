@@ -3,6 +3,8 @@ import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { Textarea } from '@/components/ui/Textarea'
 import { getProductFeedback, submitProductFeedback } from '@/services/checkService'
+import { trackEvent } from '@/lib/analytics'
+import { BRAND } from '@/lib/constants'
 import { cn } from '@/utils/cn'
 
 interface ProductFeedbackFormProps {
@@ -50,6 +52,7 @@ export function ProductFeedbackForm({ userId, email, checkId, firstName, targetR
   const [featureConsent, setFeatureConsent] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [shareMessage, setShareMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -97,6 +100,28 @@ export function ProductFeedbackForm({ userId, email, checkId, firstName, targetR
     }
   }
 
+  async function handleShare() {
+    const shareData = {
+      title: BRAND.name,
+      text: 'Before you apply, check how a recruiter may see your CV.',
+      url: BRAND.canonicalUrl,
+    }
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData)
+        setShareMessage('Thanks for sharing.')
+      } else {
+        await navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`)
+        setShareMessage('Link copied.')
+      }
+      trackEvent('referral_shared')
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return
+      setShareMessage('Could not share the link. Please try again.')
+    }
+  }
+
   if (checking || alreadySubmitted) return null
 
   if (submitted) {
@@ -104,6 +129,18 @@ export function ProductFeedbackForm({ userId, email, checkId, firstName, targetR
       <div className="rounded-2xl border border-navy bg-surface sm:rounded-xl p-6 text-center">
         <p className="text-sm font-semibold text-text-primary">Thanks for your feedback.</p>
         <p className="mt-1 text-sm text-text-secondary">It helps us improve MyRecruiterCheck.</p>
+        {rating >= 4 ? (
+          <div className="mt-5 border-t border-border pt-5">
+            <p className="text-base font-semibold text-text-primary">Know someone applying for jobs?</p>
+            <p className="mt-1 text-sm text-text-secondary">
+              Help them think like a recruiter before they apply.
+            </p>
+            <Button size="sm" className="mt-3" onClick={() => void handleShare()}>
+              Share
+            </Button>
+            {shareMessage ? <p className="mt-2 text-xs text-text-secondary" role="status">{shareMessage}</p> : null}
+          </div>
+        ) : null}
       </div>
     )
   }
