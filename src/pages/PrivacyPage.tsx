@@ -23,6 +23,7 @@ export function PrivacyPage() {
         <ul className="list-disc space-y-1 pl-5">
           <li><strong>Account data:</strong> email address, full name, authentication data.</li>
           <li><strong>Newsletter data:</strong> email address, consent wording and consent date when you choose to subscribe.</li>
+          <li><strong>Product feedback:</strong> ratings and comments you voluntarily provide after a Recruiter Check, plus your first name and target job title when you permit us to feature a review.</li>
           <li><strong>Content you submit:</strong> your CV, job descriptions, and any generated feedback and documents.</li>
           <li><strong>Payment data:</strong> handled directly by Stripe. We do not receive or store your card details.</li>
           <li><strong>Usage data:</strong> log data, device and browser information, and cookies necessary to operate the Service.</li>
@@ -35,6 +36,7 @@ export function PrivacyPage() {
           <li>Provide the Service, including generating your interview probability score, feedback, and tailored documents;</li>
           <li>Process payments and manage your subscription;</li>
           <li>Maintain the security and integrity of the Service;</li>
+          <li>Use voluntary product feedback to improve the Service. We will not publish your comment without your permission;</li>
           <li>Communicate with you about your account or the Service.</li>
         </ul>
         <p>

@@ -120,12 +120,26 @@ export async function getProductFeedback(userId: string): Promise<ProductFeedbac
 export async function submitProductFeedback(
   userId: string,
   email: string,
+  checkId: string,
+  firstName: string | null,
+  targetRole: string | null,
   rating: number,
   comment: string,
+  featureConsent: boolean,
 ): Promise<ProductFeedback> {
   const { data, error } = await supabase
     .from('product_feedback')
-    .insert({ user_id: userId, email, rating, comment: comment.trim() || null })
+    .insert({
+      user_id: userId,
+      email,
+      check_id: checkId,
+      display_name: firstName,
+      target_role: targetRole,
+      rating,
+      comment: comment.trim() || null,
+      feature_consent: featureConsent,
+      feature_consent_at: featureConsent ? new Date().toISOString() : null,
+    })
     .select('*')
     .single()
 
