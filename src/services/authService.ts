@@ -1,12 +1,10 @@
 import { supabase } from '@/lib/supabase'
 import type { Provider } from '@supabase/supabase-js'
 
-const redirectTo = `${window.location.origin}/auth/callback`
-
 export async function signInWithGoogle() {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo },
+    options: { redirectTo: `${window.location.origin}/auth/callback` },
   })
   if (error) throw error
 }
@@ -14,7 +12,7 @@ export async function signInWithGoogle() {
 export async function signInWithLinkedIn() {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'linkedin_oidc',
-    options: { redirectTo },
+    options: { redirectTo: `${window.location.origin}/auth/callback` },
   })
   if (error) throw error
 }
@@ -24,7 +22,7 @@ export async function signUpWithPassword(email: string, password: string): Promi
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: redirectTo },
+    options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
   })
   if (error) throw error
   return !data.session

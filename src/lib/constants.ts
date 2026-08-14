@@ -1,9 +1,10 @@
 export const BRAND = {
   name: 'MyRecruiterCheck',
   tagline: 'Think like a recruiter before you apply.',
-  // Production domain not yet provisioned — update once a new domain/Vercel
-  // URL is live, and keep Supabase auth redirect URLs and edge function CORS
-  // origins in sync with it at that time.
+  // Deliberately staying on the vercel.app subdomain for now (custom domain
+  // owned but not yet connected). If that changes, also update index.html,
+  // public/sitemap.xml, public/robots.txt, and the Supabase auth redirect
+  // URLs / edge function CORS origins — none of those derive from this value.
   canonicalUrl: 'https://recruitercheck.vercel.app',
 } as const
 

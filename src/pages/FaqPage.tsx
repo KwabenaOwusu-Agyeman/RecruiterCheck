@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { LegalLayout, Section } from '@/components/legal/LegalLayout'
 import { usePageMeta } from '@/hooks/usePageMeta'
@@ -31,27 +30,6 @@ const FAQ_ITEMS = [
   },
 ] as const
 
-/** Mirrors the 5 visible Q&As 1:1 — no content exists here that isn't on the page. */
-function useFaqStructuredData() {
-  useEffect(() => {
-    const script = document.createElement('script')
-    script.type = 'application/ld+json'
-    script.text = JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'FAQPage',
-      mainEntity: FAQ_ITEMS.map(({ question, answer }) => ({
-        '@type': 'Question',
-        name: question,
-        acceptedAnswer: { '@type': 'Answer', text: answer },
-      })),
-    })
-    document.head.appendChild(script)
-    return () => {
-      document.head.removeChild(script)
-    }
-  }, [])
-}
-
 export function FaqPage() {
   usePageMeta({
     title: 'FAQ — MyRecruiterCheck',
@@ -59,10 +37,23 @@ export function FaqPage() {
       'Answers to common questions about how MyRecruiterCheck evaluates your application, data security, and what you get with a Recruiter Check.',
     path: '/faq',
   })
-  useFaqStructuredData()
 
   return (
     <LegalLayout title="Frequently Asked Questions" updated="12 August 2026">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: FAQ_ITEMS.map(({ question, answer }) => ({
+              '@type': 'Question',
+              name: question,
+              acceptedAnswer: { '@type': 'Answer', text: answer },
+            })),
+          }),
+        }}
+      />
       {FAQ_ITEMS.slice(0, 2).map(({ question, answer }) => (
         <Section key={question} title={question}>
           <p>{answer}</p>

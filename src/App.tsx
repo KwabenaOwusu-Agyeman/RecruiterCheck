@@ -8,6 +8,7 @@ import { AtsResumeCheckerPage } from '@/pages/AtsResumeCheckerPage'
 import { ApplicationCheckerPage } from '@/pages/ApplicationCheckerPage'
 import { AuthCallbackPage } from '@/pages/AuthCallbackPage'
 import { BillingPage } from '@/pages/BillingPage'
+import { CookiePage } from '@/pages/CookiePage'
 import { CoverLetterGeneratorPage } from '@/pages/CoverLetterGeneratorPage'
 import { CvKeywordCheckerPage } from '@/pages/CvKeywordCheckerPage'
 import { DisclaimerPage } from '@/pages/DisclaimerPage'
@@ -30,51 +31,58 @@ import { ResumeJobMatchPage } from '@/pages/ResumeJobMatchPage'
 import { TailorCvToJobPage } from '@/pages/TailorCvToJobPage'
 import { TermsPage } from '@/pages/TermsPage'
 
+export function AppRoutes() {
+  return (
+    <Routes>
+      <Route element={<PublicLayout />}>
+        <Route index element={<LandingPage />} />
+        <Route path="sign-in" element={<LandingPage />} />
+        <Route path="sign-up" element={<LandingPage />} />
+        <Route path="example-check" element={<ExampleCheckPage />} />
+        <Route path="application-checker" element={<ApplicationCheckerPage />} />
+        <Route path="free-cv-checker" element={<FreeCvCheckerPage />} />
+        <Route path="ats-resume-checker" element={<AtsResumeCheckerPage />} />
+        <Route path="tailor-cv-to-job-description" element={<TailorCvToJobPage />} />
+        <Route path="cv-keyword-checker" element={<CvKeywordCheckerPage />} />
+        <Route path="cover-letter-generator" element={<CoverLetterGeneratorPage />} />
+        <Route path="recruiter-message-generator" element={<RecruiterMessageGeneratorPage />} />
+        <Route path="resume-strengths-and-weaknesses" element={<ResumeStrengthsWeaknessesPage />} />
+        <Route path="job-application-feedback" element={<JobApplicationFeedbackPage />} />
+        <Route path="resume-job-description-match" element={<ResumeJobMatchPage />} />
+        <Route path="interview-probability-score" element={<InterviewProbabilityPage />} />
+      </Route>
+
+      <Route path="auth/callback" element={<AuthCallbackPage />} />
+      <Route path="auth/reset-password" element={<ResetPasswordPage />} />
+      <Route path="terms" element={<TermsPage />} />
+      <Route path="privacy" element={<PrivacyPage />} />
+      <Route path="cookies" element={<CookiePage />} />
+      <Route path="disclaimer" element={<DisclaimerPage />} />
+      <Route path="faq" element={<FaqPage />} />
+      <Route path="newsletter/unsubscribe" element={<NewsletterUnsubscribePage />} />
+
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppLayout />}>
+          <Route path="checks" element={<MyChecksPage />} />
+          <Route path="checks/new" element={<NewCheckPage />} />
+          <Route path="checks/:id/edit" element={<NewCheckPage />} />
+          <Route path="checks/:id" element={<FeedbackPage />} />
+          <Route path="account" element={<AccountPage />} />
+          <Route path="account/billing" element={<BillingPage />} />
+          <Route path="extension/connect" element={<ExtensionConnectPage />} />
+        </Route>
+      </Route>
+
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
+}
+
 export function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Routes>
-          <Route element={<PublicLayout />}>
-            <Route index element={<LandingPage />} />
-            <Route path="sign-in" element={<LandingPage />} />
-            <Route path="sign-up" element={<LandingPage />} />
-            <Route path="example-check" element={<ExampleCheckPage />} />
-            <Route path="application-checker" element={<ApplicationCheckerPage />} />
-            <Route path="free-cv-checker" element={<FreeCvCheckerPage />} />
-            <Route path="ats-resume-checker" element={<AtsResumeCheckerPage />} />
-            <Route path="tailor-cv-to-job-description" element={<TailorCvToJobPage />} />
-            <Route path="cv-keyword-checker" element={<CvKeywordCheckerPage />} />
-            <Route path="cover-letter-generator" element={<CoverLetterGeneratorPage />} />
-            <Route path="recruiter-message-generator" element={<RecruiterMessageGeneratorPage />} />
-            <Route path="resume-strengths-and-weaknesses" element={<ResumeStrengthsWeaknessesPage />} />
-            <Route path="job-application-feedback" element={<JobApplicationFeedbackPage />} />
-            <Route path="resume-job-description-match" element={<ResumeJobMatchPage />} />
-            <Route path="interview-probability-score" element={<InterviewProbabilityPage />} />
-          </Route>
-
-          <Route path="auth/callback" element={<AuthCallbackPage />} />
-          <Route path="auth/reset-password" element={<ResetPasswordPage />} />
-          <Route path="terms" element={<TermsPage />} />
-          <Route path="privacy" element={<PrivacyPage />} />
-          <Route path="disclaimer" element={<DisclaimerPage />} />
-          <Route path="faq" element={<FaqPage />} />
-          <Route path="newsletter/unsubscribe" element={<NewsletterUnsubscribePage />} />
-
-          <Route element={<ProtectedRoute />}>
-            <Route element={<AppLayout />}>
-              <Route path="checks" element={<MyChecksPage />} />
-              <Route path="checks/new" element={<NewCheckPage />} />
-              <Route path="checks/:id/edit" element={<NewCheckPage />} />
-              <Route path="checks/:id" element={<FeedbackPage />} />
-              <Route path="account" element={<AccountPage />} />
-              <Route path="account/billing" element={<BillingPage />} />
-              <Route path="extension/connect" element={<ExtensionConnectPage />} />
-            </Route>
-          </Route>
-
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <AppRoutes />
       </BrowserRouter>
     </AuthProvider>
   )

@@ -9,6 +9,22 @@ interface PageMetaOptions {
   path: string
 }
 
+/**
+ * Populated synchronously during server-side renderToString (there is no
+ * DOM to write into on the server, and effects never run there) so the
+ * prerender script can read back the title/description/canonical that a
+ * page actually rendered with and bake them into the static HTML head.
+ */
+let ssrMeta: { title: string; description: string; url: string } | null = null
+
+export function resetSsrMeta() {
+  ssrMeta = null
+}
+
+export function getSsrMeta() {
+  return ssrMeta
+}
+
 function setMetaTag(selector: string, attr: string, value: string) {
   let el = document.head.querySelector<HTMLElement>(selector)
   if (!el) {
@@ -35,9 +51,14 @@ function setMetaTag(selector: string, attr: string, value: string) {
  * dependency.
  */
 export function usePageMeta({ title, description, path }: PageMetaOptions) {
+  const url = `${SITE_URL}${path}`
+
+  if (typeof document === 'undefined') {
+    ssrMeta = { title, description, url }
+  }
+
   useEffect(() => {
     const previousTitle = document.title
-    const url = `${SITE_URL}${path}`
 
     document.title = title
     setMetaTag('meta[name="description"]', 'content', description)
@@ -49,5 +70,5 @@ export function usePageMeta({ title, description, path }: PageMetaOptions) {
     return () => {
       document.title = previousTitle
     }
-  }, [title, description, path])
+  }, [title, description, url])
 }

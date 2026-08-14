@@ -14,6 +14,7 @@ interface SeoLandingPageProps {
   directAnswer?: string
   benefits: readonly { title: string; description: string }[]
   steps: readonly string[]
+  example?: { title: string; scenario: string; insight: string }
   faqs?: readonly { question: string; answer: string }[]
   relatedLinks?: readonly { label: string; to: string }[]
 }
@@ -28,6 +29,7 @@ export function SeoLandingPage({
   directAnswer,
   benefits,
   steps,
+  example,
   faqs = [],
   relatedLinks = [],
 }: SeoLandingPageProps) {
@@ -106,8 +108,20 @@ export function SeoLandingPage({
         </Container>
       </section>
 
-      {faqs.length > 0 && (
+      {example && (
         <section className="py-14 sm:py-20">
+          <Container>
+            <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-surface p-6 sm:p-8">
+              <h2 className="text-2xl font-semibold tracking-tight text-text-primary">{example.title}</h2>
+              <p className="mt-4 leading-7 text-text-secondary">{example.scenario}</p>
+              <p className="mt-4 leading-7 text-text-secondary">{example.insight}</p>
+            </div>
+          </Container>
+        </section>
+      )}
+
+      {faqs.length > 0 && (
+        <section className="border-t border-border-soft py-14 sm:py-20">
           <Container>
             <div className="mx-auto max-w-3xl">
               <h2 className="text-3xl font-semibold tracking-tight text-text-primary">
@@ -124,6 +138,23 @@ export function SeoLandingPage({
             </div>
           </Container>
         </section>
+      )}
+
+      {faqs.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'FAQPage',
+              mainEntity: faqs.map(({ question, answer }) => ({
+                '@type': 'Question',
+                name: question,
+                acceptedAnswer: { '@type': 'Answer', text: answer },
+              })),
+            }),
+          }}
+        />
       )}
 
       {relatedLinks.length > 0 && (
