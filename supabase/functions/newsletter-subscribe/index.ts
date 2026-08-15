@@ -45,11 +45,57 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'We could not save your subscription. Try again.' }, 500)
     }
 
+    await sendWelcomeEmail(email)
+
     return jsonResponse({ subscribed: true })
   } catch {
     return jsonResponse({ error: 'We could not save your subscription. Try again.' }, 500)
   }
 })
+
+async function sendWelcomeEmail(email: string) {
+  const apiKey = Deno.env.get('RESEND_API_KEY')
+  if (!apiKey) {
+    console.warn('newsletter-subscribe: RESEND_API_KEY not set, skipping welcome email')
+    return
+  }
+
+  const from = Deno.env.get('RESEND_FROM_EMAIL') ?? 'MyRecruiterCheck <onboarding@resend.dev>'
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from,
+        to: email,
+        subject: 'You are on the list',
+        html: welcomeEmailHtml(),
+      }),
+    })
+
+    if (!response.ok) {
+      console.error('newsletter-subscribe: welcome email failed', { status: response.status })
+    }
+  } catch (sendError) {
+    console.error('newsletter-subscribe: welcome email error', { message: String(sendError) })
+  }
+}
+
+function welcomeEmailHtml(): string {
+  return `
+    <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; color: #1a1a1a;">
+      <p style="font-size: 16px; line-height: 1.5;">You are subscribed to The Recruiter Check.</p>
+      <p style="font-size: 16px; line-height: 1.5;">One recruiter insight every week, short enough to read in 15 seconds and use before your next application.</p>
+      <p style="font-size: 16px; line-height: 1.5;">
+        <a href="https://recruitercheck.vercel.app" style="color: #1a3a6b;">Run your first free Recruiter Check</a>
+      </p>
+    </div>
+  `
+}
 
 function normalizeEmail(value: unknown): string | null {
   if (typeof value !== 'string') return null
