@@ -86,14 +86,115 @@ async function sendWelcomeEmail(email: string) {
 }
 
 function welcomeEmailHtml(): string {
+  const navy = '#020C38'
+  const blue = '#194A9F'
+  const textSecondary = '#3A4A6B'
+  const border = '#EEF0F5'
+  const success = '#0EA063'
+  const warning = '#F59E0B'
+
   return `
-    <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; color: #1a1a1a;">
-      <p style="font-size: 16px; line-height: 1.5;">You are subscribed to The Recruiter Check.</p>
-      <p style="font-size: 16px; line-height: 1.5;">One recruiter insight every week, short enough to read in 15 seconds and use before your next application.</p>
-      <p style="font-size: 16px; line-height: 1.5;">
-        <a href="https://recruitercheck.vercel.app" style="color: #1a3a6b;">Run your first free Recruiter Check</a>
-      </p>
-    </div>
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="color-scheme" content="light" />
+        <meta name="supported-color-schemes" content="light" />
+        <title>You are on the list</title>
+      </head>
+      <body style="margin: 0; padding: 0; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffffff;">
+          <tr>
+            <td align="center" style="padding: 40px 16px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 520px;">
+
+                <tr>
+                  <td style="padding-bottom: 32px;">
+                    <span style="font-size: 16px; font-weight: 700; color: ${navy};">MyRecruiterCheck</span>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>
+                    <h1 style="margin: 0 0 12px; font-size: 26px; line-height: 32px; font-weight: 700; color: ${navy};">
+                      You are on the list
+                    </h1>
+                    <p style="margin: 0 0 28px; font-size: 16px; line-height: 24px; color: ${textSecondary};">
+                      See what a recruiter would flag in your resume, before you apply.
+                    </p>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding-bottom: 28px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border: 1px solid ${border}; border-radius: 12px;">
+                      <tr>
+                        <td style="padding: 24px 24px 4px;">
+                          <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: ${textSecondary};">Example Recruiter Check</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 12px 24px 4px;">
+                          <span style="font-size: 32px; font-weight: 700; color: ${navy};">64%</span>
+                          <span style="font-size: 14px; color: ${textSecondary};"> Interview Probability</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 0 24px 20px;">
+                          <span style="font-size: 14px; font-weight: 700; color: ${warning};">Needs Improvement</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 0 24px 6px;">
+                          <span style="font-size: 14px; color: ${success}; font-weight: 700;">&#10003;</span>
+                          <span style="font-size: 14px; color: ${textSecondary};"> Quantified impact in your last two roles</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 0 24px 20px;">
+                          <span style="font-size: 14px; color: ${warning}; font-weight: 700;">&#33;</span>
+                          <span style="font-size: 14px; color: ${textSecondary};"> Missing a tool the job description names directly</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding-bottom: 12px;">
+                    <span style="font-size: 15px; font-weight: 600; color: ${navy};">Run my Recruiter Check</span>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding-bottom: 40px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="border-radius: 8px; background-color: ${blue};">
+                          <a href="https://recruitercheck.vercel.app" style="display: inline-block; padding: 14px 32px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none;">
+                            Check
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding-top: 24px; border-top: 1px solid ${border};">
+                    <p style="margin: 24px 0 0; font-size: 12px; line-height: 18px; color: ${textSecondary};">
+                      MyRecruiterCheck, think like a recruiter before you apply.
+                    </p>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
   `
 }
 
