@@ -66,4 +66,9 @@
   <url><loc>https://recruitercheck.vercel.app/recruiter-message-generator</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://recruitercheck.vercel.app/resume-strengths-and-weaknesses</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://recruitercheck.vercel.app/job-application-feedback</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://recruitercheck.vercel.app/software-engineer-resume-checker</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://recruitercheck.vercel.app/registered-nurse-resume-checker</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://recruitercheck.vercel.app/project-manager-resume-checker</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://recruitercheck.vercel.app/sales-resume-checker</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://recruitercheck.vercel.app/administrative-assistant-resume-checker</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
 </urlset>

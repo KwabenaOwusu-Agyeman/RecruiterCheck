@@ -15,6 +15,7 @@ interface SeoLandingPageProps {
   benefits: readonly { title: string; description: string }[]
   steps: readonly string[]
   example?: { title: string; scenario: string; insight: string }
+  verdict?: { jobTitle: string; reject: readonly string[]; accept: readonly string[] }
   faqs?: readonly { question: string; answer: string }[]
   relatedLinks?: readonly { label: string; to: string }[]
 }
@@ -30,6 +31,7 @@ export function SeoLandingPage({
   benefits,
   steps,
   example,
+  verdict,
   faqs = [],
   relatedLinks = [],
 }: SeoLandingPageProps) {
@@ -86,6 +88,35 @@ export function SeoLandingPage({
           </div>
         </Container>
       </section>
+
+      {verdict && (
+        <section className="py-14 sm:py-20">
+          <Container>
+            <div className="mx-auto grid max-w-4xl gap-5 sm:grid-cols-2">
+              <div className="rounded-2xl border border-border bg-surface p-6">
+                <h2 className="text-lg font-semibold text-text-primary">3 things recruiters reject</h2>
+                <ul className="mt-4 space-y-3">
+                  {verdict.reject.map((item) => (
+                    <li key={item} className="leading-6 text-text-secondary">{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="rounded-2xl border border-border bg-surface p-6">
+                <h2 className="text-lg font-semibold text-text-primary">3 things recruiters accept</h2>
+                <ul className="mt-4 space-y-3">
+                  {verdict.accept.map((item) => (
+                    <li key={item} className="leading-6 text-text-secondary">{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <div className="mx-auto mt-8 flex max-w-4xl flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
+              <p className="text-text-secondary">Check your {verdict.jobTitle} resume like a recruiter would</p>
+              <Button onClick={handleCheckCta}>Check</Button>
+            </div>
+          </Container>
+        </section>
+      )}
 
       <section className="border-y border-border-soft bg-surface py-14 sm:py-20">
         <Container>

@@ -4,6 +4,7 @@ import { AuthProvider } from '@/hooks/useAuth'
 import { AppLayout } from '@/layouts/AppLayout'
 import { PublicLayout } from '@/layouts/PublicLayout'
 import { AccountPage } from '@/pages/AccountPage'
+import { AdministrativeAssistantResumeCheckerPage } from '@/pages/AdministrativeAssistantResumeCheckerPage'
 import { AtsResumeCheckerPage } from '@/pages/AtsResumeCheckerPage'
 import { ApplicationCheckerPage } from '@/pages/ApplicationCheckerPage'
 import { AuthCallbackPage } from '@/pages/AuthCallbackPage'
@@ -24,10 +25,14 @@ import { MyChecksPage } from '@/pages/MyChecksPage'
 import { NewCheckPage } from '@/pages/NewCheckPage'
 import { NewsletterUnsubscribePage } from '@/pages/NewsletterUnsubscribePage'
 import { PrivacyPage } from '@/pages/PrivacyPage'
+import { ProjectManagerResumeCheckerPage } from '@/pages/ProjectManagerResumeCheckerPage'
+import { RegisteredNurseResumeCheckerPage } from '@/pages/RegisteredNurseResumeCheckerPage'
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage'
 import { RecruiterMessageGeneratorPage } from '@/pages/RecruiterMessageGeneratorPage'
 import { ResumeStrengthsWeaknessesPage } from '@/pages/ResumeStrengthsWeaknessesPage'
 import { ResumeJobMatchPage } from '@/pages/ResumeJobMatchPage'
+import { SalesResumeCheckerPage } from '@/pages/SalesResumeCheckerPage'
+import { SoftwareEngineerResumeCheckerPage } from '@/pages/SoftwareEngineerResumeCheckerPage'
 import { TailorCvToJobPage } from '@/pages/TailorCvToJobPage'
 import { TermsPage } from '@/pages/TermsPage'
 
@@ -50,6 +55,11 @@ export function AppRoutes() {
         <Route path="job-application-feedback" element={<JobApplicationFeedbackPage />} />
         <Route path="resume-job-description-match" element={<ResumeJobMatchPage />} />
         <Route path="interview-probability-score" element={<InterviewProbabilityPage />} />
+        <Route path="software-engineer-resume-checker" element={<SoftwareEngineerResumeCheckerPage />} />
+        <Route path="registered-nurse-resume-checker" element={<RegisteredNurseResumeCheckerPage />} />
+        <Route path="project-manager-resume-checker" element={<ProjectManagerResumeCheckerPage />} />
+        <Route path="sales-resume-checker" element={<SalesResumeCheckerPage />} />
+        <Route path="administrative-assistant-resume-checker" element={<AdministrativeAssistantResumeCheckerPage />} />
       </Route>
 
       <Route path="auth/callback" element={<AuthCallbackPage />} />

@@ -29,6 +29,11 @@ const ROUTES = [
   '/job-application-feedback',
   '/resume-job-description-match',
   '/interview-probability-score',
+  '/software-engineer-resume-checker',
+  '/registered-nurse-resume-checker',
+  '/project-manager-resume-checker',
+  '/sales-resume-checker',
+  '/administrative-assistant-resume-checker',
 ]
 
 const template = fs.readFileSync(path.join(clientDir, 'index.html'), 'utf-8')
