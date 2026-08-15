@@ -71,4 +71,6 @@
   <url><loc>https://recruitercheck.vercel.app/project-manager-resume-checker</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://recruitercheck.vercel.app/sales-resume-checker</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://recruitercheck.vercel.app/administrative-assistant-resume-checker</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://recruitercheck.vercel.app/myrecruitercheck-vs-jobscan</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://recruitercheck.vercel.app/myrecruitercheck-vs-resume-worded</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
 </urlset>

@@ -16,6 +16,10 @@ interface SeoLandingPageProps {
   steps: readonly string[]
   example?: { title: string; scenario: string; insight: string }
   verdict?: { jobTitle: string; reject: readonly string[]; accept: readonly string[] }
+  comparison?: {
+    competitor: string
+    rows: readonly { label: string; us: string; them: string }[]
+  }
   faqs?: readonly { question: string; answer: string }[]
   relatedLinks?: readonly { label: string; to: string }[]
 }
@@ -32,6 +36,7 @@ export function SeoLandingPage({
   steps,
   example,
   verdict,
+  comparison,
   faqs = [],
   relatedLinks = [],
 }: SeoLandingPageProps) {
@@ -112,6 +117,37 @@ export function SeoLandingPage({
             </div>
             <div className="mx-auto mt-8 flex max-w-4xl flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
               <p className="text-text-secondary">Check your {verdict.jobTitle} resume like a recruiter would</p>
+              <Button onClick={handleCheckCta}>Check</Button>
+            </div>
+          </Container>
+        </section>
+      )}
+
+      {comparison && (
+        <section className="py-14 sm:py-20">
+          <Container>
+            <div className="mx-auto max-w-3xl overflow-x-auto rounded-2xl border border-border">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-border bg-surface">
+                    <th className="p-4 text-sm font-semibold text-text-secondary"> </th>
+                    <th className="p-4 text-sm font-semibold text-text-primary">MyRecruiterCheck</th>
+                    <th className="p-4 text-sm font-semibold text-text-secondary">{comparison.competitor}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparison.rows.map((row) => (
+                    <tr key={row.label} className="border-b border-border last:border-b-0">
+                      <td className="p-4 text-sm font-medium text-text-primary">{row.label}</td>
+                      <td className="p-4 text-sm text-text-secondary">{row.us}</td>
+                      <td className="p-4 text-sm text-text-secondary">{row.them}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
+              <p className="text-text-secondary">See how your resume scores with MyRecruiterCheck</p>
               <Button onClick={handleCheckCta}>Check</Button>
             </div>
           </Container>

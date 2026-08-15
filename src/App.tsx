@@ -22,6 +22,8 @@ import { LandingPage } from '@/pages/LandingPage'
 import { InterviewProbabilityPage } from '@/pages/InterviewProbabilityPage'
 import { JobApplicationFeedbackPage } from '@/pages/JobApplicationFeedbackPage'
 import { MyChecksPage } from '@/pages/MyChecksPage'
+import { MyRecruiterCheckVsJobscanPage } from '@/pages/MyRecruiterCheckVsJobscanPage'
+import { MyRecruiterCheckVsResumeWordedPage } from '@/pages/MyRecruiterCheckVsResumeWordedPage'
 import { NewCheckPage } from '@/pages/NewCheckPage'
 import { NewsletterUnsubscribePage } from '@/pages/NewsletterUnsubscribePage'
 import { PrivacyPage } from '@/pages/PrivacyPage'
@@ -60,6 +62,8 @@ export function AppRoutes() {
         <Route path="project-manager-resume-checker" element={<ProjectManagerResumeCheckerPage />} />
         <Route path="sales-resume-checker" element={<SalesResumeCheckerPage />} />
         <Route path="administrative-assistant-resume-checker" element={<AdministrativeAssistantResumeCheckerPage />} />
+        <Route path="myrecruitercheck-vs-jobscan" element={<MyRecruiterCheckVsJobscanPage />} />
+        <Route path="myrecruitercheck-vs-resume-worded" element={<MyRecruiterCheckVsResumeWordedPage />} />
       </Route>
 
       <Route path="auth/callback" element={<AuthCallbackPage />} />
