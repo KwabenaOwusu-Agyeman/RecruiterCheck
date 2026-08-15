@@ -41,6 +41,9 @@ export function HeroSection() {
               Sign In
             </Button>
           </div>
+          <p className="mt-4 text-sm text-text-secondary">
+            Built on what real recruiters flag first, not keyword stuffing tricks.
+          </p>
         </div>
       </Container>
     </section>
