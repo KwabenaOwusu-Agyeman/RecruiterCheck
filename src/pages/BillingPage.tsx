@@ -6,7 +6,12 @@ import { Button } from '@/components/ui/Button'
 import { PRICING_PLANS } from '@/lib/constants'
 import { trackEvent } from '@/lib/analytics'
 import { useAuth } from '@/hooks/useAuth'
-import { createCheckoutSession, createPortalSession } from '@/services/checkService'
+import {
+  createCheckoutSession,
+  createPortalSession,
+  FREE_TIER_LIFETIME_LIMIT,
+  PAID_TIER_DAILY_LIMIT,
+} from '@/services/checkService'
 import { cn } from '@/utils/cn'
 
 const TIER_RANK: Record<string, number> = {
@@ -14,6 +19,25 @@ const TIER_RANK: Record<string, number> = {
   premium_weekly: 1,
   premium_monthly: 2,
 }
+
+const BILLING_FAQ = [
+  {
+    question: 'What do I get on the Free plan?',
+    answer: `${FREE_TIER_LIFETIME_LIMIT} Recruiter Check, including your Interview Probability and Recruiter Feedback.`,
+  },
+  {
+    question: 'What do I get on Weekly or Monthly?',
+    answer: `Up to ${PAID_TIER_DAILY_LIMIT} Recruiter Checks per day, plus your Recruiter Ready Kit — a tailored CV, cover letter, and recruiter message for each check.`,
+  },
+  {
+    question: 'Can I cancel anytime?',
+    answer: 'Yes. Manage or cancel your subscription anytime from the billing portal — no notice period required.',
+  },
+  {
+    question: 'Is my payment information secure?',
+    answer: 'Payments are processed securely by Stripe. We never see or store your card details.',
+  },
+] as const
 
 export function BillingPage() {
   const { profile } = useAuth()
@@ -103,7 +127,7 @@ export function BillingPage() {
                     'absolute left-1/2 top-0 z-10 -translate-x-1/2 whitespace-nowrap rounded-full px-4 py-1 text-xs font-semibold tracking-wide shadow-sm',
                     isHighlighted
                       ? 'bg-navy text-white'
-                      : 'border border-navy bg-surface text-text-secondary',
+                      : 'border border-border-strong bg-surface text-text-secondary',
                   )}
                 >
                   {plan.badge}
@@ -118,10 +142,10 @@ export function BillingPage() {
                   // (name/price/features/CTA) lower than the others — all
                   // three must start their content at the same offset to
                   // align horizontally.
-                  'flex h-full flex-col rounded-2xl border border-navy bg-surface p-2.5 pt-5 sm:rounded-[16px] sm:p-[28px] sm:pt-8',
+                  'flex h-full flex-col rounded-[16px] border bg-surface p-2.5 pt-5 sm:p-[28px] sm:pt-8',
                   isHighlighted
-                    ? 'border-2 shadow-lg sm:border-navy sm:shadow-elevated'
-                    : 'shadow-sm sm:border-border-soft sm:shadow-card',
+                    ? 'border-2 border-navy shadow-elevated'
+                    : 'border-border-soft shadow-card',
                 )}
               >
                 <div className="text-center">
@@ -218,6 +242,18 @@ export function BillingPage() {
           <span>Payments securely processed by Stripe. We never see or store your card details.</span>
         </div>
         <span>Cancel anytime from your billing portal.</span>
+      </div>
+
+      <div className="mx-auto mt-10 max-w-2xl lg:max-w-[720px]">
+        <h2 className="text-center text-lg font-semibold text-text-primary sm:text-xl">Billing FAQ</h2>
+        <div className="mt-4 divide-y divide-border rounded-[16px] border border-border-soft bg-surface shadow-card">
+          {BILLING_FAQ.map(({ question, answer }) => (
+            <div key={question} className="px-5 py-4">
+              <p className="text-sm font-semibold text-text-primary">{question}</p>
+              <p className="mt-1 text-sm text-text-secondary">{answer}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </>
   )

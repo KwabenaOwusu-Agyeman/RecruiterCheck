@@ -1,9 +1,11 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Alert } from '@/components/ui/Alert'
+import { AuthCardHeader } from '@/components/ui/AuthCard'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
+import { PasswordInput } from '@/components/ui/PasswordInput'
 import { useAuthModal } from '@/features/auth/context/AuthModalContext'
 import { consumePostAuthRedirect } from '@/features/auth/postAuthRedirect'
 import { trackEvent } from '@/lib/analytics'
@@ -158,6 +160,8 @@ export function AuthModal() {
     }
   }
 
+  const passwordsMismatch = mode === 'sign-up' && confirmPassword.length > 0 && password !== confirmPassword
+
   const title = mode === 'sign-in' ? 'Sign In' : 'Get started'
   const alternateMode = mode === 'sign-in' ? 'sign-up' : 'sign-in'
   const alternateLabel = mode === 'sign-in' ? 'Sign Up' : 'Sign In'
@@ -190,7 +194,7 @@ export function AuthModal() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="auth-modal-title"
-          className="auth-sheet-panel relative flex max-h-[92dvh] w-full max-w-none flex-col overflow-y-auto rounded-t-[24px] border border-navy border-b-0 bg-surface p-[16px] pb-[max(16px,env(safe-area-inset-bottom))] shadow-lg sm:max-h-[calc(100vh-2rem)] sm:max-w-[430px] sm:rounded-[20px] sm:border-border-soft sm:border-b sm:p-[32px] sm:pb-[32px] sm:shadow-elevated"
+          className="auth-sheet-panel relative flex max-h-[92dvh] w-full max-w-none flex-col overflow-y-auto rounded-t-[24px] border border-border-soft border-b-0 bg-surface p-[16px] pb-[max(16px,env(safe-area-inset-bottom))] shadow-elevated sm:max-h-[calc(100vh-2rem)] sm:max-w-[430px] sm:rounded-[20px] sm:border-b sm:p-[32px] sm:pb-[32px]"
         >
         <div
           className="mx-auto mb-[10px] h-1.5 w-10 shrink-0 rounded-full bg-border sm:hidden"
@@ -203,7 +207,7 @@ export function AuthModal() {
             close()
             void navigate('/', { replace: true })
           }}
-          className="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded-lg border border-navy text-text-secondary transition-colors duration-150 hover:bg-background hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue sm:right-4 sm:top-4 sm:h-9 sm:w-9 sm:border-transparent sm:hover:bg-surface-muted"
+          className="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded-lg border border-transparent text-text-secondary transition-colors duration-150 hover:bg-background hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue sm:right-4 sm:top-4 sm:h-9 sm:w-9 sm:hover:bg-surface-muted"
         >
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <path
@@ -215,25 +219,22 @@ export function AuthModal() {
           </svg>
         </button>
 
-        <div className="mb-[16px] pr-12 sm:mb-[24px]">
-          <h1
-            id="auth-modal-title"
-            className="text-[20px] font-bold tracking-tight text-text-primary sm:text-2xl"
-          >
-            {title}
-          </h1>
-          <p className="mt-[6px] text-[13px] text-text-secondary sm:text-sm">
-            {mode === 'sign-up'
+        <AuthCardHeader
+          titleId="auth-modal-title"
+          title={title}
+          subtitle={
+            mode === 'sign-up'
               ? 'Create your free account to start running recruiter checks.'
-              : 'Welcome back. Continue where you left off.'}
-          </p>
-        </div>
+              : 'Welcome back. Continue where you left off.'
+          }
+          className="pr-12"
+        />
 
         <div className="space-y-2 sm:space-y-3">
           <Button
             type="button"
             variant="secondary"
-            className="h-[48px] w-full gap-2.5 !rounded-full text-base font-semibold sm:!h-12"
+            className="h-[48px] w-full gap-2.5 text-base font-semibold sm:!h-12"
             disabled={loadingProvider !== null}
             onClick={() => void handleOAuth('google', signInWithGoogle)}
           >
@@ -245,7 +246,7 @@ export function AuthModal() {
             <Button
               type="button"
               variant="secondary"
-              className="h-[48px] w-full gap-2.5 !rounded-full text-base font-semibold sm:!h-12"
+              className="h-[48px] w-full gap-2.5 text-base font-semibold sm:!h-12"
               disabled={loadingProvider !== null}
               onClick={() => void handleOAuth('linkedin', signInWithLinkedIn)}
             >
@@ -297,9 +298,8 @@ export function AuthModal() {
                 </button>
               ) : null}
             </div>
-            <Input
+            <PasswordInput
               id="auth-modal-password"
-              type="password"
               autoComplete={mode === 'sign-up' ? 'new-password' : 'current-password'}
               required
               minLength={6}
@@ -313,24 +313,30 @@ export function AuthModal() {
           {mode === 'sign-up' ? (
             <div className="space-y-[6px]">
               <Label htmlFor="auth-modal-confirm-password">Confirm password</Label>
-              <Input
+              <PasswordInput
                 id="auth-modal-confirm-password"
-                type="password"
                 autoComplete="new-password"
                 required
                 minLength={6}
                 placeholder="••••••••"
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
+                aria-invalid={passwordsMismatch}
                 className="h-[48px] text-base sm:!h-12 sm:text-sm"
               />
+              {passwordsMismatch ? <p className="text-xs text-error">Passwords do not match.</p> : null}
             </div>
           ) : null}
 
           <Button
             type="submit"
-            className="mt-[4px] h-[48px] w-full !rounded-full text-base font-semibold sm:!h-12"
-            disabled={loadingProvider !== null || !email.trim() || !password}
+            className="mt-[4px] h-[48px] w-full text-base font-semibold sm:!h-12"
+            disabled={
+              loadingProvider !== null ||
+              !email.trim() ||
+              !password ||
+              (mode === 'sign-up' && (passwordsMismatch || !confirmPassword))
+            }
           >
             {loadingProvider === 'email' ? submitLoadingLabel : submitLabel}
           </Button>

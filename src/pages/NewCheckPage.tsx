@@ -3,9 +3,12 @@ import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-r
 import { Alert } from '@/components/ui/Alert'
 import { BackLink } from '@/components/ui/BackLink'
 import { Button } from '@/components/ui/Button'
+import { FileDropzone } from '@/components/ui/FileDropzone'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { PageHeader } from '@/components/ui/Badge'
+import { SegmentedControl } from '@/components/ui/SegmentedControl'
+import { StepIndicator } from '@/components/ui/StepIndicator'
 import { Textarea } from '@/components/ui/Textarea'
 import { AutoDeleteNotice } from '@/components/checks/AutoDeleteNotice'
 import {
@@ -27,7 +30,6 @@ import {
   updateDraftCheck,
   type CheckGateReason,
 } from '@/services/checkService'
-import { cn } from '@/utils/cn'
 import { categorizeUrlDomain, trackEvent } from '@/lib/analytics'
 
 const PASTED_CV_FILE_NAME = 'cv.txt'
@@ -257,8 +259,7 @@ export function NewCheckPage() {
     }
   }
 
-  async function handleJobFileChange(fileList: FileList | null) {
-    const file = fileList?.[0]
+  async function handleJobFileChange(file: File | null) {
     if (!file) return
 
     if (!ACCEPTED_JOB_FILE_TYPES.includes(file.type as (typeof ACCEPTED_JOB_FILE_TYPES)[number])) {
@@ -316,8 +317,7 @@ export function NewCheckPage() {
     }
   }
 
-  async function handleFileChange(fileList: FileList | null) {
-    const file = fileList?.[0]
+  async function handleFileChange(file: File | null) {
     if (!file || !user) return
 
     if (!ACCEPTED_CV_TYPES.includes(file.type as (typeof ACCEPTED_CV_TYPES)[number])) {
@@ -397,7 +397,7 @@ export function NewCheckPage() {
         <div className="mt-3">
           <PageHeader title="New Check" />
         </div>
-        <div className="mx-auto max-w-md rounded-2xl border border-navy bg-surface p-[20px] text-center sm:rounded-[16px] sm:border-border-soft sm:p-8 sm:shadow-card">
+        <div className="mx-auto max-w-md rounded-[16px] border border-border-soft bg-surface p-[20px] text-center shadow-card sm:p-8">
           <h2 className="text-base font-semibold text-text-primary">
             You've used your free Check
           </h2>
@@ -423,7 +423,7 @@ export function NewCheckPage() {
         <div className="mt-3">
           <PageHeader title="New Check" />
         </div>
-        <div className="mx-auto max-w-md rounded-2xl border border-navy bg-surface p-[20px] text-center sm:rounded-[16px] sm:border-border-soft sm:p-8 sm:shadow-card">
+        <div className="mx-auto max-w-md rounded-[16px] border border-border-soft bg-surface p-[20px] text-center shadow-card sm:p-8">
           <h2 className="text-base font-semibold text-text-primary">
             You've reached today's check limit
           </h2>
@@ -450,7 +450,11 @@ export function NewCheckPage() {
         />
       </div>
 
-      <div className="mx-auto max-w-2xl space-y-[16px] rounded-2xl border border-navy bg-surface p-[16px] sm:space-y-6 sm:rounded-[16px] sm:border-border-soft sm:p-6 sm:shadow-card lg:max-w-[800px] lg:space-y-[32px] lg:p-[32px]">
+      <div className="mx-auto max-w-2xl lg:max-w-[800px]">
+        <StepIndicator steps={['Upload', 'Analyse', 'Results']} currentIndex={analyzing ? 1 : 0} className="mb-[16px] sm:mb-6" />
+      </div>
+
+      <div className="mx-auto max-w-2xl space-y-[16px] rounded-[16px] border border-border-soft bg-surface p-[16px] shadow-card sm:space-y-6 sm:p-6 lg:max-w-[800px] lg:space-y-[32px] lg:p-[32px]">
         {captureError ? <Alert variant="error">{captureError}</Alert> : null}
 
         <div className="space-y-2">
@@ -466,53 +470,19 @@ export function NewCheckPage() {
             >
               Job description
             </Label>
-            <div className="inline-flex rounded-lg border border-border p-0.5">
-              <button
-                type="button"
-                onClick={() => {
-                  if (jobInputMode !== 'paste') trackEvent('job_input_paste_selected')
-                  setJobInputMode('paste')
-                }}
-                className={cn(
-                  'rounded-md px-3 py-1 text-xs font-medium transition-colors duration-150',
-                  jobInputMode === 'paste'
-                    ? 'bg-navy text-white shadow-sm'
-                    : 'text-text-secondary hover:text-text-primary',
-                )}
-              >
-                Paste
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (jobInputMode !== 'url') trackEvent('job_input_url_selected')
-                  setJobInputMode('url')
-                }}
-                className={cn(
-                  'rounded-md px-3 py-1 text-xs font-medium transition-colors duration-150',
-                  jobInputMode === 'url'
-                    ? 'bg-navy text-white shadow-sm'
-                    : 'text-text-secondary hover:text-text-primary',
-                )}
-              >
-                URL
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (jobInputMode !== 'upload') trackEvent('job_input_upload_selected')
-                  setJobInputMode('upload')
-                }}
-                className={cn(
-                  'rounded-md px-3 py-1 text-xs font-medium transition-colors duration-150',
-                  jobInputMode === 'upload'
-                    ? 'bg-navy text-white shadow-sm'
-                    : 'text-text-secondary hover:text-text-primary',
-                )}
-              >
-                Upload
-              </button>
-            </div>
+            <SegmentedControl
+              aria-label="Job description input method"
+              options={[
+                { value: 'paste', label: 'Paste' },
+                { value: 'url', label: 'URL' },
+                { value: 'upload', label: 'Upload' },
+              ]}
+              value={jobInputMode}
+              onChange={(mode) => {
+                if (mode !== jobInputMode) trackEvent(`job_input_${mode}_selected`)
+                setJobInputMode(mode)
+              }}
+            />
           </div>
 
           {jobInputMode === 'paste' ? (
@@ -578,20 +548,26 @@ export function NewCheckPage() {
             </>
           ) : (
             <>
-              <Input
+              <FileDropzone
                 id="jobFile"
-                type="file"
                 accept=".pdf,.docx,.txt"
                 disabled={extractingJobFile}
-                onChange={(event) => void handleJobFileChange(event.target.files)}
+                busy={extractingJobFile}
+                busyLabel="Reading file..."
+                fileName={jobFileName}
+                title="Upload the job description"
+                helperText={
+                  <>
+                    <p>PDF, DOCX, or TXT &middot; Maximum 10 MB</p>
+                    <AutoDeleteNotice />
+                  </>
+                }
+                onFileSelected={(file) => void handleJobFileChange(file)}
+                onRemove={() => {
+                  setJobFileName(null)
+                  setJobFileError(null)
+                }}
               />
-              <p className="text-xs text-text-secondary">PDF, DOCX, or TXT &middot; Maximum 10 MB</p>
-              <AutoDeleteNotice />
-              {extractingJobFile ? (
-                <p className="text-sm text-text-secondary">Reading file...</p>
-              ) : jobFileName ? (
-                <p className="text-sm text-text-secondary">Selected: {jobFileName}</p>
-              ) : null}
               {jobFileError ? <Alert variant="error">{jobFileError}</Alert> : null}
             </>
           )}
@@ -603,47 +579,34 @@ export function NewCheckPage() {
             <Label className="sr-only" htmlFor={cvInputMode === 'file' ? 'cv' : 'cvText'}>
               CV
             </Label>
-            <div className="inline-flex rounded-lg border border-border p-0.5">
-              <button
-                type="button"
-                onClick={() => setCvInputMode('file')}
-                className={cn(
-                  'rounded-md px-3 py-1 text-xs font-medium transition-colors duration-150',
-                  cvInputMode === 'file'
-                    ? 'bg-navy text-white shadow-sm'
-                    : 'text-text-secondary hover:text-text-primary',
-                )}
-              >
-                Upload file
-              </button>
-              <button
-                type="button"
-                onClick={() => setCvInputMode('paste')}
-                className={cn(
-                  'rounded-md px-3 py-1 text-xs font-medium transition-colors duration-150',
-                  cvInputMode === 'paste'
-                    ? 'bg-navy text-white shadow-sm'
-                    : 'text-text-secondary hover:text-text-primary',
-                )}
-              >
-                Paste text
-              </button>
-            </div>
+            <SegmentedControl
+              aria-label="CV input method"
+              options={[
+                { value: 'file', label: 'Upload file' },
+                { value: 'paste', label: 'Paste text' },
+              ]}
+              value={cvInputMode}
+              onChange={setCvInputMode}
+            />
           </div>
 
           {cvInputMode === 'file' ? (
-            <>
-              <p className="text-sm text-text-primary">Upload your current CV</p>
-              <Input
-                id="cv"
-                type="file"
-                accept=".pdf,.docx"
-                disabled={uploadingCv}
-                onChange={(event) => void handleFileChange(event.target.files)}
-              />
-              <p className="text-xs text-text-secondary">PDF or DOCX &middot; Maximum 10 MB</p>
-              <AutoDeleteNotice />
-            </>
+            <FileDropzone
+              id="cv"
+              accept=".pdf,.docx"
+              disabled={uploadingCv}
+              busy={uploadingCv}
+              busyLabel="Uploading..."
+              fileName={cvFileName === PASTED_CV_FILE_NAME ? null : cvFileName}
+              title="Upload your CV"
+              helperText={
+                <>
+                  <p>PDF or DOCX &middot; Maximum 10 MB</p>
+                  <AutoDeleteNotice />
+                </>
+              }
+              onFileSelected={(file) => void handleFileChange(file)}
+            />
           ) : (
             <>
               <Textarea
@@ -656,16 +619,11 @@ export function NewCheckPage() {
                 Paste your CV as plain text — saves automatically as you type.
               </p>
               <AutoDeleteNotice />
+              {cvFileName === PASTED_CV_FILE_NAME ? (
+                <p className="text-sm text-text-secondary">CV text saved</p>
+              ) : null}
             </>
           )}
-
-          {uploadingCv ? (
-            <p className="text-sm text-text-secondary">Uploading...</p>
-          ) : cvFileName ? (
-            <p className="text-sm text-text-secondary">
-              {cvFileName === PASTED_CV_FILE_NAME ? 'CV text saved' : `Selected: ${cvFileName}`}
-            </p>
-          ) : null}
         </div>
 
         {error ? <Alert variant="error">{error}</Alert> : null}

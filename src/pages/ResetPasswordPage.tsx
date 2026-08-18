@@ -1,11 +1,12 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Alert } from '@/components/ui/Alert'
+import { AuthCard, AuthCardHeader } from '@/components/ui/AuthCard'
 import { Button } from '@/components/ui/Button'
 import { Container } from '@/components/ui/Container'
-import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { Logo } from '@/components/ui/Logo'
+import { PasswordInput } from '@/components/ui/PasswordInput'
 import { updatePassword } from '@/services/authService'
 import { supabase } from '@/lib/supabase'
 
@@ -42,6 +43,8 @@ export function ResetPasswordPage() {
     return () => subscription.subscription.unsubscribe()
   }, [linkError])
 
+  const mismatch = confirmPassword.length > 0 && password !== confirmPassword
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     setError(null)
@@ -69,15 +72,8 @@ export function ResetPasswordPage() {
       </Container>
 
       <Container className="flex flex-1 flex-col items-center justify-center py-16">
-        <div className="w-full max-w-[400px] space-y-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-text-primary">
-              Set a new password
-            </h1>
-            <p className="mt-1 text-sm text-text-secondary">
-              Choose a new password for your account.
-            </p>
-          </div>
+        <AuthCard>
+          <AuthCardHeader title="Set a new password" subtitle="Choose a new password for your account." />
 
           {linkError ? (
             <div className="space-y-4">
@@ -90,9 +86,8 @@ export function ResetPasswordPage() {
             <form onSubmit={(event) => void handleSubmit(event)} className="space-y-[18px]">
               <div className="space-y-1">
                 <Label htmlFor="reset-password">New password</Label>
-                <Input
+                <PasswordInput
                   id="reset-password"
-                  type="password"
                   autoComplete="new-password"
                   required
                   minLength={6}
@@ -105,33 +100,34 @@ export function ResetPasswordPage() {
 
               <div className="space-y-1">
                 <Label htmlFor="reset-confirm-password">Confirm password</Label>
-                <Input
+                <PasswordInput
                   id="reset-confirm-password"
-                  type="password"
                   autoComplete="new-password"
                   required
                   minLength={6}
                   placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
+                  aria-invalid={mismatch}
                   className="!h-12"
                 />
+                {mismatch ? <p className="text-xs text-error">Passwords do not match.</p> : null}
               </div>
 
               <Button
                 type="submit"
-                className="!h-12 w-full !rounded-full text-base font-semibold"
-                disabled={submitting || !password || !confirmPassword}
+                className="!h-12 w-full text-base font-semibold"
+                disabled={submitting || !password || !confirmPassword || mismatch}
               >
                 {submitting ? 'Updating...' : 'Update password'}
               </Button>
+
+              {error ? <Alert variant="error">{error}</Alert> : null}
             </form>
           ) : (
             <p className="text-sm text-text-secondary">Verifying your reset link...</p>
           )}
-
-          {error ? <Alert variant="error">{error}</Alert> : null}
-        </div>
+        </AuthCard>
       </Container>
     </div>
   )

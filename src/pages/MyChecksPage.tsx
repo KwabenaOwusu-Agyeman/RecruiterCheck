@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Alert } from '@/components/ui/Alert'
 import { ScoreBadge, StatusBadge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PageHeader } from '@/components/ui/Badge'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { useAuth } from '@/hooks/useAuth'
 import { deleteCheck, getChecks } from '@/services/checkService'
 import type { Check } from '@/types'
@@ -49,22 +52,6 @@ export function MyChecksPage() {
     void loadChecks()
   }, [user])
 
-  useEffect(() => {
-    if (!pendingDelete) return
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setPendingDelete(null)
-    }
-
-    document.addEventListener('keydown', handleKeyDown)
-    document.body.style.overflow = 'hidden'
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-      document.body.style.overflow = ''
-    }
-  }, [pendingDelete])
-
   async function handleConfirmDelete() {
     if (!pendingDelete) return
     const checkId = pendingDelete.id
@@ -98,9 +85,19 @@ export function MyChecksPage() {
       />
 
       {loading ? (
-        <p className="text-sm text-text-secondary">Loading checks...</p>
+        <div className="divide-y divide-border rounded-[16px] border border-border-soft bg-surface shadow-card">
+          {[0, 1, 2, 3].map((row) => (
+            <div key={row} className="flex items-center justify-between gap-3 px-4 py-4">
+              <div className="min-w-0 flex-1 space-y-2">
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-3 w-1/4" />
+              </div>
+              <Skeleton className="h-4 w-10 shrink-0" />
+            </div>
+          ))}
+        </div>
       ) : error ? (
-        <p className="text-sm text-error">{error}</p>
+        <Alert variant="error">{error}</Alert>
       ) : checks.length === 0 ? (
         <EmptyState
           title="No checks yet"
@@ -180,7 +177,7 @@ export function MyChecksPage() {
           </div>
 
           {/* Mobile compact list */}
-          <div className="divide-y divide-border rounded-2xl border border-navy bg-surface sm:rounded-[16px] sm:border-border-soft sm:shadow-card md:hidden">
+          <div className="divide-y divide-border rounded-[16px] border border-border-soft bg-surface shadow-card md:hidden">
             {checks.map((check) => (
               <div key={check.id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <div className="min-w-0">
@@ -223,49 +220,16 @@ export function MyChecksPage() {
         </>
       )}
 
-      {pendingDelete ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#05050D]/50 p-4"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setPendingDelete(null)
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="delete-check-title"
-            className="w-full max-w-sm rounded-2xl border border-navy bg-surface p-[16px] shadow-lg sm:rounded-[20px] sm:border-border-soft sm:p-6 sm:shadow-elevated"
-          >
-            <h2 id="delete-check-title" className="text-base font-semibold text-text-primary">
-              Delete this check?
-            </h2>
-            <p className="mt-2 text-sm text-text-secondary">
-              This will permanently delete this check and its associated data. This cannot be
-              undone.
-            </p>
-            <div className="mt-[16px] flex justify-end gap-3 sm:mt-6">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                disabled={deletingId === pendingDelete.id}
-                onClick={() => setPendingDelete(null)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                disabled={deletingId === pendingDelete.id}
-                onClick={() => void handleConfirmDelete()}
-                className="!border-error bg-error hover:!bg-error/90"
-              >
-                {deletingId === pendingDelete.id ? 'Deleting...' : 'Delete'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="Delete this check?"
+        description="This will permanently delete this check and its associated data. This cannot be undone."
+        confirmLabel="Delete"
+        confirmingLabel="Deleting..."
+        busy={pendingDelete !== null && deletingId === pendingDelete.id}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={() => void handleConfirmDelete()}
+      />
     </>
   )
 }

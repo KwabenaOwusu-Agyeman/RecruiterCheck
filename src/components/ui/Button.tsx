@@ -10,12 +10,11 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary:
-    'bg-navy text-white border border-navy hover:bg-navy/90 focus-visible:ring-navy sm:hover:shadow-hover',
+  primary: 'bg-navy text-white border border-navy hover:bg-navy/90 focus-visible:ring-navy hover:shadow-hover',
   secondary:
-    'bg-surface text-text-primary border border-navy hover:bg-background focus-visible:ring-blue sm:border-border-strong sm:hover:border-navy/40 sm:hover:shadow-card',
+    'bg-surface text-text-primary border border-border-strong hover:border-navy/40 hover:bg-background focus-visible:ring-blue hover:shadow-card',
   ghost:
-    'bg-transparent text-text-primary border border-navy hover:bg-background focus-visible:ring-blue sm:border-transparent sm:hover:bg-background',
+    'bg-transparent text-text-primary border border-transparent hover:bg-background focus-visible:ring-blue',
 }
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -31,11 +30,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         type={type}
         className={cn(
-          'inline-flex items-center justify-center rounded-xl font-medium sm:rounded-[10px]',
-          'transition-[background-color,color,border-color,transform,box-shadow] duration-150 sm:duration-[180ms]',
+          'inline-flex items-center justify-center rounded-[10px] font-medium',
+          'transition-[background-color,color,border-color,transform,box-shadow] duration-150',
           'touch-manipulation active:scale-[0.97] sm:active:scale-100 sm:active:translate-y-px',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-          'disabled:pointer-events-none disabled:opacity-50 sm:disabled:hover:shadow-none',
+          'disabled:pointer-events-none disabled:opacity-50 disabled:hover:shadow-none',
           variantStyles[variant],
           sizeStyles[size],
           className,
