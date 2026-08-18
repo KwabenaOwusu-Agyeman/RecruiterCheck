@@ -39,7 +39,7 @@ export function HowItWorksSection() {
           {steps.map((step) => (
             <li
               key={step.number}
-              className="relative flex h-full flex-col rounded-xl border-2 border-navy bg-background p-[16px] shadow-lg sm:rounded-[16px] sm:border sm:border-border-soft sm:bg-surface sm:p-5 sm:shadow-card lg:p-[24px]"
+              className="relative flex h-full flex-col rounded-[16px] border border-border-soft bg-surface p-[16px] shadow-card sm:p-5 lg:p-[24px]"
             >
               <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-navy text-lg font-bold text-white">
                 {Number(step.number)}

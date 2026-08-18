@@ -4,13 +4,15 @@ import { Alert } from '@/components/ui/Alert'
 import { BackLink } from '@/components/ui/BackLink'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { PageHeader } from '@/components/ui/Badge'
+import { PasswordInput } from '@/components/ui/PasswordInput'
 import { PRICING_PLANS } from '@/lib/constants'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
-import { signOut } from '@/services/authService'
+import { signOut, updatePassword } from '@/services/authService'
 import {
   deleteAccount,
   FREE_TIER_LIFETIME_LIMIT,
@@ -46,6 +48,12 @@ export function AccountPage() {
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmNewPassword, setConfirmNewPassword] = useState('')
+  const [changingPassword, setChangingPassword] = useState(false)
+  const [passwordMessage, setPasswordMessage] = useState<string | null>(null)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
 
   useEffect(() => {
     setFullName(profile?.full_name ?? '')
@@ -96,21 +104,28 @@ export function AccountPage() {
     }
   }
 
-  useEffect(() => {
-    if (!confirmingDelete) return
+  async function handlePasswordChange(event: FormEvent) {
+    event.preventDefault()
+    setPasswordMessage(null)
+    setPasswordError(null)
 
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setConfirmingDelete(false)
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError('Passwords do not match.')
+      return
     }
 
-    document.addEventListener('keydown', handleKeyDown)
-    document.body.style.overflow = 'hidden'
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-      document.body.style.overflow = ''
+    setChangingPassword(true)
+    try {
+      await updatePassword(newPassword)
+      setNewPassword('')
+      setConfirmNewPassword('')
+      setPasswordMessage('Password updated.')
+    } catch (err) {
+      setPasswordError(err instanceof Error ? err.message : 'Could not update password')
+    } finally {
+      setChangingPassword(false)
     }
-  }, [confirmingDelete])
+  }
 
   async function handleConfirmDeleteAccount() {
     setDeleting(true)
@@ -127,6 +142,7 @@ export function AccountPage() {
     }
   }
 
+  const passwordMismatch = confirmNewPassword.length > 0 && newPassword !== confirmNewPassword
   const isFree = (profile?.subscription_tier ?? 'free') === 'free'
   const planDateLabel = subscription?.current_period_end
     ? `Renews ${formatDate(subscription.current_period_end)}`
@@ -240,6 +256,57 @@ export function AccountPage() {
         </Card>
       </div>
 
+      <Card className="mt-3 sm:mt-6">
+        <CardHeader className="py-2.5 sm:py-4">
+          <h2 className="text-base font-semibold text-text-primary sm:text-lg">Password</h2>
+        </CardHeader>
+        <CardContent className="py-3 sm:py-5">
+          <form
+            onSubmit={(event) => void handlePasswordChange(event)}
+            className="grid gap-3 sm:max-w-sm"
+          >
+            <div className="space-y-1">
+              <Label htmlFor="newPassword">New password</Label>
+              <PasswordInput
+                id="newPassword"
+                autoComplete="new-password"
+                minLength={6}
+                placeholder="••••••••"
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="confirmNewPassword">Confirm new password</Label>
+              <PasswordInput
+                id="confirmNewPassword"
+                autoComplete="new-password"
+                minLength={6}
+                placeholder="••••••••"
+                value={confirmNewPassword}
+                onChange={(event) => setConfirmNewPassword(event.target.value)}
+                aria-invalid={passwordMismatch}
+              />
+              {passwordMismatch ? <p className="text-xs text-error">Passwords do not match.</p> : null}
+            </div>
+
+            {passwordMessage ? <Alert variant="success">{passwordMessage}</Alert> : null}
+            {passwordError ? <Alert variant="error">{passwordError}</Alert> : null}
+
+            <Button
+              type="submit"
+              size="sm"
+              className="w-full sm:w-auto"
+              disabled={
+                changingPassword || !newPassword || !confirmNewPassword || passwordMismatch
+              }
+            >
+              {changingPassword ? 'Updating...' : 'Update Password'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
       <Card className="mt-3 border-error/25 sm:mt-6 sm:border-error/20 sm:bg-[#FCEFEF]/30 sm:shadow-none">
         <CardHeader className="border-b-error/10 py-2.5 sm:py-4">
           <h2 className="text-base font-semibold text-text-primary sm:text-lg">Danger Zone</h2>
@@ -266,49 +333,16 @@ export function AccountPage() {
         </CardContent>
       </Card>
 
-      {confirmingDelete ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#05050D]/50 p-4"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget && !deleting) setConfirmingDelete(false)
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="delete-account-title"
-            className="w-full max-w-sm rounded-2xl border border-navy bg-surface p-[16px] shadow-lg sm:rounded-[20px] sm:border-border-soft sm:p-6 sm:shadow-elevated"
-          >
-            <h2 id="delete-account-title" className="text-base font-semibold text-text-primary">
-              Delete your account?
-            </h2>
-            <p className="mt-2 text-sm text-text-secondary">
-              Your account, checks, uploaded CVs, generated documents, and associated data will be
-              permanently deleted. This cannot be undone.
-            </p>
-            <div className="mt-[16px] flex justify-end gap-3 sm:mt-6">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                disabled={deleting}
-                onClick={() => setConfirmingDelete(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                disabled={deleting}
-                onClick={() => void handleConfirmDeleteAccount()}
-                className="!border-error bg-error hover:!bg-error/90"
-              >
-                {deleting ? 'Deleting...' : 'Delete Account'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <ConfirmDialog
+        open={confirmingDelete}
+        title="Delete your account?"
+        description="Your account, checks, uploaded CVs, generated documents, and associated data will be permanently deleted. This cannot be undone."
+        confirmLabel="Delete Account"
+        confirmingLabel="Deleting..."
+        busy={deleting}
+        onCancel={() => setConfirmingDelete(false)}
+        onConfirm={() => void handleConfirmDeleteAccount()}
+      />
 
       <nav className="mt-3 flex justify-center gap-4 text-xs text-text-secondary" aria-label="Legal">
         <Link to="/terms" className="transition-colors hover:text-text-primary">
