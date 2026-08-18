@@ -4,6 +4,7 @@ import { Alert } from '@/components/ui/Alert'
 import { StatusBadge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { FeedbackBullet, getVerdictColor, splitFinding } from '@/components/feedback/FeedbackBullet'
 import { ProductFeedbackForm } from '@/features/feedback/components/ProductFeedbackForm'
 import { useAuth } from '@/hooks/useAuth'
@@ -119,7 +120,19 @@ export function FeedbackPage() {
   }
 
   if (loading) {
-    return <p className="text-sm text-text-secondary">Loading feedback...</p>
+    return (
+      <div className="lg:mx-auto lg:max-w-[1000px]">
+        <div className="mb-6 space-y-3 rounded-[16px] border border-border-soft bg-surface p-[16px] shadow-card sm:mb-8 sm:p-8">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-7 w-2/3" />
+          <Skeleton className="h-10 w-40" />
+        </div>
+        <div className="grid gap-5 md:grid-cols-2">
+          <Skeleton className="h-40 rounded-[16px]" />
+          <Skeleton className="h-40 rounded-[16px]" />
+        </div>
+      </div>
+    )
   }
 
   if (error || !check) {
@@ -151,7 +164,7 @@ export function FeedbackPage() {
 
   return (
     <div className="lg:mx-auto lg:max-w-[1000px]">
-      <div className="mb-6 rounded-2xl border border-navy bg-surface p-[16px] sm:mb-8 sm:rounded-[16px] sm:border-border-soft sm:bg-gradient-surface sm:p-8 sm:shadow-card">
+      <div className="mb-6 rounded-[16px] border border-border-soft bg-gradient-surface p-[16px] shadow-card sm:mb-8 sm:p-8">
         <p className="text-sm font-semibold text-text-primary">
           {firstName ? `Hi ${firstName},` : 'Hi,'}
         </p>

@@ -35,7 +35,7 @@ export function ExampleCheckPage() {
         MyRecruiterCheck gives.
       </Alert>
 
-      <div className="mb-5 mt-3 rounded-2xl border border-navy bg-surface p-[16px] sm:rounded-[16px] sm:border-border-soft sm:bg-gradient-surface sm:p-8 sm:shadow-card">
+      <div className="mb-5 mt-3 rounded-[16px] border border-border-soft bg-gradient-surface p-[16px] shadow-card sm:p-8">
         <p className="text-sm font-semibold text-text-primary">Example Recruiter Check</p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-text-primary sm:text-[28px]">
           {EXAMPLE_JOB_TITLE}

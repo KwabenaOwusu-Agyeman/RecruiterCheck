@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
+import { Card, CardContent } from '@/components/ui/Card'
 import { Container } from '@/components/ui/Container'
 import { useCheckCta } from '@/hooks/useCheckCta'
 import { usePageMeta } from '@/hooks/usePageMeta'
@@ -24,6 +25,9 @@ interface SeoLandingPageProps {
   relatedLinks?: readonly { label: string; to: string }[]
 }
 
+const secondaryLinkClassName =
+  'inline-flex h-[52px] items-center justify-center rounded-[10px] border border-border-strong bg-surface px-5 text-sm font-medium text-text-primary transition-colors duration-150 hover:border-navy/40 hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2 sm:h-[48px]'
+
 export function SeoLandingPage({
   title,
   description,
@@ -45,22 +49,19 @@ export function SeoLandingPage({
 
   return (
     <main>
-      <section className="border-b border-border-soft bg-surface py-16 sm:py-24">
+      <section className="border-b border-border-soft bg-surface py-12 sm:py-16 lg:py-20">
         <Container>
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue">{eyebrow}</p>
-            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-text-primary sm:text-5xl">
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-text-primary sm:text-4xl lg:text-[44px]">
               {heading}
             </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-text-secondary">
+            <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-text-secondary">
               {introduction}
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button size="lg" onClick={handleCheckCta}>Check My Application</Button>
-              <Link
-                to="/example-check"
-                className="inline-flex h-[52px] items-center justify-center rounded-xl border border-navy bg-surface px-5 text-sm font-medium text-text-primary transition-colors hover:bg-background sm:h-[48px] sm:rounded-[10px]"
-              >
+              <Link to="/example-check" className={secondaryLinkClassName}>
                 See an example
               </Link>
             </div>
@@ -69,51 +70,59 @@ export function SeoLandingPage({
       </section>
 
       {directAnswer && (
-        <section className="border-b border-border-soft bg-background py-10 sm:py-14">
+        <section className="border-b border-border-soft bg-background py-8 sm:py-12">
           <Container>
-            <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-surface p-6 sm:p-8">
-              <h2 className="text-2xl font-semibold tracking-tight text-text-primary">
-                What does this tool check?
-              </h2>
-              <p className="mt-4 leading-7 text-text-secondary">{directAnswer}</p>
-            </div>
+            <Card className="mx-auto max-w-3xl">
+              <CardContent className="p-6 sm:p-8">
+                <h2 className="text-2xl font-semibold tracking-tight text-text-primary">
+                  What does this tool check?
+                </h2>
+                <p className="mt-4 leading-7 text-text-secondary">{directAnswer}</p>
+              </CardContent>
+            </Card>
           </Container>
         </section>
       )}
 
-      <section className="py-14 sm:py-20">
+      <section className="py-10 sm:py-14">
         <Container>
           <div className="mx-auto grid max-w-5xl gap-5 md:grid-cols-3">
             {benefits.map((benefit) => (
-              <article key={benefit.title} className="rounded-2xl border border-border bg-surface p-6">
-                <h2 className="text-xl font-semibold text-text-primary">{benefit.title}</h2>
-                <p className="mt-3 leading-7 text-text-secondary">{benefit.description}</p>
-              </article>
+              <Card key={benefit.title} className="h-full">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold text-text-primary">{benefit.title}</h2>
+                  <p className="mt-3 leading-7 text-text-secondary">{benefit.description}</p>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </Container>
       </section>
 
       {verdict && (
-        <section className="py-14 sm:py-20">
+        <section className="py-10 sm:py-14">
           <Container>
             <div className="mx-auto grid max-w-4xl gap-5 sm:grid-cols-2">
-              <div className="rounded-2xl border border-border bg-surface p-6">
-                <h2 className="text-lg font-semibold text-text-primary">3 things recruiters reject</h2>
-                <ul className="mt-4 space-y-3">
-                  {verdict.reject.map((item) => (
-                    <li key={item} className="leading-6 text-text-secondary">{item}</li>
-                  ))}
-                </ul>
-              </div>
-              <div className="rounded-2xl border border-border bg-surface p-6">
-                <h2 className="text-lg font-semibold text-text-primary">3 things recruiters accept</h2>
-                <ul className="mt-4 space-y-3">
-                  {verdict.accept.map((item) => (
-                    <li key={item} className="leading-6 text-text-secondary">{item}</li>
-                  ))}
-                </ul>
-              </div>
+              <Card>
+                <CardContent className="p-6">
+                  <h2 className="text-lg font-semibold text-text-primary">3 things recruiters reject</h2>
+                  <ul className="mt-4 space-y-3">
+                    {verdict.reject.map((item) => (
+                      <li key={item} className="leading-6 text-text-secondary">{item}</li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <h2 className="text-lg font-semibold text-text-primary">3 things recruiters accept</h2>
+                  <ul className="mt-4 space-y-3">
+                    {verdict.accept.map((item) => (
+                      <li key={item} className="leading-6 text-text-secondary">{item}</li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
             </div>
             <div className="mx-auto mt-8 flex max-w-4xl flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
               <p className="text-text-secondary">Check your {verdict.jobTitle} resume like a recruiter would</p>
@@ -124,12 +133,12 @@ export function SeoLandingPage({
       )}
 
       {comparison && (
-        <section className="py-14 sm:py-20">
+        <section className="py-10 sm:py-14">
           <Container>
-            <div className="mx-auto max-w-3xl overflow-x-auto rounded-2xl border border-border">
+            <Card className="mx-auto max-w-3xl overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-border bg-surface">
+                  <tr className="border-b border-border bg-surface-muted">
                     <th className="p-4 text-sm font-semibold text-text-secondary"> </th>
                     <th className="p-4 text-sm font-semibold text-text-primary">MyRecruiterCheck</th>
                     <th className="p-4 text-sm font-semibold text-text-secondary">{comparison.competitor}</th>
@@ -145,7 +154,7 @@ export function SeoLandingPage({
                   ))}
                 </tbody>
               </table>
-            </div>
+            </Card>
             <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
               <p className="text-text-secondary">See how your resume scores with MyRecruiterCheck</p>
               <Button onClick={handleCheckCta}>Check</Button>
@@ -154,14 +163,14 @@ export function SeoLandingPage({
         </section>
       )}
 
-      <section className="border-y border-border-soft bg-surface py-14 sm:py-20">
+      <section className="border-y border-border-soft bg-surface py-10 sm:py-14">
         <Container>
           <div className="mx-auto max-w-3xl">
-            <h2 className="text-3xl font-semibold tracking-tight text-text-primary">How it works</h2>
+            <h2 className="text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl">How it works</h2>
             <ol className="mt-8 space-y-5">
               {steps.map((step, index) => (
                 <li key={step} className="flex gap-4 text-text-secondary">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue text-sm font-semibold text-white">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy text-sm font-semibold text-white">
                     {index + 1}
                   </span>
                   <span className="pt-1 leading-7">{step}</span>
@@ -176,27 +185,29 @@ export function SeoLandingPage({
       </section>
 
       {example && (
-        <section className="py-14 sm:py-20">
+        <section className="py-10 sm:py-14">
           <Container>
-            <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-surface p-6 sm:p-8">
-              <h2 className="text-2xl font-semibold tracking-tight text-text-primary">{example.title}</h2>
-              <p className="mt-4 leading-7 text-text-secondary">{example.scenario}</p>
-              <p className="mt-4 leading-7 text-text-secondary">{example.insight}</p>
-            </div>
+            <Card className="mx-auto max-w-3xl">
+              <CardContent className="p-6 sm:p-8">
+                <h2 className="text-2xl font-semibold tracking-tight text-text-primary">{example.title}</h2>
+                <p className="mt-4 leading-7 text-text-secondary">{example.scenario}</p>
+                <p className="mt-4 leading-7 text-text-secondary">{example.insight}</p>
+              </CardContent>
+            </Card>
           </Container>
         </section>
       )}
 
       {faqs.length > 0 && (
-        <section className="border-t border-border-soft py-14 sm:py-20">
+        <section className="border-t border-border-soft py-10 sm:py-14">
           <Container>
             <div className="mx-auto max-w-3xl">
-              <h2 className="text-3xl font-semibold tracking-tight text-text-primary">
+              <h2 className="text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl">
                 Frequently asked questions
               </h2>
-              <div className="mt-8 divide-y divide-border rounded-2xl border border-border bg-surface px-6">
+              <div className="mt-8 divide-y divide-border rounded-[16px] border border-border-soft bg-surface shadow-card">
                 {faqs.map((faq) => (
-                  <article key={faq.question} className="py-6">
+                  <article key={faq.question} className="px-6 py-6">
                     <h3 className="text-lg font-semibold text-text-primary">{faq.question}</h3>
                     <p className="mt-3 leading-7 text-text-secondary">{faq.answer}</p>
                   </article>
@@ -225,7 +236,7 @@ export function SeoLandingPage({
       )}
 
       {relatedLinks.length > 0 && (
-        <section className="border-t border-border-soft bg-surface py-10">
+        <section className="border-t border-border-soft bg-surface py-8">
           <Container>
             <nav className="mx-auto flex max-w-3xl flex-wrap items-center gap-3" aria-label="Related tools">
               <span className="text-sm font-semibold text-text-primary">Related tools:</span>
