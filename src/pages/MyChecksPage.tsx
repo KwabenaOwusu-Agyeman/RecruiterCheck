@@ -240,7 +240,7 @@ export function MyChecksPage() {
         <div className="mt-4 flex flex-col items-center gap-3 rounded-[16px] border border-border-soft bg-surface p-4 text-center shadow-card sm:flex-row sm:justify-between sm:text-left">
           <p className="text-sm text-text-secondary">Upgrade to Power to see your full check history.</p>
           <Link to="/account/billing" className="shrink-0">
-            <Button variant="secondary" size="sm">
+            <Button size="sm">
               Upgrade to Power
             </Button>
           </Link>

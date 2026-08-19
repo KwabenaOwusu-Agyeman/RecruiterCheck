@@ -76,14 +76,7 @@ export function PricingCards({
                   ) : null}
                 </div>
                 {plan.badge ? (
-                  <span
-                    className={cn(
-                      'shrink-0 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold tracking-wide',
-                      isHighlighted
-                        ? 'bg-navy text-white'
-                        : 'border border-border-strong bg-surface text-text-secondary',
-                    )}
-                  >
+                  <span className="shrink-0 whitespace-nowrap rounded-full bg-navy px-2.5 py-0.5 text-xs font-semibold tracking-wide text-white">
                     {plan.badge}
                   </span>
                 ) : null}
@@ -113,14 +106,14 @@ export function PricingCards({
                   <Button
                     className="w-full justify-center"
                     size="sm"
-                    variant="secondary"
+                    variant="primary"
                     disabled={managingBilling}
                     onClick={onManageBilling}
                   >
                     {managingBilling ? 'Opening...' : 'Manage Billing'}
                   </Button>
                 ) : isCurrent ? (
-                  <Button className="w-full justify-center" size="sm" variant="secondary" disabled>
+                  <Button className="w-full justify-center" size="sm" variant="primary" disabled>
                     Current Plan
                   </Button>
                 ) : isDowngrade ? (

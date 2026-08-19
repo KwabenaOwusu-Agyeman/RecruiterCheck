@@ -245,7 +245,7 @@ export function AccountPage() {
             <div className="flex-1" />
 
             <Link to="/account/billing">
-              <Button variant="secondary" size="sm" className="w-full">
+              <Button size="sm" className="w-full">
                 {isFree ? 'Upgrade' : 'Manage Billing'}
               </Button>
             </Link>
