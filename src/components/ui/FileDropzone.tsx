@@ -125,7 +125,10 @@ export function FileDropzone({
 
   if (fileName) {
     return (
-      <div className="flex items-center gap-3 rounded-[10px] border border-border-strong bg-surface-muted px-3 py-2.5">
+      <div
+        key={fileName}
+        className="file-selected-row flex items-center gap-3 rounded-[10px] border border-border-strong bg-surface-muted px-3 py-2.5"
+      >
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-navy-tint text-navy">
           {busy ? <Spinner /> : <FileIcon />}
         </span>

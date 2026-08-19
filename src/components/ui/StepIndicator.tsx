@@ -27,7 +27,7 @@ export function StepIndicator({ steps, currentIndex, className }: StepIndicatorP
               <span
                 aria-current={state === 'current' ? 'step' : undefined}
                 className={cn(
-                  'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
+                  'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors duration-300',
                   state === 'done' && 'bg-navy text-white',
                   state === 'current' && 'border-2 border-navy text-navy',
                   state === 'upcoming' && 'border border-border-strong text-text-secondary',
@@ -47,7 +47,10 @@ export function StepIndicator({ steps, currentIndex, className }: StepIndicatorP
             {!isLast ? (
               <span
                 aria-hidden="true"
-                className={cn('mx-2 h-px flex-1 sm:mx-3', state === 'done' ? 'bg-navy' : 'bg-border-strong')}
+                className={cn(
+                  'mx-2 h-px flex-1 transition-colors duration-300 sm:mx-3',
+                  state === 'done' ? 'bg-navy' : 'bg-border-strong',
+                )}
               />
             ) : null}
           </li>
