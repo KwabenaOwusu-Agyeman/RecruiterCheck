@@ -62,7 +62,7 @@ export function PricingCards({
           >
             <div
               className={cn(
-                'relative flex h-full flex-col rounded-2xl border bg-surface p-4 transition-transform duration-200 hover:-translate-y-1 sm:p-5',
+                'relative flex h-full flex-col rounded-2xl border bg-surface p-4 transition-transform duration-200 hover:-translate-y-1',
                 isHighlighted ? 'border-2 border-navy shadow-elevated bg-navy-tint' : 'border-border-soft shadow-card',
               )}
             >
@@ -90,14 +90,14 @@ export function PricingCards({
               </div>
               <p className="mt-1 text-sm leading-snug text-text-secondary">{plan.description}</p>
 
-              <p className="mt-3 text-4xl font-bold tracking-tight text-text-primary">
+              <p className="mt-2 text-4xl font-bold tracking-tight text-text-primary">
                 {plan.price}
                 {plan.interval ? (
                   <span className="text-base font-normal text-text-secondary">/{plan.interval}</span>
                 ) : null}
               </p>
 
-              <ul className="mt-3 flex-1 space-y-2 text-sm text-text-secondary">
+              <ul className="mt-2 flex-1 space-y-2 text-sm text-text-secondary">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex items-center gap-2">
                     <Check className="h-4 w-4 shrink-0 text-blue" strokeWidth={2.5} />
@@ -108,7 +108,7 @@ export function PricingCards({
                 ))}
               </ul>
 
-              <div className="mt-4">
+              <div className="mt-3">
                 {isCurrent && plan.id !== 'free' ? (
                   <Button
                     className="w-full justify-center"

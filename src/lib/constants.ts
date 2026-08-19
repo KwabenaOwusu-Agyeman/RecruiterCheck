@@ -63,6 +63,7 @@ export const PRICING_PLANS: PricingPlan[] = [
       'Recruiter Message',
       'Access to check history',
     ],
+    badge: 'Best Value',
     perCheckPrice: '€1.00 / check',
     highlightFeature: 'Access to check history',
   },
