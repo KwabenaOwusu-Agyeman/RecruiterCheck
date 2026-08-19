@@ -29,7 +29,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     name: 'Starter',
     price: '€10',
     interval: 'week',
-    description: 'Try it out while you get your applications moving.',
+    description: 'Get your applications moving.',
     features: ['5 Recruiter Checks per week', 'Interview Probability Score', 'Recruiter Feedback'],
     perCheckPrice: '€2.00 / check',
   },
