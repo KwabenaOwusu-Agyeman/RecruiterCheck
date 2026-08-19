@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Alert } from '@/components/ui/Alert'
 import { BackLink } from '@/components/ui/BackLink'
-import { Button } from '@/components/ui/Button'
+import { PricingCards } from '@/components/ui/PricingCards'
 import { PRICING_PLANS } from '@/lib/constants'
 import { trackEvent } from '@/lib/analytics'
 import { useAuth } from '@/hooks/useAuth'
@@ -11,14 +11,6 @@ import {
   createPortalSession,
   FREE_TIER_LIFETIME_LIMIT,
 } from '@/services/checkService'
-import { cn } from '@/utils/cn'
-
-const TIER_RANK: Record<string, number> = {
-  free: 0,
-  starter: 1,
-  active: 2,
-  power: 3,
-}
 
 const BILLING_FAQ = [
   {
@@ -132,132 +124,14 @@ export function BillingPage() {
 
       {error ? <Alert variant="error" className="mx-auto mt-6 max-w-2xl">{error}</Alert> : null}
 
-      <div className="mx-auto mt-4 grid gap-6 md:grid-cols-3 lg:max-w-[1080px] lg:gap-[24px]">
-        {PRICING_PLANS.filter((plan) => plan.id !== 'free').map((plan) => {
-          const isCurrent = profile?.subscription_tier === plan.id
-          const isPremium = plan.id !== 'free'
-          const isHighlighted = Boolean(plan.highlighted)
-
-          // Higher rank = more premium. A plan below the current rank has no
-          // supported CTA yet (no downgrade flow exists), so its button is
-          // hidden rather than mislabeled as "Upgrade" or invented outright.
-          const currentRank = TIER_RANK[profile?.subscription_tier ?? 'free'] ?? 0
-          const planRank = TIER_RANK[plan.id] ?? 0
-          const isDowngrade = !isCurrent && planRank < currentRank
-
-          return (
-            <div key={plan.id} className="relative pt-2.5">
-              {plan.badge ? (
-                <span
-                  className={cn(
-                    'absolute left-1/2 top-0 z-10 -translate-x-1/2 whitespace-nowrap rounded-full px-4 py-1 text-xs font-semibold tracking-wide shadow-sm',
-                    isHighlighted
-                      ? 'bg-navy text-white'
-                      : 'border border-border-strong bg-surface text-text-secondary',
-                  )}
-                >
-                  {plan.badge}
-                </span>
-              ) : null}
-
-              <div
-                className={cn(
-                  // pt-5 applies to every card regardless of whether it has a
-                  // badge, so the badge space reserved by the outer wrapper's
-                  // pt-2.5 doesn't push just one card's internal content
-                  // (name/price/features/CTA) lower than the others — all
-                  // three must start their content at the same offset to
-                  // align horizontally.
-                  'flex h-full flex-col rounded-[16px] border bg-surface p-2.5 pt-5 transition-transform duration-200 hover:-translate-y-1 sm:p-[28px] sm:pt-8',
-                  isHighlighted
-                    ? 'border-2 border-navy shadow-elevated'
-                    : 'border-border-soft shadow-card',
-                )}
-              >
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-2">
-                    <h2 className="text-lg font-semibold text-text-primary">{plan.name}</h2>
-                    {isCurrent ? (
-                      <span className="rounded-full bg-blue/10 px-2 py-0.5 text-xs font-semibold text-blue">
-                        Current
-                      </span>
-                    ) : null}
-                  </div>
-                  <p className="mt-1 text-3xl font-bold tracking-tight text-text-primary">
-                    {plan.price}
-                    {plan.interval ? (
-                      <span className="text-sm font-normal text-text-secondary"> / {plan.interval}</span>
-                    ) : null}
-                  </p>
-                  {plan.perCheckPrice ? (
-                    <p className="mt-0.5 text-xs text-text-secondary">{plan.perCheckPrice}</p>
-                  ) : null}
-                </div>
-
-                <ul className="mt-2 flex-1 space-y-0.5 text-sm leading-tight text-text-secondary">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2 py-0.5">
-                      <svg
-                        viewBox="0 0 20 20"
-                        fill="none"
-                        className="mt-0.5 h-4 w-4 shrink-0 text-blue"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M4 10.5L8 14.5L16 6"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                      <span className={feature === plan.highlightFeature ? 'font-semibold text-text-primary' : undefined}>
-                        {feature}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-
-                <div className="mt-2">
-                  {isCurrent && isPremium ? (
-                    <Button
-                      className="w-full"
-                      size="sm"
-                      variant="secondary"
-                      disabled={managingBilling}
-                      onClick={() => void handleManageBilling()}
-                    >
-                      {managingBilling ? 'Opening...' : 'Manage Billing'}
-                    </Button>
-                  ) : isCurrent ? (
-                    <Button className="w-full" size="sm" variant="secondary" disabled>
-                      Current Plan
-                    </Button>
-                  ) : isDowngrade ? (
-                    <div className="h-12 sm:h-[36px]" aria-hidden="true" />
-                  ) : (
-                    <Button
-                      className="w-full"
-                      size="sm"
-                      variant="primary"
-                      disabled={loadingPlan !== null}
-                      onClick={() =>
-                        void handleUpgrade(plan.id as 'starter' | 'active' | 'power')
-                      }
-                    >
-                      {loadingPlan === plan.id
-                        ? 'Redirecting...'
-                        : currentRank === 0
-                          ? `Choose ${plan.name}`
-                          : 'Upgrade'}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
+      <PricingCards
+        plans={PRICING_PLANS.filter((plan) => plan.id !== 'free')}
+        currentTier={profile?.subscription_tier ?? 'free'}
+        loadingPlan={loadingPlan}
+        managingBilling={managingBilling}
+        onUpgrade={(planId) => void handleUpgrade(planId)}
+        onManageBilling={() => void handleManageBilling()}
+      />
 
       <div className="mt-6 flex flex-col items-center gap-1.5 text-center text-xs text-text-secondary">
         <div className="flex items-center gap-1.5">
