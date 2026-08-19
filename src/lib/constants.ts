@@ -39,7 +39,12 @@ export const PRICING_PLANS: PricingPlan[] = [
     price: '€15',
     interval: 'week',
     description: 'For a job search in full swing.',
-    features: ['10 Recruiter Checks per week', 'Interview Probability Score & Feedback', 'Improved CV Draft'],
+    features: [
+      '10 Recruiter Checks per week',
+      'Interview Probability Score',
+      'Recruiter Feedback',
+      'Improved CV Draft',
+    ],
     badge: 'Most Popular',
     highlighted: true,
     perCheckPrice: '€1.50 / check',
@@ -53,11 +58,15 @@ export const PRICING_PLANS: PricingPlan[] = [
     description: 'For applying at volume.',
     features: [
       '20 Recruiter Checks per week',
-      'Improved CV Draft, Cover Letter & Recruiter Message',
+      'Interview Probability Score',
+      'Recruiter Feedback',
+      'Improved CV Draft',
+      'Cover Letter',
+      'Recruiter Message',
       'Full check history, saved forever',
     ],
     perCheckPrice: '€1.00 / check',
-    highlightFeature: 'Improved CV Draft, Cover Letter & Recruiter Message',
+    highlightFeature: 'Full check history, saved forever',
   },
 ]
 
