@@ -546,12 +546,7 @@ export function NewCheckPage() {
                 busyLabel="Reading file..."
                 fileName={jobFileName}
                 title="Upload the job description"
-                helperText={
-                  <>
-                    <p>PDF, DOCX, or TXT &middot; Maximum 10 MB</p>
-                    <AutoDeleteNotice />
-                  </>
-                }
+                helperText={<p>PDF, DOCX, or TXT &middot; Maximum 10 MB</p>}
                 onFileSelected={(file) => void handleJobFileChange(file)}
                 onRemove={() => {
                   setJobFileName(null)

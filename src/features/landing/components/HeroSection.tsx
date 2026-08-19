@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/Button'
 import { Container } from '@/components/ui/Container'
-import { AutoDeleteNotice } from '@/components/checks/AutoDeleteNotice'
 import { useAuthModal } from '@/features/auth/context/AuthModalContext'
 import { useCheckCta } from '@/hooks/useCheckCta'
 import { BRAND } from '@/lib/constants'
@@ -24,10 +23,9 @@ export function HeroSection() {
             <Button size="md" className="sm:!h-12 sm:px-6 sm:text-base" onClick={handleCheckCta}>
               Check My Application
             </Button>
-            <AutoDeleteNotice />
           </div>
           <p className="mt-4 text-sm text-text-secondary">
-            Built on what real recruiters flag first, not keyword stuffing tricks.
+            Built on what real recruiters flag first.
           </p>
           <p className="mt-2 text-sm text-text-secondary">
             Already have an account?{' '}
