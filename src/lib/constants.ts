@@ -58,15 +58,13 @@ export const PRICING_PLANS: PricingPlan[] = [
     description: 'For applying at volume.',
     features: [
       '20 Recruiter Checks per week',
-      'Interview Probability Score',
-      'Recruiter Feedback',
-      'Improved CV Draft',
+      'Everything in Active',
       'Cover Letter',
       'Recruiter Message',
-      'Full check history, saved forever',
+      'Access to check history',
     ],
     perCheckPrice: '€1.00 / check',
-    highlightFeature: 'Full check history, saved forever',
+    highlightFeature: 'Access to check history',
   },
 ]
 
