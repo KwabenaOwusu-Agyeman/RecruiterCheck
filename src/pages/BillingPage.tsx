@@ -142,7 +142,7 @@ export function BillingPage() {
                   // (name/price/features/CTA) lower than the others — all
                   // three must start their content at the same offset to
                   // align horizontally.
-                  'flex h-full flex-col rounded-[16px] border bg-surface p-2.5 pt-5 sm:p-[28px] sm:pt-8',
+                  'flex h-full flex-col rounded-[16px] border bg-surface p-2.5 pt-5 transition-transform duration-200 hover:-translate-y-1 sm:p-[28px] sm:pt-8',
                   isHighlighted
                     ? 'border-2 border-navy shadow-elevated'
                     : 'border-border-soft shadow-card',
@@ -163,6 +163,9 @@ export function BillingPage() {
                       <span className="text-sm font-normal text-text-secondary"> / {plan.interval}</span>
                     ) : null}
                   </p>
+                  {plan.perCheckPrice ? (
+                    <p className="mt-0.5 text-xs text-text-secondary">{plan.perCheckPrice}</p>
+                  ) : null}
                 </div>
 
                 <ul className="mt-2 flex-1 space-y-0.5 text-sm leading-tight text-text-secondary">
@@ -182,7 +185,9 @@ export function BillingPage() {
                           strokeLinejoin="round"
                         />
                       </svg>
-                      <span>{feature}</span>
+                      <span className={feature === plan.highlightFeature ? 'font-semibold text-text-primary' : undefined}>
+                        {feature}
+                      </span>
                     </li>
                   ))}
                 </ul>

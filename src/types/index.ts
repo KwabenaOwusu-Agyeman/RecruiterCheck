@@ -89,4 +89,10 @@ export interface PricingPlan {
   features: string[]
   badge?: string
   highlighted?: boolean
+  /** e.g. "€1.50 / check" — shown under the price so the per-check value of
+   *  upgrading is stated, not left for the buyer to work out themselves. */
+  perCheckPrice?: string
+  /** Must exactly match one entry in `features` — that line is bolded so the
+   *  one thing this tier adds over the one below it is scannable at a glance. */
+  highlightFeature?: string
 }
