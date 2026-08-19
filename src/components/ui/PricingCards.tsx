@@ -96,9 +96,6 @@ export function PricingCards({
                   <span className="text-base font-normal text-text-secondary">/{plan.interval}</span>
                 ) : null}
               </p>
-              {plan.perCheckPrice ? (
-                <p className="mt-0.5 text-xs text-text-secondary">{plan.perCheckPrice}</p>
-              ) : null}
 
               <ul className="mt-3 flex-1 space-y-2 text-sm text-text-secondary">
                 {plan.features.map((feature) => (
