@@ -6,12 +6,17 @@ const corsHeaders = {
 }
 
 interface CheckoutRequest {
-  plan: 'premium_weekly' | 'premium_monthly'
+  plan: 'starter' | 'active' | 'power'
 }
 
-const PLAN_PRICES: Record<CheckoutRequest['plan'], { amount: number; interval: string; name: string }> = {
-  premium_weekly: { amount: 999, interval: 'week', name: 'Premium Weekly' },
-  premium_monthly: { amount: 1999, interval: 'month', name: 'Premium Monthly' },
+// Kept in sync with PRICING_PLANS in src/lib/constants.ts and the
+// PLAN_CHECK_LIMITS mirror in stripe-webhook, per this codebase's existing
+// convention of duplicating small constants across edge functions rather
+// than sharing a module across separate deployables.
+const PLAN_PRICES: Record<CheckoutRequest['plan'], { amount: number; name: string }> = {
+  starter: { amount: 1000, name: 'Starter' },
+  active: { amount: 1500, name: 'Active' },
+  power: { amount: 2000, name: 'Power' },
 }
 
 Deno.serve(async (req) => {
@@ -66,7 +71,7 @@ Deno.serve(async (req) => {
     params.set('managed_payments[enabled]', 'false')
     params.set('line_items[0][price_data][currency]', 'eur')
     params.set('line_items[0][price_data][unit_amount]', String(planConfig.amount))
-    params.set('line_items[0][price_data][recurring][interval]', planConfig.interval)
+    params.set('line_items[0][price_data][recurring][interval]', 'week')
     params.set('line_items[0][price_data][product_data][name]', planConfig.name)
     params.set('line_items[0][quantity]', '1')
     params.set('metadata[plan]', plan)

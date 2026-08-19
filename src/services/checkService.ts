@@ -188,52 +188,31 @@ export async function getCheckWithFeedback(checkId: string): Promise<CheckWithFe
 }
 
 export const FREE_TIER_LIFETIME_LIMIT = 1
-export const PAID_TIER_DAILY_LIMIT = 8
 
-export type CheckGateReason = 'free-tier' | 'daily-limit' | null
+export type CheckGateReason = 'free-tier' | 'period-limit' | null
 
 /**
- * Free tier: 1 completed check ever, per the locked spec. Premium tiers
- * (weekly/monthly) are capped at 8 checks per UTC day — not a monetization
- * lever, just reinforcing the "quality over quantity" positioning even for
- * paying users. This reads the durable counters on the profile row
- * (lifetime_checks_consumed / daily_checks_consumed / daily_checks_reset_at,
- * see migration durable_usage_counters) rather than counting `checks` rows —
- * counting rows would let a deleted completed check silently restore the
- * allowance, which is exactly what the durable counters exist to prevent.
- * This is a client-side pre-check only, for UI gating before the user even
- * starts a draft; the authoritative, atomic enforcement lives server-side in
- * the reserve_check_analysis Postgres function, which this mirrors.
+ * Free tier: 1 completed check ever, per the locked spec. Paid tiers
+ * (Starter/Active/Power) each get a fixed number of checks per weekly
+ * billing period, with no rollover. This reads the durable counters on the
+ * profile row (lifetime_checks_consumed / period_checks_consumed /
+ * period_checks_limit, see migration switch_to_weekly_allotment_plans)
+ * rather than counting `checks` rows — counting rows would let a deleted
+ * completed check silently restore the allowance, which is exactly what the
+ * durable counters exist to prevent. period_checks_consumed is always
+ * current by construction: the Stripe webhook resets it to 0 on every
+ * successful weekly charge, so unlike the old daily cap there's no
+ * client-side staleness check needed here. This is a client-side pre-check
+ * only, for UI gating before the user even starts a draft; the
+ * authoritative, atomic enforcement lives server-side in the
+ * reserve_check_analysis Postgres function, which this mirrors.
  */
 export function getCheckGateReason(profile: Profile): CheckGateReason {
   if (profile.subscription_tier === 'free') {
     return profile.lifetime_checks_consumed >= FREE_TIER_LIFETIME_LIMIT ? 'free-tier' : null
   }
 
-  const consumedToday = isDailyCounterCurrent(profile) ? profile.daily_checks_consumed : 0
-  return consumedToday < PAID_TIER_DAILY_LIMIT ? null : 'daily-limit'
-}
-
-/**
- * daily_checks_reset_at is a plain `date` column (UTC), so it comes back as
- * "YYYY-MM-DD" — compared directly against today's UTC date string rather
- * than parsing into a Date, avoiding any local-timezone drift.
- */
-function isDailyCounterCurrent(profile: Profile): boolean {
-  if (!profile.daily_checks_reset_at) return false
-  const todayUtc = new Date().toISOString().slice(0, 10)
-  return profile.daily_checks_reset_at === todayUtc
-}
-
-/**
- * Reads today's usage straight off the profile's durable counter (no query)
- * for showing "X of 8 today" in the account UI, so paid-tier users can see
- * the daily cap before they hit it instead of discovering it only when
- * blocked. A stale reset date (counter last touched on an earlier UTC day)
- * reads as 0 rather than a leftover count from a previous day.
- */
-export function getTodaysCheckCount(profile: Profile): number {
-  return isDailyCounterCurrent(profile) ? profile.daily_checks_consumed : 0
+  return profile.period_checks_consumed < profile.period_checks_limit ? null : 'period-limit'
 }
 
 export async function getCheck(checkId: string): Promise<Check | null> {
@@ -397,7 +376,7 @@ export async function generateDocuments(checkId: string): Promise<GeneratedDocum
 }
 
 export async function createCheckoutSession(
-  plan: 'premium_weekly' | 'premium_monthly',
+  plan: 'starter' | 'active' | 'power',
 ): Promise<string> {
   const { data, error } = await supabase.functions.invoke('create-checkout-session', {
     body: { plan },

@@ -13,12 +13,14 @@ const MAX_CV_CHARS = 15000
 const MAX_ATTEMPTS = 3
 const OPENAI_TIMEOUT_MS = 45000
 const PARSE_TIMEOUT_MS = 15000
-// Actual enforcement of the daily limit lives in the reserve_check_analysis
-// Postgres function (see migration add_reserve_check_analysis_rpc), which
-// atomically checks and reserves a slot under a row lock — these constants
-// exist here only to build the matching user-facing error messages; keep
-// them in sync with the limits hardcoded in that function.
-const PAID_TIER_DAILY_LIMIT = 8
+// Actual enforcement of the free-check limit lives in the
+// reserve_check_analysis Postgres function (see migration
+// switch_to_weekly_allotment_plans), which atomically checks and reserves a
+// slot under a row lock — this constant exists here only to build the
+// matching user-facing error message; keep it in sync with the limit
+// hardcoded in that function. The weekly period limit varies by plan, so
+// its message is built from the profile's own period_checks_limit instead
+// of a hardcoded constant.
 const FREE_TIER_LIFETIME_LIMIT = 1
 
 interface AnalyzeRequest {
@@ -105,9 +107,19 @@ Deno.serve(async (req) => {
           429,
         )
       }
-      if (reason === 'daily_limit') {
+      if (reason === 'period_limit') {
+        const { data: limitProfile } = await adminClient
+          .from('profiles')
+          .select('period_checks_limit')
+          .eq('id', user.id)
+          .single()
+        const limit = limitProfile?.period_checks_limit
         return jsonResponse(
-          { error: `You have reached today's limit of ${PAID_TIER_DAILY_LIMIT} checks. Please try again tomorrow.` },
+          {
+            error: limit
+              ? `You have used all ${limit} checks on your plan this week. More checks unlock when your plan renews, or upgrade for a bigger weekly allotment.`
+              : 'You have used all your checks for this week. More checks unlock when your plan renews.',
+          },
           429,
         )
       }

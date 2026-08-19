@@ -17,8 +17,6 @@ import {
   deleteAccount,
   FREE_TIER_LIFETIME_LIMIT,
   getSubscription,
-  getTodaysCheckCount,
-  PAID_TIER_DAILY_LIMIT,
   updateProfile,
 } from '@/services/checkService'
 import type { Subscription } from '@/types'
@@ -43,7 +41,6 @@ export function AccountPage() {
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [subscription, setSubscription] = useState<Subscription | null>(null)
-  const [todaysCheckCount, setTodaysCheckCount] = useState<number | null>(null)
   const [freeCheckUsed, setFreeCheckUsed] = useState<boolean | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
@@ -68,13 +65,11 @@ export function AccountPage() {
 
     if (profile.subscription_tier === 'free') {
       setSubscription(null)
-      setTodaysCheckCount(null)
       setFreeCheckUsed(profile.lifetime_checks_consumed >= FREE_TIER_LIFETIME_LIMIT)
       return
     }
 
     setFreeCheckUsed(null)
-    setTodaysCheckCount(getTodaysCheckCount(profile))
 
     let cancelled = false
     void getSubscription(user.id).then((data) => {
@@ -227,13 +222,15 @@ export function AccountPage() {
                     : freeCheckUsed
                       ? `${FREE_TIER_LIFETIME_LIMIT} of ${FREE_TIER_LIFETIME_LIMIT} used`
                       : `${FREE_TIER_LIFETIME_LIMIT} total`
-                  : `${todaysCheckCount ?? '...'} of ${PAID_TIER_DAILY_LIMIT} used today`}
+                  : profile
+                    ? `${profile.period_checks_consumed} of ${profile.period_checks_limit} used this week`
+                    : '...'}
               </span>
             </div>
             {!isFree ? (
               <div className="flex items-center justify-between">
                 <span className="text-text-secondary">Resets</span>
-                <span className="font-medium text-text-primary">Daily</span>
+                <span className="font-medium text-text-primary">Weekly</span>
               </div>
             ) : null}
             {planDateLabel ? (

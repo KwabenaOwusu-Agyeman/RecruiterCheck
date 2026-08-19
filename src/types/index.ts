@@ -1,4 +1,4 @@
-export type SubscriptionTier = 'free' | 'premium_weekly' | 'premium_monthly'
+export type SubscriptionTier = 'free' | 'starter' | 'active' | 'power'
 export type SubscriptionStatus = 'active' | 'cancelled' | 'past_due' | 'trialing'
 export type CheckStatus = 'draft' | 'processing' | 'completed' | 'failed'
 export type OutputLanguage = 'auto' | 'en' | 'nl'
@@ -10,12 +10,16 @@ export interface Profile {
   subscription_tier: SubscriptionTier
   subscription_status: SubscriptionStatus
   stripe_customer_id: string | null
-  // Durable usage counters (see migration durable_usage_counters) — the
-  // authoritative source of truth for allowance checks, never derived by
-  // counting `checks` rows, and never decremented by deleting a check.
+  // Durable usage counters — the authoritative source of truth for
+  // allowance checks, never derived by counting `checks` rows, and never
+  // decremented by deleting a check. lifetime_checks_consumed tracks the
+  // free tier's single lifetime check; period_checks_consumed/_limit track
+  // the current weekly billing period's allotment for paid tiers, reset by
+  // the Stripe webhook on every successful charge (see migration
+  // switch_to_weekly_allotment_plans) rather than by a calendar date.
   lifetime_checks_consumed: number
-  daily_checks_consumed: number
-  daily_checks_reset_at: string | null
+  period_checks_consumed: number
+  period_checks_limit: number
   created_at: string
   updated_at: string
 }
@@ -56,7 +60,7 @@ export interface CheckWithFeedback extends Check {
 export interface Subscription {
   id: string
   user_id: string
-  plan: 'premium_weekly' | 'premium_monthly'
+  plan: 'starter' | 'active' | 'power'
   status: SubscriptionStatus
   current_period_end: string | null
   created_at: string

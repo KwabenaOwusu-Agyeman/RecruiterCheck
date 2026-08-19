@@ -10,14 +10,14 @@ import {
   createCheckoutSession,
   createPortalSession,
   FREE_TIER_LIFETIME_LIMIT,
-  PAID_TIER_DAILY_LIMIT,
 } from '@/services/checkService'
 import { cn } from '@/utils/cn'
 
 const TIER_RANK: Record<string, number> = {
   free: 0,
-  premium_weekly: 1,
-  premium_monthly: 2,
+  starter: 1,
+  active: 2,
+  power: 3,
 }
 
 const BILLING_FAQ = [
@@ -26,12 +26,12 @@ const BILLING_FAQ = [
     answer: `${FREE_TIER_LIFETIME_LIMIT} Recruiter Check, including your Interview Probability and Recruiter Feedback.`,
   },
   {
-    question: 'What do I get on Weekly or Monthly?',
-    answer: `Up to ${PAID_TIER_DAILY_LIMIT} Recruiter Checks per day, plus your Recruiter Ready Kit — a tailored CV, cover letter, and recruiter message for each check.`,
+    question: 'How does the weekly allotment work?',
+    answer: 'Each plan gives you a fixed number of Recruiter Checks per week, plus your Recruiter Ready Kit, a tailored CV, cover letter, and recruiter message for each check. Unused checks do not roll over, and your allotment resets every week your plan renews.',
   },
   {
     question: 'Can I cancel anytime?',
-    answer: 'Yes. Manage or cancel your subscription anytime from the billing portal — no notice period required.',
+    answer: 'Yes. Manage or cancel your subscription anytime from the billing portal, no notice period required.',
   },
   {
     question: 'Is my payment information secure?',
@@ -52,7 +52,7 @@ export function BillingPage() {
     if (checkoutStatus === 'success') trackEvent('subscription_completed')
   }, [checkoutStatus])
 
-  async function handleUpgrade(plan: 'premium_weekly' | 'premium_monthly') {
+  async function handleUpgrade(plan: 'starter' | 'active' | 'power') {
     setLoadingPlan(plan)
     setError(null)
     trackEvent('upgrade_started')
@@ -83,7 +83,7 @@ export function BillingPage() {
     <>
       <BackLink to="/account" />
 
-      <div className="mx-auto mt-1 max-w-2xl text-center lg:max-w-[1080px]">
+      <div className="mx-auto mt-1 max-w-2xl text-center lg:max-w-[1200px]">
         <h1 className="text-2xl font-semibold tracking-tight text-text-primary sm:text-[30px]">
           Choose your plan
         </h1>
@@ -106,7 +106,7 @@ export function BillingPage() {
 
       {error ? <Alert variant="error" className="mx-auto mt-6 max-w-2xl">{error}</Alert> : null}
 
-      <div className="mx-auto mt-4 grid gap-6 md:grid-cols-3 lg:max-w-[1080px] lg:gap-[24px]">
+      <div className="mx-auto mt-4 grid gap-6 sm:grid-cols-2 lg:max-w-[1200px] lg:grid-cols-4 lg:gap-[24px]">
         {PRICING_PLANS.map((plan) => {
           const isCurrent = profile?.subscription_tier === plan.id
           const isPremium = plan.id !== 'free'
@@ -211,7 +211,7 @@ export function BillingPage() {
                       variant="primary"
                       disabled={loadingPlan !== null}
                       onClick={() =>
-                        void handleUpgrade(plan.id as 'premium_weekly' | 'premium_monthly')
+                        void handleUpgrade(plan.id as 'starter' | 'active' | 'power')
                       }
                     >
                       {loadingPlan === plan.id

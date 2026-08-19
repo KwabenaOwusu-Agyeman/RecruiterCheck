@@ -2,7 +2,16 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 import Stripe from 'npm:stripe@17.5.0'
 
 type SubscriptionStatus = 'active' | 'cancelled' | 'past_due' | 'trialing'
-type SubscriptionTier = 'free' | 'premium_weekly' | 'premium_monthly'
+type SubscriptionTier = 'free' | 'starter' | 'active' | 'power'
+
+// Kept in sync with PRICING_PLANS in src/lib/constants.ts and PLAN_PRICES in
+// create-checkout-session, per this codebase's existing convention of
+// duplicating small constants across edge functions.
+const PLAN_CHECK_LIMITS: Record<'starter' | 'active' | 'power', number> = {
+  starter: 5,
+  active: 10,
+  power: 20,
+}
 
 Deno.serve(async (req) => {
   const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
@@ -114,6 +123,11 @@ async function handleCheckoutCompleted(
       subscription_tier: plan,
       subscription_status: 'active',
       stripe_customer_id: customerId ?? null,
+      // First charge of a new subscription (or a resubscribe) starts the
+      // allotment fresh — invoice.payment_succeeded does the same on every
+      // later weekly renewal.
+      period_checks_consumed: 0,
+      period_checks_limit: PLAN_CHECK_LIMITS[plan as 'starter' | 'active' | 'power'] ?? 0,
     })
     .eq('id', userId)
 
@@ -160,11 +174,17 @@ async function handleSubscriptionChange(
     .update({ status, current_period_end: currentPeriodEnd })
     .eq('stripe_subscription_id', subscription.id)
 
-  const profileUpdate: { subscription_status: SubscriptionStatus; subscription_tier?: SubscriptionTier } =
-    { subscription_status: status }
+  const profileUpdate: {
+    subscription_status: SubscriptionStatus
+    subscription_tier?: SubscriptionTier
+    period_checks_consumed?: number
+    period_checks_limit?: number
+  } = { subscription_status: status }
 
   if (status === 'cancelled') {
     profileUpdate.subscription_tier = 'free'
+    profileUpdate.period_checks_consumed = 0
+    profileUpdate.period_checks_limit = 0
   }
 
   if (userId) {
@@ -200,8 +220,15 @@ async function handleInvoicePaymentFailed(
 
 /**
  * Confirms/restores active status the moment a payment succeeds (covers
- * both a normal renewal and recovery after a past_due retry), and refreshes
- * current_period_end so the Account page's "Next billing date" stays accurate.
+ * both a normal renewal and recovery after a past_due retry), refreshes
+ * current_period_end so the Account page's "Next billing date" stays
+ * accurate, and resets the weekly check allotment for the new period. Fires
+ * on the first invoice of a brand new subscription too (alongside
+ * checkout.session.completed, which already zeroed the counter) — resetting
+ * again here is harmless, no rollover ever accumulates either way. Only the
+ * consumed counter is reset, not the limit: a plan's limit is set once by
+ * checkout.session.completed and this event carries no plan info to
+ * recompute it from.
  */
 async function handleInvoicePaymentSucceeded(
   adminClient: ReturnType<typeof createClient>,
@@ -216,7 +243,7 @@ async function handleInvoicePaymentSucceeded(
 
   await adminClient
     .from('profiles')
-    .update({ subscription_status: 'active' })
+    .update({ subscription_status: 'active', period_checks_consumed: 0 })
     .eq('stripe_customer_id', customerId)
 
   const subscriptionId =

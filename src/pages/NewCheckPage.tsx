@@ -44,22 +44,6 @@ function textToCvFile(text: string): File {
  * own day boundary), so this is computed from wall-clock time rather than
  * stored anywhere — it's only ever off by the seconds since the page loaded.
  */
-function formatResetTime(): string {
-  const now = new Date()
-  const nextMidnightUtc = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1),
-  )
-  const totalMinutes = Math.max(1, Math.round((nextMidnightUtc.getTime() - now.getTime()) / 60000))
-  const hours = Math.floor(totalMinutes / 60)
-  const minutes = totalMinutes % 60
-
-  const hourPart = hours > 0 ? `${hours} hour${hours === 1 ? '' : 's'}` : ''
-  const minutePart = minutes > 0 ? `${minutes} minute${minutes === 1 ? '' : 's'}` : ''
-
-  if (hourPart && minutePart) return `Resets in ${hourPart} ${minutePart}`
-  return `Resets in ${hourPart || minutePart}`
-}
-
 type SaveState = 'idle' | 'saving' | 'saved' | 'error'
 type CvInputMode = 'file' | 'paste'
 type JobInputMode = 'paste' | 'url' | 'upload'
@@ -416,7 +400,7 @@ export function NewCheckPage() {
     )
   }
 
-  if (gateReason === 'daily-limit') {
+  if (gateReason === 'period-limit') {
     return (
       <>
         <BackLink to="/checks" />
@@ -425,12 +409,18 @@ export function NewCheckPage() {
         </div>
         <div className="mx-auto max-w-md rounded-[16px] border border-border-soft bg-surface p-[20px] text-center shadow-card sm:p-8">
           <h2 className="text-base font-semibold text-text-primary">
-            You've reached today's check limit
+            You've used all your checks this week
           </h2>
           <p className="mt-2 text-sm text-text-secondary">
-            We cap checks at 8 a day so every application gets your full attention.
+            More checks unlock when your plan renews, or upgrade for a bigger weekly allotment.
           </p>
-          <p className="mt-3 text-xs text-text-secondary">{formatResetTime()}</p>
+          <div className="mt-6 flex justify-center">
+            <Link to="/account/billing">
+              <Button size="sm" className="w-full sm:w-auto">
+                Upgrade
+              </Button>
+            </Link>
+          </div>
         </div>
       </>
     )

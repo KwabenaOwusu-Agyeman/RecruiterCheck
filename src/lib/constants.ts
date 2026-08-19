@@ -14,15 +14,8 @@ export const FEATURE_FLAGS = {
 
 import type { PricingPlan } from '@/types'
 
-const PREMIUM_FEATURES = [
-  'Up to 8 Recruiter Checks per day',
-  'Interview Probability',
-  'Recruiter Feedback',
-  'Tailored CVs',
-  'Cover Letters',
-  'Recruiter Messages',
-]
-
+// Kept in sync with PLAN_PRICES in create-checkout-session and
+// PLAN_CHECK_LIMITS in stripe-webhook.
 export const PRICING_PLANS: PricingPlan[] = [
   {
     id: 'free' as const,
@@ -32,26 +25,30 @@ export const PRICING_PLANS: PricingPlan[] = [
     features: ['1 Recruiter Check', 'Interview Probability', 'Recruiter Feedback'],
   },
   {
-    id: 'premium_weekly' as const,
-    name: 'Weekly',
-    price: '€9.99',
+    id: 'starter' as const,
+    name: 'Starter',
+    price: '€10',
     interval: 'week',
-    description: 'More checks when you are actively applying.',
-    features: PREMIUM_FEATURES,
+    description: 'Try it out while you get your applications moving.',
+    features: ['5 Recruiter Checks per week', 'Tailored CVs', 'Cover Letters & Recruiter Messages'],
   },
   {
-    id: 'premium_monthly' as const,
-    name: 'Monthly',
-    price: '€19.99',
-    interval: 'month',
-    description: 'Best value for an active job search.',
-    features: [
-      'Up to 8 Recruiter Checks per day',
-      'Everything in Weekly',
-      'Best value for an active job search.',
-    ],
-    badge: 'Best Value',
+    id: 'active' as const,
+    name: 'Active',
+    price: '€15',
+    interval: 'week',
+    description: 'For a job search in full swing.',
+    features: ['10 Recruiter Checks per week', 'Tailored CVs', 'Cover Letters & Recruiter Messages'],
+    badge: 'Most Popular',
     highlighted: true,
+  },
+  {
+    id: 'power' as const,
+    name: 'Power',
+    price: '€20',
+    interval: 'week',
+    description: 'For applying at volume.',
+    features: ['20 Recruiter Checks per week', 'Tailored CVs', 'Cover Letters & Recruiter Messages'],
   },
 ]
 
