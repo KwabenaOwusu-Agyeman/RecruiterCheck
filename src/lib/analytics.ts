@@ -14,7 +14,7 @@ export type AnalyticsEventType =
   | 'check_submitted'
   | 'feedback_viewed'
   | 'referral_shared'
-  | 'recruiter_ready_kit_accessed'
+  | 'recruiter_recommendation_accessed'
   | 'upgrade_started'
   | 'subscription_completed'
 

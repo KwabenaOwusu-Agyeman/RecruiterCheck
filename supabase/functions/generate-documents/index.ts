@@ -140,6 +140,25 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'This check has not completed analysis yet' }, 400)
     }
 
+    // A score of 60 or below is "Not a Fit" (see getScoreLabel in
+    // src/lib/scoring.ts) — generating a polished CV draft, cover letter, and
+    // recruiter message for a role the candidate's CV doesn't support would
+    // be bad advice, not helpful. This applies to every tier, independent of
+    // the plan-based entitlement check above.
+    const MIN_DOCUMENT_SCORE = 61
+    if (
+      typeof check.interview_probability_score !== 'number' ||
+      check.interview_probability_score < MIN_DOCUMENT_SCORE
+    ) {
+      return jsonResponse(
+        {
+          error:
+            'Documents are only generated for a score of 61 or above. A lower score means this role is not a strong match for your CV.',
+        },
+        403,
+      )
+    }
+
     const feedbackRow = Array.isArray(check.feedback) ? check.feedback[0] : check.feedback
     if (!feedbackRow) {
       return jsonResponse({ error: 'No feedback available for this check' }, 400)

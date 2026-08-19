@@ -108,7 +108,7 @@ export function FeedbackPage() {
     if (!id) return
     setGeneratingDocs(true)
     setDocumentsError(null)
-    trackEvent('recruiter_ready_kit_accessed')
+    trackEvent('recruiter_recommendation_accessed')
 
     try {
       const result = await generateDocuments(id)
@@ -146,6 +146,11 @@ export function FeedbackPage() {
 
   const feedback = check.feedback
   const score = check.interview_probability_score
+  // A score of 60 or below means "Not a Fit" (see getScoreLabel) — recommending
+  // a polished CV draft, cover letter, and recruiter message for a role the
+  // candidate's CV doesn't support would be bad advice, not helpful. No tier
+  // gets documents below this line; the server enforces the same rule.
+  const isLowFit = score !== null && score < 61
   const firstName = profile?.full_name?.trim().split(/\s+/)[0]
   const visibleImprovements = feedback
     ? score === 100
@@ -297,7 +302,7 @@ export function FeedbackPage() {
 
           <Card className="sm:border-navy/15 sm:bg-navy-tint/40">
             <CardHeader className="border-b-navy/10 px-5 py-3">
-              <h2 className="text-base font-semibold text-text-primary">Recruiter Ready Kit</h2>
+              <h2 className="text-base font-semibold text-text-primary">Recruiter Recommendation</h2>
               <p className="mt-1 text-xs text-text-secondary">
                 {tier === 'power'
                   ? 'An improved CV draft, cover letter, and recruiter message based on your feedback.'
@@ -317,6 +322,12 @@ export function FeedbackPage() {
                     </Button>
                   </Link>
                 </div>
+              ) : isLowFit ? (
+                <p className="text-sm text-text-secondary">
+                  This score suggests the role is not a strong match for your current CV, so we do
+                  not generate a CV draft, cover letter, or recruiter message for it. Look for a
+                  role that better fits your experience, then run a new Recruiter Check.
+                </p>
               ) : documents ? (
                 <div className="flex flex-wrap gap-2">
                   <a href={documents.cv} target="_blank" rel="noreferrer">
@@ -365,7 +376,7 @@ export function FeedbackPage() {
                     disabled={generatingDocs}
                     onClick={() => void handleGenerateDocuments()}
                   >
-                    {generatingDocs ? 'Generating...' : 'Generate My Kit'}
+                    {generatingDocs ? 'Generating...' : 'Generate My Recommendation'}
                   </Button>
                 </div>
               )}
