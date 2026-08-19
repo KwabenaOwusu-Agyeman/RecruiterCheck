@@ -386,7 +386,7 @@ export function NewCheckPage() {
             You've used your free Check
           </h2>
           <p className="mt-2 text-sm text-text-secondary">
-            Upgrade to continue checking applications and unlock your Recruiter Ready Kit.
+            Nice work getting this far. Upgrade to keep checking applications before you apply.
           </p>
           <div className="mt-6 flex justify-center">
             <Link to="/account/billing">
@@ -412,7 +412,7 @@ export function NewCheckPage() {
             You've used all your checks this week
           </h2>
           <p className="mt-2 text-sm text-text-secondary">
-            More checks unlock when your plan renews, or upgrade for a bigger weekly allotment.
+            You're on a roll. Upgrade and keep going.
           </p>
           <div className="mt-6 flex justify-center">
             <Link to="/account/billing">
@@ -509,7 +509,7 @@ export function NewCheckPage() {
               {jobUrlError ? (
                 <Alert variant="error">
                   <p>{jobUrlError}</p>
-                  <div className="mt-2 flex gap-2">
+                  <div className="mt-2 flex flex-wrap gap-2">
                     <Button
                       type="button"
                       variant="secondary"

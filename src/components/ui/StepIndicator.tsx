@@ -22,8 +22,8 @@ export function StepIndicator({ steps, currentIndex, className }: StepIndicatorP
         const isLast = index === steps.length - 1
 
         return (
-          <li key={step} className={cn('flex items-center', !isLast && 'flex-1')}>
-            <span className="flex items-center gap-2">
+          <li key={step} className={cn('flex min-w-0 items-center', !isLast && 'flex-1')}>
+            <span className="flex min-w-0 items-center gap-1.5 sm:gap-2">
               <span
                 aria-current={state === 'current' ? 'step' : undefined}
                 className={cn(
@@ -37,7 +37,7 @@ export function StepIndicator({ steps, currentIndex, className }: StepIndicatorP
               </span>
               <span
                 className={cn(
-                  'text-xs font-medium',
+                  'truncate text-xs font-medium',
                   state === 'upcoming' ? 'text-text-secondary' : 'text-text-primary',
                 )}
               >
@@ -47,7 +47,7 @@ export function StepIndicator({ steps, currentIndex, className }: StepIndicatorP
             {!isLast ? (
               <span
                 aria-hidden="true"
-                className={cn('mx-3 h-px flex-1', state === 'done' ? 'bg-navy' : 'bg-border-strong')}
+                className={cn('mx-2 h-px flex-1 sm:mx-3', state === 'done' ? 'bg-navy' : 'bg-border-strong')}
               />
             ) : null}
           </li>

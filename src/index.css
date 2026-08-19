@@ -7,12 +7,14 @@
     @apply scroll-smooth antialiased;
     -webkit-text-size-adjust: 100%;
     min-width: 320px;
+    overflow-x: hidden;
   }
 
   body {
     @apply bg-background font-sans text-text-primary antialiased;
     min-width: 320px;
     overflow-x: hidden;
+    overscroll-behavior-x: none;
     overscroll-behavior-y: none;
     -webkit-tap-highlight-color: transparent;
   }

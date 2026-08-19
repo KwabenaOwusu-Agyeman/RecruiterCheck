@@ -14,7 +14,7 @@ const steps = [
   {
     number: '03',
     title: 'Improve before you apply',
-    description: 'Get a tailored CV, cover letter, and recruiter message ready to send.',
+    description: 'Get your feedback report, plus an improved CV draft when it can help.',
   },
 ] as const
 

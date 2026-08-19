@@ -30,7 +30,12 @@ export const PRICING_PLANS: PricingPlan[] = [
     price: '€10',
     interval: 'week',
     description: 'Try it out while you get your applications moving.',
-    features: ['5 Recruiter Checks per week', 'Tailored CVs', 'Cover Letters & Recruiter Messages'],
+    features: [
+      '5 Recruiter Checks per week',
+      'Interview Probability Score',
+      'Improved CV Draft',
+      'Lifetime access to recruiter feedback',
+    ],
   },
   {
     id: 'active' as const,
@@ -38,7 +43,12 @@ export const PRICING_PLANS: PricingPlan[] = [
     price: '€15',
     interval: 'week',
     description: 'For a job search in full swing.',
-    features: ['10 Recruiter Checks per week', 'Tailored CVs', 'Cover Letters & Recruiter Messages'],
+    features: [
+      '10 Recruiter Checks per week',
+      'Interview Probability Score',
+      'Improved CV Draft',
+      'Lifetime access to recruiter feedback',
+    ],
     badge: 'Most Popular',
     highlighted: true,
   },
@@ -48,7 +58,12 @@ export const PRICING_PLANS: PricingPlan[] = [
     price: '€20',
     interval: 'week',
     description: 'For applying at volume.',
-    features: ['20 Recruiter Checks per week', 'Tailored CVs', 'Cover Letters & Recruiter Messages'],
+    features: [
+      '20 Recruiter Checks per week',
+      'Interview Probability Score',
+      'Improved CV Draft',
+      'Lifetime access to recruiter feedback',
+    ],
   },
 ]
 
