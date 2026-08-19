@@ -28,12 +28,20 @@ function checkActionLabel(check: Check): string {
 }
 
 export function MyChecksPage() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const [checks, setChecks] = useState<Check[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [pendingDelete, setPendingDelete] = useState<Check | null>(null)
+
+  // Only Power keeps full check history visible. Starter/Active/Free see
+  // only their most recent check (getChecks already orders newest first) —
+  // older ones stay in the database untouched, just hidden behind an
+  // upgrade prompt, so nothing here is ever destructive or hard to reverse.
+  const isPower = profile?.subscription_tier === 'power'
+  const visibleChecks = isPower ? checks : checks.slice(0, 1)
+  const lockedCount = checks.length - visibleChecks.length
 
   useEffect(() => {
     async function loadChecks() {
@@ -133,7 +141,7 @@ export function MyChecksPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-surface">
-                {checks.map((check) => (
+                {visibleChecks.map((check) => (
                   <tr key={check.id} className="transition-colors duration-150 hover:bg-navy-tint/60">
                     <td className="px-4 py-4 lg:px-6 lg:py-5">
                       <div className="text-sm font-medium text-text-primary">
@@ -178,7 +186,7 @@ export function MyChecksPage() {
 
           {/* Mobile compact list */}
           <div className="divide-y divide-border rounded-[16px] border border-border-soft bg-surface shadow-card md:hidden">
-            {checks.map((check) => (
+            {visibleChecks.map((check) => (
               <div key={check.id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium text-text-primary">
@@ -219,6 +227,22 @@ export function MyChecksPage() {
           </div>
         </>
       )}
+
+      {lockedCount > 0 ? (
+        <div className="mt-4 flex flex-col items-center gap-3 rounded-[16px] border border-border-soft bg-surface p-4 text-center shadow-card sm:flex-row sm:justify-between sm:text-left">
+          <p className="text-sm text-text-secondary">
+            {lockedCount === 1
+              ? '1 earlier check is locked.'
+              : `${lockedCount} earlier checks are locked.`}{' '}
+            Upgrade to Power to see your full check history, saved forever.
+          </p>
+          <Link to="/account/billing" className="shrink-0">
+            <Button variant="secondary" size="sm">
+              Upgrade to Power
+            </Button>
+          </Link>
+        </div>
+      ) : null}
 
       <ConfirmDialog
         open={pendingDelete !== null}

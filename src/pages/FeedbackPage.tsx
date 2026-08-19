@@ -64,6 +64,7 @@ export function FeedbackPage() {
   const [documents, setDocuments] = useState<GeneratedDocuments | null>(null)
   const [generatingDocs, setGeneratingDocs] = useState(false)
   const [documentsError, setDocumentsError] = useState<string | null>(null)
+  const tier = profile?.subscription_tier ?? 'free'
 
   useEffect(() => {
     async function loadCheck() {
@@ -298,15 +299,17 @@ export function FeedbackPage() {
             <CardHeader className="border-b-navy/10 px-5 py-3">
               <h2 className="text-base font-semibold text-text-primary">Recruiter Ready Kit</h2>
               <p className="mt-1 text-xs text-text-secondary">
-                A tailored CV, cover letter, and recruiter message based on your feedback.
+                {tier === 'power'
+                  ? 'A tailored CV, cover letter, and recruiter message based on your feedback.'
+                  : 'A tailored CV based on your feedback.'}
               </p>
             </CardHeader>
             <CardContent className="px-5 py-4">
-              {profile?.subscription_tier === 'free' ? (
+              {tier === 'free' || tier === 'starter' ? (
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-text-secondary">
-                    Your tailored CV, cover letter, and recruiter message are available on
-                    Premium.
+                    Your tailored CV, cover letter, and recruiter message are available on the
+                    Active and Power plans.
                   </p>
                   <Link to="/account/billing">
                     <Button variant="primary" size="sm" className="shrink-0">
@@ -321,25 +324,39 @@ export function FeedbackPage() {
                       CV.pdf
                     </Button>
                   </a>
-                  <a href={documents.coverLetter} target="_blank" rel="noreferrer">
-                    <Button variant="secondary" size="sm">
-                      Cover Letter.pdf
-                    </Button>
-                  </a>
-                  <a href={documents.emailForRecruiter} target="_blank" rel="noreferrer">
-                    <Button variant="secondary" size="sm">
-                      Email for Recruiter.pdf
-                    </Button>
-                  </a>
-                  <a href={documents.zip} target="_blank" rel="noreferrer">
-                    <Button size="sm">Download Package</Button>
-                  </a>
+                  {documents.coverLetter ? (
+                    <a href={documents.coverLetter} target="_blank" rel="noreferrer">
+                      <Button variant="secondary" size="sm">
+                        Cover Letter.pdf
+                      </Button>
+                    </a>
+                  ) : null}
+                  {documents.emailForRecruiter ? (
+                    <a href={documents.emailForRecruiter} target="_blank" rel="noreferrer">
+                      <Button variant="secondary" size="sm">
+                        Email for Recruiter.pdf
+                      </Button>
+                    </a>
+                  ) : null}
+                  {documents.zip ? (
+                    <a href={documents.zip} target="_blank" rel="noreferrer">
+                      <Button size="sm">Download Package</Button>
+                    </a>
+                  ) : null}
+                  {tier === 'active' ? (
+                    <Link to="/account/billing" className="ml-auto">
+                      <Button variant="secondary" size="sm">
+                        Upgrade for cover letter & recruiter message
+                      </Button>
+                    </Link>
+                  ) : null}
                 </div>
               ) : (
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-text-secondary">
-                    Generate a tailored CV, cover letter, and recruiter message for this
-                    application.
+                    {tier === 'power'
+                      ? 'Generate a tailored CV, cover letter, and recruiter message for this application.'
+                      : 'Generate a tailored CV for this application.'}
                   </p>
                   <Button
                     variant="primary"

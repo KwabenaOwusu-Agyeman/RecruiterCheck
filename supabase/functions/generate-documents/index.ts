@@ -107,8 +107,22 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Profile not found' }, 404)
     }
 
-    if (profile.subscription_tier === 'free') {
-      return jsonResponse({ error: 'Documents are a Premium feature' }, 403)
+    // Document entitlement escalates by plan: Starter (and Free) get no
+    // generated documents, Active gets the tailored CV only, Power gets the
+    // full kit (CV, cover letter, recruiter message). Kept in sync with
+    // PRICING_PLANS in src/lib/constants.ts.
+    const tier = profile.subscription_tier as 'free' | 'starter' | 'active' | 'power'
+    const entitlement = {
+      cv: tier === 'active' || tier === 'power',
+      coverLetter: tier === 'power',
+      recruiterMessage: tier === 'power',
+    }
+
+    if (!entitlement.cv) {
+      return jsonResponse(
+        { error: 'Documents are available on the Active plan or higher. Upgrade to unlock your tailored CV.' },
+        403,
+      )
     }
 
     const { data: check, error: checkError } = await adminClient
@@ -165,41 +179,52 @@ Deno.serve(async (req) => {
       prospects: feedbackRow.prospects as string[],
     })
 
-    const cvPdf = await renderCvPdf(docs.tailored_cv)
-    const coverLetterPdf = await renderCoverLetterPdf(
-      docs.cover_letter,
-      docs.tailored_cv,
-      check.company_name,
-    )
-    const emailForRecruiterPdf = await renderRecruiterEmailPdf(
-      docs.recruiter_message,
-      docs.tailored_cv.full_name,
-    )
-
-    const zip = zipSync({
-      'CV.pdf': cvPdf,
-      'Cover Letter.pdf': coverLetterPdf,
-      'Email for Recruiter.pdf': emailForRecruiterPdf,
-    })
-
+    // The OpenAI call above always produces all three documents in one shot
+    // (the prompt/schema aren't split by tier — cheaper to keep one call than
+    // to maintain a second schema for a lesser bundle), but only the
+    // entitled subset is rendered, stored, and returned below.
     const basePath = `${user.id}/${checkId}`
+    const files: Record<string, Uint8Array> = {}
 
+    const cvPdf = await renderCvPdf(docs.tailored_cv)
+    files['CV.pdf'] = cvPdf
     await uploadFile(adminClient, `${basePath}/CV.pdf`, cvPdf, 'application/pdf')
-    await uploadFile(adminClient, `${basePath}/Cover Letter.pdf`, coverLetterPdf, 'application/pdf')
-    await uploadFile(
-      adminClient,
-      `${basePath}/Email for Recruiter.pdf`,
-      emailForRecruiterPdf,
-      'application/pdf',
-    )
-    await uploadFile(adminClient, `${basePath}/Documents.zip`, zip, 'application/zip')
 
-    const [cvUrl, coverLetterUrl, emailForRecruiterUrl, zipUrl] = await Promise.all([
-      signedUrl(adminClient, `${basePath}/CV.pdf`),
-      signedUrl(adminClient, `${basePath}/Cover Letter.pdf`),
-      signedUrl(adminClient, `${basePath}/Email for Recruiter.pdf`),
-      signedUrl(adminClient, `${basePath}/Documents.zip`),
-    ])
+    let coverLetterPdf: Uint8Array | null = null
+    let emailForRecruiterPdf: Uint8Array | null = null
+
+    if (entitlement.coverLetter) {
+      coverLetterPdf = await renderCoverLetterPdf(docs.cover_letter, docs.tailored_cv, check.company_name)
+      files['Cover Letter.pdf'] = coverLetterPdf
+      await uploadFile(adminClient, `${basePath}/Cover Letter.pdf`, coverLetterPdf, 'application/pdf')
+    }
+
+    if (entitlement.recruiterMessage) {
+      emailForRecruiterPdf = await renderRecruiterEmailPdf(docs.recruiter_message, docs.tailored_cv.full_name)
+      files['Email for Recruiter.pdf'] = emailForRecruiterPdf
+      await uploadFile(
+        adminClient,
+        `${basePath}/Email for Recruiter.pdf`,
+        emailForRecruiterPdf,
+        'application/pdf',
+      )
+    }
+
+    const cvUrl = await signedUrl(adminClient, `${basePath}/CV.pdf`)
+    const coverLetterUrl = coverLetterPdf
+      ? await signedUrl(adminClient, `${basePath}/Cover Letter.pdf`)
+      : undefined
+    const emailForRecruiterUrl = emailForRecruiterPdf
+      ? await signedUrl(adminClient, `${basePath}/Email for Recruiter.pdf`)
+      : undefined
+
+    // A zip only adds value once there's more than one file to bundle.
+    let zipUrl: string | undefined
+    if (Object.keys(files).length > 1) {
+      const zip = zipSync(files)
+      await uploadFile(adminClient, `${basePath}/Documents.zip`, zip, 'application/zip')
+      zipUrl = await signedUrl(adminClient, `${basePath}/Documents.zip`)
+    }
 
     return jsonResponse({
       cv: cvUrl,

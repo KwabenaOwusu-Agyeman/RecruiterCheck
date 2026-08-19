@@ -26,8 +26,8 @@ const BILLING_FAQ = [
     answer: `${FREE_TIER_LIFETIME_LIMIT} Recruiter Check, including your Interview Probability and Recruiter Feedback.`,
   },
   {
-    question: 'How does the weekly allotment work?',
-    answer: 'Each plan gives you a fixed number of Recruiter Checks per week, plus your Recruiter Ready Kit, a tailored CV, cover letter, and recruiter message for each check. Unused checks do not roll over, and your allotment resets every week your plan renews.',
+    question: 'What is the difference between Starter, Active, and Power?',
+    answer: 'All plans include your Interview Probability Score and Recruiter Feedback. Active adds a tailored CV draft for each check. Power adds the full Recruiter Ready Kit, a tailored CV, cover letter, and recruiter message, plus full check history saved forever (Starter and Active only show your most recent check). Every plan\'s check allotment resets weekly with no rollover.',
   },
   {
     question: 'Can I cancel anytime?',
