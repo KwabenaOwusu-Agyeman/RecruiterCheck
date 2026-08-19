@@ -531,6 +531,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_check_count: { Args: { p_user_id: string }; Returns: number }
       reserve_check_analysis: {
         Args: { p_check_id: string; p_user_id: string }
         Returns: {

@@ -40,26 +40,46 @@ const BILLING_FAQ = [
 ] as const
 
 export function BillingPage() {
-  const { profile } = useAuth()
+  const { profile, refreshProfile } = useAuth()
   const [searchParams] = useSearchParams()
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
   const [managingBilling, setManagingBilling] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [planUpdated, setPlanUpdated] = useState(false)
 
   const checkoutStatus = searchParams.get('status')
 
   useEffect(() => {
-    if (checkoutStatus === 'success') trackEvent('subscription_completed')
+    // A brand new subscriber lands here after a Stripe Checkout redirect —
+    // the webhook writes their tier, but this tab's `profile` was loaded
+    // before that happened, so it must be re-fetched or the rest of the
+    // session keeps showing stale (pre-upgrade) limits until a hard reload.
+    if (checkoutStatus === 'success') {
+      trackEvent('subscription_completed')
+      void refreshProfile()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkoutStatus])
 
   async function handleUpgrade(plan: 'starter' | 'active' | 'power') {
     setLoadingPlan(plan)
     setError(null)
+    setPlanUpdated(false)
     trackEvent('upgrade_started')
 
     try {
-      const url = await createCheckoutSession(plan)
-      window.location.href = url
+      const result = await createCheckoutSession(plan)
+      if (result.kind === 'redirect') {
+        window.location.href = result.url
+        return
+      }
+      // Already-subscribed user switching plans: the existing subscription
+      // was modified in place server-side, not a new Checkout session, so
+      // there's nothing to redirect to — just pick up the new tier.
+      await refreshProfile()
+      trackEvent('subscription_completed')
+      setPlanUpdated(true)
+      setLoadingPlan(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not start checkout')
       setLoadingPlan(null)
@@ -101,6 +121,12 @@ export function BillingPage() {
       {checkoutStatus === 'cancelled' ? (
         <Alert variant="info" className="mx-auto mt-6 max-w-2xl">
           Checkout was cancelled. No changes were made.
+        </Alert>
+      ) : null}
+
+      {planUpdated ? (
+        <Alert variant="success" className="mx-auto mt-6 max-w-2xl">
+          Your plan has been updated.
         </Alert>
       ) : null}
 

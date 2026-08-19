@@ -154,6 +154,12 @@ export async function deleteAccount(): Promise<void> {
   if (data?.error) throw new Error(String(data.error))
 }
 
+/**
+ * Below Power, RLS itself only returns the single most recent check row
+ * (see migration enforce_check_history_tier_at_rls) — this is not a
+ * client-side filter, the extra rows never come back from the server at
+ * all, so there's nothing to bypass via devtools or a direct API call.
+ */
 export async function getChecks(userId: string): Promise<Check[]> {
   const { data, error } = await supabase
     .from('checks')
@@ -163,6 +169,18 @@ export async function getChecks(userId: string): Promise<Check[]> {
 
   if (error) throw error
   return (data ?? []).map((row) => mapCheck(row as Check))
+}
+
+/**
+ * Total check count regardless of tier, via a security-definer RPC rather
+ * than counting the rows getChecks() returns — those are already
+ * RLS-restricted to the visible subset, so counting them would always
+ * equal what's visible and could never reveal how many are locked.
+ */
+export async function getCheckCount(userId: string): Promise<number> {
+  const { data, error } = await supabase.rpc('get_check_count', { p_user_id: userId })
+  if (error) throw error
+  return data ?? 0
 }
 
 export async function getCheckWithFeedback(checkId: string): Promise<CheckWithFeedback | null> {
@@ -377,16 +395,27 @@ export async function generateDocuments(checkId: string): Promise<GeneratedDocum
   return data as GeneratedDocuments
 }
 
+export type CheckoutResult = { kind: 'redirect'; url: string } | { kind: 'updated' }
+
+/**
+ * A user with no active subscription gets a Stripe Checkout url to redirect
+ * to. A user switching plans while already subscribed instead has their
+ * existing subscription modified in place server-side (see
+ * changeExistingSubscription in create-checkout-session) — no Checkout
+ * session, no redirect, just an { updated: true } signal so the caller can
+ * refresh the profile and show the new plan immediately.
+ */
 export async function createCheckoutSession(
   plan: 'starter' | 'active' | 'power',
-): Promise<string> {
+): Promise<CheckoutResult> {
   const { data, error } = await supabase.functions.invoke('create-checkout-session', {
     body: { plan },
   })
 
   if (error) throw await resolveFunctionError(error)
+  if (data?.updated) return { kind: 'updated' }
   if (!data?.url) throw new Error('Could not start checkout')
-  return data.url as string
+  return { kind: 'redirect', url: data.url as string }
 }
 
 export async function createPortalSession(): Promise<string> {

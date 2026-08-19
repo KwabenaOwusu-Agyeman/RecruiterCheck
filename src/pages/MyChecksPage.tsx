@@ -8,7 +8,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { PageHeader } from '@/components/ui/Badge'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { useAuth } from '@/hooks/useAuth'
-import { deleteCheck, getChecks } from '@/services/checkService'
+import { deleteCheck, getCheckCount, getChecks } from '@/services/checkService'
 import type { Check } from '@/types'
 
 function formatDate(value: string): string {
@@ -28,40 +28,40 @@ function checkActionLabel(check: Check): string {
 }
 
 export function MyChecksPage() {
-  const { user, profile } = useAuth()
+  const { user } = useAuth()
   const [checks, setChecks] = useState<Check[]>([])
+  const [totalCount, setTotalCount] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [pendingDelete, setPendingDelete] = useState<Check | null>(null)
 
-  // Only Power keeps full check history visible. Starter/Active/Free see
-  // only their most recent check (getChecks already orders newest first) —
-  // older ones stay in the database untouched, just hidden behind an
-  // upgrade prompt, so nothing here is ever destructive or hard to reverse.
-  const isPower = profile?.subscription_tier === 'power'
-  const visibleChecks = isPower ? checks : checks.slice(0, 1)
-  const lockedCount = checks.length - visibleChecks.length
+  // Below Power, RLS itself only returns the single most recent check row
+  // (see migration enforce_check_history_tier_at_rls) — `checks` is already
+  // the entitled set, nothing to slice client-side. totalCount comes from a
+  // separate count-only RPC so the "N earlier checks are locked" message
+  // stays accurate without needing the (deliberately hidden) row content.
+  const lockedCount = totalCount !== null ? totalCount - checks.length : 0
 
   useEffect(() => {
-    async function loadChecks() {
-      if (!user) return
-
-      try {
-        const data = await getChecks(user.id)
-        setChecks(data)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Could not load checks')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    void loadChecks()
+    if (!user) return
+    void loadChecks(user.id)
   }, [user])
 
+  async function loadChecks(userId: string) {
+    try {
+      const [data, count] = await Promise.all([getChecks(userId), getCheckCount(userId)])
+      setChecks(data)
+      setTotalCount(count)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not load checks')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   async function handleConfirmDelete() {
-    if (!pendingDelete) return
+    if (!pendingDelete || !user) return
     const checkId = pendingDelete.id
 
     setDeletingId(checkId)
@@ -69,7 +69,11 @@ export function MyChecksPage() {
 
     try {
       await deleteCheck(checkId)
-      setChecks((prev) => prev.filter((check) => check.id !== checkId))
+      // Re-fetch rather than splicing the deleted row out of local state:
+      // below Power, deleting the currently-visible (most recent) check
+      // means RLS will now surface a different row as "most recent" —
+      // only a fresh query picks that up correctly.
+      await loadChecks(user.id)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not delete this check')
     } finally {
@@ -141,7 +145,7 @@ export function MyChecksPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-surface">
-                {visibleChecks.map((check) => (
+                {checks.map((check) => (
                   <tr key={check.id} className="transition-colors duration-150 hover:bg-navy-tint/60">
                     <td className="px-4 py-4 lg:px-6 lg:py-5">
                       <div className="text-sm font-medium text-text-primary">
@@ -186,7 +190,7 @@ export function MyChecksPage() {
 
           {/* Mobile compact list */}
           <div className="divide-y divide-border rounded-[16px] border border-border-soft bg-surface shadow-card md:hidden">
-            {visibleChecks.map((check) => (
+            {checks.map((check) => (
               <div key={check.id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium text-text-primary">

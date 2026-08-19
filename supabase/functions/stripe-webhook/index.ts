@@ -165,13 +165,20 @@ async function handleSubscriptionChange(
 ) {
   const status = deleted ? 'cancelled' : mapStripeStatus(subscription.status)
   const userId = subscription.metadata?.user_id
+  const metadataPlan = subscription.metadata?.plan as 'starter' | 'active' | 'power' | undefined
   const customerId =
     typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id
   const currentPeriodEnd = extractCurrentPeriodEnd(subscription)
 
+  const subscriptionUpdate: { status: SubscriptionStatus; current_period_end: string | null; plan?: SubscriptionTier } =
+    { status, current_period_end: currentPeriodEnd }
+  if (!deleted && metadataPlan) {
+    subscriptionUpdate.plan = metadataPlan
+  }
+
   await adminClient
     .from('subscriptions')
-    .update({ status, current_period_end: currentPeriodEnd })
+    .update(subscriptionUpdate)
     .eq('stripe_subscription_id', subscription.id)
 
   const profileUpdate: {
@@ -185,6 +192,16 @@ async function handleSubscriptionChange(
     profileUpdate.subscription_tier = 'free'
     profileUpdate.period_checks_consumed = 0
     profileUpdate.period_checks_limit = 0
+  } else if (metadataPlan) {
+    // A plan switch (see changeExistingSubscription in create-checkout-session)
+    // updates this subscription's own metadata.plan directly via the Stripe
+    // API and already writes profiles synchronously — this re-applies the
+    // same values when the webhook event lands, which is a harmless no-op
+    // for that path, and is the ONLY thing that keeps profiles.subscription_tier
+    // correct for a plan change made from the Stripe billing portal instead
+    // (which this webhook is the sole notification of).
+    profileUpdate.subscription_tier = metadataPlan
+    profileUpdate.period_checks_limit = PLAN_CHECK_LIMITS[metadataPlan]
   }
 
   if (userId) {

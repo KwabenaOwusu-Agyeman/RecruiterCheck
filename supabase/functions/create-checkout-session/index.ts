@@ -13,10 +13,10 @@ interface CheckoutRequest {
 // PLAN_CHECK_LIMITS mirror in stripe-webhook, per this codebase's existing
 // convention of duplicating small constants across edge functions rather
 // than sharing a module across separate deployables.
-const PLAN_PRICES: Record<CheckoutRequest['plan'], { amount: number; name: string }> = {
-  starter: { amount: 1000, name: 'Starter' },
-  active: { amount: 1500, name: 'Active' },
-  power: { amount: 2000, name: 'Power' },
+const PLAN_PRICES: Record<CheckoutRequest['plan'], { amount: number; name: string; checks: number }> = {
+  starter: { amount: 1000, name: 'Starter', checks: 5 },
+  active: { amount: 1500, name: 'Active', checks: 10 },
+  power: { amount: 2000, name: 'Power', checks: 20 },
 }
 
 Deno.serve(async (req) => {
@@ -59,6 +59,35 @@ Deno.serve(async (req) => {
     }
 
     const planConfig = PLAN_PRICES[plan]
+
+    // A user switching plans while already subscribed must have their
+    // EXISTING Stripe subscription modified, not a second one created
+    // alongside it — a fresh Checkout Session always creates a brand new
+    // subscription, which would leave both billing simultaneously, and
+    // later cancelling just the old one would incorrectly reset the user to
+    // Free even though the newer subscription is still active. "Users can
+    // view own subscriptions" RLS lets this read happen on the user-scoped
+    // client without needing the service role key here.
+    const { data: existingSubscription } = await userClient
+      .from('subscriptions')
+      .select('stripe_subscription_id')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .not('stripe_subscription_id', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (existingSubscription?.stripe_subscription_id) {
+      return await changeExistingSubscription(
+        stripeSecretKey,
+        supabaseUrl,
+        existingSubscription.stripe_subscription_id,
+        user.id,
+        plan,
+        planConfig,
+      )
+    }
 
     const params = new URLSearchParams()
     params.set('mode', 'subscription')
@@ -108,4 +137,76 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
+}
+
+/**
+ * Swaps the price on an already-active Stripe subscription in place
+ * (proration invoiced on the next renewal) rather than creating a second
+ * subscription via Checkout. Also writes profiles/subscriptions directly
+ * with the service role, rather than waiting on the customer.subscription.updated
+ * webhook, so the client's refreshProfile() right after this returns sees
+ * the new plan immediately instead of racing the webhook's own delivery.
+ * stripe-webhook's handler re-applies the same values when its event lands,
+ * which is a harmless no-op.
+ */
+async function changeExistingSubscription(
+  stripeSecretKey: string,
+  supabaseUrl: string,
+  subscriptionId: string,
+  userId: string,
+  plan: CheckoutRequest['plan'],
+  planConfig: { amount: number; name: string; checks: number },
+): Promise<Response> {
+  const getResponse = await fetch(`https://api.stripe.com/v1/subscriptions/${subscriptionId}`, {
+    headers: { Authorization: `Bearer ${stripeSecretKey}` },
+  })
+
+  if (!getResponse.ok) {
+    console.error('changeExistingSubscription: could not fetch subscription', await getResponse.text())
+    return jsonResponse({ error: 'Could not update your subscription' }, 500)
+  }
+
+  const subscription = await getResponse.json()
+  const itemId = subscription.items?.data?.[0]?.id
+  if (!itemId) {
+    console.error('changeExistingSubscription: subscription has no item to update', subscriptionId)
+    return jsonResponse({ error: 'Could not update your subscription' }, 500)
+  }
+
+  const updateParams = new URLSearchParams()
+  updateParams.set('items[0][id]', itemId)
+  updateParams.set('items[0][price_data][currency]', 'eur')
+  updateParams.set('items[0][price_data][unit_amount]', String(planConfig.amount))
+  updateParams.set('items[0][price_data][recurring][interval]', 'week')
+  updateParams.set('items[0][price_data][product_data][name]', planConfig.name)
+  updateParams.set('proration_behavior', 'create_prorations')
+  updateParams.set('metadata[plan]', plan)
+
+  const updateResponse = await fetch(`https://api.stripe.com/v1/subscriptions/${subscriptionId}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${stripeSecretKey}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: updateParams.toString(),
+  })
+
+  if (!updateResponse.ok) {
+    console.error('changeExistingSubscription: Stripe update failed', await updateResponse.text())
+    return jsonResponse({ error: 'Could not update your subscription' }, 500)
+  }
+
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  const adminClient = createClient(supabaseUrl, serviceRoleKey)
+
+  await adminClient
+    .from('profiles')
+    .update({ subscription_tier: plan, period_checks_limit: planConfig.checks })
+    .eq('id', userId)
+  await adminClient
+    .from('subscriptions')
+    .update({ plan })
+    .eq('stripe_subscription_id', subscriptionId)
+
+  return jsonResponse({ updated: true })
 }
