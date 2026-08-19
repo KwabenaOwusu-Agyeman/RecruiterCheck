@@ -300,16 +300,16 @@ export function FeedbackPage() {
               <h2 className="text-base font-semibold text-text-primary">Recruiter Ready Kit</h2>
               <p className="mt-1 text-xs text-text-secondary">
                 {tier === 'power'
-                  ? 'A tailored CV, cover letter, and recruiter message based on your feedback.'
-                  : 'A tailored CV based on your feedback.'}
+                  ? 'An improved CV draft, cover letter, and recruiter message based on your feedback.'
+                  : 'An improved CV draft based on your feedback.'}
               </p>
             </CardHeader>
             <CardContent className="px-5 py-4">
               {tier === 'free' || tier === 'starter' ? (
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-text-secondary">
-                    Your tailored CV, cover letter, and recruiter message are available on the
-                    Active and Power plans.
+                    Your improved CV draft, cover letter, and recruiter message are available on
+                    the Active and Power plans.
                   </p>
                   <Link to="/account/billing">
                     <Button variant="primary" size="sm" className="shrink-0">
@@ -355,8 +355,8 @@ export function FeedbackPage() {
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-text-secondary">
                     {tier === 'power'
-                      ? 'Generate a tailored CV, cover letter, and recruiter message for this application.'
-                      : 'Generate a tailored CV for this application.'}
+                      ? 'Generate an improved CV draft, cover letter, and recruiter message for this application.'
+                      : 'Generate an improved CV draft for this application.'}
                   </p>
                   <Button
                     variant="primary"

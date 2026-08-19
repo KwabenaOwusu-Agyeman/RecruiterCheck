@@ -110,7 +110,7 @@ export function ExampleCheckPage() {
           <CardHeader className="border-b-navy/10 px-5 py-3">
             <h2 className="text-base font-semibold text-text-primary">Recruiter Ready Kit</h2>
             <p className="mt-1 text-xs text-text-secondary">
-              On a real check, this generates a tailored CV, cover letter, and recruiter message
+              On a real check, this generates an improved CV draft, cover letter, and recruiter message
               from your own information.
             </p>
           </CardHeader>

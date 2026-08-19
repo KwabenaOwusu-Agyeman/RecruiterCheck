@@ -108,9 +108,9 @@ Deno.serve(async (req) => {
     }
 
     // Document entitlement escalates by plan: Starter (and Free) get no
-    // generated documents, Active gets the tailored CV only, Power gets the
-    // full kit (CV, cover letter, recruiter message). Kept in sync with
-    // PRICING_PLANS in src/lib/constants.ts.
+    // generated documents, Active gets the improved CV draft only, Power
+    // gets the full kit (CV draft, cover letter, recruiter message). Kept
+    // in sync with PRICING_PLANS in src/lib/constants.ts.
     const tier = profile.subscription_tier as 'free' | 'starter' | 'active' | 'power'
     const entitlement = {
       cv: tier === 'active' || tier === 'power',
@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
 
     if (!entitlement.cv) {
       return jsonResponse(
-        { error: 'Documents are available on the Active plan or higher. Upgrade to unlock your tailored CV.' },
+        { error: 'Documents are available on the Active plan or higher. Upgrade to unlock your improved CV draft.' },
         403,
       )
     }

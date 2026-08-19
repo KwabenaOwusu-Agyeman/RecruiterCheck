@@ -26,7 +26,7 @@ const FAQ_ITEMS = [
   {
     question: 'What do I get with a Recruiter Check?',
     answer:
-      'The core of every check is your Interview Probability, Strengths, Areas to Improve, and Prospects. If you upgrade, you can also generate a Recruiter Ready Kit — a tailored CV, cover letter, and recruiter message built from your existing information.',
+      'The core of every check is your Interview Probability, Strengths, Areas to Improve, and Prospects. If you upgrade, you can also generate a Recruiter Ready Kit, an improved CV draft, cover letter, and recruiter message built from your existing information.',
   },
 ] as const
 

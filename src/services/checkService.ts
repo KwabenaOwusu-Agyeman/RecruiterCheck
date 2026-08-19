@@ -360,7 +360,7 @@ export async function extractJobDescriptionFromFile(file: File): Promise<string>
 
 export interface GeneratedDocuments {
   cv: string
-  // Undefined below Power, where only the tailored CV is entitled.
+  // Undefined below Power, where only the improved CV draft is entitled.
   coverLetter?: string
   emailForRecruiter?: string
   // Undefined whenever only one document was generated (nothing to bundle).

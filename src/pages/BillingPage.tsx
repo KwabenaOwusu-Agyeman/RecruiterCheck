@@ -27,7 +27,7 @@ const BILLING_FAQ = [
   },
   {
     question: 'What is the difference between Starter, Active, and Power?',
-    answer: 'All plans include your Interview Probability Score and Recruiter Feedback. Active adds a tailored CV draft for each check. Power adds the full Recruiter Ready Kit, a tailored CV, cover letter, and recruiter message, plus full check history saved forever (Starter and Active only show your most recent check). Every plan\'s check allotment resets weekly with no rollover.',
+    answer: 'All plans include your Interview Probability Score and Recruiter Feedback. Active adds an improved CV draft for each check. Power adds the full Recruiter Ready Kit, an improved CV draft, cover letter, and recruiter message, plus full check history saved forever (Starter and Active only show your most recent check). Every plan\'s check allotment resets weekly with no rollover.',
   },
   {
     question: 'Can I cancel anytime?',
