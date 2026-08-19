@@ -351,13 +351,13 @@ export function FeedbackPage() {
                   ) : null}
                   {documents.zip ? (
                     <a href={documents.zip} target="_blank" rel="noreferrer">
-                      <Button size="sm">Download Package</Button>
+                      <Button size="sm">Download All</Button>
                     </a>
                   ) : null}
                   {tier === 'active' ? (
                     <Link to="/account/billing" className="ml-auto">
                       <Button variant="secondary" size="sm">
-                        Upgrade for cover letter & recruiter message
+                        Upgrade
                       </Button>
                     </Link>
                   ) : null}
