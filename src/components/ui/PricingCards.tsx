@@ -68,7 +68,7 @@ export function PricingCards({
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-semibold text-text-primary">{plan.name}</h2>
+                  <h2 className="text-xl font-semibold text-text-primary">{plan.name}</h2>
                   {isCurrent ? (
                     <span className="rounded-full bg-blue/10 px-2 py-0.5 text-xs font-semibold text-blue">
                       Current
@@ -88,22 +88,22 @@ export function PricingCards({
                   </span>
                 ) : null}
               </div>
-              <p className="mt-1 text-xs leading-snug text-text-secondary">{plan.description}</p>
+              <p className="mt-1 text-sm leading-snug text-text-secondary">{plan.description}</p>
 
-              <p className="mt-3 text-3xl font-bold tracking-tight text-text-primary">
+              <p className="mt-3 text-4xl font-bold tracking-tight text-text-primary">
                 {plan.price}
                 {plan.interval ? (
-                  <span className="text-sm font-normal text-text-secondary">/{plan.interval}</span>
+                  <span className="text-base font-normal text-text-secondary">/{plan.interval}</span>
                 ) : null}
               </p>
               {plan.perCheckPrice ? (
                 <p className="mt-0.5 text-xs text-text-secondary">{plan.perCheckPrice}</p>
               ) : null}
 
-              <ul className="mt-3 flex-1 space-y-1.5 text-sm leading-tight text-text-secondary">
+              <ul className="mt-3 flex-1 space-y-2 text-sm text-text-secondary">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex items-center gap-2">
-                    <Check className="h-3.5 w-3.5 shrink-0 text-blue" strokeWidth={2.5} />
+                    <Check className="h-4 w-4 shrink-0 text-blue" strokeWidth={2.5} />
                     <span className={feature === plan.highlightFeature ? 'font-semibold text-text-primary' : undefined}>
                       {feature}
                     </span>
