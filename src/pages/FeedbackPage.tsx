@@ -28,9 +28,10 @@ function lowerFirstClause(text: string): string {
 /**
  * Builds the one-line "why" sentence under the score, entirely from data
  * already on the page (score tier + the two areas-to-improve findings) so
- * it needs no new backend field or database column.
+ * it needs no new backend field or database column. Returns null below 61
+ * ("Not a Fit") since there's nothing constructive to say there.
  */
-function buildSummarySentence(score: number, improvements: string[]): string {
+function buildSummarySentence(score: number, improvements: string[]): string | null {
   const findings = improvements.map((item) => lowerFirstClause(splitFinding(item).title))
 
   if (score >= 85) {
@@ -48,10 +49,7 @@ function buildSummarySentence(score: number, improvements: string[]): string {
     return 'Your experience is relevant, but a few improvements would strengthen your application.'
   }
 
-  const [first] = findings
-  return first
-    ? `This role is a stretch right now. Focus on ${first} to improve your chances.`
-    : 'This role is a stretch right now. A few key improvements would strengthen your chances.'
+  return null
 }
 
 export function FeedbackPage() {
@@ -170,7 +168,7 @@ export function FeedbackPage() {
 
   return (
     <div className="lg:mx-auto lg:max-w-[1000px]">
-      <div className="mb-6 rounded-[16px] border border-border-soft bg-gradient-surface p-[16px] shadow-card sm:mb-8 sm:p-8">
+      <div className="mb-6 rounded-[14px] border border-border-soft bg-gradient-surface p-3.5 shadow-card sm:mb-8 sm:p-7">
         <p className="text-sm font-semibold text-text-primary">
           {firstName ? `Hi ${firstName},` : 'Hi,'}
         </p>
@@ -185,17 +183,17 @@ export function FeedbackPage() {
         </div>
 
         {score !== null ? (
-          <div className="mt-6 border-t border-border pt-6">
-            <p className="text-4xl font-bold tracking-tight text-navy sm:text-5xl">
+          <div className="mt-5 border-t border-border pt-5">
+            <p className="text-[2.125rem] font-bold tracking-tight text-navy sm:text-[2.625rem]">
               {score}%{' '}
-              <span className="text-lg font-semibold text-text-secondary sm:text-xl">
+              <span className="text-base font-semibold text-text-secondary sm:text-lg">
                 Interview Probability
               </span>
             </p>
-            <p className={cn('mt-2 text-lg font-semibold', getVerdictColor(score))}>
+            <p className={cn('mt-2 text-base font-semibold sm:text-lg', getVerdictColor(score))}>
               {getScoreLabel(score)}
             </p>
-            {feedback ? (
+            {feedback && buildSummarySentence(score, visibleImprovements) ? (
               <p className="mt-2 max-w-xl text-sm text-text-secondary">
                 {buildSummarySentence(score, visibleImprovements)}
               </p>

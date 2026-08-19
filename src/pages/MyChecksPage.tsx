@@ -28,7 +28,7 @@ function checkActionLabel(check: Check): string {
 }
 
 export function MyChecksPage() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const [checks, setChecks] = useState<Check[]>([])
   const [totalCount, setTotalCount] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
@@ -41,6 +41,10 @@ export function MyChecksPage() {
   // the entitled set, nothing to slice client-side. totalCount comes from a
   // separate count-only RPC so the "N earlier checks are locked" message
   // stays accurate without needing the (deliberately hidden) row content.
+  // Defensive: RLS already gives Power users every row (lockedCount === 0),
+  // but never show the upgrade banner to a Power subscriber even if
+  // totalCount/checks briefly disagree while a tier change is in flight.
+  const isPower = profile?.subscription_tier === 'power'
   const lockedCount = totalCount !== null ? totalCount - checks.length : 0
 
   useEffect(() => {
@@ -232,14 +236,9 @@ export function MyChecksPage() {
         </>
       )}
 
-      {lockedCount > 0 ? (
+      {lockedCount > 0 && !isPower ? (
         <div className="mt-4 flex flex-col items-center gap-3 rounded-[16px] border border-border-soft bg-surface p-4 text-center shadow-card sm:flex-row sm:justify-between sm:text-left">
-          <p className="text-sm text-text-secondary">
-            {lockedCount === 1
-              ? '1 earlier check is locked.'
-              : `${lockedCount} earlier checks are locked.`}{' '}
-            Upgrade to Power to see your full check history, saved forever.
-          </p>
+          <p className="text-sm text-text-secondary">Upgrade to Power to see your full check history.</p>
           <Link to="/account/billing" className="shrink-0">
             <Button variant="secondary" size="sm">
               Upgrade to Power
