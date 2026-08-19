@@ -83,7 +83,7 @@ export function BillingPage() {
     <>
       <BackLink to="/account" />
 
-      <div className="mx-auto mt-1 max-w-2xl text-center lg:max-w-[1200px]">
+      <div className="mx-auto mt-1 max-w-2xl text-center lg:max-w-[1080px]">
         <h1 className="text-2xl font-semibold tracking-tight text-text-primary sm:text-[30px]">
           Choose your plan
         </h1>
@@ -106,8 +106,8 @@ export function BillingPage() {
 
       {error ? <Alert variant="error" className="mx-auto mt-6 max-w-2xl">{error}</Alert> : null}
 
-      <div className="mx-auto mt-4 grid gap-6 sm:grid-cols-2 lg:max-w-[1200px] lg:grid-cols-4 lg:gap-[24px]">
-        {PRICING_PLANS.map((plan) => {
+      <div className="mx-auto mt-4 grid gap-6 md:grid-cols-3 lg:max-w-[1080px] lg:gap-[24px]">
+        {PRICING_PLANS.filter((plan) => plan.id !== 'free').map((plan) => {
           const isCurrent = profile?.subscription_tier === plan.id
           const isPremium = plan.id !== 'free'
           const isHighlighted = Boolean(plan.highlighted)
