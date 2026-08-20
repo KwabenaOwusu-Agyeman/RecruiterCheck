@@ -16,6 +16,7 @@ export type AnalyticsEventType =
   | 'referral_shared'
   | 'recruiter_recommendation_accessed'
   | 'upgrade_started'
+  | 'downgrade_started'
   | 'subscription_completed'
 
 export type DomainCategory = 'linkedin' | 'indeed' | 'greenhouse' | 'lever' | 'workday' | 'other'

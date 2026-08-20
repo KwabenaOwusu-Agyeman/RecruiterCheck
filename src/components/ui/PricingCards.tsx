@@ -29,6 +29,7 @@ interface PricingCardsProps {
   loadingPlan: string | null
   managingBilling: boolean
   onUpgrade: (planId: 'starter' | 'active' | 'power') => void
+  onDowngrade: (planId: 'starter' | 'active' | 'power') => void
   onManageBilling: () => void
 }
 
@@ -38,6 +39,7 @@ export function PricingCards({
   loadingPlan,
   managingBilling,
   onUpgrade,
+  onDowngrade,
   onManageBilling,
 }: PricingCardsProps) {
   const gridRef = useRef<HTMLDivElement>(null)
@@ -117,7 +119,15 @@ export function PricingCards({
                     Current Plan
                   </Button>
                 ) : isDowngrade ? (
-                  <div className="h-12 sm:h-[36px]" aria-hidden="true" />
+                  <Button
+                    className="w-full justify-center"
+                    size="sm"
+                    variant="secondary"
+                    disabled={loadingPlan !== null}
+                    onClick={() => onDowngrade(plan.id as 'starter' | 'active' | 'power')}
+                  >
+                    {loadingPlan === plan.id ? 'Updating...' : 'Downgrade'}
+                  </Button>
                 ) : (
                   <Button
                     className="w-full justify-center gap-2"

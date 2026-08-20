@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Alert } from '@/components/ui/Alert'
 import { BackLink } from '@/components/ui/BackLink'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { PricingCards } from '@/components/ui/PricingCards'
 import { PRICING_PLANS } from '@/lib/constants'
 import { trackEvent } from '@/lib/analytics'
@@ -38,6 +39,7 @@ export function BillingPage() {
   const [managingBilling, setManagingBilling] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [planUpdated, setPlanUpdated] = useState(false)
+  const [downgradeTarget, setDowngradeTarget] = useState<'starter' | 'active' | 'power' | null>(null)
 
   const checkoutStatus = searchParams.get('status')
 
@@ -53,11 +55,10 @@ export function BillingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkoutStatus])
 
-  async function handleUpgrade(plan: 'starter' | 'active' | 'power') {
+  async function switchPlan(plan: 'starter' | 'active' | 'power') {
     setLoadingPlan(plan)
     setError(null)
     setPlanUpdated(false)
-    trackEvent('upgrade_started')
 
     try {
       const result = await createCheckoutSession(plan)
@@ -76,6 +77,23 @@ export function BillingPage() {
       setError(err instanceof Error ? err.message : 'Could not start checkout')
       setLoadingPlan(null)
     }
+  }
+
+  function handleUpgrade(plan: 'starter' | 'active' | 'power') {
+    trackEvent('upgrade_started')
+    void switchPlan(plan)
+  }
+
+  function handleDowngrade(plan: 'starter' | 'active' | 'power') {
+    setDowngradeTarget(plan)
+  }
+
+  async function confirmDowngrade() {
+    if (!downgradeTarget) return
+    trackEvent('downgrade_started')
+    const plan = downgradeTarget
+    setDowngradeTarget(null)
+    await switchPlan(plan)
   }
 
   async function handleManageBilling() {
@@ -129,8 +147,26 @@ export function BillingPage() {
         currentTier={profile?.subscription_tier ?? 'free'}
         loadingPlan={loadingPlan}
         managingBilling={managingBilling}
-        onUpgrade={(planId) => void handleUpgrade(planId)}
+        onUpgrade={handleUpgrade}
+        onDowngrade={handleDowngrade}
         onManageBilling={() => void handleManageBilling()}
+      />
+
+      <ConfirmDialog
+        open={downgradeTarget !== null}
+        title="Downgrade plan?"
+        description={
+          downgradeTarget
+            ? `You'll move to ${PRICING_PLANS.find((plan) => plan.id === downgradeTarget)?.name} right away, with a prorated credit for the time remaining on your current plan. Your check allotment will drop to match the new plan immediately.`
+            : null
+        }
+        confirmLabel="Downgrade"
+        confirmingLabel="Updating..."
+        cancelLabel="Keep current plan"
+        busy={loadingPlan !== null}
+        destructive={false}
+        onConfirm={() => void confirmDowngrade()}
+        onCancel={() => setDowngradeTarget(null)}
       />
 
       <div className="mt-6 flex flex-col items-center gap-1.5 text-center text-xs text-text-secondary">

@@ -12,11 +12,16 @@ interface CheckoutRequest {
 // Kept in sync with PRICING_PLANS in src/lib/constants.ts and the
 // PLAN_CHECK_LIMITS mirror in stripe-webhook, per this codebase's existing
 // convention of duplicating small constants across edge functions rather
-// than sharing a module across separate deployables.
-const PLAN_PRICES: Record<CheckoutRequest['plan'], { amount: number; name: string; checks: number }> = {
-  starter: { amount: 1000, name: 'Starter', checks: 5 },
-  active: { amount: 1500, name: 'Active', checks: 10 },
-  power: { amount: 2000, name: 'Power', checks: 20 },
+// than sharing a module across separate deployables. priceId points at the
+// named, recurring weekly Price created for each plan's Product in the
+// Stripe dashboard (see stripe_api_write PostProducts) — Checkout and
+// subscription updates reference these by ID rather than building ad-hoc
+// price_data on every request, so the dashboard shows real product/price
+// names instead of untitled one-off line items.
+const PLAN_PRICES: Record<CheckoutRequest['plan'], { priceId: string; name: string; checks: number }> = {
+  starter: { priceId: 'price_1U6PODPoeQ54WTPbYhgBXkLo', name: 'Starter', checks: 5 },
+  active: { priceId: 'price_1U6POFPoeQ54WTPbq4XoQ5al', name: 'Active', checks: 10 },
+  power: { priceId: 'price_1U6POGPoeQ54WTPbLjZPectM', name: 'Power', checks: 20 },
 }
 
 Deno.serve(async (req) => {
@@ -96,12 +101,10 @@ Deno.serve(async (req) => {
     params.set('client_reference_id', user.id)
     params.set('customer_email', user.email ?? '')
     // This Stripe account has Managed Payments on by default, which requires
-    // a product tax_code on ad-hoc price_data line items unless disabled here.
+    // a product tax_code unless disabled here — the Products created for
+    // these plans don't have one set.
     params.set('managed_payments[enabled]', 'false')
-    params.set('line_items[0][price_data][currency]', 'eur')
-    params.set('line_items[0][price_data][unit_amount]', String(planConfig.amount))
-    params.set('line_items[0][price_data][recurring][interval]', 'week')
-    params.set('line_items[0][price_data][product_data][name]', planConfig.name)
+    params.set('line_items[0][price]', planConfig.priceId)
     params.set('line_items[0][quantity]', '1')
     params.set('metadata[plan]', plan)
     params.set('metadata[user_id]', user.id)
@@ -155,7 +158,7 @@ async function changeExistingSubscription(
   subscriptionId: string,
   userId: string,
   plan: CheckoutRequest['plan'],
-  planConfig: { amount: number; name: string; checks: number },
+  planConfig: { priceId: string; name: string; checks: number },
 ): Promise<Response> {
   const getResponse = await fetch(`https://api.stripe.com/v1/subscriptions/${subscriptionId}`, {
     headers: { Authorization: `Bearer ${stripeSecretKey}` },
@@ -175,10 +178,7 @@ async function changeExistingSubscription(
 
   const updateParams = new URLSearchParams()
   updateParams.set('items[0][id]', itemId)
-  updateParams.set('items[0][price_data][currency]', 'eur')
-  updateParams.set('items[0][price_data][unit_amount]', String(planConfig.amount))
-  updateParams.set('items[0][price_data][recurring][interval]', 'week')
-  updateParams.set('items[0][price_data][product_data][name]', planConfig.name)
+  updateParams.set('items[0][price]', planConfig.priceId)
   updateParams.set('proration_behavior', 'create_prorations')
   updateParams.set('metadata[plan]', plan)
 
