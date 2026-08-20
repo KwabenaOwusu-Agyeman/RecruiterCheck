@@ -29,7 +29,7 @@ export function ExampleCheckTeaser() {
         </div>
 
         <div className="mx-auto mt-[24px] max-w-2xl sm:mt-8 lg:max-w-[900px]">
-          <Card className="relative overflow-hidden shadow-lg sm:shadow-elevated">
+          <Card className="relative overflow-hidden shadow-lg sm:shadow-glow">
             <div className="h-1.5 bg-navy" aria-hidden="true" />
 
             <CardContent className="px-6 py-5 lg:grid lg:grid-cols-2 lg:gap-x-10 lg:gap-y-0 lg:p-[40px]">

@@ -21,16 +21,22 @@ const dotColors: Record<CheckStatus, string> = {
   failed: 'bg-error',
 }
 
-const textColors: Record<CheckStatus, string> = {
-  draft: 'text-text-secondary',
-  processing: 'text-blue',
-  completed: 'text-success',
-  failed: 'text-error',
+const pillColors: Record<CheckStatus, string> = {
+  draft: 'bg-text-secondary/10 text-text-secondary',
+  processing: 'bg-blue/10 text-blue',
+  completed: 'bg-success/10 text-success',
+  failed: 'bg-error/10 text-error',
 }
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
   return (
-    <span className={cn('inline-flex items-center gap-1.5 text-sm font-medium', textColors[status], className)}>
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold',
+        pillColors[status],
+        className,
+      )}
+    >
       <span className={cn('h-1.5 w-1.5 rounded-full', dotColors[status])} />
       {labels[status]}
     </span>
