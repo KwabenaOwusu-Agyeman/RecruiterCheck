@@ -92,8 +92,12 @@ export function MyChecksPage() {
         title="My Checks"
         description="View your checks, scores, and feedback in one place."
         action={
-          <Link to="/checks/new" className="block w-full sm:inline-block sm:w-auto">
-            <Button size="sm" className="w-full sm:w-auto">
+          // Hidden from sm+ — AppHeader's own New Check button covers that
+          // range, and stacking both right on top of each other read as a
+          // duplicate CTA. Below sm, AppHeader's nav (including its New
+          // Check button) is hidden entirely, so this is the only one there.
+          <Link to="/checks/new" className="block w-full sm:hidden">
+            <Button size="sm" className="w-full">
               New Check
             </Button>
           </Link>
