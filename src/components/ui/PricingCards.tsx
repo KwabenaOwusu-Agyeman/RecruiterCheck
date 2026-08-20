@@ -32,7 +32,7 @@ export function PricingCards({
   const currentRank = TIER_RANK[currentTier] ?? 0
 
   return (
-    <div className="mx-auto mt-4 grid gap-4 md:grid-cols-3 lg:max-w-[1080px]">
+    <div className="mx-auto mt-3 grid gap-3 md:grid-cols-3 lg:max-w-[1080px]">
       {plans.map((plan) => {
         const isCurrent = currentTier === plan.id
         const isHighlighted = Boolean(plan.highlighted)
@@ -45,7 +45,7 @@ export function PricingCards({
           <div key={plan.id} className="relative h-full">
             <div
               className={cn(
-                'relative flex h-full flex-col rounded-2xl border bg-navy p-5 transition-transform duration-200 hover:-translate-y-1 sm:p-6',
+                'relative flex h-full flex-col rounded-2xl border bg-navy p-4 transition-transform duration-200 hover:-translate-y-1 sm:p-5',
                 isHighlighted ? 'border-blue-light/40 shadow-glow' : 'border-white/10 shadow-card',
               )}
             >
@@ -65,22 +65,22 @@ export function PricingCards({
                   </span>
                 ) : null}
               </div>
-              <h2 className="mt-2 text-2xl font-bold text-white">{plan.name}</h2>
+              <h2 className="mt-1.5 text-xl font-bold text-white">{plan.name}</h2>
               <p className="mt-1 text-sm leading-snug text-white/60">{plan.description}</p>
 
-              <div className="mt-4 border-t border-white/10 pt-4">
+              <div className="mt-3 border-t border-white/10 pt-3">
                 <p className="text-4xl font-bold tracking-tight text-white">
                   {plan.price}
                   {plan.interval ? (
                     <span className="text-base font-normal text-white/50">/{plan.interval}</span>
                   ) : null}
                 </p>
-                {plan.perCheckPrice ? (
-                  <p className="mt-1 text-xs text-white/50">{plan.perCheckPrice}</p>
+                {plan.interval ? (
+                  <p className="mt-1 text-xs text-white/50">Renews {plan.interval}ly. Cancel anytime.</p>
                 ) : null}
               </div>
 
-              <ul className="mt-4 flex-1 space-y-2.5 border-t border-white/10 pt-4 text-sm text-white/80">
+              <ul className="mt-3 flex-1 space-y-2 border-t border-white/10 pt-3 text-sm text-white/90">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex items-center gap-2">
                     <Check className="h-4 w-4 shrink-0 text-blue-light" strokeWidth={2.5} />
@@ -91,7 +91,7 @@ export function PricingCards({
                 ))}
               </ul>
 
-              <div className="mt-5">
+              <div className="mt-4">
                 {isCurrent && plan.id !== 'free' ? (
                   <Button
                     variant="secondary"

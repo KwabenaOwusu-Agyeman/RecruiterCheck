@@ -92,10 +92,10 @@ export function BillingPage() {
 
       <div className="mx-auto mt-1 max-w-2xl text-center lg:max-w-[1080px]">
         <p className="text-xs font-bold uppercase tracking-wider text-blue">Recruiter Check Plans</p>
-        <h1 className="mt-2 text-[32px] font-bold tracking-tight text-text-primary sm:text-[40px]">
+        <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-text-primary sm:text-[32px]">
           Choose your plan
         </h1>
-        <p className="mx-auto mt-3 max-w-xl text-base text-text-secondary sm:text-lg">
+        <p className="mx-auto mt-2 max-w-xl text-sm text-text-secondary sm:text-base">
           Get more Recruiter Checks and tailored application documents when you need them.
         </p>
       </div>
