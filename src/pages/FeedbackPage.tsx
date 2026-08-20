@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import NumberFlow from '@number-flow/react'
+import { motion } from 'motion/react'
 import { Alert } from '@/components/ui/Alert'
 import { StatusBadge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -183,9 +185,14 @@ export function FeedbackPage() {
         </div>
 
         {score !== null ? (
-          <div className="mt-5 border-t border-border pt-5">
+          <motion.div
+            className="mt-5 border-t border-border pt-5"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+          >
             <p className="text-[2.125rem] font-bold tracking-tight text-navy sm:text-[2.625rem]">
-              {score}%{' '}
+              <NumberFlow value={score} suffix="%" willChange />{' '}
               <span className="text-base font-semibold text-text-secondary sm:text-lg">
                 Interview Probability
               </span>
@@ -201,7 +208,7 @@ export function FeedbackPage() {
             <p className="mt-2 max-w-xl text-xs text-text-secondary">
               Based on the information provided. Hiring decisions and competition may affect the outcome.
             </p>
-          </div>
+          </motion.div>
         ) : null}
       </div>
 

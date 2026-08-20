@@ -1,3 +1,4 @@
+import NumberFlow from '@number-flow/react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Container } from '@/components/ui/Container'
 import { FeedbackBullet, getVerdictColor } from '@/components/feedback/FeedbackBullet'
@@ -38,7 +39,7 @@ export function ExampleCheckTeaser() {
                 <p className="text-sm font-semibold text-navy">{EXAMPLE_COMPANY_NAME}</p>
 
                 <p className="mt-4 text-3xl font-bold tracking-tight text-navy sm:text-4xl">
-                  {score}%{' '}
+                  <NumberFlow value={score} suffix="%" willChange />{' '}
                   <span className="text-base font-semibold text-text-secondary sm:text-lg">
                     Interview Probability
                   </span>
