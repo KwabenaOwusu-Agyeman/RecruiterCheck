@@ -32,7 +32,7 @@ function StarInput({ rating, onChange }: { rating: number; onChange: (value: num
           >
             <svg
               viewBox="0 0 20 20"
-              className={cn('h-7 w-7', value <= rating ? 'fill-warning' : 'fill-border')}
+              className={cn('h-7 w-7', value <= rating ? 'fill-warning' : 'fill-white/15')}
               aria-hidden="true"
             >
               <path d="M10 1.5l2.59 5.25 5.79.84-4.19 4.08.99 5.77L10 14.77l-5.18 2.67.99-5.77L1.62 7.59l5.79-.84L10 1.5z" />
@@ -126,17 +126,17 @@ export function ProductFeedbackForm({ userId, email, checkId, firstName, targetR
 
   if (submitted) {
     return (
-      <div className="mx-auto w-full max-w-2xl rounded-xl border border-border bg-surface p-4 text-center sm:p-5">
-        <p className="text-sm font-semibold text-text-primary">Thanks for your feedback.</p>
+      <div className="mx-auto w-full max-w-2xl rounded-xl border border-white/10 bg-white/[0.04] p-4 text-center sm:p-5">
+        <p className="text-sm font-semibold text-white">Thanks for your feedback.</p>
         {rating >= 4 ? (
-          <div className="mt-4 flex flex-col items-center justify-between gap-3 border-t border-border pt-4 sm:flex-row sm:text-left">
+          <div className="mt-4 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-4 sm:flex-row sm:text-left">
             <div>
-              <p className="text-sm font-semibold text-text-primary">Know someone applying?</p>
-              <p className="mt-0.5 text-xs text-text-secondary">Help them think like a recruiter.</p>
+              <p className="text-sm font-semibold text-white">Know someone applying?</p>
+              <p className="mt-0.5 text-xs text-white/60">Help them think like a recruiter.</p>
             </div>
             <div className="w-full sm:w-auto">
-              <Button size="sm" className="w-full sm:w-auto" onClick={() => void handleShare()}>Share</Button>
-              {shareMessage ? <p className="mt-1 text-xs text-text-secondary" role="status">{shareMessage}</p> : null}
+              <Button variant="secondary" size="sm" className="w-full sm:w-auto" onClick={() => void handleShare()}>Share</Button>
+              {shareMessage ? <p className="mt-1 text-xs text-white/60" role="status">{shareMessage}</p> : null}
             </div>
           </div>
         ) : null}
@@ -145,8 +145,8 @@ export function ProductFeedbackForm({ userId, email, checkId, firstName, targetR
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl rounded-xl border border-border bg-surface p-4 shadow-sm sm:p-5">
-      <h2 className="text-sm font-semibold text-text-primary">Rate your Recruiter Check</h2>
+    <div className="mx-auto w-full max-w-2xl rounded-xl border border-white/10 bg-white/[0.04] p-4 sm:p-5">
+      <h2 className="text-sm font-semibold text-white">Rate your Recruiter Check</h2>
 
       <div className="mt-2">
         <StarInput rating={rating} onChange={setRating} />
@@ -159,7 +159,7 @@ export function ProductFeedbackForm({ userId, email, checkId, firstName, targetR
         onChange={(event) => setComment(event.target.value)}
       />
       {comment.trim() && firstName ? (
-        <label className="mt-2.5 flex cursor-pointer items-start gap-2 text-xs leading-4 text-text-secondary">
+        <label className="mt-2.5 flex cursor-pointer items-start gap-2 text-xs leading-4 text-white/60">
           <input
             type="checkbox"
             checked={featureConsent}
@@ -172,7 +172,7 @@ export function ProductFeedbackForm({ userId, email, checkId, firstName, targetR
           </span>
         </label>
       ) : (
-        <p className="mt-1.5 text-xs text-text-secondary">Private unless you give permission.</p>
+        <p className="mt-1.5 text-xs text-white/60">Private unless you give permission.</p>
       )}
 
       {error ? (
@@ -182,6 +182,7 @@ export function ProductFeedbackForm({ userId, email, checkId, firstName, targetR
       ) : null}
 
       <Button
+        variant="secondary"
         size="sm"
         className="mt-3 w-full sm:w-auto"
         disabled={submitting}

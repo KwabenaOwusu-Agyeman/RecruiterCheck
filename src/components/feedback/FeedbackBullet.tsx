@@ -1,7 +1,9 @@
-export function getVerdictColor(score: number): string {
+import { cn } from '@/utils/cn'
+
+export function getVerdictColor(score: number, tone: 'light' | 'dark' = 'light'): string {
   if (score >= 85) return 'text-success'
   if (score >= 61) return 'text-warning'
-  return 'text-error'
+  return tone === 'dark' ? 'text-error-light' : 'text-error'
 }
 
 /**
@@ -28,15 +30,16 @@ export function splitFinding(text: string): { title: string; evidence: string; e
   return { title: restore(match[1].trim()), evidence: restore(match[2].trim()), example }
 }
 
-export function FeedbackBullet({ text }: { text: string }) {
+export function FeedbackBullet({ text, tone = 'light' }: { text: string; tone?: 'light' | 'dark' }) {
   const { title, evidence, example } = splitFinding(text)
+  const isDark = tone === 'dark'
   return (
     <li className="flex gap-2">
-      <span className="text-blue" aria-hidden="true">
+      <span className={isDark ? 'text-blue-light' : 'text-blue'} aria-hidden="true">
         •
       </span>
-      <span className="text-sm leading-snug text-text-secondary">
-        <span className="font-semibold text-text-primary">{title}</span>
+      <span className={cn('text-sm leading-snug', isDark ? 'text-white/70' : 'text-text-secondary')}>
+        <span className={cn('font-semibold', isDark ? 'text-white' : 'text-text-primary')}>{title}</span>
         {evidence ? ` ${evidence}` : null}
         {example ? <span className="block mt-1 italic">Example: &quot;{example}&quot;</span> : null}
       </span>

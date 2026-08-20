@@ -123,14 +123,16 @@ export function FeedbackPage() {
   if (loading) {
     return (
       <div className="lg:mx-auto lg:max-w-[1000px]">
-        <div className="mb-6 space-y-3 rounded-[16px] border border-border-soft bg-surface p-[16px] shadow-card sm:mb-8 sm:p-8">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-7 w-2/3" />
-          <Skeleton className="h-10 w-40" />
-        </div>
-        <div className="grid gap-5 md:grid-cols-2">
-          <Skeleton className="h-40 rounded-[16px]" />
-          <Skeleton className="h-40 rounded-[16px]" />
+        <div className="rounded-[20px] border border-white/10 bg-navy p-4 shadow-glow sm:p-6 lg:p-8">
+          <div className="space-y-3">
+            <Skeleton className="h-4 w-24 bg-white/10" />
+            <Skeleton className="h-7 w-2/3 bg-white/10" />
+            <Skeleton className="h-10 w-40 bg-white/10" />
+          </div>
+          <div className="mt-6 grid gap-5 md:grid-cols-2">
+            <Skeleton className="h-40 rounded-[16px] bg-white/[0.06]" />
+            <Skeleton className="h-40 rounded-[16px] bg-white/[0.06]" />
+          </div>
         </div>
       </div>
     )
@@ -168,245 +170,250 @@ export function FeedbackPage() {
       : feedback.prospects
     : []
 
+  const nestedCard = 'border-white/10 bg-white/[0.04]'
+  const highlightedNestedCard = 'border-blue-light/30 bg-white/[0.04] shadow-glow'
+
   return (
     <div className="lg:mx-auto lg:max-w-[1000px]">
-      <div className="mb-6 rounded-[14px] border border-border-soft bg-gradient-surface p-3.5 shadow-glow sm:mb-8 sm:p-7">
-        <p className="text-sm font-semibold text-text-primary">
-          {firstName ? `Hi ${firstName},` : 'Hi,'}
-        </p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-text-primary sm:text-[28px]">
-          {check.job_title || 'Recruiter Feedback'}
-        </h1>
-        {check.company_name ? (
-          <p className="mt-1 text-base font-semibold text-navy">{check.company_name}</p>
-        ) : null}
-        <div className="mt-2">
-          <StatusBadge status={check.status} />
+      <div className="rounded-[20px] border border-white/10 bg-navy p-4 shadow-glow sm:p-6 lg:p-8">
+        <div className="border-b border-white/10 pb-5 sm:pb-7">
+          <p className="text-sm font-semibold text-white/60">
+            {firstName ? `Hi ${firstName},` : 'Hi,'}
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-[28px]">
+            {check.job_title || 'Recruiter Feedback'}
+          </h1>
+          {check.company_name ? (
+            <p className="mt-1 text-base font-semibold text-blue-light">{check.company_name}</p>
+          ) : null}
+          <div className="mt-2">
+            <StatusBadge status={check.status} tone="dark" />
+          </div>
+
+          {score !== null ? (
+            <motion.div
+              className="mt-5 border-t border-white/10 pt-5"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+            >
+              <p className="text-[2.125rem] font-bold tracking-tight text-white sm:text-[2.625rem]">
+                <NumberFlow value={score} suffix="%" willChange />{' '}
+                <span className="text-base font-semibold text-white/50 sm:text-lg">
+                  Interview Probability
+                </span>
+              </p>
+              <p className={cn('mt-2 text-base font-semibold sm:text-lg', getVerdictColor(score, 'dark'))}>
+                {getScoreLabel(score)}
+              </p>
+              {feedback && buildSummarySentence(score, visibleImprovements) ? (
+                <p className="mt-2 max-w-xl text-sm text-white/70">
+                  {buildSummarySentence(score, visibleImprovements)}
+                </p>
+              ) : null}
+              <p className="mt-2 max-w-xl text-xs text-white/40">
+                Based on the information provided. Hiring decisions and competition may affect the outcome.
+              </p>
+            </motion.div>
+          ) : null}
         </div>
 
-        {score !== null ? (
-          <motion.div
-            className="mt-5 border-t border-border pt-5"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, ease: 'easeOut' }}
-          >
-            <p className="text-[2.125rem] font-bold tracking-tight text-navy sm:text-[2.625rem]">
-              <NumberFlow value={score} suffix="%" willChange />{' '}
-              <span className="text-base font-semibold text-text-secondary sm:text-lg">
-                Interview Probability
-              </span>
-            </p>
-            <p className={cn('mt-2 text-base font-semibold sm:text-lg', getVerdictColor(score))}>
-              {getScoreLabel(score)}
-            </p>
-            {feedback && buildSummarySentence(score, visibleImprovements) ? (
-              <p className="mt-2 max-w-xl text-sm text-text-secondary">
-                {buildSummarySentence(score, visibleImprovements)}
-              </p>
-            ) : null}
-            <p className="mt-2 max-w-xl text-xs text-text-secondary">
-              Based on the information provided. Hiring decisions and competition may affect the outcome.
-            </p>
-          </motion.div>
+        {check.status === 'failed' ? (
+          <Alert variant="error" className="mt-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <span>{check.error_message ?? 'This check could not be completed.'}</span>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={retrying}
+                onClick={() => void handleRetry()}
+              >
+                {retrying ? 'Retrying...' : 'Retry'}
+              </Button>
+            </div>
+          </Alert>
         ) : null}
-      </div>
 
-      {check.status === 'failed' ? (
-        <Alert variant="error" className="mb-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <span>{check.error_message ?? 'This check could not be completed.'}</span>
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={retrying}
-              onClick={() => void handleRetry()}
-            >
-              {retrying ? 'Retrying...' : 'Retry'}
-            </Button>
-          </div>
-        </Alert>
-      ) : null}
+        {check.status === 'processing' || check.status === 'draft' ? (
+          <Alert variant="info" className="mt-5">
+            Your check is still being reviewed. Refresh this page in a moment.
+          </Alert>
+        ) : null}
 
-      {check.status === 'processing' || check.status === 'draft' ? (
-        <Alert variant="info">
-          Your check is still being reviewed. Refresh this page in a moment.
-        </Alert>
-      ) : null}
+        {feedback ? (
+          <div className="mt-5 space-y-5 sm:mt-7">
+            <div className="grid gap-5 md:grid-cols-2">
+              {feedback.strengths.length > 0 ? <Card className={nestedCard}>
+                <CardHeader className="border-b-white/10 px-5 py-3">
+                  <h2 className="text-base font-semibold text-white">Strengths</h2>
+                </CardHeader>
+                <CardContent className="px-5 py-4">
+                  <ul className="space-y-3">
+                    {feedback.strengths.map((item) => (
+                      <FeedbackBullet key={item} text={item} tone="dark" />
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card> : null}
 
-      {feedback ? (
-        <div className="space-y-5">
-          <div className="grid gap-5 md:grid-cols-2">
-            {feedback.strengths.length > 0 ? <Card>
-              <CardHeader className="px-5 py-3">
-                <h2 className="text-base font-semibold text-text-primary">Strengths</h2>
+              <Card className={nestedCard}>
+                <CardHeader className="border-b-white/10 px-5 py-3">
+                  <h2 className="text-base font-semibold text-white">
+                    {score === 100 ? 'Ready to Apply' : 'Areas to Improve'}
+                  </h2>
+                </CardHeader>
+                <CardContent className="px-5 py-4">
+                  {visibleImprovements.length > 0 ? (
+                    <ul className="space-y-3">
+                      {visibleImprovements.map((item) => (
+                        <FeedbackBullet key={item} text={item} tone="dark" />
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-white/60">
+                      {score === 100
+                        ? 'No material improvements identified.'
+                        : 'No evidence based improvements identified.'}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {visibleProspects.length > 0 ? <Card className={nestedCard}>
+              <CardHeader className="border-b-white/10 px-5 py-3">
+                <h2 className="text-base font-semibold text-white">Prospects</h2>
+                <p className="mt-0.5 text-xs text-white/60">
+                  What could improve your chances of getting an interview.
+                </p>
               </CardHeader>
               <CardContent className="px-5 py-4">
-                <ul className="space-y-3">
-                  {feedback.strengths.map((item) => (
-                    <FeedbackBullet key={item} text={item} />
+                <ul className="space-y-2">
+                  {visibleProspects.map((item) => (
+                    <li key={item} className="flex gap-2">
+                      <span className="text-blue-light" aria-hidden="true">
+                        •
+                      </span>
+                      <span className="text-sm leading-snug text-white/70">{item}</span>
+                    </li>
                   ))}
                 </ul>
               </CardContent>
             </Card> : null}
 
-            <Card>
-              <CardHeader className="px-5 py-3">
-                <h2 className="text-base font-semibold text-text-primary">
-                  {score === 100 ? 'Ready to Apply' : 'Areas to Improve'}
-                </h2>
+            {user?.email ? (
+              <ProductFeedbackForm
+                userId={user.id}
+                email={user.email}
+                checkId={check.id}
+                firstName={firstName || null}
+                targetRole={check.job_title}
+              />
+            ) : null}
+
+            <Card className={highlightedNestedCard}>
+              <CardHeader className="border-b-white/10 px-5 py-3">
+                <h2 className="text-base font-semibold text-white">Recruiter Recommendation</h2>
+                <p className="mt-1 text-xs text-white/60">
+                  {tier === 'power'
+                    ? 'An improved CV draft, cover letter, and recruiter message based on your feedback. Your CV draft may include placeholder figures (e.g. "X%") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with real numbers before submitting.'
+                    : 'An improved CV draft based on your feedback. Your CV draft may include placeholder figures (e.g. "X%") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with real numbers before submitting.'}
+                </p>
               </CardHeader>
               <CardContent className="px-5 py-4">
-                {visibleImprovements.length > 0 ? (
-                  <ul className="space-y-3">
-                    {visibleImprovements.map((item) => (
-                      <FeedbackBullet key={item} text={item} />
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-text-secondary">
-                    {score === 100
-                      ? 'No material improvements identified.'
-                      : 'No evidence based improvements identified.'}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {visibleProspects.length > 0 ? <Card>
-            <CardHeader className="px-5 py-3">
-              <h2 className="text-base font-semibold text-text-primary">Prospects</h2>
-              <p className="mt-0.5 text-xs text-text-secondary">
-                What could improve your chances of getting an interview.
-              </p>
-            </CardHeader>
-            <CardContent className="px-5 py-4">
-              <ul className="space-y-2">
-                {visibleProspects.map((item) => (
-                  <li key={item} className="flex gap-2">
-                    <span className="text-blue" aria-hidden="true">
-                      •
-                    </span>
-                    <span className="text-sm leading-snug text-text-secondary">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card> : null}
-
-          {user?.email ? (
-            <ProductFeedbackForm
-              userId={user.id}
-              email={user.email}
-              checkId={check.id}
-              firstName={firstName || null}
-              targetRole={check.job_title}
-            />
-          ) : null}
-
-          <Card className="sm:border-navy/15 sm:bg-navy-tint/40 sm:shadow-glow">
-            <CardHeader className="border-b-navy/10 px-5 py-3">
-              <h2 className="text-base font-semibold text-text-primary">Recruiter Recommendation</h2>
-              <p className="mt-1 text-xs text-text-secondary">
-                {tier === 'power'
-                  ? 'An improved CV draft, cover letter, and recruiter message based on your feedback. Your CV draft may include placeholder figures (e.g. "X%") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with real numbers before submitting.'
-                  : 'An improved CV draft based on your feedback. Your CV draft may include placeholder figures (e.g. "X%") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with real numbers before submitting.'}
-              </p>
-            </CardHeader>
-            <CardContent className="px-5 py-4">
-              {tier === 'free' || tier === 'starter' ? (
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm text-text-secondary">
-                    Your improved CV draft, cover letter, and recruiter message are available on
-                    the Active and Power plans.
-                  </p>
-                  <Link to="/account/billing">
-                    <Button variant="primary" size="sm" className="shrink-0">
-                      Upgrade
-                    </Button>
-                  </Link>
-                </div>
-              ) : isLowFit ? (
-                <p className="text-sm text-text-secondary">
-                  This score suggests the role is not a strong match for your current CV, so we do
-                  not generate a CV draft, cover letter, or recruiter message for it. Look for a
-                  role that better fits your experience, then run a new Recruiter Check.
-                </p>
-              ) : documents ? (
-                <motion.div
-                  className="flex flex-wrap gap-2"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, ease: 'easeOut' }}
-                >
-                  <a href={documents.cv} target="_blank" rel="noreferrer">
-                    <Button variant="secondary" size="sm">
-                      CV.pdf
-                    </Button>
-                  </a>
-                  <p className="w-full basis-full text-xs text-text-secondary">
-                    This CV draft is watermarked "Draft, not for submission." Any area we found no
-                    supporting evidence for in your CV is marked with a placeholder figure (e.g.
-                    "X%"), replace it with your real numbers before sending it.
-                  </p>
-                  {documents.coverLetter ? (
-                    <a href={documents.coverLetter} target="_blank" rel="noreferrer">
-                      <Button variant="secondary" size="sm">
-                        Cover Letter.pdf
-                      </Button>
-                    </a>
-                  ) : null}
-                  {documents.emailForRecruiter ? (
-                    <a href={documents.emailForRecruiter} target="_blank" rel="noreferrer">
-                      <Button variant="secondary" size="sm">
-                        Email for Recruiter.pdf
-                      </Button>
-                    </a>
-                  ) : null}
-                  {documents.zip ? (
-                    <a href={documents.zip} target="_blank" rel="noreferrer">
-                      <Button size="sm">Download All</Button>
-                    </a>
-                  ) : null}
-                  {tier === 'active' ? (
-                    <Link to="/account/billing" className="ml-auto">
-                      <Button variant="secondary" size="sm">
+                {tier === 'free' || tier === 'starter' ? (
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm text-white/70">
+                      Your improved CV draft, cover letter, and recruiter message are available on
+                      the Active and Power plans.
+                    </p>
+                    <Link to="/account/billing">
+                      <Button variant="secondary" size="sm" className="shrink-0">
                         Upgrade
                       </Button>
                     </Link>
-                  ) : null}
-                </motion.div>
-              ) : (
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm text-text-secondary">
-                    {tier === 'power'
-                      ? 'Generate an improved CV draft, cover letter, and recruiter message for this application.'
-                      : 'Generate an improved CV draft for this application.'}
+                  </div>
+                ) : isLowFit ? (
+                  <p className="text-sm text-white/70">
+                    This score suggests the role is not a strong match for your current CV, so we do
+                    not generate a CV draft, cover letter, or recruiter message for it. Look for a
+                    role that better fits your experience, then run a new Recruiter Check.
                   </p>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className="shrink-0"
-                    disabled={generatingDocs}
-                    onClick={() => void handleGenerateDocuments()}
+                ) : documents ? (
+                  <motion.div
+                    className="flex flex-wrap gap-2"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeOut' }}
                   >
-                    {generatingDocs ? 'Generating...' : 'Generate My Recommendation'}
-                  </Button>
-                </div>
-              )}
-              {documentsError ? (
-                <Alert variant="error" className="mt-4">
-                  {documentsError}
-                </Alert>
-              ) : null}
-            </CardContent>
-          </Card>
+                    <a href={documents.cv} target="_blank" rel="noreferrer">
+                      <Button variant="secondary" size="sm">
+                        CV.pdf
+                      </Button>
+                    </a>
+                    <p className="w-full basis-full text-xs text-white/60">
+                      This CV draft is watermarked "Draft, not for submission." Any area we found no
+                      supporting evidence for in your CV is marked with a placeholder figure (e.g.
+                      "X%"), replace it with your real numbers before sending it.
+                    </p>
+                    {documents.coverLetter ? (
+                      <a href={documents.coverLetter} target="_blank" rel="noreferrer">
+                        <Button variant="secondary" size="sm">
+                          Cover Letter.pdf
+                        </Button>
+                      </a>
+                    ) : null}
+                    {documents.emailForRecruiter ? (
+                      <a href={documents.emailForRecruiter} target="_blank" rel="noreferrer">
+                        <Button variant="secondary" size="sm">
+                          Email for Recruiter.pdf
+                        </Button>
+                      </a>
+                    ) : null}
+                    {documents.zip ? (
+                      <a href={documents.zip} target="_blank" rel="noreferrer">
+                        <Button variant="secondary" size="sm">Download All</Button>
+                      </a>
+                    ) : null}
+                    {tier === 'active' ? (
+                      <Link to="/account/billing" className="ml-auto">
+                        <Button variant="secondary" size="sm">
+                          Upgrade
+                        </Button>
+                      </Link>
+                    ) : null}
+                  </motion.div>
+                ) : (
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm text-white/70">
+                      {tier === 'power'
+                        ? 'Generate an improved CV draft, cover letter, and recruiter message for this application.'
+                        : 'Generate an improved CV draft for this application.'}
+                    </p>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="shrink-0"
+                      disabled={generatingDocs}
+                      onClick={() => void handleGenerateDocuments()}
+                    >
+                      {generatingDocs ? 'Generating...' : 'Generate My Recommendation'}
+                    </Button>
+                  </div>
+                )}
+                {documentsError ? (
+                  <Alert variant="error" className="mt-4">
+                    {documentsError}
+                  </Alert>
+                ) : null}
+              </CardContent>
+            </Card>
 
-        </div>
-      ) : check.status === 'completed' ? (
-        <Alert variant="info">Feedback is not available for this check.</Alert>
-      ) : null}
+          </div>
+        ) : check.status === 'completed' ? (
+          <Alert variant="info" className="mt-5">Feedback is not available for this check.</Alert>
+        ) : null}
+      </div>
     </div>
   )
 }

@@ -5,6 +5,7 @@ import type { CheckStatus } from '@/types'
 interface StatusBadgeProps {
   status: CheckStatus
   className?: string
+  tone?: 'light' | 'dark'
 }
 
 const labels: Record<CheckStatus, string> = {
@@ -28,12 +29,19 @@ const pillColors: Record<CheckStatus, string> = {
   failed: 'bg-error/10 text-error',
 }
 
-export function StatusBadge({ status, className }: StatusBadgeProps) {
+const darkPillColors: Record<CheckStatus, string> = {
+  draft: 'bg-white/10 text-white/70',
+  processing: 'bg-blue-light/15 text-blue-light',
+  completed: 'bg-success/15 text-success',
+  failed: 'bg-error-light/15 text-error-light',
+}
+
+export function StatusBadge({ status, className, tone = 'light' }: StatusBadgeProps) {
   return (
     <span
       className={cn(
         'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold',
-        pillColors[status],
+        tone === 'dark' ? darkPillColors[status] : pillColors[status],
         className,
       )}
     >
