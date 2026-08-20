@@ -44,7 +44,7 @@ export function PricingCards({
             <div
               className={cn(
                 'relative flex h-full flex-col rounded-2xl border bg-surface p-4 transition-transform duration-200 hover:-translate-y-1',
-                isHighlighted ? 'border-2 border-navy shadow-elevated bg-navy-tint' : 'border-border-soft shadow-card',
+                isHighlighted ? 'border-2 border-navy shadow-glow bg-navy-tint' : 'border-border-soft shadow-card',
               )}
             >
               <div className="flex items-start justify-between gap-2">
