@@ -643,7 +643,7 @@ export function NewCheckPage() {
               {analyzing ? 'Checking...' : 'Check'}
             </Button>
             {!canCheck ? (
-              <p className="text-xs text-white/88">
+              <p className="text-xs text-white">
                 Add your CV and job description to continue.
               </p>
             ) : null}
