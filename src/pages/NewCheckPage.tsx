@@ -382,7 +382,7 @@ export function NewCheckPage() {
         <div className="mt-3">
           <PageHeader title="New Check" />
         </div>
-        <div className="relative mx-auto max-w-md overflow-hidden rounded-[20px] border border-white/10 bg-navy p-[20px] text-center shadow-glow sm:p-8">
+        <div className="relative mx-auto max-w-md overflow-hidden rounded-[20px] border border-white/20 bg-navy p-[20px] text-center shadow-glow sm:p-8">
           <div className="pointer-events-none absolute inset-0 bg-glow-navy" aria-hidden="true" />
           <div className="relative mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-light/15">
             <Sparkles className="h-5 w-5 text-blue-light" strokeWidth={2} />
@@ -412,7 +412,7 @@ export function NewCheckPage() {
         <div className="mt-3">
           <PageHeader title="New Check" />
         </div>
-        <div className="relative mx-auto max-w-md overflow-hidden rounded-[20px] border border-white/10 bg-navy p-[20px] text-center shadow-glow sm:p-8">
+        <div className="relative mx-auto max-w-md overflow-hidden rounded-[20px] border border-white/20 bg-navy p-[20px] text-center shadow-glow sm:p-8">
           <div className="pointer-events-none absolute inset-0 bg-glow-navy" aria-hidden="true" />
           <div className="relative mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-light/15">
             <Sparkles className="h-5 w-5 text-blue-light" strokeWidth={2} />
@@ -449,13 +449,13 @@ export function NewCheckPage() {
         />
       </div>
 
-      <div className="mx-auto max-w-2xl space-y-[16px] rounded-[20px] border border-white/10 bg-navy p-[16px] shadow-glow sm:space-y-6 sm:p-6 lg:max-w-[800px] lg:space-y-[32px] lg:p-[32px]">
+      <div className="mx-auto max-w-2xl space-y-[16px] rounded-[20px] border border-white/20 bg-navy p-[16px] shadow-glow sm:space-y-6 sm:p-6 lg:max-w-[800px] lg:space-y-[32px] lg:p-[32px]">
         <StepIndicator steps={['Upload', 'Analyse', 'Results']} currentIndex={analyzing ? 1 : 0} />
 
         {captureError ? <Alert variant="error">{captureError}</Alert> : null}
 
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-white/68">
+          <p className="text-xs font-semibold uppercase tracking-wide text-white">
             Job description
           </p>
           <div className="flex items-center justify-between">
@@ -565,8 +565,8 @@ export function NewCheckPage() {
           )}
         </div>
 
-        <div className="space-y-2 border-t border-white/10 pt-[16px] sm:pt-6 lg:pt-8">
-          <p className="text-xs font-semibold uppercase tracking-wide text-white/68">CV</p>
+        <div className="space-y-2 border-t border-white/20 pt-[16px] sm:pt-6 lg:pt-8">
+          <p className="text-xs font-semibold uppercase tracking-wide text-white">CV</p>
           <div className="flex items-center justify-between">
             <Label className="sr-only" htmlFor={cvInputMode === 'file' ? 'cv' : 'cvText'}>
               CV
@@ -628,7 +628,7 @@ export function NewCheckPage() {
           <p className="text-xs text-error-light">Could not save your changes</p>
         ) : null}
 
-        <div className="flex flex-col gap-3 border-t border-white/10 pt-[16px] sm:flex-row sm:items-center sm:justify-end sm:pt-6 lg:pt-8">
+        <div className="flex flex-col gap-3 border-t border-white/20 pt-[16px] sm:flex-row sm:items-center sm:justify-end sm:pt-6 lg:pt-8">
           <div className="flex w-full flex-col items-start gap-2 sm:w-auto sm:items-end">
             <Button
               type="button"

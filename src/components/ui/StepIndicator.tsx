@@ -30,7 +30,7 @@ export function StepIndicator({ steps, currentIndex, className }: StepIndicatorP
                   'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors duration-300',
                   state === 'done' && 'bg-blue-light text-navy',
                   state === 'current' && 'border-2 border-blue-light text-blue-light',
-                  state === 'upcoming' && 'border border-white/20 text-white/58',
+                  state === 'upcoming' && 'border border-white/35 text-white/70',
                 )}
               >
                 {state === 'done' ? <CheckIcon /> : index + 1}
@@ -38,7 +38,7 @@ export function StepIndicator({ steps, currentIndex, className }: StepIndicatorP
               <span
                 className={cn(
                   'truncate text-xs font-medium',
-                  state === 'upcoming' ? 'text-white/58' : 'text-white',
+                  state === 'upcoming' ? 'text-white/70' : 'text-white',
                 )}
               >
                 {step}
@@ -49,7 +49,7 @@ export function StepIndicator({ steps, currentIndex, className }: StepIndicatorP
                 aria-hidden="true"
                 className={cn(
                   'mx-2 h-px flex-1 transition-colors duration-300 sm:mx-3',
-                  state === 'done' ? 'bg-blue-light' : 'bg-white/15',
+                  state === 'done' ? 'bg-blue-light' : 'bg-white/30',
                 )}
               />
             ) : null}
