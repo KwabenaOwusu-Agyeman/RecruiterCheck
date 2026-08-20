@@ -253,56 +253,62 @@ export function AccountPage() {
         </Card>
       </div>
 
-      <Card className="mt-3 sm:mt-6">
-        <CardHeader className="py-2.5 sm:py-4">
-          <h2 className="text-base font-semibold text-text-primary sm:text-lg">Password</h2>
-        </CardHeader>
-        <CardContent className="py-3 sm:py-5">
-          <form
-            onSubmit={(event) => void handlePasswordChange(event)}
-            className="grid gap-3 sm:max-w-sm"
-          >
-            <div className="space-y-1">
-              <Label htmlFor="newPassword">New password</Label>
-              <PasswordInput
-                id="newPassword"
-                autoComplete="new-password"
-                minLength={6}
-                placeholder="••••••••"
-                value={newPassword}
-                onChange={(event) => setNewPassword(event.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="confirmNewPassword">Confirm new password</Label>
-              <PasswordInput
-                id="confirmNewPassword"
-                autoComplete="new-password"
-                minLength={6}
-                placeholder="••••••••"
-                value={confirmNewPassword}
-                onChange={(event) => setConfirmNewPassword(event.target.value)}
-                aria-invalid={passwordMismatch}
-              />
-              {passwordMismatch ? <p className="text-xs text-error">Passwords do not match.</p> : null}
-            </div>
-
-            {passwordMessage ? <Alert variant="success">{passwordMessage}</Alert> : null}
-            {passwordError ? <Alert variant="error">{passwordError}</Alert> : null}
-
-            <Button
-              type="submit"
-              size="sm"
-              className="w-full sm:w-auto"
-              disabled={
-                changingPassword || !newPassword || !confirmNewPassword || passwordMismatch
-              }
+      {/* Only shown for users who actually have a password to change —
+          signInWithOAuth (Google/LinkedIn) accounts never set one, and
+          offering to "update" a password they don't have either fails or
+          confusingly grants them a new, unrequested sign-in method. */}
+      {user?.app_metadata.provider === 'email' ? (
+        <Card className="mt-3 sm:mt-6">
+          <CardHeader className="py-2.5 sm:py-4">
+            <h2 className="text-base font-semibold text-text-primary sm:text-lg">Password</h2>
+          </CardHeader>
+          <CardContent className="py-3 sm:py-5">
+            <form
+              onSubmit={(event) => void handlePasswordChange(event)}
+              className="grid gap-3 sm:max-w-sm"
             >
-              {changingPassword ? 'Updating...' : 'Update Password'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+              <div className="space-y-1">
+                <Label htmlFor="newPassword">New password</Label>
+                <PasswordInput
+                  id="newPassword"
+                  autoComplete="new-password"
+                  minLength={6}
+                  placeholder="••••••••"
+                  value={newPassword}
+                  onChange={(event) => setNewPassword(event.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="confirmNewPassword">Confirm new password</Label>
+                <PasswordInput
+                  id="confirmNewPassword"
+                  autoComplete="new-password"
+                  minLength={6}
+                  placeholder="••••••••"
+                  value={confirmNewPassword}
+                  onChange={(event) => setConfirmNewPassword(event.target.value)}
+                  aria-invalid={passwordMismatch}
+                />
+                {passwordMismatch ? <p className="text-xs text-error">Passwords do not match.</p> : null}
+              </div>
+
+              {passwordMessage ? <Alert variant="success">{passwordMessage}</Alert> : null}
+              {passwordError ? <Alert variant="error">{passwordError}</Alert> : null}
+
+              <Button
+                type="submit"
+                size="sm"
+                className="w-full sm:w-auto"
+                disabled={
+                  changingPassword || !newPassword || !confirmNewPassword || passwordMismatch
+                }
+              >
+                {changingPassword ? 'Updating...' : 'Update Password'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card className="mt-3 border-error/25 sm:mt-6 sm:border-error/20 sm:bg-[#FCEFEF]/30 sm:shadow-none">
         <CardHeader className="border-b-error/10 py-2.5 sm:py-4">
