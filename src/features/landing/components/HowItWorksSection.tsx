@@ -60,7 +60,7 @@ export function HowItWorksSection() {
               customVariants={stepVariants}
               className="relative flex h-full flex-col rounded-[16px] border border-border-soft bg-surface p-[16px] shadow-card sm:p-5 lg:p-[24px]"
             >
-              <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-navy text-lg font-bold text-white">
+              <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-navy text-lg font-bold text-white shadow-glow-sm">
                 {Number(step.number)}
               </span>
               <h3 className="mt-3 text-base font-semibold text-text-primary sm:text-lg">

@@ -170,7 +170,7 @@ export function SeoLandingPage({
             <ol className="mt-8 space-y-5">
               {steps.map((step, index) => (
                 <li key={step} className="flex gap-4 text-text-secondary">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy text-sm font-semibold text-white">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy text-sm font-semibold text-white shadow-glow-sm">
                     {index + 1}
                   </span>
                   <span className="pt-1 leading-7">{step}</span>

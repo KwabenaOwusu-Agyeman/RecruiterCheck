@@ -43,8 +43,8 @@ export function PricingCards({
           <div key={plan.id} className="relative h-full">
             <div
               className={cn(
-                'relative flex h-full flex-col rounded-2xl border bg-navy p-4 transition-transform duration-200 hover:-translate-y-1 sm:p-5',
-                isHighlighted ? 'border-blue-light/40 shadow-glow' : 'border-white/10 shadow-card',
+                'relative flex h-full flex-col rounded-2xl border bg-navy p-4 shadow-glow transition-transform duration-200 hover:-translate-y-1 sm:p-5',
+                isHighlighted ? 'border-blue-light/40' : 'border-white/10',
               )}
             >
               <div className="flex items-center justify-between gap-2">

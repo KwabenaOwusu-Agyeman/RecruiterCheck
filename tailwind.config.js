@@ -29,6 +29,7 @@ export default {
         elevated: '0 20px 60px rgba(2,12,56,0.14)',
         hover: '0 12px 32px rgba(2,12,56,0.09)',
         glow: '0 1px 2px rgba(2,12,56,0.04), 0 30px 70px -18px rgba(25,74,159,0.28)',
+        'glow-sm': '0 1px 2px rgba(2,12,56,0.06), 0 8px 20px -6px rgba(25,74,159,0.35)',
       },
       backgroundImage: {
         'gradient-hero': 'linear-gradient(135deg, #F7F8FC 0%, #EEF2FA 100%)',
