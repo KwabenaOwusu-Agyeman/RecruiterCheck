@@ -132,11 +132,11 @@ export function ProductFeedbackForm({ userId, email, checkId, firstName, targetR
           <div className="mt-4 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-4 sm:flex-row sm:text-left">
             <div>
               <p className="text-sm font-semibold text-white">Know someone applying?</p>
-              <p className="mt-0.5 text-xs text-white/60">Help them think like a recruiter.</p>
+              <p className="mt-0.5 text-xs text-white/75">Help them think like a recruiter.</p>
             </div>
             <div className="w-full sm:w-auto">
               <Button variant="secondary" size="sm" className="w-full sm:w-auto" onClick={() => void handleShare()}>Share</Button>
-              {shareMessage ? <p className="mt-1 text-xs text-white/60" role="status">{shareMessage}</p> : null}
+              {shareMessage ? <p className="mt-1 text-xs text-white/75" role="status">{shareMessage}</p> : null}
             </div>
           </div>
         ) : null}
@@ -159,7 +159,7 @@ export function ProductFeedbackForm({ userId, email, checkId, firstName, targetR
         onChange={(event) => setComment(event.target.value)}
       />
       {comment.trim() && firstName ? (
-        <label className="mt-2.5 flex cursor-pointer items-start gap-2 text-xs leading-4 text-white/60">
+        <label className="mt-2.5 flex cursor-pointer items-start gap-2 text-xs leading-4 text-white/75">
           <input
             type="checkbox"
             checked={featureConsent}
@@ -172,7 +172,7 @@ export function ProductFeedbackForm({ userId, email, checkId, firstName, targetR
           </span>
         </label>
       ) : (
-        <p className="mt-1.5 text-xs text-white/60">Private unless you give permission.</p>
+        <p className="mt-1.5 text-xs text-white/75">Private unless you give permission.</p>
       )}
 
       {error ? (

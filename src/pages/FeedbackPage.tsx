@@ -177,7 +177,7 @@ export function FeedbackPage() {
     <div className="lg:mx-auto lg:max-w-[1000px]">
       <div className="rounded-[20px] border border-white/10 bg-navy p-4 shadow-glow sm:p-6 lg:p-8">
         <div className="border-b border-white/10 pb-5 sm:pb-7">
-          <p className="text-sm font-semibold text-white/60">
+          <p className="text-sm font-semibold text-white/75">
             {firstName ? `Hi ${firstName},` : 'Hi,'}
           </p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-[28px]">
@@ -199,7 +199,7 @@ export function FeedbackPage() {
             >
               <p className="text-[2.125rem] font-bold tracking-tight text-white sm:text-[2.625rem]">
                 <NumberFlow value={score} suffix="%" willChange />{' '}
-                <span className="text-base font-semibold text-white/50 sm:text-lg">
+                <span className="text-base font-semibold text-white/65 sm:text-lg">
                   Interview Probability
                 </span>
               </p>
@@ -207,11 +207,11 @@ export function FeedbackPage() {
                 {getScoreLabel(score)}
               </p>
               {feedback && buildSummarySentence(score, visibleImprovements) ? (
-                <p className="mt-2 max-w-xl text-sm text-white/70">
+                <p className="mt-2 max-w-xl text-sm text-white/85">
                   {buildSummarySentence(score, visibleImprovements)}
                 </p>
               ) : null}
-              <p className="mt-2 max-w-xl text-xs text-white/40">
+              <p className="mt-2 max-w-xl text-xs text-white/55">
                 Based on the information provided. Hiring decisions and competition may affect the outcome.
               </p>
             </motion.div>
@@ -270,7 +270,7 @@ export function FeedbackPage() {
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-sm text-white/60">
+                    <p className="text-sm text-white/75">
                       {score === 100
                         ? 'No material improvements identified.'
                         : 'No evidence based improvements identified.'}
@@ -283,7 +283,7 @@ export function FeedbackPage() {
             {visibleProspects.length > 0 ? <Card className={nestedCard}>
               <CardHeader className="border-b-white/10 px-5 py-3">
                 <h2 className="text-base font-semibold text-white">Prospects</h2>
-                <p className="mt-0.5 text-xs text-white/60">
+                <p className="mt-0.5 text-xs text-white/75">
                   What could improve your chances of getting an interview.
                 </p>
               </CardHeader>
@@ -294,7 +294,7 @@ export function FeedbackPage() {
                       <span className="text-blue-light" aria-hidden="true">
                         •
                       </span>
-                      <span className="text-sm leading-snug text-white/70">{item}</span>
+                      <span className="text-sm leading-snug text-white/85">{item}</span>
                     </li>
                   ))}
                 </ul>
@@ -314,7 +314,7 @@ export function FeedbackPage() {
             <Card className={highlightedNestedCard}>
               <CardHeader className="border-b-white/10 px-5 py-3">
                 <h2 className="text-base font-semibold text-white">Recruiter Recommendation</h2>
-                <p className="mt-1 text-xs text-white/60">
+                <p className="mt-1 text-xs text-white/75">
                   {tier === 'power'
                     ? 'An improved CV draft, cover letter, and recruiter message based on your feedback. Your CV draft may include placeholder figures (e.g. "X%") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with real numbers before submitting.'
                     : 'An improved CV draft based on your feedback. Your CV draft may include placeholder figures (e.g. "X%") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with real numbers before submitting.'}
@@ -323,7 +323,7 @@ export function FeedbackPage() {
               <CardContent className="px-5 py-4">
                 {tier === 'free' || tier === 'starter' ? (
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm text-white/70">
+                    <p className="text-sm text-white/85">
                       Your improved CV draft, cover letter, and recruiter message are available on
                       the Active and Power plans.
                     </p>
@@ -334,7 +334,7 @@ export function FeedbackPage() {
                     </Link>
                   </div>
                 ) : isLowFit ? (
-                  <p className="text-sm text-white/70">
+                  <p className="text-sm text-white/85">
                     This score suggests the role is not a strong match for your current CV, so we do
                     not generate a CV draft, cover letter, or recruiter message for it. Look for a
                     role that better fits your experience, then run a new Recruiter Check.
@@ -351,7 +351,7 @@ export function FeedbackPage() {
                         CV.pdf
                       </Button>
                     </a>
-                    <p className="w-full basis-full text-xs text-white/60">
+                    <p className="w-full basis-full text-xs text-white/75">
                       This CV draft is watermarked "Draft, not for submission." Any area we found no
                       supporting evidence for in your CV is marked with a placeholder figure (e.g.
                       "X%"), replace it with your real numbers before sending it.
@@ -385,7 +385,7 @@ export function FeedbackPage() {
                   </motion.div>
                 ) : (
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm text-white/70">
+                    <p className="text-sm text-white/85">
                       {tier === 'power'
                         ? 'Generate an improved CV draft, cover letter, and recruiter message for this application.'
                         : 'Generate an improved CV draft for this application.'}

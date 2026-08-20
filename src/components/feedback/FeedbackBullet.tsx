@@ -38,7 +38,7 @@ export function FeedbackBullet({ text, tone = 'light' }: { text: string; tone?: 
       <span className={isDark ? 'text-blue-light' : 'text-blue'} aria-hidden="true">
         •
       </span>
-      <span className={cn('text-sm leading-snug', isDark ? 'text-white/70' : 'text-text-secondary')}>
+      <span className={cn('text-sm leading-snug', isDark ? 'text-white/85' : 'text-text-secondary')}>
         <span className={cn('font-semibold', isDark ? 'text-white' : 'text-text-primary')}>{title}</span>
         {evidence ? ` ${evidence}` : null}
         {example ? <span className="block mt-1 italic">Example: &quot;{example}&quot;</span> : null}
