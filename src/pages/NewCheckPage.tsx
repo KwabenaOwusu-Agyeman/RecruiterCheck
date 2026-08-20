@@ -488,6 +488,7 @@ export function NewCheckPage() {
               value={jobDescription}
               onChange={(event) => handleJobDescriptionChange(event.target.value)}
               placeholder="Paste the full job description"
+              className="bg-surface-muted border-border-strong"
             />
           ) : jobInputMode === 'url' ? (
             <>
@@ -594,7 +595,7 @@ export function NewCheckPage() {
               helperText={
                 <>
                   <p>PDF or DOCX &middot; Maximum 10 MB</p>
-                  <AutoDeleteNotice />
+                  <AutoDeleteNotice tone="light" />
                 </>
               }
               onFileSelected={(file) => void handleFileChange(file)}
@@ -606,6 +607,7 @@ export function NewCheckPage() {
                 value={cvPastedText}
                 onChange={(event) => handleCvTextChange(event.target.value)}
                 placeholder="Paste the text of your CV here..."
+                className="bg-surface-muted border-border-strong"
               />
               <p className="text-xs text-white/88">
                 Paste your CV as plain text — saves automatically as you type.

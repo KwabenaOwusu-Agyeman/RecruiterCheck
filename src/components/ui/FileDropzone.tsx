@@ -127,21 +127,21 @@ export function FileDropzone({
     return (
       <div
         key={fileName}
-        className="file-selected-row flex items-center gap-3 rounded-[10px] border border-white/25 bg-white/[0.04] px-3 py-2.5"
+        className="file-selected-row flex items-center gap-3 rounded-[10px] border border-border-strong bg-surface-muted px-3 py-2.5"
       >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-light/15 text-blue-light">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-navy-tint text-navy">
           {busy ? <Spinner /> : <FileIcon />}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-white">{fileName}</p>
-          {busy ? <p className="text-xs text-white/85">{busyLabel}</p> : null}
+          <p className="truncate text-sm font-medium text-text-primary">{fileName}</p>
+          {busy ? <p className="text-xs text-text-secondary">{busyLabel}</p> : null}
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"
             onClick={openPicker}
             disabled={disabled}
-            className="min-h-[36px] rounded-lg px-2.5 text-xs font-medium text-blue-light transition-colors hover:underline disabled:pointer-events-none disabled:opacity-50"
+            className="min-h-[36px] rounded-lg px-2.5 text-xs font-medium text-blue transition-colors hover:underline disabled:pointer-events-none disabled:opacity-50"
           >
             Replace
           </button>
@@ -151,7 +151,7 @@ export function FileDropzone({
               onClick={onRemove}
               disabled={disabled}
               aria-label="Remove file"
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-white/85 transition-colors hover:bg-white/10 hover:text-error-light disabled:pointer-events-none disabled:opacity-50"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-background hover:text-error disabled:pointer-events-none disabled:opacity-50"
             >
               <TrashIcon />
             </button>
@@ -184,22 +184,22 @@ export function FileDropzone({
         onDrop={handleDrop}
         className={cn(
           'flex min-h-[112px] flex-col items-center justify-center gap-1.5 rounded-[10px] border-2 border-dashed px-4 py-6 text-center transition-colors duration-150',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-light focus-visible:ring-offset-2',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2',
           disabled ? 'pointer-events-none opacity-60' : 'cursor-pointer',
-          dragActive ? 'border-blue-light bg-blue-light/10' : 'border-white/30 bg-white/[0.03] hover:border-blue-light/50',
+          dragActive ? 'border-blue bg-navy-tint' : 'border-border-strong bg-surface-muted hover:border-navy/40',
         )}
       >
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white">
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-surface text-text-secondary shadow-card">
           {busy ? <Spinner /> : <UploadIcon />}
         </span>
-        <p className="text-sm font-medium text-white">{busy ? busyLabel : title}</p>
+        <p className="text-sm font-medium text-text-primary">{busy ? busyLabel : title}</p>
         {!busy ? (
-          <p className="text-xs text-white/85">
-            Drag and drop, or <span className="font-medium text-blue-light">browse</span>
+          <p className="text-xs text-text-secondary">
+            Drag and drop, or <span className="font-medium text-blue">browse</span>
           </p>
         ) : null}
       </div>
-      <div id={`${id}-helper`} className="mt-1.5 space-y-1 text-xs text-white/85">
+      <div id={`${id}-helper`} className="mt-1.5 space-y-1 text-xs text-text-secondary">
         {helperText}
       </div>
       {hiddenInput}
