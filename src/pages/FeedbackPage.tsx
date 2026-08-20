@@ -305,7 +305,7 @@ export function FeedbackPage() {
             />
           ) : null}
 
-          <Card className="sm:border-navy/15 sm:bg-navy-tint/40">
+          <Card className="sm:border-navy/15 sm:bg-navy-tint/40 sm:shadow-glow">
             <CardHeader className="border-b-navy/10 px-5 py-3">
               <h2 className="text-base font-semibold text-text-primary">Recruiter Recommendation</h2>
               <p className="mt-1 text-xs text-text-secondary">
@@ -334,7 +334,12 @@ export function FeedbackPage() {
                   role that better fits your experience, then run a new Recruiter Check.
                 </p>
               ) : documents ? (
-                <div className="flex flex-wrap gap-2">
+                <motion.div
+                  className="flex flex-wrap gap-2"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                >
                   <a href={documents.cv} target="_blank" rel="noreferrer">
                     <Button variant="secondary" size="sm">
                       CV.pdf
@@ -371,7 +376,7 @@ export function FeedbackPage() {
                       </Button>
                     </Link>
                   ) : null}
-                </div>
+                </motion.div>
               ) : (
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-text-secondary">
