@@ -35,90 +35,92 @@ export function ExampleCheckPage() {
         MyRecruiterCheck gives.
       </Alert>
 
-      <div className="mb-5 mt-3 rounded-[16px] border border-border-soft bg-gradient-surface p-[16px] shadow-card sm:p-8">
-        <p className="text-sm font-semibold text-text-primary">Example Recruiter Check</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-text-primary sm:text-[28px]">
-          {EXAMPLE_JOB_TITLE}
-        </h1>
-        <p className="mt-1 text-base font-semibold text-navy">{EXAMPLE_COMPANY_NAME}</p>
-        <p className="mt-1 text-sm text-text-secondary">Candidate: {EXAMPLE_CANDIDATE_NAME}</p>
+      <div className="mt-3 rounded-[20px] border border-white/20 bg-navy p-3 shadow-glow sm:p-4">
+        <div className="border-b border-white/10 pb-5 sm:pb-7">
+          <p className="text-sm font-semibold text-white/75">Example Recruiter Check</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-[28px]">
+            {EXAMPLE_JOB_TITLE}
+          </h1>
+          <p className="mt-1 text-base font-semibold text-blue-light">{EXAMPLE_COMPANY_NAME}</p>
+          <p className="mt-1 text-sm text-white/75">Candidate: {EXAMPLE_CANDIDATE_NAME}</p>
 
-        <div className="mt-6 border-t border-border pt-6">
-          <p className="text-4xl font-bold tracking-tight text-navy sm:text-5xl">
-            {score}%{' '}
-            <span className="text-lg font-semibold text-text-secondary sm:text-xl">
-              Interview Probability
-            </span>
-          </p>
-          <p className={cn('mt-2 text-lg font-semibold', getVerdictColor(score))}>
-            {getScoreLabel(score)}
-          </p>
+          <div className="mt-5 border-t border-white/10 pt-5">
+            <p className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+              {score}%{' '}
+              <span className="text-lg font-semibold text-white/65 sm:text-xl">
+                Interview Probability
+              </span>
+            </p>
+            <p className={cn('mt-2 text-lg font-semibold', getVerdictColor(score, 'dark'))}>
+              {getScoreLabel(score)}
+            </p>
+          </div>
         </div>
-      </div>
 
-      <div className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader className="px-5 py-3">
-              <h2 className="text-base font-semibold text-text-primary">Strengths</h2>
+        <div className="mt-5 space-y-4 sm:mt-7">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card tone="nested">
+              <CardHeader tone="nested" className="px-5 py-3">
+                <h2 className="text-base font-semibold text-white">Strengths</h2>
+              </CardHeader>
+              <CardContent className="px-5 py-4">
+                <ul className="space-y-3">
+                  {strengths.map((item) => (
+                    <FeedbackBullet key={item} text={item} tone="dark" />
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card tone="nested">
+              <CardHeader tone="nested" className="px-5 py-3">
+                <h2 className="text-base font-semibold text-white">Areas to Improve</h2>
+              </CardHeader>
+              <CardContent className="px-5 py-4">
+                <ul className="space-y-3">
+                  {improvements.map((item) => (
+                    <FeedbackBullet key={item} text={item} tone="dark" />
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card tone="nested">
+            <CardHeader tone="nested" className="px-5 py-3">
+              <h2 className="text-base font-semibold text-white">Prospects</h2>
+              <p className="mt-0.5 text-xs text-white/75">
+                What could improve your chances of getting an interview.
+              </p>
             </CardHeader>
             <CardContent className="px-5 py-4">
-              <ul className="space-y-3">
-                {strengths.map((item) => (
-                  <FeedbackBullet key={item} text={item} />
+              <ul className="space-y-2">
+                {prospects.map((item) => (
+                  <li key={item} className="flex gap-2">
+                    <span className="text-blue-light" aria-hidden="true">
+                      •
+                    </span>
+                    <span className="text-sm leading-snug text-white/85">{item}</span>
+                  </li>
                 ))}
               </ul>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="px-5 py-3">
-              <h2 className="text-base font-semibold text-text-primary">Areas to Improve</h2>
+          <Card tone="nested-highlighted">
+            <CardHeader tone="nested" className="px-5 py-3">
+              <h2 className="text-base font-semibold text-white">Recommendation</h2>
+              <p className="mt-1 text-xs text-white/75">
+                On a real check, this generates an improved CV draft, cover letter, and recruiter message
+                from your own information.
+              </p>
             </CardHeader>
-            <CardContent className="px-5 py-4">
-              <ul className="space-y-3">
-                {improvements.map((item) => (
-                  <FeedbackBullet key={item} text={item} />
-                ))}
-              </ul>
-            </CardContent>
           </Card>
         </div>
-
-        <Card>
-          <CardHeader className="px-5 py-3">
-            <h2 className="text-base font-semibold text-text-primary">Prospects</h2>
-            <p className="mt-0.5 text-xs text-text-secondary">
-              What could improve your chances of getting an interview.
-            </p>
-          </CardHeader>
-          <CardContent className="px-5 py-4">
-            <ul className="space-y-2">
-              {prospects.map((item) => (
-                <li key={item} className="flex gap-2">
-                  <span className="text-blue" aria-hidden="true">
-                    •
-                  </span>
-                  <span className="text-sm leading-snug text-text-secondary">{item}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-
-        <Card className="sm:border-navy/15 sm:bg-navy-tint/40">
-          <CardHeader className="border-b-navy/10 px-5 py-3">
-            <h2 className="text-base font-semibold text-text-primary">Recommendation</h2>
-            <p className="mt-1 text-xs text-text-secondary">
-              On a real check, this generates an improved CV draft, cover letter, and recruiter message
-              from your own information.
-            </p>
-          </CardHeader>
-        </Card>
       </div>
 
       <div className="mt-6 text-center">
-        <Button size="lg" onClick={handleCheckCta}>
+        <Button variant="accent" size="lg" onClick={handleCheckCta}>
           Check
         </Button>
       </div>

@@ -170,9 +170,6 @@ export function FeedbackPage() {
       : feedback.prospects
     : []
 
-  const nestedCard = 'border-white/10 bg-white/[0.04]'
-  const highlightedNestedCard = 'border-blue-light/30 bg-white/[0.04] shadow-glow'
-
   return (
     <div className="lg:mx-auto lg:max-w-[1000px]">
       <div className="rounded-[20px] border border-white/10 bg-navy p-4 shadow-glow sm:p-6 lg:p-8">
@@ -243,8 +240,8 @@ export function FeedbackPage() {
         {feedback ? (
           <div className="mt-5 space-y-5 sm:mt-7">
             <div className="grid gap-5 md:grid-cols-2">
-              {feedback.strengths.length > 0 ? <Card className={nestedCard}>
-                <CardHeader className="border-b-white/10 px-5 py-3">
+              {feedback.strengths.length > 0 ? <Card tone="nested">
+                <CardHeader tone="nested" className="px-5 py-3">
                   <h2 className="text-base font-semibold text-white">Strengths</h2>
                 </CardHeader>
                 <CardContent className="px-5 py-4">
@@ -256,8 +253,8 @@ export function FeedbackPage() {
                 </CardContent>
               </Card> : null}
 
-              <Card className={nestedCard}>
-                <CardHeader className="border-b-white/10 px-5 py-3">
+              <Card tone="nested">
+                <CardHeader tone="nested" className="px-5 py-3">
                   <h2 className="text-base font-semibold text-white">
                     {score === 100 ? 'Ready to Apply' : 'Areas to Improve'}
                   </h2>
@@ -280,8 +277,8 @@ export function FeedbackPage() {
               </Card>
             </div>
 
-            {visibleProspects.length > 0 ? <Card className={nestedCard}>
-              <CardHeader className="border-b-white/10 px-5 py-3">
+            {visibleProspects.length > 0 ? <Card tone="nested">
+              <CardHeader tone="nested" className="px-5 py-3">
                 <h2 className="text-base font-semibold text-white">Prospects</h2>
                 <p className="mt-0.5 text-xs text-white/75">
                   What could improve your chances of getting an interview.
@@ -311,8 +308,8 @@ export function FeedbackPage() {
               />
             ) : null}
 
-            <Card className={highlightedNestedCard}>
-              <CardHeader className="border-b-white/10 px-5 py-3">
+            <Card tone="nested-highlighted">
+              <CardHeader tone="nested" className="px-5 py-3">
                 <h2 className="text-base font-semibold text-white">Recommendation</h2>
                 <p className="mt-1 text-xs text-white/75">
                   {tier === 'power'

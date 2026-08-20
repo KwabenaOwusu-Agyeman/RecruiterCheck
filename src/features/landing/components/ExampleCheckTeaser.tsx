@@ -30,39 +30,37 @@ export function ExampleCheckTeaser() {
         </div>
 
         <div className="mx-auto mt-[24px] max-w-2xl sm:mt-8 lg:max-w-[900px]">
-          <Card className="relative overflow-hidden shadow-lg sm:shadow-glow">
-            <div className="h-1.5 bg-navy" aria-hidden="true" />
-
+          <Card tone="dark" className="relative overflow-hidden">
             <CardContent className="px-6 py-5 lg:grid lg:grid-cols-2 lg:gap-x-10 lg:gap-y-0 lg:p-[40px]">
-              <div className="lg:border-r lg:border-border-soft lg:pr-10">
-                <p className="text-sm font-semibold text-text-primary">{EXAMPLE_JOB_TITLE}</p>
-                <p className="text-sm font-semibold text-navy">{EXAMPLE_COMPANY_NAME}</p>
+              <div className="lg:border-r lg:border-white/10 lg:pr-10">
+                <p className="text-sm font-semibold text-white">{EXAMPLE_JOB_TITLE}</p>
+                <p className="text-sm font-semibold text-blue-light">{EXAMPLE_COMPANY_NAME}</p>
 
-                <p className="mt-4 text-3xl font-bold tracking-tight text-navy sm:text-4xl">
+                <p className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl">
                   <NumberFlow value={score} suffix="%" willChange />{' '}
-                  <span className="text-base font-semibold text-text-secondary sm:text-lg">
+                  <span className="text-base font-semibold text-white/65 sm:text-lg">
                     Interview Probability
                   </span>
                 </p>
-                <p className={cn('mt-1 text-base font-semibold', getVerdictColor(score))}>
+                <p className={cn('mt-1 text-base font-semibold', getVerdictColor(score, 'dark'))}>
                   {getScoreLabel(score)}
                 </p>
               </div>
 
               <div className="mt-[16px] grid gap-[16px] sm:mt-5 sm:gap-5 lg:mt-0 lg:pl-10">
                 <div>
-                  <h3 className="text-sm font-semibold text-text-primary">Strengths</h3>
+                  <h3 className="text-sm font-semibold text-white">Strengths</h3>
                   <ul className="mt-2 space-y-3">
                     {strengths.map((item) => (
-                      <FeedbackBullet key={item} text={item} />
+                      <FeedbackBullet key={item} text={item} tone="dark" />
                     ))}
                   </ul>
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-text-primary">Areas to Improve</h3>
+                  <h3 className="text-sm font-semibold text-white">Areas to Improve</h3>
                   <ul className="mt-2 space-y-3">
                     {[improvements[0], improvements[2]].map((item) => (
-                      <FeedbackBullet key={item} text={item} />
+                      <FeedbackBullet key={item} text={item} tone="dark" />
                     ))}
                   </ul>
                 </div>
