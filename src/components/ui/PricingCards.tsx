@@ -32,7 +32,7 @@ export function PricingCards({
   const currentRank = TIER_RANK[currentTier] ?? 0
 
   return (
-    <div className="mx-auto mt-3 grid gap-3 md:grid-cols-3 lg:max-w-[1080px]">
+    <div className="mx-auto mt-3 grid gap-3 md:grid-cols-3">
       {plans.map((plan) => {
         const isCurrent = currentTier === plan.id
         const isHighlighted = Boolean(plan.highlighted)
@@ -65,11 +65,11 @@ export function PricingCards({
                   </span>
                 ) : null}
               </div>
-              <h2 className="mt-1.5 text-xl font-bold text-white">{plan.name}</h2>
+              <h2 className="mt-1.5 text-lg font-bold text-white">{plan.name}</h2>
               <p className="mt-1 text-sm leading-snug text-white/60">{plan.description}</p>
 
-              <div className="mt-3 border-t border-white/10 pt-3">
-                <p className="text-4xl font-bold tracking-tight text-white">
+              <div className="mt-2.5 border-t border-white/10 pt-2.5">
+                <p className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
                   {plan.price}
                   {plan.interval ? (
                     <span className="text-base font-normal text-white/50">/{plan.interval}</span>
@@ -80,7 +80,7 @@ export function PricingCards({
                 ) : null}
               </div>
 
-              <ul className="mt-3 flex-1 space-y-2 border-t border-white/10 pt-3 text-sm text-white/90">
+              <ul className="mt-2.5 flex-1 grid grid-cols-1 gap-x-4 gap-y-1.5 border-t border-white/10 pt-2.5 text-sm text-white/90 sm:grid-cols-2">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex items-center gap-2">
                     <Check className="h-4 w-4 shrink-0 text-blue-light" strokeWidth={2.5} />
@@ -91,7 +91,7 @@ export function PricingCards({
                 ))}
               </ul>
 
-              <div className="mt-4">
+              <div className="mt-3">
                 {isCurrent && plan.id !== 'free' ? (
                   <Button
                     variant="secondary"
