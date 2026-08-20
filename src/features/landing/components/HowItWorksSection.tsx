@@ -41,7 +41,7 @@ export function HowItWorksSection() {
     >
       <Container className="py-[32px] sm:py-12 lg:py-[88px]">
         <div className="mx-auto max-w-xl text-center">
-          <h2 className="text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl lg:text-[32px]">
+          <h2 className="text-glow-navy text-2xl font-semibold tracking-tight text-navy sm:text-3xl lg:text-[32px]">
             How it works
           </h2>
         </div>
@@ -63,7 +63,7 @@ export function HowItWorksSection() {
               <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-navy text-lg font-bold text-white shadow-glow-sm">
                 {Number(step.number)}
               </span>
-              <h3 className="mt-3 text-base font-semibold text-text-primary sm:text-lg">
+              <h3 className="text-glow-navy mt-3 text-base font-semibold text-navy sm:text-lg">
                 {step.title}
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-text-secondary">

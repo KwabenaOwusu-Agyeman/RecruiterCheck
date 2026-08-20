@@ -8,7 +8,7 @@ interface BackLinkProps {
 }
 
 const linkClassName =
-  'inline-flex min-h-[44px] items-center gap-1.5 rounded-lg py-1 text-sm font-medium text-text-secondary transition-colors hover:text-text-primary touch-manipulation sm:min-h-0'
+  'text-glow-navy inline-flex min-h-[44px] items-center gap-1.5 rounded-lg py-1 text-sm font-medium text-navy transition-colors hover:text-navy/80 touch-manipulation sm:min-h-0'
 
 const icon = (
   <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">

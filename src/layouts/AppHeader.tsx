@@ -45,10 +45,8 @@ export function AppHeader() {
                   to={item.to}
                   aria-current={isActive ? 'page' : undefined}
                   className={cn(
-                    'rounded-lg px-3.5 py-2 text-sm transition-colors duration-150',
-                    isActive
-                      ? 'bg-navy-tint font-medium text-navy'
-                      : 'text-text-secondary hover:text-text-primary',
+                    'text-glow-navy rounded-lg px-3.5 py-2 text-sm text-navy transition-colors duration-150',
+                    isActive ? 'bg-navy-tint font-medium' : 'hover:text-navy/70',
                   )}
                 >
                   {item.label}
@@ -59,7 +57,7 @@ export function AppHeader() {
               to="/checks/new"
               aria-current={isNewCheckActive(location.pathname) ? 'page' : undefined}
               className={cn(
-                'ml-2 inline-flex items-center gap-1 rounded-lg bg-navy px-3 py-1.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-navy/90',
+                'ml-2 inline-flex items-center gap-1 rounded-lg bg-navy px-3 py-1.5 text-sm font-medium text-white shadow-glow-sm transition-colors duration-150 hover:bg-navy/90',
                 isNewCheckActive(location.pathname) && 'ring-2 ring-navy/30 ring-offset-2',
               )}
             >
