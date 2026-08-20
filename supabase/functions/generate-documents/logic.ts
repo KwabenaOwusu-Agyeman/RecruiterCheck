@@ -251,21 +251,30 @@ export function validateDocuments(raw: RawDocuments): RawDocuments {
     throw new Error('Document content did not look like English')
   }
 
-  // A "X%"/"[metric]" style placeholder is only ever legitimate inside a
-  // CV experience bullet the model has explicitly disclosed as one via
+  // A "X%"/bracketed style placeholder is only ever legitimate inside a CV
+  // experience bullet the model has explicitly disclosed as one via
   // is_placeholder (the sanctioned case-(C) bullet) — never in the summary,
   // cover letter, or recruiter message, which must stay submittable as is.
+  //
+  // Deliberately one directional: an unflagged bullet containing placeholder
+  // vocabulary is still rejected (undisclosed leakage of example text), but
+  // a flagged bullet is NOT required to contain that vocabulary. Not every
+  // case-(C) area to improve is a missing fact/metric/credential — some ask
+  // for a genuine attitude or framing statement (e.g. "express enjoyment in
+  // this kind of work"), which has no natural bracketed placeholder and
+  // shouldn't need one. is_placeholder itself (cross-checked against the
+  // case-(C) count below, and rendered italic + under the page watermark)
+  // is the disclosure mechanism; a rigid text-pattern requirement on top of
+  // it only produced repeated real failures — confirmed live, twice — where
+  // the model correctly flagged a bullet but couldn't force it into the
+  // "X%"/bracket shape, exhausted all retries, and the user saw a 500.
   for (const entry of experience) {
     const rawBullets = Array.isArray(entry.bullets) ? entry.bullets : []
     for (const bullet of rawBullets) {
       const text = stripDashes((bullet?.text ?? '').trim())
       if (!text) continue
       const flagged = Boolean(bullet?.is_placeholder)
-      const looksPlaceholder = containsPlaceholder(text)
-      if (flagged && !looksPlaceholder) {
-        throw new Error('Bullet marked as a placeholder does not use the required placeholder vocabulary (e.g. "X%")')
-      }
-      if (!flagged && looksPlaceholder) {
+      if (!flagged && containsPlaceholder(text)) {
         throw new Error('CV bullet contains an unfilled example placeholder (e.g. "X%") without being marked as one')
       }
     }

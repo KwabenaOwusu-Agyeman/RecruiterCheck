@@ -116,13 +116,22 @@ test('validateDocuments accepts a qualitative bracketed placeholder (no metric) 
   assert.ok(placeholderBullet!.text.includes('[relevant hospitality or language training course]'))
 })
 
-test('validateDocuments rejects a bullet marked is_placeholder that has no placeholder vocabulary', () => {
-  const raw = baseRaw()
+// Some case-(C) improvements ask for a genuine attitude or framing
+// statement (e.g. "express enjoyment of this kind of work"), not a missing
+// fact — those have no natural bracketed placeholder and shouldn't need
+// one. is_placeholder itself (cross-checked against the case-(C) count
+// elsewhere) is the disclosure signal; the text isn't required to match any
+// particular pattern. Confirmed live: requiring bracket/"X%" vocabulary on
+// every flagged bullet made the model exhaust all retries and 500 whenever
+// an improvement was attitudinal rather than factual.
+test('validateDocuments accepts a bullet marked is_placeholder with no placeholder vocabulary at all', () => {
+  const raw = baseRaw({ improvement_classifications: [{ case: 'B' }, { case: 'C' }] })
   raw.tailored_cv.experience[0].bullets.push({
-    text: 'Led the migration of core services to a new cloud provider.',
+    text: 'Finds genuine satisfaction in creating clean, welcoming spaces that guests can relax in.',
     is_placeholder: true,
   })
-  assert.throws(() => validateDocuments(raw), /placeholder/)
+  const result = validateDocuments(raw)
+  assert.equal(result.tailored_cv.experience[0].bullets.filter((bullet) => bullet.is_placeholder).length, 1)
 })
 
 test('validateDocuments still rejects a placeholder in the professional summary', () => {
