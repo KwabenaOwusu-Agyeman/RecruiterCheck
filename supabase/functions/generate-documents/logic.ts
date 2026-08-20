@@ -1,11 +1,20 @@
 // Pure, network-free logic split out of index.ts so it can be unit tested
 // (via `npx tsx`/Deno test) without needing the OpenAI call or Deno runtime.
 
+export interface ExperienceBullet {
+  text: string
+  // Only ever true for a bullet the case-(C) prompt instruction deliberately
+  // composed to hold space for a feedback area the candidate's real CV has
+  // no evidence for — uses the app's own placeholder vocabulary (e.g. "X%")
+  // on purpose, watermarked and disclosed rather than being real content.
+  is_placeholder: boolean
+}
+
 export interface ExperienceEntry {
   title: string
   company_location: string
   dates: string
-  bullets: string[]
+  bullets: ExperienceBullet[]
 }
 
 export interface EducationEntry {
@@ -232,11 +241,26 @@ export function validateDocuments(raw: RawDocuments): RawDocuments {
   }
 
   // A "X%"/"[metric]" style placeholder is only ever legitimate inside a
-  // feedback example, never in a final document the candidate submits
-  // as is — catch the model carrying one over verbatim from the areas to
-  // improve context instead of either using a real CV figure or omitting it.
-  const experienceBulletsText = experience.flatMap((entry) => (Array.isArray(entry.bullets) ? entry.bullets : [])).join(' ')
-  const placeholderCheckText = [professionalSummary, experienceBulletsText, introParagraph, ...bodyParagraphs, conclusionParagraph, messageBody].join(' ')
+  // CV experience bullet the model has explicitly disclosed as one via
+  // is_placeholder (the sanctioned case-(C) bullet) — never in the summary,
+  // cover letter, or recruiter message, which must stay submittable as is.
+  for (const entry of experience) {
+    const rawBullets = Array.isArray(entry.bullets) ? entry.bullets : []
+    for (const bullet of rawBullets) {
+      const text = stripDashes((bullet?.text ?? '').trim())
+      if (!text) continue
+      const flagged = Boolean(bullet?.is_placeholder)
+      const looksPlaceholder = containsPlaceholder(text)
+      if (flagged && !looksPlaceholder) {
+        throw new Error('Bullet marked as a placeholder does not use the required placeholder vocabulary (e.g. "X%")')
+      }
+      if (!flagged && looksPlaceholder) {
+        throw new Error('CV bullet contains an unfilled example placeholder (e.g. "X%") without being marked as one')
+      }
+    }
+  }
+
+  const placeholderCheckText = [professionalSummary, introParagraph, ...bodyParagraphs, conclusionParagraph, messageBody].join(' ')
   if (containsPlaceholder(placeholderCheckText)) {
     throw new Error('Document contains an unfilled example placeholder (e.g. "X%") instead of real or omitted content')
   }
@@ -253,8 +277,11 @@ export function validateDocuments(raw: RawDocuments): RawDocuments {
         company_location: (entry.company_location ?? '').trim(),
         dates: (entry.dates ?? '').trim(),
         bullets: (Array.isArray(entry.bullets) ? entry.bullets : [])
-          .map((bullet) => stripDashes(bullet.trim()))
-          .filter(Boolean)
+          .map((bullet) => ({
+            text: stripDashes((bullet?.text ?? '').trim()),
+            is_placeholder: Boolean(bullet?.is_placeholder),
+          }))
+          .filter((bullet) => bullet.text.length > 0)
           .slice(0, MAX_BULLETS_PER_ENTRY),
       })),
       education: education.slice(0, MAX_EDUCATION_ENTRIES).map((entry) => ({

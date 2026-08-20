@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 import { Buffer } from 'node:buffer'
 import { zipSync } from 'npm:fflate@0.8.2'
 import mammoth from 'npm:mammoth@1.8.0'
-import { PDFDocument, PDFFont, StandardFonts, rgb } from 'npm:pdf-lib@1.17.1'
+import { PDFDocument, PDFFont, PDFPage, StandardFonts, degrees, rgb } from 'npm:pdf-lib@1.17.1'
 import { extractText as extractPdfText, getDocumentProxy } from 'npm:unpdf@0.12.1'
 import {
   validateDocuments,
@@ -405,11 +405,11 @@ async function callOpenAI(
 ): Promise<RawDocuments> {
   const systemPrompt = `You are an expert career writer helping a candidate present their strongest possible application for a specific role. Using their CV and the job description, produce three documents. Write as if the candidate is seeing their application the way a recruiter would, and use the recruiter's own assessment (strengths, areas to improve, and prospects) to sharpen the framing — lean into the strengths, and address the improvement areas constructively without being defensive. Do not invent experience, employers, dates, or credentials that are not in the original CV.
 
-MyRecruiterCheck diagnoses first; these documents implement that diagnosis only where the candidate's own CV supports it. For every recruiter identified area to improve listed below, decide which case it falls into before writing: (A) the original CV already contains the supporting fact (a number, a scope, an outcome) needed to address it, so rewrite the relevant part of the tailored_cv, cover_letter, or recruiter_message to surface that fact clearly and prominently; (B) the original CV has related detail but not the specific number or outcome the improvement calls for, so strengthen the wording, structure, or prioritization without adding any number or outcome that was not stated; (C) the original CV has no relevant evidence at all for that improvement, so leave it unaddressed in the documents rather than inventing supporting evidence. Never force every area to improve into the documents. Improve the presentation of the candidate's history, never the history itself. The prospects below are read only context on how competitive the candidate is and what would most increase interview odds — they may inform tone and emphasis but must never be copied as findings and must never introduce a claim the CV does not support.
+MyRecruiterCheck diagnoses first; these documents implement that diagnosis only where the candidate's own CV supports it. For every recruiter identified area to improve listed below, decide which case it falls into before writing: (A) the original CV already contains the supporting fact (a number, a scope, an outcome) needed to address it, so rewrite the relevant part of the tailored_cv, cover_letter, or recruiter_message to surface that fact clearly and prominently; (B) the original CV has related detail but not the specific number or outcome the improvement calls for, so strengthen the wording, structure, or prioritization without adding any number or outcome that was not stated; (C) the original CV has no relevant evidence at all for that improvement: for cover_letter and recruiter_message, leave it unaddressed exactly as before — never invent supporting evidence in those two documents. For tailored_cv only, this case must still be reflected: add one new experience bullet to the most relevant entry that names the improvement in concrete terms but replaces every unverifiable number or outcome with the literal placeholder vocabulary this app expects — for example: "Implemented a new onboarding system that led to a X% increase in efficiency in X months." Use literal tokens like "X%", "X months", "X years" (never bracketed text like "[percentage]"). Set that bullet's is_placeholder field to true. Never set is_placeholder true on any other bullet, and never use this placeholder vocabulary anywhere outside a bullet marked is_placeholder: true. Never force every area to improve into cover_letter or recruiter_message — only tailored_cv gets this forced treatment for case (C). Improve the presentation of the candidate's history, never the history itself, except for the sanctioned placeholder bullet described above. The prospects below are read only context on how competitive the candidate is and what would most increase interview odds — they may inform tone and emphasis but must never be copied as findings and must never introduce a claim the CV does not support.
 
 Write all three documents entirely in English, regardless of what language the job description or CV are written in.
 
-Every document must be usable exactly as generated — the candidate should be able to submit this package to a real application with zero edits. Never write a bracketed or unfilled placeholder (e.g. "[Company Address]", "[Hiring Manager Name]", "[Recruiter's Name]") anywhere in any of the three documents. If a piece of information isn't available, omit it gracefully rather than leaving a placeholder for the candidate to fill in. This also applies to the recruiter identified areas to improve below: any illustrative placeholder they might imply (such as a generic "X%" style figure) is never a value to insert, quote, or otherwise carry into the generated documents, only real figures already present in the original CV may appear.
+Every document must be usable exactly as generated — the candidate should be able to submit this package to a real application with zero edits. Never write a bracketed or unfilled placeholder (e.g. "[Company Address]", "[Hiring Manager Name]", "[Recruiter's Name]") anywhere in any of the three documents. If a piece of information isn't available, omit it gracefully rather than leaving a placeholder for the candidate to fill in. This also applies to the recruiter identified areas to improve below: any illustrative placeholder they might imply (such as a generic "X%" style figure) is never a value to insert, quote, or otherwise carry into the generated documents, only real figures already present in the original CV may appear — with one narrow exception: a tailored_cv experience bullet explicitly marked is_placeholder: true is permitted, and required by the case (C) instruction above, to use that placeholder vocabulary verbatim. This exception applies to nothing else: not the professional summary, not any other CV field, not the cover letter, not the recruiter message, which must all still be submittable with zero edits.
 
 1. tailored_cv: a structured, tailored CV for this specific role.
    - full_name: extract exactly from the original CV.
@@ -417,7 +417,7 @@ Every document must be usable exactly as generated — the candidate should be a
    - section_labels: the four standard resume section headings: "Professional Summary", "Work Experience", "Education", "Languages".
    - professional_summary: required, never empty, and never more than exactly 3 sentences, written in third person without "I". This is entirely about the candidate, never the employer, so never mention the company name or reference "this role" or "this employer" anywhere in it. Follow an Evidence, Strength, Value framework: sentence 1 states concrete evidence of who the candidate is and their relevant experience (role, years, domain); sentence 2 names the core strength or pattern that evidence demonstrates; sentence 3 states the broader professional value or impact that strength delivers, described generically (e.g. "driving measurable revenue growth" or "building trusted client relationships"), not tied to any specific company. Keep each sentence short and direct.
    - experience: include up to 4 roles from the original CV, most relevant/recent first, favoring relevance to this job but leaning toward including more roles rather than fewer so the page fills out properly, the way a real one page resume does. If the candidate's original CV only has 2 or 3 roles total, include all of them (never invent a role that is not in the original CV) and instead add more depth: more bullets per entry (up to the 4 bullet limit) and more concrete detail drawn from the original CV, so the page still reads as full and substantive rather than sparse. Each entry needs a concise, tailored title, "company, location" (comma separated, not a dash), "dates" (preserve month and year exactly as given in the original CV when the original CV includes the month, e.g. "January 2023 to Present", not just the year), and 3-4 short bullets rewritten to foreground what matters for this role.
-   - Absolute rule, more important than filling space: every fact in every bullet, including every number, percentage, dollar amount, count, or timeframe, must be traceable to something actually stated in the original CV. When you add depth or an extra bullet to make an entry richer, that added material must be a rephrasing, reprioritization, or elaboration of details already in the original CV text, e.g. surfacing a scope word like "team of 4" or a tool name that was mentioned but not emphasized. It must never be a new number or outcome you composed to sound more impressive, even a plausible sounding one like "achieving a 25% conversion rate" that was never in the source. If the original CV genuinely has no more real detail to draw out for a bullet, keep that bullet as is rather than padding it with an invented figure.
+   - Absolute rule, more important than filling space: every fact in every bullet, including every number, percentage, dollar amount, count, or timeframe, must be traceable to something actually stated in the original CV, with the single exception of a bullet you've marked is_placeholder: true, whose entire purpose is holding space for an area to improve the CV has no real evidence for. When you add depth or an extra bullet to make an entry richer, that added material must be a rephrasing, reprioritization, or elaboration of details already in the original CV text, e.g. surfacing a scope word like "team of 4" or a tool name that was mentioned but not emphasized. It must never be a new number or outcome you composed to sound more impressive, even a plausible sounding one like "achieving a 25% conversion rate" that was never in the source. If the original CV genuinely has no more real detail to draw out for a bullet, keep that bullet as is rather than padding it with an invented figure. Every bullet you write, including this placeholder bullet, must include the is_placeholder field.
    - Use the recruiter identified areas to improve provided below to actively guide how you rewrite the experience bullets, not just as background context: if an area to improve calls for more quantification, rework the relevant bullets to lead with whatever metrics, numbers, or concrete outcomes already exist in the original CV instead of burying them; if it calls for elaborating on a specific experience entry, give that entry more depth, more bullets (up to the 4 bullet limit), and more concrete detail than the others, drawing out relevant specifics from the original CV that were previously omitted or compressed. The goal is a fuller, richer looking entry for whichever role the feedback points to, not just a reworded one. Never invent a metric, outcome, or detail that is not actually present in the original CV — only re-prioritize, re-word, expand on, and bring forward what is already true.
    - education: only the most relevant 1-2 entries, with "dates" preserving month and year exactly as given in the original CV when the original CV includes the month.
    - languages: only include if present in the original CV, otherwise an empty array.
@@ -447,7 +447,7 @@ Every document must be usable exactly as generated — the candidate should be a
 
 Never use hyphens, en dashes, or em dashes anywhere in any of the three documents (no "-", "–", or "—"). This is an absolute rule with no exceptions. This includes dates ("2020-2023"), job titles, and compound words and phrases that would default to a hyphen in English (such as "well-known", "data-driven", "problem-solving", "self-motivated", "detail-oriented", "cross-functional", "well-being", "ad-hoc", "up-to-date") — always write these as two separate words instead (e.g. "well known", "data driven", "problem solving"), and use a comma or "to" in date ranges (e.g. "2020 to 2023"). Before finalizing your answer, reread every sentence you wrote and remove any hyphen, en dash, or em dash you find.
 
-Finally, self check your own output and populate new_claims_introduced: a JSON array of every number, percentage, currency amount, count, timeframe, employer name, job title, certification, or skill that appears anywhere in the tailored_cv, cover_letter, or recruiter_message above but is not a direct restatement, reordering, or rephrasing of something that actually appears in the original CV text provided below. This is an honest self audit, not a formality — go back through every bullet, every sentence, and every figure you wrote and verify it against the original CV. If you are not certain a specific detail traces back to the original CV, include it here rather than omitting it. Return an empty array only if, after this careful check, truly nothing you wrote goes beyond what the original CV actually states.`
+Finally, self check your own output and populate new_claims_introduced: a JSON array of every number, percentage, currency amount, count, timeframe, employer name, job title, certification, or skill that appears anywhere in the tailored_cv, cover_letter, or recruiter_message above but is not a direct restatement, reordering, or rephrasing of something that actually appears in the original CV text provided below. This is an honest self audit, not a formality — go back through every bullet, every sentence, and every figure you wrote and verify it against the original CV. If you are not certain a specific detail traces back to the original CV, include it here rather than omitting it. Do not include the content of any bullet you marked is_placeholder: true in new_claims_introduced — that field is for undisclosed fabrication, and a placeholder bullet is disclosed via is_placeholder instead. Everything else you wrote, including every other CV bullet, must still go through this same audit as before. Return an empty array only if, after this careful check, truly nothing you wrote goes beyond what the original CV actually states (aside from any disclosed is_placeholder bullets).`
 
   const userPrompt = `Job title: ${context.jobTitle ?? 'Not specified'}
 Company: ${context.companyName ?? 'Not specified'}
@@ -513,7 +513,18 @@ ${cvText}`
                         title: { type: 'string' },
                         company_location: { type: 'string' },
                         dates: { type: 'string' },
-                        bullets: { type: 'array', items: { type: 'string' } },
+                        bullets: {
+                          type: 'array',
+                          items: {
+                            type: 'object',
+                            properties: {
+                              text: { type: 'string' },
+                              is_placeholder: { type: 'boolean' },
+                            },
+                            required: ['text', 'is_placeholder'],
+                            additionalProperties: false,
+                          },
+                        },
                       },
                       required: ['title', 'company_location', 'dates', 'bullets'],
                       additionalProperties: false,
@@ -652,7 +663,7 @@ type DrawLine = {
  */
 function layoutCv(
   cv: TailoredCv,
-  fonts: { regular: PDFFont; bold: PDFFont },
+  fonts: { regular: PDFFont; bold: PDFFont; italic: PDFFont },
   pageWidth: number,
   margin: number,
   scale: number,
@@ -726,7 +737,9 @@ function layoutCv(
       addLeft(entry.title, jobTitleSize, fonts.bold, BLUE)
       if (entry.company_location) addLeft(entry.company_location, bodySize, fonts.regular, BLACK)
       addLeft(entry.dates || ' ', bodySize, fonts.regular, BLACK, gapTiny)
-      entry.bullets.forEach((bullet) => addBullet(bullet, bodySize, fonts.regular, BLACK))
+      entry.bullets.forEach((bullet) =>
+        addBullet(bullet.text, bodySize, bullet.is_placeholder ? fonts.italic : fonts.regular, BLACK),
+      )
       if (lines.length > 0) lines[lines.length - 1].advance += index < cv.experience.length - 1 ? gapMedium : gapSection
       totalHeight += index < cv.experience.length - 1 ? gapMedium : gapSection
     })
@@ -752,10 +765,36 @@ function layoutCv(
   return { lines, totalHeight }
 }
 
+// Draws a large, semi-transparent diagonal stamp across the page. This CV
+// may contain case-(C) placeholder bullets (see layoutCv/is_placeholder) —
+// unverified content the candidate must fill in with real numbers — so the
+// document must never look submission-ready before that's done.
+function drawDraftWatermark(page: PDFPage, font: PDFFont, pageWidth: number, pageHeight: number) {
+  const watermarkText = 'DRAFT — NOT FOR SUBMISSION'
+  const watermarkSize = 40
+  const watermarkColor = rgb(0.55, 0.55, 0.55)
+  const watermarkWidth = font.widthOfTextAtSize(watermarkText, watermarkSize)
+  const angleRad = (45 * Math.PI) / 180
+
+  page.drawText(watermarkText, {
+    // pdf-lib rotates around (x, y) as the pivot, not the text's visual
+    // center — offset the start point by half the text width along the
+    // rotation direction so the rotated run lands centered on the page.
+    x: pageWidth / 2 - (watermarkWidth / 2) * Math.cos(angleRad),
+    y: pageHeight / 2 - (watermarkWidth / 2) * Math.sin(angleRad),
+    size: watermarkSize,
+    font,
+    color: watermarkColor,
+    opacity: 0.22,
+    rotate: degrees(45),
+  })
+}
+
 async function renderCvPdf(cv: TailoredCv): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create()
   const regular = await pdfDoc.embedFont(StandardFonts.Helvetica)
   const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+  const italic = await pdfDoc.embedFont(StandardFonts.HelveticaOblique)
 
   const pageWidth = 612
   const pageHeight = 792
@@ -763,10 +802,10 @@ async function renderCvPdf(cv: TailoredCv): Promise<Uint8Array> {
   const usableHeight = pageHeight - margin * 2
 
   const scales = [1, 0.92, 0.85, 0.78, 0.72, 0.66]
-  let chosen = layoutCv(cv, { regular, bold }, pageWidth, margin, scales[scales.length - 1])
+  let chosen = layoutCv(cv, { regular, bold, italic }, pageWidth, margin, scales[scales.length - 1])
 
   for (const scale of scales) {
-    const attempt = layoutCv(cv, { regular, bold }, pageWidth, margin, scale)
+    const attempt = layoutCv(cv, { regular, bold, italic }, pageWidth, margin, scale)
     if (attempt.totalHeight <= usableHeight) {
       chosen = attempt
       break
@@ -782,6 +821,8 @@ async function renderCvPdf(cv: TailoredCv): Promise<Uint8Array> {
     page.drawText(line.text, { x: line.x, y: cursorY, size: line.size, font: line.font, color: line.color })
     cursorY -= line.advance - line.size * 1.05
   }
+
+  drawDraftWatermark(page, bold, pageWidth, pageHeight)
 
   return pdfDoc.save()
 }

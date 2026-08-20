@@ -303,8 +303,8 @@ export function FeedbackPage() {
               <h2 className="text-base font-semibold text-text-primary">Recruiter Recommendation</h2>
               <p className="mt-1 text-xs text-text-secondary">
                 {tier === 'power'
-                  ? 'An improved CV draft, cover letter, and recruiter message based on your feedback.'
-                  : 'An improved CV draft based on your feedback.'}
+                  ? 'An improved CV draft, cover letter, and recruiter message based on your feedback. Your CV draft may include placeholder figures (e.g. "X%") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with real numbers before submitting.'
+                  : 'An improved CV draft based on your feedback. Your CV draft may include placeholder figures (e.g. "X%") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with real numbers before submitting.'}
               </p>
             </CardHeader>
             <CardContent className="px-5 py-4">
@@ -333,6 +333,11 @@ export function FeedbackPage() {
                       CV.pdf
                     </Button>
                   </a>
+                  <p className="w-full basis-full text-xs text-text-secondary">
+                    This CV draft is watermarked "Draft, not for submission." Any area we found no
+                    supporting evidence for in your CV is marked with a placeholder figure (e.g.
+                    "X%"), replace it with your real numbers before sending it.
+                  </p>
                   {documents.coverLetter ? (
                     <a href={documents.coverLetter} target="_blank" rel="noreferrer">
                       <Button variant="secondary" size="sm">

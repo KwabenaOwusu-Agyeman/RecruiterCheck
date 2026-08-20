@@ -28,8 +28,11 @@ function baseRaw(overrides: Partial<RawDocuments> = {}): RawDocuments {
           company_location: 'Acme, Amsterdam',
           dates: 'January 2021 to Present',
           bullets: [
-            'Led a sales team to exceed annual revenue targets by 15 percent.',
-            'Designed and implemented a new onboarding workflow to improve operational efficiency.',
+            { text: 'Led a sales team to exceed annual revenue targets by 15 percent.', is_placeholder: false },
+            {
+              text: 'Designed and implemented a new onboarding workflow to improve operational efficiency.',
+              is_placeholder: false,
+            },
           ],
         },
       ],
@@ -62,7 +65,8 @@ function baseRaw(overrides: Partial<RawDocuments> = {}): RawDocuments {
 // TEST 1 — existing metric is preserved through validation.
 test('validateDocuments preserves a real metric already present in the CV bullet', () => {
   const result = validateDocuments(baseRaw())
-  assert.ok(result.tailored_cv.experience[0].bullets[0].includes('15 percent'))
+  assert.ok(result.tailored_cv.experience[0].bullets[0].text.includes('15 percent'))
+  assert.equal(result.tailored_cv.experience[0].bullets[0].is_placeholder, false)
 })
 
 // TEST 2 / safeguard — the model self reporting an invented fact fails validation.
@@ -75,10 +79,38 @@ test('validateDocuments rejects output that self reports a fabricated claim', ()
 
 // Placeholder safeguard — an "X%" style placeholder leaking into a final
 // document (e.g. carried over from a feedback example) must fail validation
-// rather than ship to the candidate.
-test('validateDocuments rejects a placeholder like "X%" in a CV bullet', () => {
+// rather than ship to the candidate, unless it's an explicitly disclosed
+// case-(C) bullet (see the tests below for that sanctioned path).
+test('validateDocuments rejects a placeholder like "X%" in a CV bullet not marked is_placeholder', () => {
   const raw = baseRaw()
-  raw.tailored_cv.experience[0].bullets[0] = 'Increased retention by X% within X months.'
+  raw.tailored_cv.experience[0].bullets[0] = { text: 'Increased retention by X% within X months.', is_placeholder: false }
+  assert.throws(() => validateDocuments(raw), /placeholder/)
+})
+
+test('validateDocuments accepts a CV bullet explicitly marked is_placeholder with placeholder vocabulary', () => {
+  const raw = baseRaw()
+  raw.tailored_cv.experience[0].bullets.push({
+    text: 'Implemented a new onboarding system that led to a X% increase in efficiency in X months.',
+    is_placeholder: true,
+  })
+  const result = validateDocuments(raw)
+  const placeholderBullet = result.tailored_cv.experience[0].bullets.find((bullet) => bullet.is_placeholder)
+  assert.ok(placeholderBullet)
+  assert.ok(placeholderBullet!.text.includes('X%'))
+})
+
+test('validateDocuments rejects a bullet marked is_placeholder that has no placeholder vocabulary', () => {
+  const raw = baseRaw()
+  raw.tailored_cv.experience[0].bullets.push({
+    text: 'Led the migration of core services to a new cloud provider.',
+    is_placeholder: true,
+  })
+  assert.throws(() => validateDocuments(raw), /placeholder/)
+})
+
+test('validateDocuments still rejects a placeholder in the professional summary', () => {
+  const raw = baseRaw()
+  raw.tailored_cv.professional_summary = 'Backend engineer who increased retention by X% within X months.'
   assert.throws(() => validateDocuments(raw), /placeholder/)
 })
 
