@@ -1,3 +1,4 @@
+import { Plus } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { Container } from '@/components/ui/Container'
 import { cn } from '@/utils/cn'
@@ -5,21 +6,20 @@ import { BRAND } from '@/lib/constants'
 
 const navItems = [
   { to: '/checks', label: 'My Checks' },
-  { to: '/checks/new', label: 'New Check' },
   { to: '/account', label: 'Account' },
 ] as const
 
 function isNavItemActive(pathname: string, to: string): boolean {
-  if (to === '/checks/new') {
-    return pathname === '/checks/new' || /^\/checks\/[^/]+\/edit$/.test(pathname)
-  }
   if (to === '/checks') {
     return (
-      !isNavItemActive(pathname, '/checks/new') &&
-      (pathname === '/checks' || /^\/checks\/[^/]+$/.test(pathname))
+      !isNewCheckActive(pathname) && (pathname === '/checks' || /^\/checks\/[^/]+$/.test(pathname))
     )
   }
   return pathname.startsWith(to)
+}
+
+function isNewCheckActive(pathname: string): boolean {
+  return pathname === '/checks/new' || /^\/checks\/[^/]+\/edit$/.test(pathname)
 }
 
 export function AppHeader() {
@@ -55,6 +55,17 @@ export function AppHeader() {
                 </Link>
               )
             })}
+            <Link
+              to="/checks/new"
+              aria-current={isNewCheckActive(location.pathname) ? 'page' : undefined}
+              className={cn(
+                'ml-2 inline-flex items-center gap-1.5 rounded-lg bg-navy px-3.5 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-navy/90',
+                isNewCheckActive(location.pathname) && 'ring-2 ring-navy/30 ring-offset-2',
+              )}
+            >
+              <Plus className="h-4 w-4" strokeWidth={2.5} />
+              New Check
+            </Link>
           </nav>
         </div>
       </Container>
