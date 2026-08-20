@@ -1,4 +1,7 @@
+import { useRef } from 'react'
+import type { Variants } from 'motion/react'
 import { Container } from '@/components/ui/Container'
+import { TimelineContent } from '@/components/ui/timeline-animation'
 
 const steps = [
   {
@@ -18,10 +21,22 @@ const steps = [
   },
 ] as const
 
+const stepVariants: Variants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4, delay: i * 0.12, ease: 'easeOut' },
+  }),
+}
+
 export function HowItWorksSection() {
+  const sectionRef = useRef<HTMLElement>(null)
+
   return (
     <section
       id="how-it-works"
+      ref={sectionRef}
       className="scroll-mt-[88px] border-b border-border bg-surface"
     >
       <Container className="py-[32px] sm:py-12 lg:py-[88px]">
@@ -36,9 +51,13 @@ export function HowItWorksSection() {
             className="pointer-events-none absolute left-[16.5%] right-[16.5%] top-[52px] hidden h-px bg-border-strong lg:block"
             aria-hidden="true"
           />
-          {steps.map((step) => (
-            <li
+          {steps.map((step, index) => (
+            <TimelineContent
               key={step.number}
+              as="li"
+              animationNum={index}
+              timelineRef={sectionRef}
+              customVariants={stepVariants}
               className="relative flex h-full flex-col rounded-[16px] border border-border-soft bg-surface p-[16px] shadow-card sm:p-5 lg:p-[24px]"
             >
               <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-navy text-lg font-bold text-white">
@@ -50,7 +69,7 @@ export function HowItWorksSection() {
               <p className="mt-2 text-sm leading-relaxed text-text-secondary">
                 {step.description}
               </p>
-            </li>
+            </TimelineContent>
           ))}
         </ol>
       </Container>
