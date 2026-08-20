@@ -315,7 +315,7 @@ export function AccountPage() {
             </p>
             <Button
               size="sm"
-              className="shrink-0 border-error bg-error text-white hover:bg-error/90"
+              className="shrink-0 !border-error !bg-error text-white hover:!bg-error/90"
               disabled={deleting}
               onClick={() => setConfirmingDelete(true)}
             >
