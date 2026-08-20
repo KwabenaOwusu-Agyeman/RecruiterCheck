@@ -17,6 +17,7 @@ function test(name: string, fn: () => void) {
 function baseRaw(overrides: Partial<RawDocuments> = {}): RawDocuments {
   return {
     new_claims_introduced: [],
+    improvement_classifications: [{ case: 'B' }],
     tailored_cv: {
       full_name: 'Jamie Rivera',
       contact_line: 'Amsterdam, Netherlands',
@@ -99,6 +100,22 @@ test('validateDocuments accepts a CV bullet explicitly marked is_placeholder wit
   assert.ok(placeholderBullet!.text.includes('X%'))
 })
 
+// Not every area to improve is metric shaped (e.g. a missing language
+// course or certification has no natural "X%" figure) — a bracketed
+// description of the missing qualitative detail must also be accepted,
+// not just the numeric "X%"/"X months" tokens.
+test('validateDocuments accepts a qualitative bracketed placeholder (no metric) marked is_placeholder', () => {
+  const raw = baseRaw({ improvement_classifications: [{ case: 'B' }, { case: 'C' }] })
+  raw.tailored_cv.experience[0].bullets.push({
+    text: 'Completed a [relevant hospitality or language training course] to strengthen guest communication skills.',
+    is_placeholder: true,
+  })
+  const result = validateDocuments(raw)
+  const placeholderBullet = result.tailored_cv.experience[0].bullets.find((bullet) => bullet.is_placeholder)
+  assert.ok(placeholderBullet)
+  assert.ok(placeholderBullet!.text.includes('[relevant hospitality or language training course]'))
+})
+
 test('validateDocuments rejects a bullet marked is_placeholder that has no placeholder vocabulary', () => {
   const raw = baseRaw()
   raw.tailored_cv.experience[0].bullets.push({
@@ -112,6 +129,31 @@ test('validateDocuments still rejects a placeholder in the professional summary'
   const raw = baseRaw()
   raw.tailored_cv.professional_summary = 'Backend engineer who increased retention by X% within X months.'
   assert.throws(() => validateDocuments(raw), /placeholder/)
+})
+
+// Reproduces the real bug: the model classified an area to improve as case C
+// (no CV evidence) but silently produced no placeholder bullet for it — that
+// used to pass validation since nothing invalid was written, it was just
+// omitted. improvement_classifications makes that omission checkable.
+test('validateDocuments rejects a case C classification with no matching placeholder bullet', () => {
+  const raw = baseRaw({ improvement_classifications: [{ case: 'B' }, { case: 'C' }] })
+  assert.throws(() => validateDocuments(raw), /case C/)
+})
+
+test('validateDocuments accepts a case C classification backed by a placeholder bullet', () => {
+  const raw = baseRaw({ improvement_classifications: [{ case: 'B' }, { case: 'C' }] })
+  raw.tailored_cv.experience[0].bullets.push({
+    text: 'Completed training that led to a X% improvement in guest satisfaction over X months.',
+    is_placeholder: true,
+  })
+  const result = validateDocuments(raw)
+  assert.equal(result.tailored_cv.experience[0].bullets.filter((bullet) => bullet.is_placeholder).length, 1)
+})
+
+test('validateDocuments does not force a placeholder bullet for case D (not CV relevant) areas', () => {
+  const raw = baseRaw({ improvement_classifications: [{ case: 'D' }, { case: 'D' }] })
+  const result = validateDocuments(raw)
+  assert.equal(result.tailored_cv.experience[0].bullets.filter((bullet) => bullet.is_placeholder).length, 0)
 })
 
 test('validateDocuments rejects a placeholder in the cover letter body', () => {

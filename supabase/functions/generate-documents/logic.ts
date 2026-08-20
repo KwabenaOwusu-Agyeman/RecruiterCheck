@@ -57,11 +57,16 @@ export interface RecruiterMessage {
   sign_off: string
 }
 
+export interface ImprovementClassification {
+  case: 'A' | 'B' | 'C' | 'D'
+}
+
 export interface RawDocuments {
   tailored_cv: TailoredCv
   cover_letter: CoverLetter
   recruiter_message: RecruiterMessage
   new_claims_introduced: string[]
+  improvement_classifications: ImprovementClassification[]
 }
 
 // Defensive caps on top of the prompt's own instructions, so the shrink-to-fit
@@ -141,11 +146,17 @@ export function stripDashes(text: string): string {
 }
 
 // Placeholder patterns that are only ever legitimate inside a feedback
-// "Example: ..." clause, never in a final generated document — this catches
-// the model reusing an illustrative placeholder (e.g. "X%", "X months")
-// straight out of the recruiter identified areas to improve instead of
-// either using a real figure from the CV or omitting it.
-const PLACEHOLDER_PATTERN = /\bX\s?%|\bX\s?(percent|months?|years?|customers?|clients?|hours?|days?|weeks?)\b|\[(number|metric|percentage|team size|product|amount|figure)\]|€\s?X\b|\$\s?X\b/i
+// "Example: ..." clause, or inside a CV bullet explicitly marked
+// is_placeholder: true (see validateDocuments) — never anywhere else in a
+// final generated document. Two shapes are recognized: the classic "X%"
+// style token (for a metric a case-(C) bullet can't verify), and any short
+// bracketed phrase (for a qualitative gap that has no natural metric, e.g.
+// "[a relevant language course]" for a missing credential). The bracket
+// form is intentionally generic rather than an enumerated word list, since
+// case-(C) areas to improve cover a much wider range of missing evidence
+// than percentages alone (training, certifications, language level, tools,
+// soft skills) and a fixed word list can't anticipate all of them.
+const PLACEHOLDER_PATTERN = /\bX\s?%|\bX\s?(percent|months?|years?|customers?|clients?|hours?|days?|weeks?)\b|€\s?X\b|\$\s?X\b|\[[^[\]]{1,60}\]/i
 
 export function containsPlaceholder(text: string): boolean {
   return PLACEHOLDER_PATTERN.test(text)
@@ -260,6 +271,27 @@ export function validateDocuments(raw: RawDocuments): RawDocuments {
     }
   }
 
+  // The model can silently skip the forced case-(C) placeholder bullet
+  // without tripping any check above (nothing invalid was written, it just
+  // omitted something) — this was a real gap: a case reported case-(C) with
+  // no corresponding is_placeholder bullet anywhere on the CV, and shipped
+  // clean. improvement_classifications is the model's own mechanical record
+  // of its A/B/C/D decisions (required by the schema), so cross-check it
+  // against what was actually produced and retry (via generateDocuments'
+  // loop) if fewer placeholder bullets exist than case-(C) entries demand.
+  const classifications = Array.isArray(raw.improvement_classifications) ? raw.improvement_classifications : []
+  const caseCCount = classifications.filter((entry) => entry?.case === 'C').length
+  const placeholderBulletCount = experience.reduce(
+    (count, entry) =>
+      count + (Array.isArray(entry.bullets) ? entry.bullets.filter((bullet) => bullet?.is_placeholder).length : 0),
+    0,
+  )
+  if (placeholderBulletCount < caseCCount) {
+    throw new Error(
+      `Model classified ${caseCCount} area(s) to improve as case C but only produced ${placeholderBulletCount} placeholder bullet(s)`,
+    )
+  }
+
   const placeholderCheckText = [professionalSummary, introParagraph, ...bodyParagraphs, conclusionParagraph, messageBody].join(' ')
   if (containsPlaceholder(placeholderCheckText)) {
     throw new Error('Document contains an unfilled example placeholder (e.g. "X%") instead of real or omitted content')
@@ -267,6 +299,7 @@ export function validateDocuments(raw: RawDocuments): RawDocuments {
 
   return {
     new_claims_introduced: [],
+    improvement_classifications: classifications,
     tailored_cv: {
       full_name: fullName,
       contact_line: contactLine,
