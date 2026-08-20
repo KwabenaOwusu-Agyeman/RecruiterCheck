@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { LegalLayout, Section } from '@/components/legal/LegalLayout'
 import { usePageMeta } from '@/hooks/usePageMeta'
+import { FREE_TIER_LIFETIME_LIMIT } from '@/services/checkService'
 
 const FAQ_ITEMS = [
   {
@@ -28,6 +29,23 @@ const FAQ_ITEMS = [
     answer:
       'The core of every check is your Interview Probability, Strengths, Areas to Improve, and Prospects. If you upgrade and score 61 or above, you can also generate a Recruiter Recommendation, an improved CV draft, cover letter, and recruiter message built from your existing information.',
   },
+  {
+    question: 'What do I get on the Free plan?',
+    answer: `${FREE_TIER_LIFETIME_LIMIT} Recruiter Check, including your Interview Probability and Recruiter Feedback.`,
+  },
+  {
+    question: 'What is the difference between Starter, Active, and Power?',
+    answer:
+      "All plans include your Interview Probability Score and Recruiter Feedback. Active adds an improved CV draft for each check. Power adds the full Recruiter Recommendation, an improved CV draft, cover letter, and recruiter message, plus access to your full check history (Starter and Active only show your most recent check). Documents are only generated for a check scored 61 or above, since a lower score means the role is not a strong match. Every plan's check allotment resets weekly with no rollover.",
+  },
+  {
+    question: 'Can I cancel my subscription anytime?',
+    answer: 'Yes. Manage or cancel your subscription anytime from the billing portal, no notice period required.',
+  },
+  {
+    question: 'Is my payment information secure?',
+    answer: 'Payments are processed securely by Stripe. We never see or store your card details.',
+  },
 ] as const
 
 export function FaqPage() {
@@ -39,7 +57,7 @@ export function FaqPage() {
   })
 
   return (
-    <LegalLayout title="Frequently Asked Questions" updated="12 August 2026">
+    <LegalLayout title="Frequently Asked Questions" updated="20 August 2026">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Alert } from '@/components/ui/Alert'
 import { BackLink } from '@/components/ui/BackLink'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -7,30 +7,7 @@ import { PricingCards } from '@/components/ui/PricingCards'
 import { PRICING_PLANS } from '@/lib/constants'
 import { trackEvent } from '@/lib/analytics'
 import { useAuth } from '@/hooks/useAuth'
-import {
-  createCheckoutSession,
-  createPortalSession,
-  FREE_TIER_LIFETIME_LIMIT,
-} from '@/services/checkService'
-
-const BILLING_FAQ = [
-  {
-    question: 'What do I get on the Free plan?',
-    answer: `${FREE_TIER_LIFETIME_LIMIT} Recruiter Check, including your Interview Probability and Recruiter Feedback.`,
-  },
-  {
-    question: 'What is the difference between Starter, Active, and Power?',
-    answer: 'All plans include your Interview Probability Score and Recruiter Feedback. Active adds an improved CV draft for each check. Power adds the full Recruiter Recommendation, an improved CV draft, cover letter, and recruiter message, plus access to your full check history (Starter and Active only show your most recent check). Documents are only generated for a check scored 61 or above, since a lower score means the role is not a strong match. Every plan\'s check allotment resets weekly with no rollover.',
-  },
-  {
-    question: 'Can I cancel anytime?',
-    answer: 'Yes. Manage or cancel your subscription anytime from the billing portal, no notice period required.',
-  },
-  {
-    question: 'Is my payment information secure?',
-    answer: 'Payments are processed securely by Stripe. We never see or store your card details.',
-  },
-] as const
+import { createCheckoutSession, createPortalSession } from '@/services/checkService'
 
 export function BillingPage() {
   const { profile, refreshProfile } = useAuth()
@@ -183,18 +160,12 @@ export function BillingPage() {
           <span>Payments securely processed by Stripe. We never see or store your card details.</span>
         </div>
         <span>Cancel anytime from your billing portal.</span>
-      </div>
-
-      <div className="mx-auto mt-10 max-w-2xl lg:max-w-[720px]">
-        <h2 className="text-center text-lg font-semibold text-text-primary sm:text-xl">Billing FAQ</h2>
-        <div className="mt-4 divide-y divide-border rounded-[16px] border border-border-soft bg-surface shadow-card">
-          {BILLING_FAQ.map(({ question, answer }) => (
-            <div key={question} className="px-5 py-4">
-              <p className="text-sm font-semibold text-text-primary">{question}</p>
-              <p className="mt-1 text-sm text-text-secondary">{answer}</p>
-            </div>
-          ))}
-        </div>
+        <span>
+          Have questions?{' '}
+          <Link to="/faq" className="font-medium text-blue hover:underline">
+            Read the FAQ
+          </Link>
+        </span>
       </div>
     </>
   )
