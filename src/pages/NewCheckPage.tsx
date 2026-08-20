@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Sparkles } from 'lucide-react'
 import { Alert } from '@/components/ui/Alert'
 import { BackLink } from '@/components/ui/BackLink'
 import { Button } from '@/components/ui/Button'
@@ -381,11 +382,15 @@ export function NewCheckPage() {
         <div className="mt-3">
           <PageHeader title="New Check" />
         </div>
-        <div className="mx-auto max-w-md rounded-[16px] border border-border-soft bg-surface p-[20px] text-center shadow-card sm:p-8">
-          <h2 className="text-base font-semibold text-text-primary">
+        <div className="relative mx-auto max-w-md overflow-hidden rounded-[16px] border border-border-soft bg-surface p-[20px] text-center shadow-glow sm:p-8">
+          <div className="pointer-events-none absolute inset-0 bg-glow-navy" aria-hidden="true" />
+          <div className="relative mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-navy-tint">
+            <Sparkles className="h-5 w-5 text-navy" strokeWidth={2} />
+          </div>
+          <h2 className="relative mt-4 text-base font-semibold text-text-primary">
             You've used your free Check
           </h2>
-          <p className="mt-2 text-sm text-text-secondary">
+          <p className="relative mt-2 text-sm text-text-secondary">
             Nice work getting this far. Upgrade to keep checking applications before you apply.
           </p>
           <div className="mt-6 flex justify-center">
@@ -407,11 +412,15 @@ export function NewCheckPage() {
         <div className="mt-3">
           <PageHeader title="New Check" />
         </div>
-        <div className="mx-auto max-w-md rounded-[16px] border border-border-soft bg-surface p-[20px] text-center shadow-card sm:p-8">
-          <h2 className="text-base font-semibold text-text-primary">
+        <div className="relative mx-auto max-w-md overflow-hidden rounded-[16px] border border-border-soft bg-surface p-[20px] text-center shadow-glow sm:p-8">
+          <div className="pointer-events-none absolute inset-0 bg-glow-navy" aria-hidden="true" />
+          <div className="relative mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-navy-tint">
+            <Sparkles className="h-5 w-5 text-navy" strokeWidth={2} />
+          </div>
+          <h2 className="relative mt-4 text-base font-semibold text-text-primary">
             You've used all your checks this week
           </h2>
-          <p className="mt-2 text-sm text-text-secondary">
+          <p className="relative mt-2 text-sm text-text-secondary">
             You're on a roll. Upgrade and keep going.
           </p>
           <div className="mt-6 flex justify-center">
