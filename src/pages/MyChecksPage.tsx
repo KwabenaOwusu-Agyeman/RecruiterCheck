@@ -137,19 +137,19 @@ export function MyChecksPage() {
               <table className="min-w-full divide-y divide-white/10">
                 <thead>
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-white/70 lg:px-6">
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-white lg:px-6">
                       Role
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-white/70">
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-white">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-white/70">
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-white">
                       Score
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-white/70">
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-white">
                       Date
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-white/70 lg:px-6">
+                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-white lg:px-6">
                       Actions
                     </th>
                   </tr>
@@ -162,7 +162,7 @@ export function MyChecksPage() {
                           {check.job_title || 'Untitled role'}
                         </div>
                         {check.company_name ? (
-                          <div className="text-sm text-white/70">{check.company_name}</div>
+                          <div className="text-sm text-white">{check.company_name}</div>
                         ) : null}
                       </td>
                       <td className="px-4 py-4 lg:py-5">
@@ -171,7 +171,7 @@ export function MyChecksPage() {
                       <td className="px-4 py-4 lg:py-5">
                         <ScoreBadge score={check.interview_probability_score} tone="dark" />
                       </td>
-                      <td className="px-4 py-4 text-sm text-white/70 lg:py-5">
+                      <td className="px-4 py-4 text-sm text-white lg:py-5">
                         {formatDate(check.created_at)}
                       </td>
                       <td className="px-4 py-4 lg:px-6 lg:py-5">
@@ -207,13 +207,13 @@ export function MyChecksPage() {
                       {check.job_title || 'Untitled role'}
                     </div>
                     {check.company_name ? (
-                      <div className="truncate text-sm text-white/70">
+                      <div className="truncate text-sm text-white">
                         {check.company_name}
                       </div>
                     ) : null}
                     <div className="mt-1 flex items-center gap-2">
                       <StatusBadge status={check.status} tone="dark" />
-                      <span className="text-xs text-white/70">
+                      <span className="text-xs text-white">
                         {formatDate(check.created_at)}
                       </span>
                     </div>

@@ -13,7 +13,7 @@ export function Logo({ className }: LogoProps) {
       className={cn('inline-flex items-center gap-2.5 text-text-primary', className)}
       aria-label={`${BRAND.name} home`}
     >
-      <span className="text-[18px] font-extrabold tracking-tight text-navy sm:text-xl">
+      <span className="text-glow-navy text-[18px] font-extrabold tracking-tight text-navy sm:text-xl">
         {BRAND.name}
       </span>
     </Link>

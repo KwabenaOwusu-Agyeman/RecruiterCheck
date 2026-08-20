@@ -13,7 +13,7 @@ export function HeroSection() {
       <div className="pointer-events-none absolute inset-0 bg-glow-navy" aria-hidden="true" />
       <Container className="relative py-[40px] sm:py-16 lg:py-[96px]">
         <div className="mx-auto max-w-2xl text-center lg:max-w-[800px]">
-          <p className="mb-4 text-xl font-bold text-navy sm:text-2xl">{BRAND.tagline}</p>
+          <p className="text-glow-navy mb-4 text-xl font-bold text-navy sm:text-2xl">{BRAND.tagline}</p>
           <h1 className="text-4xl font-semibold tracking-tight text-text-primary sm:text-5xl lg:text-[54px] lg:leading-[1.1]">
             If you were the recruiter, would you invite yourself to an interview?
           </h1>
