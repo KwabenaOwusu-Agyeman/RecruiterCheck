@@ -80,7 +80,7 @@ export function PricingCards({
                 ) : null}
               </div>
 
-              <ul className="mt-2.5 flex-1 grid grid-cols-1 gap-x-4 gap-y-1.5 border-t border-white/10 pt-2.5 text-sm text-white/90 sm:grid-cols-2">
+              <ul className="mt-2.5 flex-1 space-y-1.5 border-t border-white/10 pt-2.5 text-sm text-white/90">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex items-center gap-2">
                     <Check className="h-4 w-4 shrink-0 text-blue-light" strokeWidth={2.5} />
