@@ -390,7 +390,7 @@ export function NewCheckPage() {
           <h2 className="relative mt-4 text-base font-semibold text-white">
             You've used your free Check
           </h2>
-          <p className="relative mt-2 text-sm text-white/75">
+          <p className="relative mt-2 text-sm text-white/88">
             Nice work getting this far. Upgrade to keep checking applications before you apply.
           </p>
           <div className="relative mt-6 flex justify-center">
@@ -420,7 +420,7 @@ export function NewCheckPage() {
           <h2 className="relative mt-4 text-base font-semibold text-white">
             You've used all your checks this week
           </h2>
-          <p className="relative mt-2 text-sm text-white/75">
+          <p className="relative mt-2 text-sm text-white/88">
             You're on a roll. Upgrade and keep going.
           </p>
           <div className="relative mt-6 flex justify-center">
@@ -455,7 +455,7 @@ export function NewCheckPage() {
         {captureError ? <Alert variant="error">{captureError}</Alert> : null}
 
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-white/50">
+          <p className="text-xs font-semibold uppercase tracking-wide text-white/68">
             Job description
           </p>
           <div className="flex items-center justify-between">
@@ -512,7 +512,7 @@ export function NewCheckPage() {
                   {extractingJobUrl ? 'Reading...' : 'Extract'}
                 </Button>
               </div>
-              <p className="text-xs text-white/75">Paste a link to a public job posting.</p>
+              <p className="text-xs text-white/88">Paste a link to a public job posting.</p>
               {jobUrlError ? (
                 <Alert variant="error">
                   <p>{jobUrlError}</p>
@@ -566,7 +566,7 @@ export function NewCheckPage() {
         </div>
 
         <div className="space-y-2 border-t border-white/10 pt-[16px] sm:pt-6 lg:pt-8">
-          <p className="text-xs font-semibold uppercase tracking-wide text-white/50">CV</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-white/68">CV</p>
           <div className="flex items-center justify-between">
             <Label className="sr-only" htmlFor={cvInputMode === 'file' ? 'cv' : 'cvText'}>
               CV
@@ -607,12 +607,12 @@ export function NewCheckPage() {
                 onChange={(event) => handleCvTextChange(event.target.value)}
                 placeholder="Paste the text of your CV here..."
               />
-              <p className="text-xs text-white/75">
+              <p className="text-xs text-white/88">
                 Paste your CV as plain text — saves automatically as you type.
               </p>
               <AutoDeleteNotice />
               {cvFileName === PASTED_CV_FILE_NAME ? (
-                <p className="text-sm text-white/75">CV text saved</p>
+                <p className="text-sm text-white/88">CV text saved</p>
               ) : null}
             </>
           )}
@@ -621,9 +621,9 @@ export function NewCheckPage() {
         {error ? <Alert variant="error">{error}</Alert> : null}
 
         {saveState === 'saving' ? (
-          <p className="text-xs text-white/55">Saving...</p>
+          <p className="text-xs text-white/85">Saving...</p>
         ) : saveState === 'saved' ? (
-          <p className="text-xs text-white/55">Saved</p>
+          <p className="text-xs text-white/85">Saved</p>
         ) : saveState === 'error' ? (
           <p className="text-xs text-error-light">Could not save your changes</p>
         ) : null}
@@ -641,7 +641,7 @@ export function NewCheckPage() {
               {analyzing ? 'Checking...' : 'Check'}
             </Button>
             {!canCheck ? (
-              <p className="text-xs text-white/75">
+              <p className="text-xs text-white/88">
                 Add your CV and job description to continue.
               </p>
             ) : null}

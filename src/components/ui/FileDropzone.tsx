@@ -134,7 +134,7 @@ export function FileDropzone({
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-white">{fileName}</p>
-          {busy ? <p className="text-xs text-white/60">{busyLabel}</p> : null}
+          {busy ? <p className="text-xs text-white/78">{busyLabel}</p> : null}
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <button
@@ -151,7 +151,7 @@ export function FileDropzone({
               onClick={onRemove}
               disabled={disabled}
               aria-label="Remove file"
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/10 hover:text-error-light disabled:pointer-events-none disabled:opacity-50"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-white/68 transition-colors hover:bg-white/10 hover:text-error-light disabled:pointer-events-none disabled:opacity-50"
             >
               <TrashIcon />
             </button>
@@ -189,17 +189,17 @@ export function FileDropzone({
           dragActive ? 'border-blue-light bg-blue-light/10' : 'border-white/15 bg-white/[0.03] hover:border-blue-light/40',
         )}
       >
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/70">
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/85">
           {busy ? <Spinner /> : <UploadIcon />}
         </span>
         <p className="text-sm font-medium text-white">{busy ? busyLabel : title}</p>
         {!busy ? (
-          <p className="text-xs text-white/60">
+          <p className="text-xs text-white/78">
             Drag and drop, or <span className="font-medium text-blue-light">browse</span>
           </p>
         ) : null}
       </div>
-      <div id={`${id}-helper`} className="mt-1.5 space-y-1 text-xs text-white/60">
+      <div id={`${id}-helper`} className="mt-1.5 space-y-1 text-xs text-white/78">
         {helperText}
       </div>
       {hiddenInput}

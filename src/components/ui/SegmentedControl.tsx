@@ -37,7 +37,7 @@ export function SegmentedControl<T extends string>({
             onClick={() => onChange(option.value)}
             className={cn(
               'min-h-[36px] touch-manipulation rounded-md px-3 py-1 text-xs font-medium transition-colors duration-150',
-              active ? 'bg-white text-navy shadow-sm' : 'text-white/60 hover:text-white',
+              active ? 'bg-white text-navy shadow-sm' : 'text-white/78 hover:text-white',
             )}
           >
             {option.label}
