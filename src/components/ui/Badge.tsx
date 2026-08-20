@@ -54,17 +54,20 @@ export function StatusBadge({ status, className, tone = 'light' }: StatusBadgePr
 interface ScoreBadgeProps {
   score: number | null
   className?: string
+  tone?: 'light' | 'dark'
 }
 
-export function ScoreBadge({ score, className }: ScoreBadgeProps) {
+export function ScoreBadge({ score, className, tone = 'light' }: ScoreBadgeProps) {
   if (score === null) {
     return (
-      <span className={cn('text-sm text-text-secondary', className)}>—</span>
+      <span className={cn('text-sm', tone === 'dark' ? 'text-white/60' : 'text-text-secondary', className)}>
+        —
+      </span>
     )
   }
 
   return (
-    <span className={cn('text-sm font-medium text-text-primary', className)}>
+    <span className={cn('text-sm font-medium', tone === 'dark' ? 'text-white' : 'text-text-primary', className)}>
       {score}%
     </span>
   )

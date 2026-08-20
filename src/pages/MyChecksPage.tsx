@@ -4,7 +4,6 @@ import { Alert } from '@/components/ui/Alert'
 import { ScoreBadge, StatusBadge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { EmptyState } from '@/components/ui/EmptyState'
 import { PageHeader } from '@/components/ui/Badge'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { useAuth } from '@/hooks/useAuth'
@@ -104,152 +103,156 @@ export function MyChecksPage() {
         }
       />
 
-      {loading ? (
-        <div className="divide-y divide-border rounded-[16px] border border-border-soft bg-surface shadow-card">
-          {[0, 1, 2, 3].map((row) => (
-            <div key={row} className="flex items-center justify-between gap-3 px-4 py-4">
-              <div className="min-w-0 flex-1 space-y-2">
-                <Skeleton className="h-4 w-1/3" />
-                <Skeleton className="h-3 w-1/4" />
-              </div>
-              <Skeleton className="h-4 w-10 shrink-0" />
-            </div>
-          ))}
-        </div>
-      ) : error ? (
-        <Alert variant="error">{error}</Alert>
-      ) : checks.length === 0 ? (
-        <EmptyState
-          title="No checks yet"
-          description="Add a job and your CV to see your application from a recruiter's perspective."
-          action={
-            <Link to="/checks/new">
-              <Button size="sm">New Check</Button>
-            </Link>
-          }
-        />
-      ) : (
-        <>
-          {/* Desktop table */}
-          <div className="hidden overflow-hidden rounded-[16px] border border-border-soft bg-surface shadow-card md:block">
-            <table className="min-w-full divide-y divide-border">
-              <thead className="bg-surface-muted">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-text-secondary lg:px-6">
-                    Role
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-text-secondary">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-text-secondary">
-                    Score
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-text-secondary">
-                    Date
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-text-secondary lg:px-6">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border bg-surface">
-                {checks.map((check) => (
-                  <tr key={check.id} className="transition-colors duration-150 hover:bg-navy-tint/60">
-                    <td className="px-4 py-4 lg:px-6 lg:py-5">
-                      <div className="text-sm font-medium text-text-primary">
-                        {check.job_title || 'Untitled role'}
-                      </div>
-                      {check.company_name ? (
-                        <div className="text-sm text-text-secondary">{check.company_name}</div>
-                      ) : null}
-                    </td>
-                    <td className="px-4 py-4 lg:py-5">
-                      <StatusBadge status={check.status} />
-                    </td>
-                    <td className="px-4 py-4 lg:py-5">
-                      <ScoreBadge score={check.interview_probability_score} />
-                    </td>
-                    <td className="px-4 py-4 text-sm text-text-secondary lg:py-5">
-                      {formatDate(check.created_at)}
-                    </td>
-                    <td className="px-4 py-4 lg:px-6 lg:py-5">
-                      <div className="flex items-center justify-end gap-4">
-                        <Link
-                          to={checkActionHref(check)}
-                          className="text-sm font-semibold text-blue hover:underline"
-                        >
-                          {checkActionLabel(check)}
-                        </Link>
-                        <button
-                          type="button"
-                          disabled={deletingId === check.id}
-                          onClick={() => setPendingDelete(check)}
-                          className="text-sm text-text-secondary/70 transition-colors hover:text-error hover:underline disabled:opacity-50"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile compact list */}
-          <div className="divide-y divide-border rounded-[16px] border border-border-soft bg-surface shadow-card md:hidden">
-            {checks.map((check) => (
-              <div key={check.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-medium text-text-primary">
-                    {check.job_title || 'Untitled role'}
-                  </div>
-                  {check.company_name ? (
-                    <div className="truncate text-sm text-text-secondary">
-                      {check.company_name}
-                    </div>
-                  ) : null}
-                  <div className="mt-1 flex items-center gap-2">
-                    <StatusBadge status={check.status} />
-                    <span className="text-xs text-text-secondary">
-                      {formatDate(check.created_at)}
-                    </span>
-                  </div>
+      <div className="rounded-[20px] border border-white/20 bg-navy p-3 shadow-glow sm:p-4">
+        {loading ? (
+          <div className="divide-y divide-white/10">
+            {[0, 1, 2, 3].map((row) => (
+              <div key={row} className="flex items-center justify-between gap-3 px-3 py-4">
+                <div className="min-w-0 flex-1 space-y-2">
+                  <Skeleton className="h-4 w-1/3 bg-white/10" />
+                  <Skeleton className="h-3 w-1/4 bg-white/10" />
                 </div>
-
-                <div className="flex shrink-0 flex-col items-end gap-1.5">
-                  <ScoreBadge score={check.interview_probability_score} />
-                  <Link
-                    to={checkActionHref(check)}
-                    className="text-sm font-medium text-blue hover:underline"
-                  >
-                    {checkActionLabel(check)}
-                  </Link>
-                  <button
-                    type="button"
-                    disabled={deletingId === check.id}
-                    onClick={() => setPendingDelete(check)}
-                    className="text-xs text-text-secondary hover:text-error hover:underline disabled:opacity-50"
-                  >
-                    Delete
-                  </button>
-                </div>
+                <Skeleton className="h-4 w-10 shrink-0 bg-white/10" />
               </div>
             ))}
           </div>
-        </>
-      )}
+        ) : error ? (
+          <Alert variant="error">{error}</Alert>
+        ) : checks.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-[16px] border border-dashed border-white/25 px-6 py-16 text-center sm:py-20">
+            <h2 className="text-base font-semibold text-white">No checks yet</h2>
+            <p className="mt-2 max-w-sm text-sm text-white/75">
+              Add a job and your CV to see your application from a recruiter's perspective.
+            </p>
+            <div className="mt-6">
+              <Link to="/checks/new">
+                <Button variant="accent" size="sm">New Check</Button>
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Desktop table */}
+            <div className="hidden overflow-hidden rounded-[16px] md:block">
+              <table className="min-w-full divide-y divide-white/10">
+                <thead>
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-white/70 lg:px-6">
+                      Role
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-white/70">
+                      Status
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-white/70">
+                      Score
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-white/70">
+                      Date
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-white/70 lg:px-6">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/10">
+                  {checks.map((check) => (
+                    <tr key={check.id} className="transition-colors duration-150 hover:bg-white/[0.04]">
+                      <td className="px-4 py-4 lg:px-6 lg:py-5">
+                        <div className="text-sm font-medium text-white">
+                          {check.job_title || 'Untitled role'}
+                        </div>
+                        {check.company_name ? (
+                          <div className="text-sm text-white/70">{check.company_name}</div>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-4 lg:py-5">
+                        <StatusBadge status={check.status} tone="dark" />
+                      </td>
+                      <td className="px-4 py-4 lg:py-5">
+                        <ScoreBadge score={check.interview_probability_score} tone="dark" />
+                      </td>
+                      <td className="px-4 py-4 text-sm text-white/70 lg:py-5">
+                        {formatDate(check.created_at)}
+                      </td>
+                      <td className="px-4 py-4 lg:px-6 lg:py-5">
+                        <div className="flex items-center justify-end gap-4">
+                          <Link
+                            to={checkActionHref(check)}
+                            className="text-sm font-semibold text-blue-light hover:underline"
+                          >
+                            {checkActionLabel(check)}
+                          </Link>
+                          <button
+                            type="button"
+                            disabled={deletingId === check.id}
+                            onClick={() => setPendingDelete(check)}
+                            className="text-sm text-white/50 transition-colors hover:text-error-light hover:underline disabled:opacity-50"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-      {lockedCount > 0 && !isPower ? (
-        <div className="mt-4 flex flex-col items-center gap-3 rounded-[16px] border border-navy/15 bg-navy-tint p-4 text-center shadow-glow sm:flex-row sm:justify-between sm:text-left">
-          <p className="text-sm font-medium text-navy">Upgrade to Power to see your full check history.</p>
-          <Link to="/account/billing" className="shrink-0">
-            <Button size="sm">
-              Upgrade to Power
-            </Button>
-          </Link>
-        </div>
-      ) : null}
+            {/* Mobile compact list */}
+            <div className="divide-y divide-white/10 md:hidden">
+              {checks.map((check) => (
+                <div key={check.id} className="flex items-center justify-between gap-3 px-3 py-3">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium text-white">
+                      {check.job_title || 'Untitled role'}
+                    </div>
+                    {check.company_name ? (
+                      <div className="truncate text-sm text-white/70">
+                        {check.company_name}
+                      </div>
+                    ) : null}
+                    <div className="mt-1 flex items-center gap-2">
+                      <StatusBadge status={check.status} tone="dark" />
+                      <span className="text-xs text-white/70">
+                        {formatDate(check.created_at)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex shrink-0 flex-col items-end gap-1.5">
+                    <ScoreBadge score={check.interview_probability_score} tone="dark" />
+                    <Link
+                      to={checkActionHref(check)}
+                      className="text-sm font-medium text-blue-light hover:underline"
+                    >
+                      {checkActionLabel(check)}
+                    </Link>
+                    <button
+                      type="button"
+                      disabled={deletingId === check.id}
+                      onClick={() => setPendingDelete(check)}
+                      className="text-xs text-white/50 hover:text-error-light hover:underline disabled:opacity-50"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {lockedCount > 0 && !isPower ? (
+          <div className="mt-3 flex flex-col items-center gap-3 rounded-[16px] border border-blue-light/30 bg-white/[0.04] p-4 text-center sm:flex-row sm:justify-between sm:text-left">
+            <p className="text-sm font-medium text-white">Upgrade to Power to see your full check history.</p>
+            <Link to="/account/billing" className="shrink-0">
+              <Button variant="light" size="sm">
+                Upgrade to Power
+              </Button>
+            </Link>
+          </div>
+        ) : null}
+      </div>
 
       <ConfirmDialog
         open={pendingDelete !== null}
