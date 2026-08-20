@@ -170,7 +170,7 @@ export function FeedbackPage() {
 
   return (
     <div className="lg:mx-auto lg:max-w-[1000px]">
-      <div className="mb-6 rounded-[14px] border border-border-soft bg-gradient-surface p-3.5 shadow-card sm:mb-8 sm:p-7">
+      <div className="mb-6 rounded-[14px] border border-border-soft bg-gradient-surface p-3.5 shadow-glow sm:mb-8 sm:p-7">
         <p className="text-sm font-semibold text-text-primary">
           {firstName ? `Hi ${firstName},` : 'Hi,'}
         </p>

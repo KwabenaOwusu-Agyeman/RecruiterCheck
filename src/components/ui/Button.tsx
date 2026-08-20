@@ -10,7 +10,8 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-navy text-white border border-navy hover:bg-navy/90 focus-visible:ring-navy hover:shadow-hover',
+  primary:
+    'bg-navy text-white border border-navy hover:bg-navy/90 focus-visible:ring-navy hover:shadow-hover sm:hover:-translate-y-px',
   secondary:
     'bg-surface text-text-primary border border-border-strong hover:border-navy/40 hover:bg-background focus-visible:ring-blue hover:shadow-card',
   ghost:
