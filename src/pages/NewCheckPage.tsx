@@ -390,7 +390,7 @@ export function NewCheckPage() {
           <h2 className="relative mt-4 text-base font-semibold text-white">
             You've used your free Check
           </h2>
-          <p className="relative mt-2 text-sm text-white/88">
+          <p className="relative mt-2 text-sm text-white">
             Nice work getting this far. Upgrade to keep checking applications before you apply.
           </p>
           <div className="relative mt-6 flex justify-center">
@@ -420,7 +420,7 @@ export function NewCheckPage() {
           <h2 className="relative mt-4 text-base font-semibold text-white">
             You've used all your checks this week
           </h2>
-          <p className="relative mt-2 text-sm text-white/88">
+          <p className="relative mt-2 text-sm text-white">
             You're on a roll. Upgrade and keep going.
           </p>
           <div className="relative mt-6 flex justify-center">
@@ -614,7 +614,7 @@ export function NewCheckPage() {
               </p>
               <AutoDeleteNotice />
               {cvFileName === PASTED_CV_FILE_NAME ? (
-                <p className="text-sm text-white/88">CV text saved</p>
+                <p className="text-sm text-white">CV text saved</p>
               ) : null}
             </>
           )}
