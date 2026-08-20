@@ -595,7 +595,7 @@ export function NewCheckPage() {
               helperText={
                 <>
                   <p>PDF or DOCX &middot; Maximum 10 MB</p>
-                  <AutoDeleteNotice tone="light" />
+                  <AutoDeleteNotice />
                 </>
               }
               onFileSelected={(file) => void handleFileChange(file)}

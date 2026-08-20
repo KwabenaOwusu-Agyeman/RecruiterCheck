@@ -5,7 +5,7 @@ export function AutoDeleteNotice({ tone = 'dark' }: { tone?: 'light' | 'dark' })
     <p
       className={cn(
         'flex items-center gap-1.5 text-xs',
-        tone === 'dark' ? 'text-white/85' : 'text-text-secondary',
+        tone === 'dark' ? 'text-white' : 'text-text-secondary',
       )}
     >
       <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5 shrink-0" aria-hidden="true">
