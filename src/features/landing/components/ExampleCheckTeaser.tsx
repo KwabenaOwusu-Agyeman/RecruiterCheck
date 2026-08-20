@@ -21,7 +21,7 @@ export function ExampleCheckTeaser() {
     >
       <Container className="py-[32px] sm:py-12 lg:py-[96px]">
         <div className="mx-auto max-w-xl text-center">
-          <h2 className="text-glow-navy text-[20px] font-semibold tracking-tight text-navy sm:text-3xl">
+          <h2 className="text-[20px] font-semibold tracking-tight text-text-primary sm:text-3xl">
             See {BRAND.name} in Action
           </h2>
           <p className="mt-3 text-[14px] text-text-secondary sm:text-base">

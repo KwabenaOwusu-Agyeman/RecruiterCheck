@@ -45,8 +45,10 @@ export function AppHeader() {
                   to={item.to}
                   aria-current={isActive ? 'page' : undefined}
                   className={cn(
-                    'text-glow-navy rounded-lg px-3.5 py-2 text-sm text-navy transition-colors duration-150',
-                    isActive ? 'bg-navy-tint font-medium' : 'hover:text-navy/70',
+                    'rounded-lg px-3.5 py-2 text-sm transition-colors duration-150',
+                    isActive
+                      ? 'bg-navy-tint font-medium text-navy'
+                      : 'text-text-secondary hover:text-text-primary',
                   )}
                 >
                   {item.label}
