@@ -1,6 +1,6 @@
 // Run with: npx tsx supabase/functions/generate-documents/logic.test.ts
 import assert from 'node:assert/strict'
-import { containsName, containsPlaceholder, looksLikeEnglish, stripDashes, validateDocuments, type RawDocuments } from './logic.ts'
+import { containsName, containsPlaceholder, looksLikeEnglish, splitSentences, stripDashes, validateDocuments, type RawDocuments } from './logic.ts'
 
 let passed = 0
 function test(name: string, fn: () => void) {
@@ -124,6 +124,24 @@ test('stripDashes turns date ranges and compounds into plain words', () => {
 
 test('looksLikeEnglish flags non English content', () => {
   assert.ok(!looksLikeEnglish('Ik ben zeer geinteresseerd in deze functie bij uw bedrijf.'))
+})
+
+test('splitSentences keeps a mid-word period (e.g. "Node.js") from swallowing the text before it', () => {
+  const result = splitSentences(
+    'Backend engineer with 6 years of experience using Node.js and Python for high traffic products. Mentors junior engineers on system design.',
+  )
+  assert.equal(result.length, 2)
+  assert.equal(
+    result[0],
+    'Backend engineer with 6 years of experience using Node.js and Python for high traffic products.',
+  )
+  assert.equal(result[1], 'Mentors junior engineers on system design.')
+})
+
+test('splitSentences still protects decimal numbers like "7.2%"', () => {
+  const result = splitSentences('Improved throughput by 7.2 percent. Reduced latency across the board.')
+  assert.equal(result.length, 2)
+  assert.match(result[0], /7\.2 percent\.$/)
 })
 
 console.log(`\n${passed} tests passed`)

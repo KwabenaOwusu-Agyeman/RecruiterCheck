@@ -74,11 +74,24 @@ export function looksLikeEnglish(text: string): boolean {
  * (e.g. "7.2%") are protected first so a stat like that never gets split
  * into two fragments ("7." and "2%") — a real bug this app hit, since CVs
  * routinely cite decimal metrics and the naive split would corrupt them.
+ *
+ * The sentence-content group is a lazy `[\s\S]*?` rather than `[^.!?]+`, and
+ * the terminator is checked with a lookahead rather than being consumed
+ * before the whitespace check. That matters for a token like "Node.js":
+ * with `[^.!?]+[.!?]+(\s+|$)`, the only way to satisfy "punctuation
+ * followed by whitespace/end" was to skip past the un-spaced period
+ * entirely — and since a failed match at one start position makes regex
+ * matching retry from the next character rather than back up, every
+ * attempt starting before "Node.js" failed the same way, so the whole
+ * prefix up to it silently vanished from the output (not just a bad split
+ * point — real content deleted with no error). The lazy content group can
+ * absorb a mid-word period like that as ordinary text and keep extending
+ * until it reaches a terminator the lookahead actually accepts.
  */
 export function splitSentences(text: string): string[] {
   const DECIMAL_MARK = '@@DECIMAL@@'
   const protectedText = text.replace(/(\d)\.(\d)/g, `$1${DECIMAL_MARK}$2`)
-  return (protectedText.match(/[^.!?]+[.!?]+(\s+|$)/g) ?? [protectedText])
+  return (protectedText.match(/[\s\S]*?[.!?]+(?:\s+|$)/g) ?? [protectedText])
     .map((sentence) => sentence.trim().split(DECIMAL_MARK).join('.'))
     .filter(Boolean)
 }
