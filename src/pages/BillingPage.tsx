@@ -91,10 +91,11 @@ export function BillingPage() {
       <BackLink to="/account" />
 
       <div className="mx-auto mt-1 max-w-2xl text-center lg:max-w-[1080px]">
-        <h1 className="text-2xl font-semibold tracking-tight text-text-primary sm:text-[30px]">
+        <p className="text-xs font-bold uppercase tracking-wider text-blue">Recruiter Check Plans</p>
+        <h1 className="mt-2 text-[32px] font-bold tracking-tight text-text-primary sm:text-[40px]">
           Choose your plan
         </h1>
-        <p className="mt-2 text-sm text-text-secondary sm:text-base">
+        <p className="mx-auto mt-3 max-w-xl text-base text-text-secondary sm:text-lg">
           Get more Recruiter Checks and tailored application documents when you need them.
         </p>
       </div>

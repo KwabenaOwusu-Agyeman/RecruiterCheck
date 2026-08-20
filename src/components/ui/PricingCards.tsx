@@ -38,70 +38,84 @@ export function PricingCards({
         const isHighlighted = Boolean(plan.highlighted)
         const planRank = TIER_RANK[plan.id] ?? 0
         const isDowngrade = !isCurrent && planRank < currentRank
+        const lightButtonClasses =
+          'bg-white text-navy border-transparent hover:bg-white/90 focus-visible:ring-white'
 
         return (
           <div key={plan.id} className="relative h-full">
             <div
               className={cn(
-                'relative flex h-full flex-col rounded-2xl border bg-surface p-4 transition-transform duration-200 hover:-translate-y-1',
-                isHighlighted ? 'border-2 border-navy shadow-glow bg-navy-tint' : 'border-border-soft shadow-card',
+                'relative flex h-full flex-col rounded-2xl border bg-navy p-5 transition-transform duration-200 hover:-translate-y-1 sm:p-6',
+                isHighlighted ? 'border-blue-light/40 shadow-glow' : 'border-white/10 shadow-card',
               )}
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-semibold text-text-primary">{plan.name}</h2>
-                  {isCurrent ? (
-                    <span className="rounded-full bg-blue/10 px-2 py-0.5 text-xs font-semibold text-blue">
-                      Current
-                    </span>
-                  ) : null}
-                </div>
+              <div className="flex items-center justify-between gap-2">
                 {plan.badge ? (
-                  <span className="shrink-0 whitespace-nowrap rounded-full bg-navy px-2.5 py-0.5 text-xs font-semibold tracking-wide text-white">
+                  <span className="text-xs font-bold uppercase tracking-wider text-blue-light">
                     {plan.badge}
+                  </span>
+                ) : (
+                  <span className="text-xs font-bold uppercase tracking-wider text-white/30">
+                    {plan.name}
+                  </span>
+                )}
+                {isCurrent ? (
+                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-semibold text-white">
+                    Current
                   </span>
                 ) : null}
               </div>
-              <p className="mt-1 text-sm leading-snug text-text-secondary">{plan.description}</p>
+              <h2 className="mt-2 text-2xl font-bold text-white">{plan.name}</h2>
+              <p className="mt-1 text-sm leading-snug text-white/60">{plan.description}</p>
 
-              <p className="mt-2 text-4xl font-bold tracking-tight text-text-primary">
-                {plan.price}
-                {plan.interval ? (
-                  <span className="text-base font-normal text-text-secondary">/{plan.interval}</span>
+              <div className="mt-4 border-t border-white/10 pt-4">
+                <p className="text-4xl font-bold tracking-tight text-white">
+                  {plan.price}
+                  {plan.interval ? (
+                    <span className="text-base font-normal text-white/50">/{plan.interval}</span>
+                  ) : null}
+                </p>
+                {plan.perCheckPrice ? (
+                  <p className="mt-1 text-xs text-white/50">{plan.perCheckPrice}</p>
                 ) : null}
-              </p>
+              </div>
 
-              <ul className="mt-2 flex-1 space-y-2 text-sm text-text-secondary">
+              <ul className="mt-4 flex-1 space-y-2.5 border-t border-white/10 pt-4 text-sm text-white/80">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex items-center gap-2">
-                    <Check className="h-4 w-4 shrink-0 text-blue" strokeWidth={2.5} />
-                    <span className={feature === plan.highlightFeature ? 'font-semibold text-text-primary' : undefined}>
+                    <Check className="h-4 w-4 shrink-0 text-blue-light" strokeWidth={2.5} />
+                    <span className={feature === plan.highlightFeature ? 'font-semibold text-white' : undefined}>
                       {feature}
                     </span>
                   </li>
                 ))}
               </ul>
 
-              <div className="mt-3">
+              <div className="mt-5">
                 {isCurrent && plan.id !== 'free' ? (
                   <Button
-                    className="w-full justify-center"
+                    variant="secondary"
+                    className={cn('w-full justify-center', lightButtonClasses)}
                     size="sm"
-                    variant="primary"
                     disabled={managingBilling}
                     onClick={onManageBilling}
                   >
                     {managingBilling ? 'Opening...' : 'Manage Billing'}
                   </Button>
                 ) : isCurrent ? (
-                  <Button className="w-full justify-center" size="sm" variant="primary" disabled>
+                  <Button
+                    variant="secondary"
+                    className={cn('w-full justify-center', lightButtonClasses)}
+                    size="sm"
+                    disabled
+                  >
                     Current Plan
                   </Button>
                 ) : isDowngrade ? (
                   <Button
-                    className="w-full justify-center"
+                    variant="ghost"
+                    className="w-full justify-center border-white/20 text-white hover:bg-white/10"
                     size="sm"
-                    variant="secondary"
                     disabled={loadingPlan !== null}
                     onClick={() => onDowngrade(plan.id as 'starter' | 'active' | 'power')}
                   >
@@ -109,9 +123,9 @@ export function PricingCards({
                   </Button>
                 ) : (
                   <Button
-                    className="w-full justify-center gap-2"
+                    variant="secondary"
+                    className={cn('w-full justify-center gap-2', lightButtonClasses)}
                     size="sm"
-                    variant="primary"
                     disabled={loadingPlan !== null}
                     onClick={() => onUpgrade(plan.id as 'starter' | 'active' | 'power')}
                   >

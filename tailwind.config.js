@@ -18,6 +18,7 @@ export default {
         success: '#0EA063',
         warning: '#F59E0B',
         error: '#91151A',
+        'blue-light': '#8FB2F0',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
