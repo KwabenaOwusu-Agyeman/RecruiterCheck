@@ -59,11 +59,11 @@ export function AppHeader() {
               to="/checks/new"
               aria-current={isNewCheckActive(location.pathname) ? 'page' : undefined}
               className={cn(
-                'ml-2 inline-flex items-center gap-1.5 rounded-lg bg-navy px-3.5 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-navy/90',
+                'ml-2 inline-flex items-center gap-1 rounded-lg bg-navy px-3 py-1.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-navy/90',
                 isNewCheckActive(location.pathname) && 'ring-2 ring-navy/30 ring-offset-2',
               )}
             >
-              <Plus className="h-4 w-4" strokeWidth={2.5} />
+              <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
               New Check
             </Link>
           </nav>
