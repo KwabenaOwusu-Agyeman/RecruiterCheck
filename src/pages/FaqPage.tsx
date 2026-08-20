@@ -27,7 +27,7 @@ const FAQ_ITEMS = [
   {
     question: 'What do I get with a Recruiter Check?',
     answer:
-      'The core of every check is your Interview Probability, Strengths, Areas to Improve, and Prospects. If you upgrade and score 61 or above, you can also generate a Recruiter Recommendation, an improved CV draft, cover letter, and recruiter message built from your existing information.',
+      'The core of every check is your Interview Probability, Strengths, Areas to Improve, and Prospects. If you upgrade and score 61 or above, you can also generate a Recommendation, an improved CV draft, cover letter, and recruiter message built from your existing information.',
   },
   {
     question: 'What do I get on the Free plan?',
@@ -36,7 +36,7 @@ const FAQ_ITEMS = [
   {
     question: 'What is the difference between Starter, Active, and Power?',
     answer:
-      "All plans include your Interview Probability Score and Recruiter Feedback. Active adds an improved CV draft for each check. Power adds the full Recruiter Recommendation, an improved CV draft, cover letter, and recruiter message, plus access to your full check history (Starter and Active only show your most recent check). Documents are only generated for a check scored 61 or above, since a lower score means the role is not a strong match. Every plan's check allotment resets weekly with no rollover.",
+      "All plans include your Interview Probability Score and Recruiter Feedback. Active adds an improved CV draft for each check. Power adds the full Recommendation, an improved CV draft, cover letter, and recruiter message, plus access to your full check history (Starter and Active only show your most recent check). Documents are only generated for a check scored 61 or above, since a lower score means the role is not a strong match. Every plan's check allotment resets weekly with no rollover.",
   },
   {
     question: 'Can I cancel my subscription anytime?',

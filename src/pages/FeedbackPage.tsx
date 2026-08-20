@@ -313,7 +313,7 @@ export function FeedbackPage() {
 
             <Card className={highlightedNestedCard}>
               <CardHeader className="border-b-white/10 px-5 py-3">
-                <h2 className="text-base font-semibold text-white">Recruiter Recommendation</h2>
+                <h2 className="text-base font-semibold text-white">Recommendation</h2>
                 <p className="mt-1 text-xs text-white/75">
                   {tier === 'power'
                     ? 'An improved CV draft, cover letter, and recruiter message based on your feedback. Your CV draft may include placeholder figures (e.g. "X%") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with real numbers before submitting.'
@@ -397,7 +397,7 @@ export function FeedbackPage() {
                       disabled={generatingDocs}
                       onClick={() => void handleGenerateDocuments()}
                     >
-                      {generatingDocs ? 'Generating...' : 'Generate My Recommendation'}
+                      {generatingDocs ? 'Generating...' : 'Generate'}
                     </Button>
                   </div>
                 )}
