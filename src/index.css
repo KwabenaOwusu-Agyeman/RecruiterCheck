@@ -8,14 +8,24 @@
     -webkit-text-size-adjust: 100%;
     min-width: 320px;
     overflow-x: hidden;
+    overscroll-behavior-x: none;
+    overscroll-behavior-y: contain;
   }
 
   body {
     @apply bg-background font-sans text-text-primary antialiased;
     min-width: 320px;
-    overflow-x: hidden;
-    overscroll-behavior-x: none;
-    overscroll-behavior-y: contain;
+    /* No overflow-x (and no overscroll-behavior) here: html's overflow-x:
+       hidden already stops horizontal scroll at the document root and is
+       where html is the real scroll container. Setting overflow-x here too
+       would (per the CSS overflow computation quirk) force this axis's
+       unspecified overflow-y to compute as "auto", turning body into a
+       second scroll container that can never actually scroll (it's sized
+       to its content, not the viewport) — and overscroll-behavior on that
+       dead-end container blocks real trackpad/keyboard scroll input from
+       ever chaining up to html, freezing the page for real input while
+       devtools-issued synthetic scrolls (which hit html directly) look
+       fine. */
     -webkit-tap-highlight-color: transparent;
   }
 
