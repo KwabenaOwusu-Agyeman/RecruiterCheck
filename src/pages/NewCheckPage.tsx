@@ -382,20 +382,20 @@ export function NewCheckPage() {
         <div className="mt-3">
           <PageHeader title="New Check" />
         </div>
-        <div className="relative mx-auto max-w-md overflow-hidden rounded-[16px] border border-border-soft bg-surface p-[20px] text-center shadow-glow sm:p-8">
+        <div className="relative mx-auto max-w-md overflow-hidden rounded-[20px] border border-white/10 bg-navy p-[20px] text-center shadow-glow sm:p-8">
           <div className="pointer-events-none absolute inset-0 bg-glow-navy" aria-hidden="true" />
-          <div className="relative mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-navy-tint">
-            <Sparkles className="h-5 w-5 text-navy" strokeWidth={2} />
+          <div className="relative mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-light/15">
+            <Sparkles className="h-5 w-5 text-blue-light" strokeWidth={2} />
           </div>
-          <h2 className="relative mt-4 text-base font-semibold text-text-primary">
+          <h2 className="relative mt-4 text-base font-semibold text-white">
             You've used your free Check
           </h2>
-          <p className="relative mt-2 text-sm text-text-secondary">
+          <p className="relative mt-2 text-sm text-white/75">
             Nice work getting this far. Upgrade to keep checking applications before you apply.
           </p>
-          <div className="mt-6 flex justify-center">
+          <div className="relative mt-6 flex justify-center">
             <Link to="/account/billing">
-              <Button size="sm" className="w-full sm:w-auto">
+              <Button variant="light" size="sm" className="w-full sm:w-auto">
                 Upgrade
               </Button>
             </Link>
@@ -412,20 +412,20 @@ export function NewCheckPage() {
         <div className="mt-3">
           <PageHeader title="New Check" />
         </div>
-        <div className="relative mx-auto max-w-md overflow-hidden rounded-[16px] border border-border-soft bg-surface p-[20px] text-center shadow-glow sm:p-8">
+        <div className="relative mx-auto max-w-md overflow-hidden rounded-[20px] border border-white/10 bg-navy p-[20px] text-center shadow-glow sm:p-8">
           <div className="pointer-events-none absolute inset-0 bg-glow-navy" aria-hidden="true" />
-          <div className="relative mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-navy-tint">
-            <Sparkles className="h-5 w-5 text-navy" strokeWidth={2} />
+          <div className="relative mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-light/15">
+            <Sparkles className="h-5 w-5 text-blue-light" strokeWidth={2} />
           </div>
-          <h2 className="relative mt-4 text-base font-semibold text-text-primary">
+          <h2 className="relative mt-4 text-base font-semibold text-white">
             You've used all your checks this week
           </h2>
-          <p className="relative mt-2 text-sm text-text-secondary">
+          <p className="relative mt-2 text-sm text-white/75">
             You're on a roll. Upgrade and keep going.
           </p>
-          <div className="mt-6 flex justify-center">
+          <div className="relative mt-6 flex justify-center">
             <Link to="/account/billing">
-              <Button size="sm" className="w-full sm:w-auto">
+              <Button variant="light" size="sm" className="w-full sm:w-auto">
                 Upgrade
               </Button>
             </Link>
@@ -449,15 +449,13 @@ export function NewCheckPage() {
         />
       </div>
 
-      <div className="mx-auto max-w-2xl lg:max-w-[800px]">
-        <StepIndicator steps={['Upload', 'Analyse', 'Results']} currentIndex={analyzing ? 1 : 0} className="mb-[16px] sm:mb-6" />
-      </div>
+      <div className="mx-auto max-w-2xl space-y-[16px] rounded-[20px] border border-white/10 bg-navy p-[16px] shadow-glow sm:space-y-6 sm:p-6 lg:max-w-[800px] lg:space-y-[32px] lg:p-[32px]">
+        <StepIndicator steps={['Upload', 'Analyse', 'Results']} currentIndex={analyzing ? 1 : 0} />
 
-      <div className="mx-auto max-w-2xl space-y-[16px] rounded-[16px] border border-border-soft bg-surface p-[16px] shadow-card sm:space-y-6 sm:p-6 lg:max-w-[800px] lg:space-y-[32px] lg:p-[32px]">
         {captureError ? <Alert variant="error">{captureError}</Alert> : null}
 
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
+          <p className="text-xs font-semibold uppercase tracking-wide text-white/50">
             Job description
           </p>
           <div className="flex items-center justify-between">
@@ -514,7 +512,7 @@ export function NewCheckPage() {
                   {extractingJobUrl ? 'Reading...' : 'Extract'}
                 </Button>
               </div>
-              <p className="text-xs text-text-secondary">Paste a link to a public job posting.</p>
+              <p className="text-xs text-white/75">Paste a link to a public job posting.</p>
               {jobUrlError ? (
                 <Alert variant="error">
                   <p>{jobUrlError}</p>
@@ -567,8 +565,8 @@ export function NewCheckPage() {
           )}
         </div>
 
-        <div className="space-y-2 border-t border-border pt-[16px] sm:pt-6 lg:pt-8">
-          <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">CV</p>
+        <div className="space-y-2 border-t border-white/10 pt-[16px] sm:pt-6 lg:pt-8">
+          <p className="text-xs font-semibold uppercase tracking-wide text-white/50">CV</p>
           <div className="flex items-center justify-between">
             <Label className="sr-only" htmlFor={cvInputMode === 'file' ? 'cv' : 'cvText'}>
               CV
@@ -609,12 +607,12 @@ export function NewCheckPage() {
                 onChange={(event) => handleCvTextChange(event.target.value)}
                 placeholder="Paste the text of your CV here..."
               />
-              <p className="text-xs text-text-secondary">
+              <p className="text-xs text-white/75">
                 Paste your CV as plain text — saves automatically as you type.
               </p>
               <AutoDeleteNotice />
               {cvFileName === PASTED_CV_FILE_NAME ? (
-                <p className="text-sm text-text-secondary">CV text saved</p>
+                <p className="text-sm text-white/75">CV text saved</p>
               ) : null}
             </>
           )}
@@ -623,17 +621,18 @@ export function NewCheckPage() {
         {error ? <Alert variant="error">{error}</Alert> : null}
 
         {saveState === 'saving' ? (
-          <p className="text-xs text-text-secondary">Saving...</p>
+          <p className="text-xs text-white/55">Saving...</p>
         ) : saveState === 'saved' ? (
-          <p className="text-xs text-text-secondary">Saved</p>
+          <p className="text-xs text-white/55">Saved</p>
         ) : saveState === 'error' ? (
-          <p className="text-xs text-error">Could not save your changes</p>
+          <p className="text-xs text-error-light">Could not save your changes</p>
         ) : null}
 
-        <div className="flex flex-col gap-3 border-t border-border pt-[16px] sm:flex-row sm:items-center sm:justify-end sm:pt-6 lg:pt-8">
+        <div className="flex flex-col gap-3 border-t border-white/10 pt-[16px] sm:flex-row sm:items-center sm:justify-end sm:pt-6 lg:pt-8">
           <div className="flex w-full flex-col items-start gap-2 sm:w-auto sm:items-end">
             <Button
               type="button"
+              variant="accent"
               size="sm"
               className="w-full sm:!h-12 sm:w-auto sm:px-8 sm:text-base"
               disabled={!canCheck || analyzing}
@@ -642,7 +641,7 @@ export function NewCheckPage() {
               {analyzing ? 'Checking...' : 'Check'}
             </Button>
             {!canCheck ? (
-              <p className="text-xs text-text-secondary">
+              <p className="text-xs text-white/75">
                 Add your CV and job description to continue.
               </p>
             ) : null}

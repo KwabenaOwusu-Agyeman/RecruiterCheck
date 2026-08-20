@@ -38,8 +38,6 @@ export function PricingCards({
         const isHighlighted = Boolean(plan.highlighted)
         const planRank = TIER_RANK[plan.id] ?? 0
         const isDowngrade = !isCurrent && planRank < currentRank
-        const lightButtonClasses =
-          'bg-white text-navy border-transparent hover:bg-white/90 focus-visible:ring-white'
 
         return (
           <div key={plan.id} className="relative h-full">
@@ -94,8 +92,8 @@ export function PricingCards({
               <div className="mt-3">
                 {isCurrent && plan.id !== 'free' ? (
                   <Button
-                    variant="secondary"
-                    className={cn('w-full justify-center', lightButtonClasses)}
+                    variant="light"
+                    className="w-full justify-center"
                     size="sm"
                     disabled={managingBilling}
                     onClick={onManageBilling}
@@ -103,12 +101,7 @@ export function PricingCards({
                     {managingBilling ? 'Opening...' : 'Manage Billing'}
                   </Button>
                 ) : isCurrent ? (
-                  <Button
-                    variant="secondary"
-                    className={cn('w-full justify-center', lightButtonClasses)}
-                    size="sm"
-                    disabled
-                  >
+                  <Button variant="light" className="w-full justify-center" size="sm" disabled>
                     Current Plan
                   </Button>
                 ) : isDowngrade ? (
@@ -123,8 +116,8 @@ export function PricingCards({
                   </Button>
                 ) : (
                   <Button
-                    variant="secondary"
-                    className={cn('w-full justify-center gap-2', lightButtonClasses)}
+                    variant="light"
+                    className="w-full justify-center gap-2"
                     size="sm"
                     disabled={loadingPlan !== null}
                     onClick={() => onUpgrade(plan.id as 'starter' | 'active' | 'power')}

@@ -1,7 +1,7 @@
 import { type ButtonHTMLAttributes, forwardRef } from 'react'
 import { cn } from '@/utils/cn'
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost'
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'light' | 'accent'
 type ButtonSize = 'sm' | 'md' | 'lg'
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -16,6 +16,18 @@ const variantStyles: Record<ButtonVariant, string> = {
     'bg-surface text-text-primary border border-border-strong hover:border-navy/40 hover:bg-background focus-visible:ring-blue hover:shadow-card',
   ghost:
     'bg-transparent text-text-primary border border-transparent hover:bg-background focus-visible:ring-blue',
+  // White pill for use on a dark card (Card variant className="bg-navy" etc.)
+  // — a first-class variant rather than overriding secondary/primary's own
+  // bg-*/text-* classes via className, since Tailwind's generated CSS order
+  // is determined by codebase-wide class discovery order, not by where a
+  // className string sits in this component's cn() call, so overriding a
+  // variant's own color utility from the outside is not reliable.
+  light:
+    'bg-white text-navy border border-transparent hover:bg-white/90 focus-visible:ring-white hover:shadow-hover',
+  // Bright accent pill for the single primary CTA on a dark card, distinct
+  // from the neutral white `light` buttons used for secondary actions there.
+  accent:
+    'bg-blue-light text-navy border border-transparent hover:bg-blue-light/90 focus-visible:ring-blue-light hover:shadow-hover sm:hover:-translate-y-px',
 }
 
 const sizeStyles: Record<ButtonSize, string> = {
