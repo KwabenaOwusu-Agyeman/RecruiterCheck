@@ -1,8 +1,5 @@
-import { useRef } from 'react'
 import { ArrowRight, Check } from 'lucide-react'
-import type { Variants } from 'motion/react'
 import { Button } from '@/components/ui/Button'
-import { TimelineContent } from '@/components/ui/timeline-animation'
 import type { PricingPlan } from '@/types'
 import { cn } from '@/utils/cn'
 
@@ -11,16 +8,6 @@ const TIER_RANK: Record<string, number> = {
   starter: 1,
   active: 2,
   power: 3,
-}
-
-const revealVariants: Variants = {
-  visible: (i: number) => ({
-    y: 0,
-    opacity: 1,
-    filter: 'blur(0px)',
-    transition: { delay: i * 0.1, duration: 0.4 },
-  }),
-  hidden: { y: 16, opacity: 0, filter: 'blur(6px)' },
 }
 
 interface PricingCardsProps {
@@ -42,26 +29,18 @@ export function PricingCards({
   onDowngrade,
   onManageBilling,
 }: PricingCardsProps) {
-  const gridRef = useRef<HTMLDivElement>(null)
   const currentRank = TIER_RANK[currentTier] ?? 0
 
   return (
-    <div ref={gridRef} className="mx-auto mt-4 grid gap-4 md:grid-cols-3 lg:max-w-[1080px]">
-      {plans.map((plan, index) => {
+    <div className="mx-auto mt-4 grid gap-4 md:grid-cols-3 lg:max-w-[1080px]">
+      {plans.map((plan) => {
         const isCurrent = currentTier === plan.id
         const isHighlighted = Boolean(plan.highlighted)
         const planRank = TIER_RANK[plan.id] ?? 0
         const isDowngrade = !isCurrent && planRank < currentRank
 
         return (
-          <TimelineContent
-            key={plan.id}
-            as="div"
-            animationNum={index}
-            timelineRef={gridRef}
-            customVariants={revealVariants}
-            className="relative h-full"
-          >
+          <div key={plan.id} className="relative h-full">
             <div
               className={cn(
                 'relative flex h-full flex-col rounded-2xl border bg-surface p-4 transition-transform duration-200 hover:-translate-y-1',
@@ -146,7 +125,7 @@ export function PricingCards({
                 )}
               </div>
             </div>
-          </TimelineContent>
+          </div>
         )
       })}
     </div>
