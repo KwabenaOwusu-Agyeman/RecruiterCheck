@@ -118,7 +118,7 @@ export function PricingCards({
                   </Button>
                 ) : (
                   <Button
-                    variant="light"
+                    variant="accent"
                     className="w-full justify-center gap-2"
                     size="sm"
                     disabled={loadingPlan !== null}
