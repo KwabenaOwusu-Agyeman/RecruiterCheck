@@ -168,7 +168,7 @@ export function AccountPage() {
       <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-2 lg:gap-[24px]">
         <Card className="flex h-full flex-col">
           <CardHeader className="py-2.5 sm:py-4">
-            <h2 className="text-base font-semibold text-text-primary sm:text-lg">Profile</h2>
+            <h2 className="font-display text-lg font-semibold text-text-primary sm:text-xl">Profile</h2>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col py-3 sm:py-5">
             <form
@@ -204,7 +204,7 @@ export function AccountPage() {
 
         <Card tone="light-glow" className="flex h-full flex-col">
           <CardHeader className="py-2.5 sm:py-4">
-            <h2 className="text-base font-semibold text-text-primary sm:text-lg">Plan</h2>
+            <h2 className="font-display text-lg font-semibold text-text-primary sm:text-xl">Plan</h2>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col space-y-1.5 py-3 text-sm sm:space-y-2.5 sm:py-5">
             <div className="flex items-center justify-between">
@@ -260,7 +260,7 @@ export function AccountPage() {
       {user?.app_metadata.provider === 'email' ? (
         <Card className="mt-3 sm:mt-6">
           <CardHeader className="py-2.5 sm:py-4">
-            <h2 className="text-base font-semibold text-text-primary sm:text-lg">Password</h2>
+            <h2 className="font-display text-lg font-semibold text-text-primary sm:text-xl">Password</h2>
           </CardHeader>
           <CardContent className="py-3 sm:py-5">
             <form
@@ -312,7 +312,7 @@ export function AccountPage() {
 
       <Card className="mt-3 border-error/25 sm:mt-6 sm:border-error/20 sm:bg-[#FCEFEF]/30 sm:shadow-none">
         <CardHeader className="border-b-error/10 py-2.5 sm:py-4">
-          <h2 className="text-base font-semibold text-text-primary sm:text-lg">Danger Zone</h2>
+          <h2 className="font-display text-lg font-semibold text-text-primary sm:text-xl">Danger Zone</h2>
         </CardHeader>
         <CardContent className="py-3 sm:py-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
