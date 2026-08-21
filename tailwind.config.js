@@ -7,11 +7,11 @@ export default {
         navy: '#020C38',
         blue: '#194A9F',
         surface: '#FFFFFF',
-        background: '#F7F8FC',
-        border: '#EEF0F5',
-        'border-strong': '#DDE2EC',
-        'border-soft': '#E8EBF2',
-        'surface-muted': '#F2F4F8',
+        background: '#F8F6F2',
+        border: '#EFEBE3',
+        'border-strong': '#DED6C7',
+        'border-soft': '#E9E4D9',
+        'surface-muted': '#F2EEE6',
         'navy-tint': '#F1F3FA',
         'text-primary': '#05050D',
         'text-secondary': '#3A4A6B',
@@ -23,6 +23,7 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Fraunces', 'Georgia', 'serif'],
       },
       boxShadow: {
         card: '0 1px 2px rgba(2,12,56,0.04), 0 8px 24px rgba(2,12,56,0.05)',
@@ -33,7 +34,7 @@ export default {
       },
       backgroundImage: {
         'gradient-hero': 'linear-gradient(135deg, #F7F8FC 0%, #EEF2FA 100%)',
-        'gradient-surface': 'linear-gradient(180deg, #FFFFFF 0%, #F7F8FC 100%)',
+        'gradient-surface': 'linear-gradient(180deg, #FFFFFF 0%, #F8F6F2 100%)',
         'glow-navy':
           'radial-gradient(60% 60% at 50% 0%, rgba(25,74,159,0.14) 0%, rgba(25,74,159,0) 70%)',
       },

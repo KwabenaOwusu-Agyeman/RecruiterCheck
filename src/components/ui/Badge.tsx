@@ -83,7 +83,7 @@ export function PageHeader({ title, description, action }: PageHeaderProps) {
   return (
     <div className="mb-[20px] flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-start sm:justify-between lg:mb-[32px]">
       <div>
-        <h1 className="text-[22px] font-semibold tracking-tight text-text-primary sm:text-[30px] lg:text-[32px]">
+        <h1 className="font-display text-[24px] font-semibold tracking-tight text-text-primary sm:text-[32px] lg:text-[34px]">
           {title}
         </h1>
         {description ? (

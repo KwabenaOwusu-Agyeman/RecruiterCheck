@@ -25,7 +25,7 @@ const cardToneStyles: Record<CardTone, string> = {
 
 export function Card({ children, className, tone = 'light' }: CardProps) {
   return (
-    <div className={cn('rounded-[16px] border', cardToneStyles[tone], className)}>
+    <div className={cn('rounded-[20px] border', cardToneStyles[tone], className)}>
       {children}
     </div>
   )

@@ -11,7 +11,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-navy text-white border border-navy shadow-glow-sm hover:bg-navy/90 focus-visible:ring-navy hover:shadow-hover sm:hover:-translate-y-px',
+    'bg-navy text-white border border-navy hover:bg-navy/90 focus-visible:ring-navy hover:shadow-hover sm:hover:-translate-y-px',
   secondary:
     'bg-surface text-text-primary border border-border-strong hover:border-navy/40 hover:bg-background focus-visible:ring-blue hover:shadow-card',
   ghost:
@@ -43,7 +43,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         type={type}
         className={cn(
-          'inline-flex items-center justify-center rounded-[10px] font-medium',
+          'inline-flex items-center justify-center rounded-[12px] font-medium',
           'transition-[background-color,color,border-color,transform,box-shadow] duration-150',
           'touch-manipulation active:scale-[0.97] sm:active:scale-100 sm:active:translate-y-px',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',

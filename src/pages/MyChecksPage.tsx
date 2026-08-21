@@ -241,7 +241,7 @@ export function MyChecksPage() {
       )}
 
       {lockedCount > 0 && !isPower ? (
-        <div className="mt-4 flex flex-col items-center gap-3 rounded-[16px] border border-navy/15 bg-navy-tint p-4 text-center shadow-glow sm:flex-row sm:justify-between sm:text-left">
+        <div className="mt-4 flex flex-col items-center gap-3 rounded-[16px] border border-navy/15 bg-navy-tint p-4 text-center sm:flex-row sm:justify-between sm:text-left">
           <p className="text-sm font-medium text-navy">Upgrade to Power to see your full check history.</p>
           <Link to="/account/billing" className="shrink-0">
             <Button size="sm">

@@ -75,7 +75,7 @@ export function AppBottomNav() {
         >
           <span
             className={cn(
-              '-mt-5 flex h-11 w-11 items-center justify-center rounded-full bg-navy text-white shadow-glow-sm ring-4 ring-surface transition-transform',
+              '-mt-5 flex h-11 w-11 items-center justify-center rounded-full bg-navy text-white shadow-hover ring-4 ring-surface transition-transform',
               isNewCheckActive && 'scale-105',
             )}
           >
