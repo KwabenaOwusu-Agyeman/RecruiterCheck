@@ -129,7 +129,7 @@ export function FileDropzone({
         key={fileName}
         className="file-selected-row flex items-center gap-3 rounded-[10px] border border-border-strong bg-surface-muted px-3 py-2.5"
       >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-navy-tint text-navy">
+        <span className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-lg bg-navy-tint text-navy">
           {busy ? <Spinner /> : <FileIcon />}
         </span>
         <div className="min-w-0 flex-1">
@@ -151,7 +151,7 @@ export function FileDropzone({
               onClick={onRemove}
               disabled={disabled}
               aria-label="Remove file"
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-background hover:text-error disabled:pointer-events-none disabled:opacity-50"
+              className="flex h-[36px] w-[36px] items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-background hover:text-error disabled:pointer-events-none disabled:opacity-50"
             >
               <TrashIcon />
             </button>
@@ -189,7 +189,7 @@ export function FileDropzone({
           dragActive ? 'border-blue bg-navy-tint' : 'border-border-strong bg-surface-muted hover:border-navy/40',
         )}
       >
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-surface text-text-secondary shadow-card">
+        <span className="flex h-[36px] w-[36px] items-center justify-center rounded-full bg-surface text-text-secondary shadow-card">
           {busy ? <Spinner /> : <UploadIcon />}
         </span>
         <p className="text-sm font-medium text-text-primary">{busy ? busyLabel : title}</p>
