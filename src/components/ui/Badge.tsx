@@ -81,13 +81,13 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, action }: PageHeaderProps) {
   return (
-    <div className="mb-[20px] flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-start sm:justify-between lg:mb-[32px]">
+    <div className="mb-[24px] flex flex-col gap-4 sm:mb-10 sm:flex-row sm:items-start sm:justify-between lg:mb-[40px]">
       <div>
         <h1 className="font-display text-[24px] font-semibold tracking-tight text-text-primary sm:text-[32px] lg:text-[34px]">
           {title}
         </h1>
         {description ? (
-          <p className="mt-2 max-w-2xl text-sm text-text-secondary sm:text-base">{description}</p>
+          <p className="mt-3 max-w-2xl text-sm text-text-secondary sm:text-base">{description}</p>
         ) : null}
       </div>
       {action ? <div className="w-full shrink-0 sm:w-auto">{action}</div> : null}

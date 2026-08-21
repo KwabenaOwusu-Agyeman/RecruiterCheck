@@ -165,22 +165,22 @@ export function AccountPage() {
         />
       </div>
 
-      <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-2 lg:gap-[24px]">
+      <div className="grid items-stretch gap-4 sm:gap-6 lg:grid-cols-2 lg:gap-[32px]">
         <Card className="flex h-full flex-col">
-          <CardHeader className="py-2.5 sm:py-4">
+          <CardHeader className="py-3.5 sm:py-5">
             <h2 className="font-display text-lg font-semibold text-text-primary sm:text-xl">Profile</h2>
           </CardHeader>
-          <CardContent className="flex flex-1 flex-col py-3 sm:py-5">
+          <CardContent className="flex flex-1 flex-col py-4 sm:py-6">
             <form
               onSubmit={(event) => void handleSave(event)}
-              className="flex flex-1 flex-col space-y-2"
+              className="flex flex-1 flex-col space-y-3"
             >
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" value={user?.email ?? ''} disabled />
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <Label htmlFor="fullName">Full name</Label>
                 <Input
                   id="fullName"
@@ -203,10 +203,10 @@ export function AccountPage() {
         </Card>
 
         <Card tone="light-elevated" className="flex h-full flex-col">
-          <CardHeader className="py-2.5 sm:py-4">
+          <CardHeader className="py-3.5 sm:py-5">
             <h2 className="font-display text-lg font-semibold text-text-primary sm:text-xl">Plan</h2>
           </CardHeader>
-          <CardContent className="flex flex-1 flex-col space-y-1.5 py-3 text-sm sm:space-y-2.5 sm:py-5">
+          <CardContent className="flex flex-1 flex-col space-y-2 py-4 text-sm sm:space-y-3 sm:py-6">
             <div className="flex items-center justify-between">
               <span className="text-text-secondary">Current plan</span>
               <span className="font-medium text-text-primary">
@@ -258,16 +258,16 @@ export function AccountPage() {
           offering to "update" a password they don't have either fails or
           confusingly grants them a new, unrequested sign-in method. */}
       {user?.app_metadata.provider === 'email' ? (
-        <Card className="mt-3 sm:mt-6">
-          <CardHeader className="py-2.5 sm:py-4">
+        <Card className="mt-4 sm:mt-8">
+          <CardHeader className="py-3.5 sm:py-5">
             <h2 className="font-display text-lg font-semibold text-text-primary sm:text-xl">Password</h2>
           </CardHeader>
-          <CardContent className="py-3 sm:py-5">
+          <CardContent className="py-4 sm:py-6">
             <form
               onSubmit={(event) => void handlePasswordChange(event)}
-              className="grid gap-3 sm:max-w-sm"
+              className="grid gap-4 sm:max-w-sm"
             >
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <Label htmlFor="newPassword">New password</Label>
                 <PasswordInput
                   id="newPassword"
@@ -278,7 +278,7 @@ export function AccountPage() {
                   onChange={(event) => setNewPassword(event.target.value)}
                 />
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <Label htmlFor="confirmNewPassword">Confirm new password</Label>
                 <PasswordInput
                   id="confirmNewPassword"
@@ -310,11 +310,11 @@ export function AccountPage() {
         </Card>
       ) : null}
 
-      <Card className="mt-3 border-error/25 sm:mt-6 sm:border-error/20 sm:bg-[#FCEFEF]/30 sm:shadow-none">
-        <CardHeader className="border-b-error/10 py-2.5 sm:py-4">
+      <Card className="mt-4 border-error/25 sm:mt-8 sm:border-error/20 sm:bg-[#FCEFEF]/30 sm:shadow-none">
+        <CardHeader className="border-b-error/10 py-3.5 sm:py-5">
           <h2 className="font-display text-lg font-semibold text-text-primary sm:text-xl">Danger Zone</h2>
         </CardHeader>
-        <CardContent className="py-3 sm:py-5">
+        <CardContent className="py-4 sm:py-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-text-secondary">
               Permanently delete your account and all associated data. This cannot be undone.

@@ -8,7 +8,7 @@ export function AppLayout() {
     <div className="flex min-h-screen flex-col bg-background">
       <AppHeader />
       <main className="flex-1 pb-[calc(80px+env(safe-area-inset-bottom))] sm:pb-0">
-        <Container className="pb-[40px] pt-[12px] sm:pb-10 sm:pt-4 lg:max-w-[1120px] lg:pb-[48px] lg:pt-[32px]">
+        <Container className="pb-[48px] pt-[20px] sm:pb-12 sm:pt-8 lg:max-w-[1120px] lg:pb-[56px] lg:pt-[40px]">
           {<Outlet />}
         </Container>
       </main>

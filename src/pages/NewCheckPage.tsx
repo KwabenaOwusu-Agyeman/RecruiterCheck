@@ -449,10 +449,10 @@ export function NewCheckPage() {
       </div>
 
       <div className="mx-auto max-w-2xl lg:max-w-[800px]">
-        <StepIndicator steps={['Upload', 'Analyse', 'Results']} currentIndex={analyzing ? 1 : 0} className="mb-[16px] sm:mb-6" />
+        <StepIndicator steps={['Upload', 'Analyse', 'Results']} currentIndex={analyzing ? 1 : 0} className="mb-[20px] sm:mb-8" />
       </div>
 
-      <Card className="mx-auto max-w-2xl space-y-[16px] p-[16px] sm:space-y-6 sm:p-6 lg:max-w-[800px] lg:space-y-[32px] lg:p-[32px]">
+      <Card className="mx-auto max-w-2xl space-y-[20px] p-[20px] sm:space-y-7 sm:p-7 lg:max-w-[800px] lg:space-y-[40px] lg:p-[40px]">
         {captureError ? <Alert variant="error">{captureError}</Alert> : null}
 
         <div className="space-y-2">

@@ -35,7 +35,7 @@ export function CardHeader({ children, className, tone = 'light' }: CardProps) {
   return (
     <div
       className={cn(
-        'border-b px-[16px] py-[12px] sm:px-6 sm:py-4 lg:px-[24px] lg:py-[20px]',
+        'border-b px-[20px] py-[16px] sm:px-7 sm:py-5 lg:px-[32px] lg:py-[24px]',
         tone === 'light' || tone === 'light-elevated' ? 'border-border' : 'border-white/10',
         className,
       )}
@@ -47,7 +47,7 @@ export function CardHeader({ children, className, tone = 'light' }: CardProps) {
 
 export function CardContent({ children, className }: CardProps) {
   return (
-    <div className={cn('px-[16px] py-[14px] sm:px-6 sm:py-5 lg:px-[24px] lg:py-[24px]', className)}>
+    <div className={cn('px-[20px] py-[18px] sm:px-7 sm:py-6 lg:px-[32px] lg:py-[32px]', className)}>
       {children}
     </div>
   )
