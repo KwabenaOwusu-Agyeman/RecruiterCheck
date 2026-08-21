@@ -37,11 +37,11 @@ export function HowItWorksSection() {
     <section
       id="how-it-works"
       ref={sectionRef}
-      className="scroll-mt-[88px] border-b border-border bg-surface"
+      className="scroll-mt-[88px] border-b border-border bg-background"
     >
       <Container className="py-[32px] sm:py-12 lg:py-[88px]">
         <div className="mx-auto max-w-xl text-center">
-          <h2 className="text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl lg:text-[32px]">
+          <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl lg:text-[32px]">
             How it works
           </h2>
         </div>

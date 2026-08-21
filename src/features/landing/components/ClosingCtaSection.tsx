@@ -10,7 +10,7 @@ export function ClosingCtaSection() {
   const isInView = useInView(sectionRef, { once: true, amount: 0.3 })
 
   return (
-    <section ref={sectionRef} className="border-b border-border bg-surface">
+    <section ref={sectionRef} className="border-b border-border bg-background">
       <Container className="py-[32px] sm:py-12 lg:py-[64px]">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
