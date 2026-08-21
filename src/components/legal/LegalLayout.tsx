@@ -22,7 +22,7 @@ export function LegalLayout({ title, updated, children }: LegalLayoutProps) {
 
       <Container className="max-w-3xl pb-12 pt-4 sm:pb-[56px] sm:pt-8 lg:max-w-[760px]">
         <BackLink />
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-text-primary sm:mt-6 sm:text-[32px]">
+        <h1 className="font-display mt-3 text-2xl font-semibold tracking-tight text-text-primary sm:mt-6 sm:text-[32px]">
           {title}
         </h1>
         <p className="mt-2 text-sm text-text-secondary">Last updated: {updated}</p>

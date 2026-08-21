@@ -92,7 +92,7 @@ export function BillingPage() {
 
       <div className="mx-auto mt-1 max-w-2xl text-center lg:max-w-[1080px]">
         <p className="text-xs font-bold uppercase tracking-wider text-blue">Recruiter Check Plans</p>
-        <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-text-primary sm:text-[32px]">
+        <h1 className="font-display mt-1.5 text-2xl font-bold tracking-tight text-text-primary sm:text-[32px]">
           Choose your plan
         </h1>
         <p className="mx-auto mt-2 max-w-none text-sm text-text-secondary sm:whitespace-nowrap sm:text-base">

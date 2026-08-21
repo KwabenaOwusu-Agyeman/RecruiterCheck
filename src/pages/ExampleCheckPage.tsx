@@ -38,7 +38,7 @@ export function ExampleCheckPage() {
       <div className="mt-3 rounded-[20px] border border-white/20 bg-navy p-3 shadow-elevated sm:p-4">
         <div className="border-b border-white/10 pb-5 sm:pb-7">
           <p className="text-sm font-semibold text-white/75">Example Recruiter Check</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-[28px]">
+          <h1 className="font-display mt-1 text-2xl font-semibold tracking-tight text-white sm:text-[28px]">
             {EXAMPLE_JOB_TITLE}
           </h1>
           <p className="mt-1 text-base font-semibold text-blue-light">{EXAMPLE_COMPANY_NAME}</p>

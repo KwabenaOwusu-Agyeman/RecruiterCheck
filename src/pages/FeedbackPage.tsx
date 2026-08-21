@@ -177,7 +177,7 @@ export function FeedbackPage() {
           <p className="text-sm font-semibold text-white/75">
             {firstName ? `Hi ${firstName},` : 'Hi,'}
           </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-[28px]">
+          <h1 className="font-display mt-1 text-2xl font-semibold tracking-tight text-white sm:text-[28px]">
             {check.job_title || 'Recruiter Feedback'}
           </h1>
           {check.company_name ? (
