@@ -308,10 +308,10 @@ export function FeedbackPage() {
               />
             ) : null}
 
-            <Card tone="nested-highlighted">
-              <CardHeader tone="nested" className="px-5 py-3">
-                <h2 className="text-base font-semibold text-white">Recommendation</h2>
-                <p className="mt-1 text-xs text-white/75">
+            <Card>
+              <CardHeader className="px-5 py-3">
+                <h2 className="text-base font-semibold text-text-primary">Recommendation</h2>
+                <p className="mt-1 text-xs text-text-secondary">
                   {tier === 'power'
                     ? 'An improved CV draft, cover letter, and recruiter message based on your feedback. Your CV draft may include placeholder figures (e.g. "X%") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with real numbers before submitting.'
                     : 'An improved CV draft based on your feedback. Your CV draft may include placeholder figures (e.g. "X%") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with real numbers before submitting.'}
@@ -320,18 +320,18 @@ export function FeedbackPage() {
               <CardContent className="px-5 py-4">
                 {tier === 'free' || tier === 'starter' ? (
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm text-white/85">
+                    <p className="text-sm text-text-secondary">
                       Your improved CV draft, cover letter, and recruiter message are available on
                       the Active and Power plans.
                     </p>
                     <Link to="/account/billing">
-                      <Button variant="secondary" size="sm" className="shrink-0">
+                      <Button size="sm" className="shrink-0">
                         Upgrade
                       </Button>
                     </Link>
                   </div>
                 ) : isLowFit ? (
-                  <p className="text-sm text-white/85">
+                  <p className="text-sm text-text-secondary">
                     This score suggests the role is not a strong match for your current CV, so we do
                     not generate a CV draft, cover letter, or recruiter message for it. Look for a
                     role that better fits your experience, then run a new Recruiter Check.
@@ -348,7 +348,7 @@ export function FeedbackPage() {
                         CV.pdf
                       </Button>
                     </a>
-                    <p className="w-full basis-full text-xs text-white/75">
+                    <p className="w-full basis-full text-xs text-text-secondary">
                       This CV draft is watermarked "Draft, not for submission." Any area we found no
                       supporting evidence for in your CV is marked with a placeholder figure (e.g.
                       "X%"), replace it with your real numbers before sending it.
@@ -374,7 +374,7 @@ export function FeedbackPage() {
                     ) : null}
                     {tier === 'active' ? (
                       <Link to="/account/billing" className="ml-auto">
-                        <Button variant="secondary" size="sm">
+                        <Button size="sm">
                           Upgrade
                         </Button>
                       </Link>
@@ -382,13 +382,12 @@ export function FeedbackPage() {
                   </motion.div>
                 ) : (
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm text-white/85">
+                    <p className="text-sm text-text-secondary">
                       {tier === 'power'
                         ? 'Generate an improved CV draft, cover letter, and recruiter message for this application.'
                         : 'Generate an improved CV draft for this application.'}
                     </p>
                     <Button
-                      variant="secondary"
                       size="sm"
                       className="shrink-0"
                       disabled={generatingDocs}
