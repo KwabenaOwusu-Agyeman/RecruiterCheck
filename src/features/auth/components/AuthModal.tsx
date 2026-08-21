@@ -207,7 +207,7 @@ export function AuthModal() {
             close()
             void navigate('/', { replace: true })
           }}
-          className="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded-lg border border-transparent text-text-secondary transition-colors duration-150 hover:bg-background hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue sm:right-4 sm:top-4 sm:h-9 sm:w-9 sm:hover:bg-surface-muted"
+          className="absolute right-[8px] top-[8px] flex h-11 w-11 items-center justify-center rounded-lg border border-transparent text-text-secondary transition-colors duration-150 hover:bg-background hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue sm:right-[16px] sm:top-[16px] sm:h-[36px] sm:w-[36px] sm:hover:bg-surface-muted"
         >
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <path
