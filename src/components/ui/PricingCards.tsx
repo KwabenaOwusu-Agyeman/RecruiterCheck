@@ -53,8 +53,10 @@ export function PricingCards({
                     {plan.badge}
                   </span>
                 ) : (
-                  <span className="text-xs font-bold uppercase tracking-wider text-white/30">
-                    {plan.name}
+                  // Reserves the same row height as the badge above without
+                  // repeating the plan name, which sits right below anyway.
+                  <span className="text-xs font-bold uppercase tracking-wider text-transparent" aria-hidden="true">
+                    &nbsp;
                   </span>
                 )}
                 {isCurrent ? (
