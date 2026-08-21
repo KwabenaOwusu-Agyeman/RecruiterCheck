@@ -234,7 +234,7 @@ export function AuthModal() {
           <Button
             type="button"
             variant="secondary"
-            className="h-[48px] w-full gap-2.5 text-base font-semibold sm:!h-12"
+            className="h-[48px] w-full gap-2.5 !bg-background text-base font-semibold hover:!bg-surface sm:!h-12"
             disabled={loadingProvider !== null}
             onClick={() => void handleOAuth('google', signInWithGoogle)}
           >
@@ -246,7 +246,7 @@ export function AuthModal() {
             <Button
               type="button"
               variant="secondary"
-              className="h-[48px] w-full gap-2.5 text-base font-semibold sm:!h-12"
+              className="h-[48px] w-full gap-2.5 !bg-background text-base font-semibold hover:!bg-surface sm:!h-12"
               disabled={loadingProvider !== null}
               onClick={() => void handleOAuth('linkedin', signInWithLinkedIn)}
             >
@@ -279,7 +279,7 @@ export function AuthModal() {
                 placeholder="you@example.com"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                className="h-[48px] pl-10 text-base sm:!h-12 sm:text-sm"
+                className="h-[48px] pl-10 !bg-background text-base sm:!h-12 sm:text-sm"
               />
             </div>
           </div>
@@ -306,7 +306,7 @@ export function AuthModal() {
               placeholder="••••••••"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="h-[48px] text-base sm:!h-12 sm:text-sm"
+              className="h-[48px] !bg-background text-base sm:!h-12 sm:text-sm"
             />
           </div>
 
@@ -322,7 +322,7 @@ export function AuthModal() {
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 aria-invalid={passwordsMismatch}
-                className="h-[48px] text-base sm:!h-12 sm:text-sm"
+                className="h-[48px] !bg-background text-base sm:!h-12 sm:text-sm"
               />
               {passwordsMismatch ? <p className="text-xs text-error">Passwords do not match.</p> : null}
             </div>
