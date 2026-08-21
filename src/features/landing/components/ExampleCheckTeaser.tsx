@@ -17,7 +17,7 @@ export function ExampleCheckTeaser() {
   return (
     <section
       id="example"
-      className="scroll-mt-[88px] border-b border-border bg-surface sm:bg-navy-tint"
+      className="scroll-mt-[88px] border-b border-border bg-surface"
     >
       <Container className="py-[32px] sm:py-12 lg:py-[96px]">
         <div className="mx-auto max-w-xl text-center">
