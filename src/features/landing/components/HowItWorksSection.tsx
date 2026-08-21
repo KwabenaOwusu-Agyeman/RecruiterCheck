@@ -63,7 +63,7 @@ export function HowItWorksSection() {
               <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-navy text-lg font-bold text-white">
                 {Number(step.number)}
               </span>
-              <h3 className="mt-3 font-display text-lg font-semibold text-text-primary sm:text-xl">
+              <h3 className="mt-3 min-h-[56px] font-display text-lg font-semibold leading-[1.4] text-text-primary sm:min-h-[64px] sm:text-xl">
                 {step.title}
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-text-secondary">
