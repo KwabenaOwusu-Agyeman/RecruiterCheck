@@ -95,12 +95,16 @@ export function MyChecksPage() {
           // Hidden from sm+ — AppHeader's own New Check button covers that
           // range, and stacking both right on top of each other read as a
           // duplicate CTA. Below sm, AppHeader's nav (including its New
-          // Check button) is hidden entirely, so this is the only one there.
-          <Link to="/checks/new" className="block w-full sm:hidden">
-            <Button size="sm" className="w-full">
-              New Check
-            </Button>
-          </Link>
+          // Check button) is hidden entirely, so this is the only one there
+          // — except when the list is empty, where EmptyState below already
+          // has its own centered CTA and this would just duplicate it.
+          !loading && checks.length === 0 ? null : (
+            <Link to="/checks/new" className="block w-full sm:hidden">
+              <Button size="sm" className="w-full">
+                New Check
+              </Button>
+            </Link>
+          )
         }
       />
 
