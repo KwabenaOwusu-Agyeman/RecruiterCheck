@@ -20,10 +20,11 @@ export default {
         error: '#91151A',
         'blue-light': '#8FB2F0',
         'error-light': '#FF8A8A',
-        // Card/panel fill only (not text, buttons, or the logo) — sits
-        // between `navy` and white, less stark against the light grey page
-        // while staying dark enough for white text to stay legible on top.
-        'navy-card': '#194A9F',
+        // Card/panel fill only (not text, buttons, or the logo) — a richer,
+        // more saturated navy-blue than `navy` itself, chosen so dark cards
+        // read less starkly against the light grey page while staying dark
+        // enough for white text to stay fully legible on top.
+        'navy-card': '#15316A',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
