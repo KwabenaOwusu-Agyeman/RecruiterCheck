@@ -382,7 +382,7 @@ export function NewCheckPage() {
         <div className="mt-3">
           <PageHeader title="New Check" />
         </div>
-        <div className="relative mx-auto max-w-md overflow-hidden rounded-[20px] border border-white/20 bg-navy p-[20px] text-center shadow-glow sm:p-8">
+        <div className="relative mx-auto max-w-md overflow-hidden rounded-[20px] border border-white/20 bg-navy-card p-[20px] text-center shadow-glow sm:p-8">
           <div className="pointer-events-none absolute inset-0 bg-glow-navy" aria-hidden="true" />
           <div className="relative mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-light/15">
             <Sparkles className="h-5 w-5 text-blue-light" strokeWidth={2} />
@@ -412,7 +412,7 @@ export function NewCheckPage() {
         <div className="mt-3">
           <PageHeader title="New Check" />
         </div>
-        <div className="relative mx-auto max-w-md overflow-hidden rounded-[20px] border border-white/20 bg-navy p-[20px] text-center shadow-glow sm:p-8">
+        <div className="relative mx-auto max-w-md overflow-hidden rounded-[20px] border border-white/20 bg-navy-card p-[20px] text-center shadow-glow sm:p-8">
           <div className="pointer-events-none absolute inset-0 bg-glow-navy" aria-hidden="true" />
           <div className="relative mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-light/15">
             <Sparkles className="h-5 w-5 text-blue-light" strokeWidth={2} />
@@ -449,7 +449,7 @@ export function NewCheckPage() {
         />
       </div>
 
-      <div className="mx-auto max-w-2xl space-y-[16px] rounded-[20px] border border-white/20 bg-navy p-[16px] shadow-glow sm:space-y-6 sm:p-6 lg:max-w-[800px] lg:space-y-[32px] lg:p-[32px]">
+      <div className="mx-auto max-w-2xl space-y-[16px] rounded-[20px] border border-white/20 bg-navy-card p-[16px] shadow-glow sm:space-y-6 sm:p-6 lg:max-w-[800px] lg:space-y-[32px] lg:p-[32px]">
         <StepIndicator steps={['Upload', 'Analyse', 'Results']} currentIndex={analyzing ? 1 : 0} />
 
         {captureError ? <Alert variant="error">{captureError}</Alert> : null}

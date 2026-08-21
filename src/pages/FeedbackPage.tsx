@@ -123,7 +123,7 @@ export function FeedbackPage() {
   if (loading) {
     return (
       <div className="lg:mx-auto lg:max-w-[1000px]">
-        <div className="rounded-[20px] border border-white/10 bg-navy p-4 shadow-glow sm:p-6 lg:p-8">
+        <div className="rounded-[20px] border border-white/10 bg-navy-card p-4 shadow-glow sm:p-6 lg:p-8">
           <div className="space-y-3">
             <Skeleton className="h-4 w-24 bg-white/10" />
             <Skeleton className="h-7 w-2/3 bg-white/10" />
@@ -172,7 +172,7 @@ export function FeedbackPage() {
 
   return (
     <div className="lg:mx-auto lg:max-w-[1000px]">
-      <div className="rounded-[20px] border border-white/10 bg-navy p-4 shadow-glow sm:p-6 lg:p-8">
+      <div className="rounded-[20px] border border-white/10 bg-navy-card p-4 shadow-glow sm:p-6 lg:p-8">
         <div className="border-b border-white/10 pb-5 sm:pb-7">
           <p className="text-sm font-semibold text-white/75">
             {firstName ? `Hi ${firstName},` : 'Hi,'}

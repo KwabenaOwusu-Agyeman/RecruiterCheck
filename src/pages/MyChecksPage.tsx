@@ -103,7 +103,7 @@ export function MyChecksPage() {
         }
       />
 
-      <div className="rounded-[20px] border border-white/20 bg-navy p-3 shadow-glow sm:p-4">
+      <div className="rounded-[20px] border border-white/20 bg-navy-card p-3 shadow-glow sm:p-4">
         {loading ? (
           <div className="divide-y divide-white/10">
             {[0, 1, 2, 3].map((row) => (
