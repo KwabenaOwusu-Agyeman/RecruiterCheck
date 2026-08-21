@@ -2,7 +2,6 @@ import { Plus } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { Container } from '@/components/ui/Container'
 import { cn } from '@/utils/cn'
-import { BRAND } from '@/lib/constants'
 
 const navItems = [
   { to: '/checks', label: 'My Checks' },
@@ -33,7 +32,7 @@ export function AppHeader() {
               through My Checks / Account, not the logo. */}
           <span className="inline-flex items-center gap-2.5 text-text-primary">
             <span className="text-[18px] font-extrabold tracking-tight text-navy sm:text-xl">
-              {BRAND.name}
+              MyRecruiter<span className="text-blue">Check</span>
             </span>
           </span>
           <nav className="hidden items-center gap-1 sm:flex" aria-label="App">

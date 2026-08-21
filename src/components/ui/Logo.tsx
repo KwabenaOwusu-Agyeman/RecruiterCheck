@@ -14,7 +14,7 @@ export function Logo({ className }: LogoProps) {
       aria-label={`${BRAND.name} home`}
     >
       <span className="text-[18px] font-extrabold tracking-tight text-navy sm:text-xl">
-        {BRAND.name}
+        MyRecruiter<span className="text-blue">Check</span>
       </span>
     </Link>
   )
