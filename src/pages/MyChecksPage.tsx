@@ -246,14 +246,14 @@ export function MyChecksPage() {
       )}
 
       {lockedCount > 0 && !isPower ? (
-        <div className="mt-4 flex flex-col items-center gap-3 rounded-[20px] border border-navy/15 bg-surface-muted p-4 text-center sm:flex-row sm:justify-between sm:text-left">
+        <Card className="mt-4 flex flex-col items-center gap-3 p-4 text-center sm:flex-row sm:justify-between sm:text-left">
           <p className="text-sm font-medium text-navy">Upgrade to Power to see your full check history.</p>
           <Link to="/account/billing" className="shrink-0">
             <Button size="sm">
               Upgrade to Power
             </Button>
           </Link>
-        </div>
+        </Card>
       ) : null}
 
       <ConfirmDialog
