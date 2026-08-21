@@ -13,7 +13,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({ className, ...p
         'placeholder:text-text-secondary/60',
         'transition-[border-color,box-shadow] duration-150',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2',
-        'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-surface-muted',
+        'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-background',
         className,
       )}
       {...props}

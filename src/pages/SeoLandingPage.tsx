@@ -138,7 +138,7 @@ export function SeoLandingPage({
             <Card className="mx-auto max-w-3xl overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-border bg-surface-muted">
+                  <tr className="border-b border-border bg-background">
                     <th className="p-4 text-sm font-semibold text-text-secondary"> </th>
                     <th className="p-4 text-sm font-semibold text-text-primary">MyRecruiterCheck</th>
                     <th className="p-4 text-sm font-semibold text-text-secondary">{comparison.competitor}</th>

@@ -11,7 +11,6 @@ export default {
         border: '#EFEBE3',
         'border-strong': '#DED6C7',
         'border-soft': '#E9E4D9',
-        'surface-muted': '#F2EEE6',
         'navy-tint': '#F1F3FA',
         'text-primary': '#05050D',
         'text-secondary': '#3A4A6B',

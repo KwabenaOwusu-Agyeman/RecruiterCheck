@@ -123,7 +123,7 @@ export function MyChecksPage() {
           {/* Desktop table */}
           <Card className="hidden overflow-hidden md:block">
             <table className="min-w-full divide-y divide-border">
-              <thead className="bg-surface-muted">
+              <thead className="bg-background">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-text-secondary lg:px-6">
                     Role
