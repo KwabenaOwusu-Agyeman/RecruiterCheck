@@ -162,7 +162,7 @@ export function AuthModal() {
 
   const passwordsMismatch = mode === 'sign-up' && confirmPassword.length > 0 && password !== confirmPassword
 
-  const title = mode === 'sign-in' ? 'Sign In' : 'Get started'
+  const title = mode === 'sign-in' ? 'Welcome back' : 'Get started'
   const alternateMode = mode === 'sign-in' ? 'sign-up' : 'sign-in'
   const alternateLabel = mode === 'sign-in' ? 'Sign Up' : 'Sign In'
   const submitLabel = mode === 'sign-up' ? 'Create free account' : 'Sign In'
@@ -194,7 +194,7 @@ export function AuthModal() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="auth-modal-title"
-          className="auth-sheet-panel relative flex max-h-[92dvh] w-full max-w-none flex-col overflow-y-auto rounded-t-[24px] border border-border-soft border-b-0 bg-surface p-[16px] pb-[max(16px,env(safe-area-inset-bottom))] shadow-elevated sm:max-h-[calc(100vh-2rem)] sm:max-w-[430px] sm:rounded-[20px] sm:border-b sm:p-[32px] sm:pb-[32px]"
+          className="auth-sheet-panel relative flex max-h-[92dvh] w-full max-w-none flex-col overflow-y-auto rounded-t-[24px] border border-border-soft border-b-0 bg-background p-[16px] pb-[max(16px,env(safe-area-inset-bottom))] shadow-elevated sm:max-h-[calc(100vh-2rem)] sm:max-w-[430px] sm:rounded-[20px] sm:border-b sm:p-[32px] sm:pb-[32px]"
         >
         <div
           className="mx-auto mb-[10px] h-1.5 w-10 shrink-0 rounded-full bg-border sm:hidden"
@@ -207,7 +207,7 @@ export function AuthModal() {
             close()
             void navigate('/', { replace: true })
           }}
-          className="absolute right-[8px] top-[8px] flex h-11 w-11 items-center justify-center rounded-lg border border-transparent text-text-secondary transition-colors duration-150 hover:bg-background hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue sm:right-[16px] sm:top-[16px] sm:h-[36px] sm:w-[36px] sm:hover:bg-surface-muted"
+          className="absolute right-[8px] top-[8px] flex h-11 w-11 items-center justify-center rounded-lg border border-transparent text-text-secondary transition-colors duration-150 hover:bg-surface hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue sm:right-[16px] sm:top-[16px] sm:h-[36px] sm:w-[36px] sm:hover:bg-surface"
         >
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <path
