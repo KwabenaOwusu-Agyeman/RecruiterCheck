@@ -65,7 +65,7 @@ export function PricingCards({
                   </span>
                 ) : null}
               </div>
-              <h2 className="mt-1.5 text-lg font-bold text-white">{plan.name}</h2>
+              <h2 className="font-display mt-1.5 text-xl font-semibold text-white">{plan.name}</h2>
               <p className="mt-1 text-sm leading-snug text-white/60">{plan.description}</p>
 
               <div className="mt-2.5 border-t border-white/10 pt-2.5">
