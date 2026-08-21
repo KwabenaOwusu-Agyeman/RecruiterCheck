@@ -18,7 +18,7 @@ interface ProductFeedbackFormProps {
 
 function StarInput({ rating, onChange }: { rating: number; onChange: (value: number) => void }) {
   return (
-    <div className="flex gap-1" role="radiogroup" aria-label="Rating">
+    <div className="flex gap-[4px]" role="radiogroup" aria-label="Rating">
       {Array.from({ length: 5 }).map((_, index) => {
         const value = index + 1
         return (
@@ -29,11 +29,11 @@ function StarInput({ rating, onChange }: { rating: number; onChange: (value: num
             aria-checked={rating === value}
             aria-label={`${value} star${value === 1 ? '' : 's'}`}
             onClick={() => onChange(value)}
-            className="p-1"
+            className="p-[4px]"
           >
             <svg
               viewBox="0 0 20 20"
-              className={cn('h-7 w-7', value <= rating ? 'fill-warning' : 'fill-border-strong')}
+              className={cn('h-[28px] w-[28px]', value <= rating ? 'fill-warning' : 'fill-border-strong')}
               aria-hidden="true"
             >
               <path d="M10 1.5l2.59 5.25 5.79.84-4.19 4.08.99 5.77L10 14.77l-5.18 2.67.99-5.77L1.62 7.59l5.79-.84L10 1.5z" />
@@ -165,7 +165,7 @@ export function ProductFeedbackForm({ userId, email, checkId, firstName, targetR
             type="checkbox"
             checked={featureConsent}
             onChange={(event) => setFeatureConsent(event.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-border"
+            className="mt-0.5 h-[16px] w-[16px] rounded border-border"
           />
           <span>
             I agree that MyRecruiterCheck may publish this feedback with my first name and job title on its
