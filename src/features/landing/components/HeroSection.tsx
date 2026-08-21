@@ -12,7 +12,7 @@ export function HeroSection() {
     <section className="relative overflow-hidden border-b border-border bg-gradient-hero">
       <Container className="relative py-[40px] sm:py-16 lg:py-[96px]">
         <div className="mx-auto max-w-2xl text-center lg:max-w-[800px]">
-          <p className="text-glow-navy mb-4 text-xl font-bold text-navy sm:text-2xl">{BRAND.tagline}</p>
+          <p className="mb-4 text-xl font-bold text-navy sm:text-2xl">{BRAND.tagline}</p>
           <h1 className="font-display text-4xl font-semibold tracking-tight text-text-primary sm:text-5xl lg:text-[54px] lg:leading-[1.1]">
             If you were the recruiter, would you invite yourself to an interview?
           </h1>

@@ -7,7 +7,7 @@ import { cn } from '@/utils/cn'
 // resolve by Tailwind's codebase-wide class-discovery order, not by where
 // the className string sits in the `cn()` call, so an override is not a
 // reliable way to recolor this component. Add a new tone here instead.
-type CardTone = 'light' | 'light-glow' | 'dark' | 'nested' | 'nested-highlighted'
+type CardTone = 'light' | 'light-elevated' | 'dark' | 'nested' | 'nested-highlighted'
 
 interface CardProps {
   children: ReactNode
@@ -17,7 +17,7 @@ interface CardProps {
 
 const cardToneStyles: Record<CardTone, string> = {
   light: 'border-border-soft bg-surface shadow-card',
-  'light-glow': 'border-border-soft bg-surface shadow-elevated',
+  'light-elevated': 'border-border-soft bg-surface shadow-elevated',
   dark: 'border-white/20 bg-navy shadow-elevated',
   nested: 'border-white/10 bg-white/[0.04] shadow-card',
   'nested-highlighted': 'border-blue-light/30 bg-white/[0.04] shadow-elevated',
@@ -36,7 +36,7 @@ export function CardHeader({ children, className, tone = 'light' }: CardProps) {
     <div
       className={cn(
         'border-b px-[16px] py-[12px] sm:px-6 sm:py-4 lg:px-[24px] lg:py-[20px]',
-        tone === 'light' || tone === 'light-glow' ? 'border-border' : 'border-white/10',
+        tone === 'light' || tone === 'light-elevated' ? 'border-border' : 'border-white/10',
         className,
       )}
     >

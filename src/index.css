@@ -2,15 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  /* Soft navy-tinted halo for brand-identity text (logo, tagline) on a light
-     background — the text equivalent of the shadow-glow surfaces, since
-     box-shadow doesn't apply to inline text. */
-  .text-glow-navy {
-    text-shadow: 0 2px 16px rgba(25, 74, 159, 0.35);
-  }
-}
-
 @layer base {
   html {
     @apply scroll-smooth antialiased;

@@ -202,7 +202,7 @@ export function AccountPage() {
           </CardContent>
         </Card>
 
-        <Card tone="light-glow" className="flex h-full flex-col">
+        <Card tone="light-elevated" className="flex h-full flex-col">
           <CardHeader className="py-2.5 sm:py-4">
             <h2 className="font-display text-lg font-semibold text-text-primary sm:text-xl">Plan</h2>
           </CardHeader>
