@@ -1,4 +1,6 @@
 import NumberFlow from '@number-flow/react'
+import { ArrowRight } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Container } from '@/components/ui/Container'
 import { FeedbackBullet, getVerdictColor } from '@/components/feedback/FeedbackBullet'
@@ -32,7 +34,7 @@ export function ExampleCheckTeaser() {
         <div className="mx-auto mt-[24px] max-w-2xl sm:mt-8 lg:max-w-[900px]">
           <Card tone="dark" className="relative overflow-hidden">
             <CardContent className="px-6 py-5 lg:grid lg:grid-cols-2 lg:gap-x-10 lg:gap-y-0 lg:p-[40px]">
-              <div className="lg:border-r lg:border-white/10 lg:pr-10">
+              <div className="flex flex-col lg:border-r lg:border-white/10 lg:pr-10">
                 <p className="text-sm font-semibold text-white">{EXAMPLE_JOB_TITLE}</p>
                 <p className="text-sm font-semibold text-blue-light">{EXAMPLE_COMPANY_NAME}</p>
 
@@ -45,6 +47,14 @@ export function ExampleCheckTeaser() {
                 <p className={cn('mt-1 text-base font-semibold', getVerdictColor(score, 'dark'))}>
                   {getScoreLabel(score)}
                 </p>
+
+                <Link
+                  to="/example-check"
+                  className="mt-8 hidden items-center gap-1.5 text-sm font-semibold text-blue-light hover:underline lg:mt-auto lg:flex"
+                >
+                  See the full example
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
               </div>
 
               <div className="mt-[16px] grid gap-[16px] sm:mt-5 sm:gap-5 lg:mt-0 lg:pl-10">
