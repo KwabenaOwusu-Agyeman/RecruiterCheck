@@ -17,10 +17,10 @@ interface CardProps {
 
 const cardToneStyles: Record<CardTone, string> = {
   light: 'border-border-soft bg-surface shadow-card',
-  'light-glow': 'border-border-soft bg-surface shadow-glow',
-  dark: 'border-white/20 bg-navy shadow-glow',
+  'light-glow': 'border-border-soft bg-surface shadow-elevated',
+  dark: 'border-white/20 bg-navy shadow-elevated',
   nested: 'border-white/10 bg-white/[0.04] shadow-card',
-  'nested-highlighted': 'border-blue-light/30 bg-white/[0.04] shadow-glow',
+  'nested-highlighted': 'border-blue-light/30 bg-white/[0.04] shadow-elevated',
 }
 
 export function Card({ children, className, tone = 'light' }: CardProps) {
