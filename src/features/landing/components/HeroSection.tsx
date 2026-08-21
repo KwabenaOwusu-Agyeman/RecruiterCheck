@@ -9,7 +9,7 @@ export function HeroSection() {
   const handleCheckCta = useCheckCta()
 
   return (
-    <section className="relative overflow-hidden border-b border-border bg-gradient-hero">
+    <section className="relative overflow-hidden border-b border-border bg-background">
       <Container className="relative py-[40px] sm:py-16 lg:py-[96px]">
         <div className="mx-auto max-w-2xl text-center lg:max-w-[800px]">
           <p className="mb-4 text-xl font-bold text-navy sm:text-2xl">{BRAND.tagline}</p>
