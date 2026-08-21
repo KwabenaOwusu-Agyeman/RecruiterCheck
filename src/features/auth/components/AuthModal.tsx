@@ -194,7 +194,7 @@ export function AuthModal() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="auth-modal-title"
-          className="auth-sheet-panel relative flex max-h-[92dvh] w-full max-w-none flex-col overflow-y-auto rounded-t-[24px] border border-border-soft border-b-0 bg-surface p-[16px] pb-[max(16px,env(safe-area-inset-bottom))] shadow-elevated sm:max-h-[calc(100vh-2rem)] sm:max-w-[430px] sm:rounded-[20px] sm:border-b sm:p-[32px] sm:pb-[32px] sm:shadow-glow"
+          className="auth-sheet-panel relative flex max-h-[92dvh] w-full max-w-none flex-col overflow-y-auto rounded-t-[24px] border border-border-soft border-b-0 bg-surface p-[16px] pb-[max(16px,env(safe-area-inset-bottom))] shadow-elevated sm:max-h-[calc(100vh-2rem)] sm:max-w-[430px] sm:rounded-[20px] sm:border-b sm:p-[32px] sm:pb-[32px]"
         >
         <div
           className="mx-auto mb-[10px] h-1.5 w-10 shrink-0 rounded-full bg-border sm:hidden"

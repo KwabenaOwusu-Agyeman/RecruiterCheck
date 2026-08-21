@@ -33,10 +33,8 @@ export default {
         'glow-sm': '0 1px 2px rgba(2,12,56,0.06), 0 8px 20px -6px rgba(25,74,159,0.35)',
       },
       backgroundImage: {
-        'gradient-hero': 'linear-gradient(135deg, #F7F8FC 0%, #EEF2FA 100%)',
+        'gradient-hero': 'linear-gradient(135deg, #F8F6F2 0%, #F1ECE1 100%)',
         'gradient-surface': 'linear-gradient(180deg, #FFFFFF 0%, #F8F6F2 100%)',
-        'glow-navy':
-          'radial-gradient(60% 60% at 50% 0%, rgba(25,74,159,0.14) 0%, rgba(25,74,159,0) 70%)',
       },
       spacing: {
         1: '0.5rem',
