@@ -96,21 +96,21 @@ export function PricingCards({
                   <Button
                     variant="light"
                     className="w-full justify-center"
-                    size="sm"
+                    size="lg"
                     disabled={managingBilling}
                     onClick={onManageBilling}
                   >
                     {managingBilling ? 'Opening...' : 'Manage Billing'}
                   </Button>
                 ) : isCurrent ? (
-                  <Button variant="light" className="w-full justify-center" size="sm" disabled>
+                  <Button variant="light" className="w-full justify-center" size="lg" disabled>
                     Current Plan
                   </Button>
                 ) : isDowngrade ? (
                   <Button
                     variant="ghost"
                     className="w-full justify-center border-white/20 text-white hover:bg-white/10"
-                    size="sm"
+                    size="lg"
                     disabled={loadingPlan !== null}
                     onClick={() => onDowngrade(plan.id as 'starter' | 'active' | 'power')}
                   >
@@ -120,7 +120,7 @@ export function PricingCards({
                   <Button
                     variant="accent"
                     className="w-full justify-center gap-2"
-                    size="sm"
+                    size="lg"
                     disabled={loadingPlan !== null}
                     onClick={() => onUpgrade(plan.id as 'starter' | 'active' | 'power')}
                   >
