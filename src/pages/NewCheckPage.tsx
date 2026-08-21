@@ -4,6 +4,7 @@ import { Sparkles } from 'lucide-react'
 import { Alert } from '@/components/ui/Alert'
 import { BackLink } from '@/components/ui/BackLink'
 import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
 import { FileDropzone } from '@/components/ui/FileDropzone'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
@@ -382,7 +383,7 @@ export function NewCheckPage() {
         <div className="mt-3">
           <PageHeader title="New Check" />
         </div>
-        <div className="mx-auto max-w-md rounded-[16px] border border-border-soft bg-surface p-[20px] text-center shadow-card sm:p-8">
+        <Card className="mx-auto max-w-md p-[20px] text-center sm:p-8">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-navy-tint">
             <Sparkles className="h-5 w-5 text-navy" strokeWidth={2} />
           </div>
@@ -399,7 +400,7 @@ export function NewCheckPage() {
               </Button>
             </Link>
           </div>
-        </div>
+        </Card>
       </>
     )
   }
@@ -411,7 +412,7 @@ export function NewCheckPage() {
         <div className="mt-3">
           <PageHeader title="New Check" />
         </div>
-        <div className="mx-auto max-w-md rounded-[16px] border border-border-soft bg-surface p-[20px] text-center shadow-card sm:p-8">
+        <Card className="mx-auto max-w-md p-[20px] text-center sm:p-8">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-navy-tint">
             <Sparkles className="h-5 w-5 text-navy" strokeWidth={2} />
           </div>
@@ -428,7 +429,7 @@ export function NewCheckPage() {
               </Button>
             </Link>
           </div>
-        </div>
+        </Card>
       </>
     )
   }
@@ -451,7 +452,7 @@ export function NewCheckPage() {
         <StepIndicator steps={['Upload', 'Analyse', 'Results']} currentIndex={analyzing ? 1 : 0} className="mb-[16px] sm:mb-6" />
       </div>
 
-      <div className="mx-auto max-w-2xl space-y-[16px] rounded-[16px] border border-border-soft bg-surface p-[16px] shadow-card sm:space-y-6 sm:p-6 lg:max-w-[800px] lg:space-y-[32px] lg:p-[32px]">
+      <Card className="mx-auto max-w-2xl space-y-[16px] p-[16px] sm:space-y-6 sm:p-6 lg:max-w-[800px] lg:space-y-[32px] lg:p-[32px]">
         {captureError ? <Alert variant="error">{captureError}</Alert> : null}
 
         <div className="space-y-2">
@@ -646,7 +647,7 @@ export function NewCheckPage() {
             ) : null}
           </div>
         </div>
-      </div>
+      </Card>
     </>
   )
 }

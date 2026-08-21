@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Alert } from '@/components/ui/Alert'
 import { ScoreBadge, StatusBadge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PageHeader } from '@/components/ui/Badge'
@@ -109,7 +110,7 @@ export function MyChecksPage() {
       />
 
       {loading ? (
-        <div className="divide-y divide-border rounded-[16px] border border-border-soft bg-surface shadow-card">
+        <Card className="divide-y divide-border">
           {[0, 1, 2, 3].map((row) => (
             <div key={row} className="flex items-center justify-between gap-3 px-4 py-4">
               <div className="min-w-0 flex-1 space-y-2">
@@ -119,7 +120,7 @@ export function MyChecksPage() {
               <Skeleton className="h-4 w-10 shrink-0" />
             </div>
           ))}
-        </div>
+        </Card>
       ) : error ? (
         <Alert variant="error">{error}</Alert>
       ) : checks.length === 0 ? (
@@ -135,7 +136,7 @@ export function MyChecksPage() {
       ) : (
         <>
           {/* Desktop table */}
-          <div className="hidden overflow-hidden rounded-[16px] border border-border-soft bg-surface shadow-card md:block">
+          <Card className="hidden overflow-hidden md:block">
             <table className="min-w-full divide-y divide-border">
               <thead className="bg-surface-muted">
                 <tr>
@@ -198,10 +199,10 @@ export function MyChecksPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </Card>
 
           {/* Mobile compact list */}
-          <div className="divide-y divide-border rounded-[16px] border border-border-soft bg-surface shadow-card md:hidden">
+          <Card className="divide-y divide-border md:hidden">
             {checks.map((check) => (
               <div key={check.id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <div className="min-w-0">
@@ -240,7 +241,7 @@ export function MyChecksPage() {
                 </div>
               </div>
             ))}
-          </div>
+          </Card>
         </>
       )}
 
