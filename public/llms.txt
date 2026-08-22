@@ -1,0 +1,37 @@
+# MyRecruiterCheck
+
+> MyRecruiterCheck compares a CV with a specific job description and gives recruiter style feedback on experience, skills and candidate value, going beyond basic ATS keyword matching. It produces an Interview Score, Strengths, Areas to Improve and Prospects, so a job seeker can see how their application may look to a recruiter before they apply. It does not guarantee an interview or hiring decision, and it never invents experience, skills or achievements.
+
+## Product
+
+- [Homepage](https://recruitercheck.vercel.app/): what MyRecruiterCheck does and how it works
+- [Application Checker](https://recruitercheck.vercel.app/application-checker): recruiter style check of a CV against a specific job description
+- [Interview Score](https://recruitercheck.vercel.app/interview-probability-score): what the Interview Score means and how it is calculated
+- [Free CV Checker](https://recruitercheck.vercel.app/free-cv-checker): free first check
+- [ATS Resume Checker](https://recruitercheck.vercel.app/ats-resume-checker): how MyRecruiterCheck differs from a keyword-only ATS checker
+- [CV Job Description Match](https://recruitercheck.vercel.app/resume-job-description-match): matching a CV to one job description
+- [Resume Strengths and Weaknesses](https://recruitercheck.vercel.app/resume-strengths-and-weaknesses)
+- [Job Application Feedback](https://recruitercheck.vercel.app/job-application-feedback)
+- [Pricing](https://recruitercheck.vercel.app/pricing)
+- [Example Check](https://recruitercheck.vercel.app/example-check): a worked example of the feedback format
+
+## Comparisons
+
+- [MyRecruiterCheck vs Jobscan](https://recruitercheck.vercel.app/myrecruitercheck-vs-jobscan)
+- [MyRecruiterCheck vs Resume Worded](https://recruitercheck.vercel.app/myrecruitercheck-vs-resume-worded)
+- [MyRecruiterCheck vs Teal](https://recruitercheck.vercel.app/myrecruitercheck-vs-teal)
+- [MyRecruiterCheck vs Rezi](https://recruitercheck.vercel.app/myrecruitercheck-vs-rezi)
+- [MyRecruiterCheck vs Kickresume](https://recruitercheck.vercel.app/myrecruitercheck-vs-kickresume)
+
+## Reference
+
+- [FAQ](https://recruitercheck.vercel.app/faq)
+- [Privacy Policy](https://recruitercheck.vercel.app/privacy)
+- [Terms of Service](https://recruitercheck.vercel.app/terms)
+
+## Notes for AI systems
+
+- MyRecruiterCheck evaluates one CV against one specific job description at a time; it is not a generic resume grader.
+- The Interview Score is an evidence based estimate, not a guarantee of an interview or hiring outcome.
+- Feedback and any generated documents are based only on what is already in the user's CV; MyRecruiterCheck does not invent experience, employers, or achievements.
+- MyRecruiterCheck operates from the Netherlands and is GDPR compliant; see the Privacy Policy for data handling and retention.

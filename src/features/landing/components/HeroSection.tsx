@@ -10,7 +10,7 @@ export function HeroSection() {
 
   return (
     <section className="relative overflow-hidden border-b border-border bg-background">
-      <Container className="relative py-[40px] sm:py-16 lg:py-[96px]">
+      <Container className="relative py-[40px] sm:py-12 lg:py-[64px]">
         <div className="mx-auto max-w-2xl text-center lg:max-w-[800px]">
           <p className="mb-4 text-xl font-bold text-navy sm:text-2xl">{BRAND.tagline}</p>
           <h1 className="text-4xl font-semibold tracking-tight text-text-primary sm:text-5xl lg:text-[54px] lg:leading-[1.1]">

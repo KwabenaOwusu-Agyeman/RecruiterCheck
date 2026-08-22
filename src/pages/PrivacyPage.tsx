@@ -33,7 +33,7 @@ export function PrivacyPage() {
       <Section title="3. How We Use Your Data">
         <p>We process your data to:</p>
         <ul className="list-disc space-y-1 pl-5">
-          <li>Provide the Service, including generating your interview probability score, feedback, and tailored documents;</li>
+          <li>Provide the Service, including generating your interview score, feedback, and tailored documents;</li>
           <li>Process payments and manage your subscription;</li>
           <li>Maintain the security and integrity of the Service;</li>
           <li>Use voluntary product feedback to improve the Service. We will not publish your comment without your permission;</li>
@@ -73,8 +73,14 @@ export function PrivacyPage() {
 
       <Section title="7. Data Retention">
         <p>
-          We retain your data for as long as your account is active. You can permanently delete
-          your account, CV, and all generated documents at any time from{' '}
+          Your original uploaded CV and any documents we generate for you (tailored CV, cover
+          letter, recruiter message) are automatically and permanently deleted from our storage
+          within 24 hours of being processed. The results of a check — your Interview Score,
+          feedback, job title, and company name — are retained for as long as your account is
+          active, so you can review your check history.
+        </p>
+        <p>
+          You can permanently delete your account and all remaining data at any time from{' '}
           <Link to="/account" className="font-medium text-blue hover:underline">
             Account settings
           </Link>

@@ -17,7 +17,7 @@ export function SoftwareEngineerResumeCheckerPage() {
       steps={[
         'Upload your resume in PDF or DOCX format.',
         'Paste the job description for the engineering role you want.',
-        'Review your Interview Probability and fix what recruiters would flag before you apply.',
+        'Review your Interview Score and fix what recruiters would flag before you apply.',
       ]}
       verdict={{
         jobTitle: 'Software Engineer',
@@ -40,7 +40,7 @@ export function SoftwareEngineerResumeCheckerPage() {
       relatedLinks={[
         { label: 'ATS Resume Checker', to: '/ats-resume-checker' },
         { label: 'CV Job Match', to: '/resume-job-description-match' },
-        { label: 'Interview Probability', to: '/interview-probability-score' },
+        { label: 'Interview Score', to: '/interview-probability-score' },
       ]}
     />
   )

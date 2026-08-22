@@ -35,7 +35,7 @@ export function AtsResumeCheckerPage() {
       relatedLinks={[
         { label: 'Free CV Checker', to: '/free-cv-checker' },
         { label: 'CV Job Match', to: '/resume-job-description-match' },
-        { label: 'Interview Probability', to: '/interview-probability-score' },
+        { label: 'Interview Score', to: '/interview-probability-score' },
         { label: 'Application Checker', to: '/application-checker' },
       ]}
     />

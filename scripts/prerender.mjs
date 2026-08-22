@@ -13,6 +13,7 @@ const serverEntry = path.join(rootDir, 'dist-ssr', 'entry-server.js')
 const ROUTES = [
   '/',
   '/example-check',
+  '/about',
   '/faq',
   '/terms',
   '/privacy',
@@ -27,6 +28,7 @@ const ROUTES = [
   '/recruiter-message-generator',
   '/resume-strengths-and-weaknesses',
   '/job-application-feedback',
+  '/how-recruiters-evaluate-a-cv',
   '/resume-job-description-match',
   '/interview-probability-score',
   '/software-engineer-resume-checker',
@@ -39,6 +41,7 @@ const ROUTES = [
   '/myrecruitercheck-vs-teal',
   '/myrecruitercheck-vs-rezi',
   '/myrecruitercheck-vs-kickresume',
+  '/pricing',
 ]
 
 const template = fs.readFileSync(path.join(clientDir, 'index.html'), 'utf-8')
@@ -61,7 +64,7 @@ function withTag(html, regex, replacement) {
 
 function applyMeta(html, meta) {
   if (!meta) return html
-  const { title, description, url } = meta
+  const { title, description, url, noindex } = meta
   const escaped = title.replace(/&/g, '&amp;').replace(/</g, '&lt;')
   let out = html
   out = withTag(out, /<title>[^<]*<\/title>/, `<title>${escaped}</title>`)
@@ -90,6 +93,13 @@ function applyMeta(html, meta) {
     /<meta property="og:url" content="[^"]*"\s*\/>/,
     `<meta property="og:url" content="${url}" />`,
   )
+  if (noindex) {
+    out = withTag(
+      out,
+      /<meta name="robots" content="[^"]*"\s*\/>/,
+      `<meta name="robots" content="noindex, nofollow" />`,
+    )
+  }
   return out
 }
 
@@ -102,4 +112,17 @@ for (const route of ROUTES) {
   fs.mkdirSync(outDir, { recursive: true })
   fs.writeFileSync(path.join(outDir, 'index.html'), page)
   console.log(`prerendered ${route}${meta ? '' : ' (no page meta found)'}`)
+}
+
+// Vercel automatically serves a root-level 404.html (with a genuine HTTP 404
+// status) for any request that matches neither a static file nor a rewrite
+// rule. Rendering an unmatched path here hits AppRoutes' catch-all "*" route
+// (NotFoundPage), so this file carries the same branded markup as the SPA's
+// client-side 404 instead of a bare fallback.
+{
+  const { html, meta } = render('/__not-found__')
+  let page = template.replace('<div id="root"></div>', `<div id="root">${html}</div>`)
+  page = applyMeta(page, meta)
+  fs.writeFileSync(path.join(clientDir, '404.html'), page)
+  console.log('prerendered /404.html')
 }

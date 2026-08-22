@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { PageHeader } from '@/components/ui/Badge'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { useAuth } from '@/hooks/useAuth'
+import { usePageMeta } from '@/hooks/usePageMeta'
 import { deleteCheck, getCheckCount, getChecks } from '@/services/checkService'
 import type { Check } from '@/types'
 
@@ -29,6 +30,7 @@ function checkActionLabel(check: Check): string {
 }
 
 export function MyChecksPage() {
+  usePageMeta({ title: 'My Checks | MyRecruiterCheck', description: 'View your Recruiter Checks.', path: '/checks', noindex: true })
   const { user, profile } = useAuth()
   const [checks, setChecks] = useState<Check[]>([])
   const [totalCount, setTotalCount] = useState<number | null>(null)
@@ -174,7 +176,7 @@ export function MyChecksPage() {
                           type="button"
                           disabled={deletingId === check.id}
                           onClick={() => setPendingDelete(check)}
-                          className="text-sm text-text-secondary/70 transition-colors hover:text-error hover:underline disabled:opacity-50"
+                          className="text-sm text-text-secondary transition-colors hover:text-error hover:underline disabled:opacity-50"
                         >
                           Delete
                         </button>

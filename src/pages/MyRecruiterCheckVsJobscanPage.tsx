@@ -17,7 +17,7 @@ export function MyRecruiterCheckVsJobscanPage() {
       steps={[
         'Upload your resume in PDF or DOCX format.',
         'Paste the job description for the role you want.',
-        'Get an Interview Probability and recruiter-style feedback, not just a keyword match rate.',
+        'Get an Interview Score and recruiter-style feedback, not just a keyword match rate.',
       ]}
       comparison={{
         competitor: 'Jobscan',
@@ -35,7 +35,7 @@ export function MyRecruiterCheckVsJobscanPage() {
       relatedLinks={[
         { label: 'Free CV Checker', to: '/free-cv-checker' },
         { label: 'ATS Resume Checker', to: '/ats-resume-checker' },
-        { label: 'Interview Probability', to: '/interview-probability-score' },
+        { label: 'Interview Score', to: '/interview-probability-score' },
       ]}
     />
   )

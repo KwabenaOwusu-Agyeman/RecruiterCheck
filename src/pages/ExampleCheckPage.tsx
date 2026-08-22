@@ -19,7 +19,7 @@ export function ExampleCheckPage() {
   usePageMeta({
     title: 'Example Recruiter Check — MyRecruiterCheck',
     description:
-      'See a fictional example of the recruiter-style feedback MyRecruiterCheck gives: an Interview Probability, Strengths, Areas to Improve, and Prospects.',
+      'See a fictional example of the recruiter-style feedback MyRecruiterCheck gives: an Interview Score, Strengths, Areas to Improve, and Prospects.',
     path: '/example-check',
   })
 
@@ -48,7 +48,7 @@ export function ExampleCheckPage() {
             <p className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
               {score}%{' '}
               <span className="text-lg font-semibold text-white/65 sm:text-xl">
-                Interview Probability
+                Interview Score
               </span>
             </p>
             <p className={cn('mt-2 text-lg font-semibold', getVerdictColor(score, 'dark'))}>

@@ -22,6 +22,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 //
 // Never log CV content, job-description text, or file names here — only
 // check IDs, timestamps, and success/failure, matching upload_purge_log.
+//
+// Also purges generated documents (tailored CV / cover letter / recruiter
+// email / zip, written by generate-documents to the `documents` bucket at
+// `${user_id}/${checkId}/...`) on the same 24h window as the original
+// upload — see migration purge_generated_documents.
 
 const BATCH_SIZE = 200
 const RETENTION_HOURS = 24
@@ -60,8 +65,8 @@ Deno.serve(async (req) => {
 
     const { data: expired, error: selectError } = await adminClient
       .from('checks')
-      .select('id, cv_storage_path, upload_purge_attempts')
-      .eq('uploads_purged', false)
+      .select('id, user_id, cv_storage_path, uploads_purged, documents_purged, upload_purge_attempts')
+      .or('uploads_purged.eq.false,documents_purged.eq.false')
       .lt('created_at', cutoff)
       .lt('upload_purge_attempts', MAX_PURGE_ATTEMPTS)
       .order('created_at', { ascending: true })
@@ -77,7 +82,7 @@ Deno.serve(async (req) => {
 
     for (const check of expired ?? []) {
       const attemptNumber = check.upload_purge_attempts + 1
-      const success = await purgeOne(adminClient, check.id, check.cv_storage_path)
+      const success = await purgeOne(adminClient, check)
 
       await adminClient.from('upload_purge_log').insert({
         check_id: check.id,
@@ -103,44 +108,104 @@ Deno.serve(async (req) => {
   }
 })
 
+interface ExpiredCheck {
+  id: string
+  user_id: string
+  cv_storage_path: string | null
+  uploads_purged: boolean
+  documents_purged: boolean
+}
+
 /**
- * Removes the CV file from storage (if one exists) and blanks the original
- * upload fields on the check row, leaving job_title/company_name/status/
- * scores and the linked feedback row untouched. Returns false (and leaves
- * uploads_purged unset, so the next run retries) if the storage removal
- * itself fails; the DB update failing after a successful storage removal
- * still counts as a failure so it retries too, since a retry just re-runs
- * an idempotent storage delete on an already-gone object.
+ * Purges the two independent things a check can still be holding past
+ * retention: the original CV upload (`cvs` bucket + the row's upload
+ * fields) and any generated documents (`documents` bucket, deterministic
+ * `${user_id}/${checkId}/...` path, no path column to look up). Each leg is
+ * skipped if already marked purged, and only the still-outstanding leg(s)
+ * get their purged flag/timestamp set — if one leg fails, the other's
+ * progress is still persisted rather than being re-attempted needlessly.
+ * Overall success (and whether upload_purge_attempts increments) requires
+ * both legs to be done; a retry safely re-runs an idempotent storage delete
+ * on an already-gone object.
  */
-async function purgeOne(
-  adminClient: ReturnType<typeof createClient>,
-  checkId: string,
-  cvStoragePath: string | null,
-): Promise<boolean> {
-  if (cvStoragePath) {
-    const { error: removeError } = await adminClient.storage.from('cvs').remove([cvStoragePath])
-    if (removeError) {
-      console.error('purge-expired-uploads: storage removal failed', {
-        checkId,
-        message: removeError.message,
+async function purgeOne(adminClient: ReturnType<typeof createClient>, check: ExpiredCheck): Promise<boolean> {
+  let uploadsOk = check.uploads_purged
+  if (!uploadsOk) {
+    uploadsOk = await purgeUpload(adminClient, check.id, check.cv_storage_path)
+  }
+
+  let documentsOk = check.documents_purged
+  if (!documentsOk) {
+    documentsOk = await purgeDocuments(adminClient, check.id, check.user_id)
+  }
+
+  const update: Record<string, unknown> = {}
+  if (uploadsOk && !check.uploads_purged) {
+    update.cv_storage_path = ''
+    update.cv_file_name = ''
+    update.job_description = ''
+    update.uploads_purged = true
+    update.uploads_purged_at = new Date().toISOString()
+  }
+  if (documentsOk && !check.documents_purged) {
+    update.documents_purged = true
+    update.documents_purged_at = new Date().toISOString()
+  }
+
+  if (Object.keys(update).length > 0) {
+    const { error: updateError } = await adminClient.from('checks').update(update).eq('id', check.id)
+    if (updateError) {
+      console.error('purge-expired-uploads: row update failed', {
+        checkId: check.id,
+        message: updateError.message,
       })
+      // The storage-side deletes above may have already succeeded even
+      // though this write failed — reporting failure here just means the
+      // next run retries; those deletes are idempotent on an already-gone
+      // object, so retrying is harmless.
       return false
     }
   }
 
-  const { error: updateError } = await adminClient
-    .from('checks')
-    .update({
-      cv_storage_path: '',
-      cv_file_name: '',
-      job_description: '',
-      uploads_purged: true,
-      uploads_purged_at: new Date().toISOString(),
-    })
-    .eq('id', checkId)
+  return uploadsOk && documentsOk
+}
 
-  if (updateError) {
-    console.error('purge-expired-uploads: row update failed', { checkId, message: updateError.message })
+async function purgeUpload(
+  adminClient: ReturnType<typeof createClient>,
+  checkId: string,
+  cvStoragePath: string | null,
+): Promise<boolean> {
+  if (!cvStoragePath) return true
+
+  const { error } = await adminClient.storage.from('cvs').remove([cvStoragePath])
+  if (error) {
+    console.error('purge-expired-uploads: cv storage removal failed', { checkId, message: error.message })
+    return false
+  }
+  return true
+}
+
+async function purgeDocuments(
+  adminClient: ReturnType<typeof createClient>,
+  checkId: string,
+  userId: string,
+): Promise<boolean> {
+  const prefix = `${userId}/${checkId}`
+
+  const { data: files, error: listError } = await adminClient.storage.from('documents').list(prefix)
+  if (listError) {
+    console.error('purge-expired-uploads: documents list failed', { checkId, message: listError.message })
+    return false
+  }
+
+  if (!files || files.length === 0) return true
+
+  const { error: removeError } = await adminClient.storage
+    .from('documents')
+    .remove(files.map((file) => `${prefix}/${file.name}`))
+
+  if (removeError) {
+    console.error('purge-expired-uploads: documents removal failed', { checkId, message: removeError.message })
     return false
   }
 

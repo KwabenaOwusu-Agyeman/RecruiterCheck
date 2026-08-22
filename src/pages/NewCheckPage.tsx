@@ -20,6 +20,7 @@ import {
   MAX_JOB_FILE_SIZE_BYTES,
 } from '@/lib/constants'
 import { useAuth } from '@/hooks/useAuth'
+import { usePageMeta } from '@/hooks/usePageMeta'
 import {
   analyzeCheck,
   createDraftCheck,
@@ -51,6 +52,7 @@ type CvInputMode = 'file' | 'paste'
 type JobInputMode = 'paste' | 'url' | 'upload'
 
 export function NewCheckPage() {
+  usePageMeta({ title: 'New Check | MyRecruiterCheck', description: 'Start a new Recruiter Check.', path: '/checks/new', noindex: true })
   const { id } = useParams<{ id?: string }>()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()

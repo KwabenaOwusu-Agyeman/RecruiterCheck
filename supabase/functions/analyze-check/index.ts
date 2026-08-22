@@ -23,6 +23,10 @@ const PARSE_TIMEOUT_MS = 15000
 // of a hardcoded constant.
 const FREE_TIER_LIFETIME_LIMIT = 1
 
+const RATE_LIMIT_BUCKET = 'analyze-check'
+const RATE_LIMIT_MAX = 10
+const RATE_LIMIT_WINDOW_SECONDS = 3600
+
 interface AnalyzeRequest {
   checkId: string
 }
@@ -66,6 +70,29 @@ Deno.serve(async (req) => {
     }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey)
+
+    // Each call parses a CV and makes a paid OpenAI request, so this needs
+    // its own rate limit independent of the usage-quota reservation below —
+    // a user within their plan's quota could otherwise still hammer this
+    // endpoint. Same pattern as generate-documents.
+    const { data: rateLimitAllowed, error: rateLimitError } = await adminClient.rpc(
+      'check_and_record_rate_limit',
+      {
+        p_user_id: user.id,
+        p_bucket: RATE_LIMIT_BUCKET,
+        p_limit: RATE_LIMIT_MAX,
+        p_window_seconds: RATE_LIMIT_WINDOW_SECONDS,
+      },
+    )
+
+    if (rateLimitError) {
+      console.error('analyze-check: rate limit check failed', rateLimitError)
+      return jsonResponse({ error: 'Could not process this request. Please try again.' }, 500)
+    }
+
+    if (!rateLimitAllowed) {
+      return jsonResponse({ error: 'Too many analysis requests. Please try again later.' }, 429)
+    }
 
     const { data: check, error: checkError } = await adminClient
       .from('checks')

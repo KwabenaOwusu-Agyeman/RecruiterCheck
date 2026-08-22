@@ -1,5 +1,14 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/app-shell.html" }],
+  "rewrites": [
+    {
+      "source": "/(checks|account|extension|auth|sign-in|sign-up)/:path*",
+      "destination": "/app-shell.html"
+    },
+    { "source": "/checks", "destination": "/app-shell.html" },
+    { "source": "/account", "destination": "/app-shell.html" },
+    { "source": "/sign-in", "destination": "/app-shell.html" },
+    { "source": "/sign-up", "destination": "/app-shell.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
@@ -8,7 +17,11 @@
         { "key": "X-Frame-Options", "value": "DENY" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=()" }
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=()" },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' https://tracker.metricool.com 'sha256-b0gkmtslFy95zlWbYUqkoYMZkwGb921xBJ5uKCPMbIE=' 'sha256-nrNs37ledQLJldY/mVbuu61NXu32P7lGvFa19BlRXUw=' 'sha256-c0hKLut7mKlLD4el6inJFJgjQLQ9EG7aG+tUyst8CQY='; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://tracker.metricool.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+        }
       ]
     }
   ]

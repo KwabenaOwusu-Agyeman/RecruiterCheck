@@ -11,6 +11,7 @@ import { consumePostAuthRedirect } from '@/features/auth/postAuthRedirect'
 import { trackEvent } from '@/lib/analytics'
 import { FEATURE_FLAGS } from '@/lib/constants'
 import {
+  mapAuthError,
   resetPasswordForEmail,
   signInWithGoogle,
   signInWithLinkedIn,
@@ -25,6 +26,7 @@ export function AuthModal() {
   const { mode, close, setMode } = useAuthModal()
   const navigate = useNavigate()
   const dialogRef = useRef<HTMLDivElement>(null)
+  const previousFocusRef = useRef<HTMLElement | null>(null)
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -48,6 +50,11 @@ export function AuthModal() {
   // so keyboard/screen-reader users land inside the dialog immediately.
   useEffect(() => {
     if (!mode) return
+
+    // Remember whatever had focus before the dialog opened (the button that
+    // triggered it) so we can hand focus back on close instead of dropping it
+    // to the document body.
+    previousFocusRef.current = document.activeElement as HTMLElement | null
 
     // Focus the email field rather than whatever is first in DOM order (the
     // close button) — that's where a user opening this dialog actually wants
@@ -88,6 +95,7 @@ export function AuthModal() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
       document.body.style.overflow = ''
+      previousFocusRef.current?.focus()
     }
   }, [mode, close])
 
@@ -128,6 +136,7 @@ export function AuthModal() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
+    if (!mode) return
     setError(null)
     setMessage(null)
 
@@ -154,7 +163,7 @@ export function AuthModal() {
         navigate(consumePostAuthRedirect())
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not complete sign in')
+      setError(mapAuthError(err, mode))
     } finally {
       setLoadingProvider(null)
     }
@@ -165,7 +174,7 @@ export function AuthModal() {
   const title = mode === 'sign-in' ? 'Welcome back' : 'Get started'
   const alternateMode = mode === 'sign-in' ? 'sign-up' : 'sign-in'
   const alternateLabel = mode === 'sign-in' ? 'Sign Up' : 'Sign In'
-  const submitLabel = mode === 'sign-up' ? 'Create free account' : 'Sign In'
+  const submitLabel = mode === 'sign-up' ? 'Create account' : 'Sign In'
   const submitLoadingLabel = mode === 'sign-up' ? 'Creating account...' : 'Signing in...'
 
   return (
@@ -224,7 +233,7 @@ export function AuthModal() {
           title={title}
           subtitle={
             mode === 'sign-up'
-              ? 'Create your free account to start running recruiter checks.'
+              ? 'Create your account to check your application.'
               : 'Welcome back. Continue where you left off.'
           }
           className="pr-12"
@@ -322,9 +331,14 @@ export function AuthModal() {
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 aria-invalid={passwordsMismatch}
+                aria-describedby={passwordsMismatch ? 'auth-modal-confirm-password-error' : undefined}
                 className="h-[48px] !bg-background text-base sm:!h-12 sm:text-sm"
               />
-              {passwordsMismatch ? <p className="text-xs text-error">Passwords do not match.</p> : null}
+              {passwordsMismatch ? (
+                <p id="auth-modal-confirm-password-error" className="text-xs text-error">
+                  Passwords do not match.
+                </p>
+              ) : null}
             </div>
           ) : null}
 

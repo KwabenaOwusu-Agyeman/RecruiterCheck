@@ -22,7 +22,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     name: 'Free',
     price: '€0',
     description: 'Get started with your first Recruiter Check.',
-    features: ['1 Recruiter Check', 'Interview Probability', 'Recruiter Feedback'],
+    features: ['1 Recruiter Check', 'Interview Score', 'Recruiter Feedback'],
   },
   {
     id: 'starter' as const,
@@ -30,7 +30,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     price: '€10',
     interval: 'week',
     description: 'Get your applications moving.',
-    features: ['5 Recruiter Checks per week', 'Interview Probability Score', 'Recruiter Feedback'],
+    features: ['5 Recruiter Checks per week', 'Interview Score', 'Recruiter Feedback'],
     perCheckPrice: '€2.00 / check',
   },
   {
@@ -41,7 +41,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     description: 'For a job search in full swing.',
     features: [
       '10 Recruiter Checks per week',
-      'Interview Probability Score',
+      'Interview Score',
       'Recruiter Feedback',
       'Improved CV Draft',
     ],

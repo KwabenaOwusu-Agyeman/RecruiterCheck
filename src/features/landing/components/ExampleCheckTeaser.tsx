@@ -1,4 +1,3 @@
-import NumberFlow from '@number-flow/react'
 import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/Card'
@@ -21,7 +20,7 @@ export function ExampleCheckTeaser() {
       id="example"
       className="scroll-mt-[88px] border-b border-border bg-background"
     >
-      <Container className="py-[32px] sm:py-12 lg:py-[96px]">
+      <Container className="py-[32px] sm:py-12 lg:py-[64px]">
         <div className="mx-auto max-w-xl text-center">
           <h2 className="font-display text-[20px] font-semibold tracking-tight text-text-primary sm:text-3xl">
             See {BRAND.name} in Action
@@ -31,7 +30,7 @@ export function ExampleCheckTeaser() {
           </p>
         </div>
 
-        <div className="mx-auto mt-[24px] max-w-2xl sm:mt-8 lg:max-w-[900px]">
+        <div className="mx-auto mt-[24px] max-w-2xl sm:mt-[32px] lg:max-w-[900px]">
           <Card tone="dark" className="relative overflow-hidden">
             <CardContent className="px-6 py-5 lg:grid lg:grid-cols-2 lg:gap-x-10 lg:gap-y-0 lg:p-[40px]">
               <div className="flex flex-col lg:justify-center lg:border-r lg:border-white/10 lg:pr-10">
@@ -39,9 +38,9 @@ export function ExampleCheckTeaser() {
                 <p className="text-sm font-semibold text-blue-light">{EXAMPLE_COMPANY_NAME}</p>
 
                 <p className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-                  <NumberFlow value={score} suffix="%" willChange />{' '}
+                  {score}%{' '}
                   <span className="text-base font-semibold text-white/65 sm:text-lg">
-                    Interview Probability
+                    Interview Score
                   </span>
                 </p>
                 <p className={cn('mt-1 text-base font-semibold', getVerdictColor(score, 'dark'))}>

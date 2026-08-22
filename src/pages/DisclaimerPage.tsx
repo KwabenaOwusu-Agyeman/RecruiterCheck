@@ -20,7 +20,7 @@ export function DisclaimerPage() {
 
       <Section title="AI generated output">
         <p>
-          Your interview probability score, feedback, and any generated documents (CV, cover
+          Your interview score, feedback, and any generated documents (CV, cover
           letter, and email for recruiter) are produced automatically by an AI model. They may
           contain errors, omissions, or inaccuracies, and should be reviewed carefully before you
           rely on or submit them to an employer.

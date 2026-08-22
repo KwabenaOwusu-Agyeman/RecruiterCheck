@@ -11,6 +11,7 @@ import { PageHeader } from '@/components/ui/Badge'
 import { PasswordInput } from '@/components/ui/PasswordInput'
 import { PRICING_PLANS } from '@/lib/constants'
 import { useAuth } from '@/hooks/useAuth'
+import { usePageMeta } from '@/hooks/usePageMeta'
 import { supabase } from '@/lib/supabase'
 import { signOut, updatePassword } from '@/services/authService'
 import {
@@ -34,6 +35,7 @@ function formatDate(value: string): string {
 }
 
 export function AccountPage() {
+  usePageMeta({ title: 'Account | MyRecruiterCheck', description: 'Manage your MyRecruiterCheck account.', path: '/account', noindex: true })
   const { user, profile, refreshProfile } = useAuth()
   const navigate = useNavigate()
   const [fullName, setFullName] = useState(profile?.full_name ?? '')

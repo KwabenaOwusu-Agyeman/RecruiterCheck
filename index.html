@@ -12,7 +12,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta
       name="description"
-      content="MyRecruiterCheck compares your CV with a specific job description and gives you recruiter-style feedback — an Interview Probability, Strengths, Areas to Improve, and Prospects — before you apply."
+      content="MyRecruiterCheck compares your CV with a specific job description and gives you recruiter-style feedback on your experience, skills and candidate value, including an Interview Score, Strengths, Areas to Improve, and Prospects, before you apply."
     />
     <link rel="canonical" href="https://recruitercheck.vercel.app/" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
@@ -24,20 +24,22 @@
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="MyRecruiterCheck" />
-    <meta property="og:title" content="MyRecruiterCheck — Think like a recruiter before you apply." />
+    <meta property="og:title" content="MyRecruiterCheck | Recruiter Style CV and Job Application Checker" />
     <meta
       property="og:description"
-      content="MyRecruiterCheck compares your CV with a specific job description and gives you recruiter-style feedback before you apply."
+      content="MyRecruiterCheck compares your CV with a specific job description and gives you recruiter-style feedback on your experience, skills and candidate value, before you apply."
     />
     <meta property="og:url" content="https://recruitercheck.vercel.app/" />
-    <meta property="og:image" content="https://recruitercheck.vercel.app/icons/pwa-512x512.png" />
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="MyRecruiterCheck — Think like a recruiter before you apply." />
+    <meta property="og:image" content="https://recruitercheck.vercel.app/social/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MyRecruiterCheck | Recruiter Style CV and Job Application Checker" />
     <meta
       name="twitter:description"
-      content="MyRecruiterCheck compares your CV with a specific job description and gives you recruiter-style feedback before you apply."
+      content="MyRecruiterCheck compares your CV with a specific job description and gives you recruiter-style feedback on your experience, skills and candidate value, before you apply."
     />
-    <meta name="twitter:image" content="https://recruitercheck.vercel.app/icons/pwa-512x512.png" />
+    <meta name="twitter:image" content="https://recruitercheck.vercel.app/social/og-image.png" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -45,8 +47,14 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap"
       rel="stylesheet"
     />
-    <title>MyRecruiterCheck — Think like a recruiter before you apply.</title>
+    <title>MyRecruiterCheck | Recruiter Style CV and Job Application Checker</title>
 
+    <!--
+      The CSP script-src in vercel.json allowlists these two JSON-LD blocks by
+      SHA-256 hash instead of 'unsafe-inline', so editing their content
+      (including whitespace) requires recomputing the hash and updating
+      vercel.json, or the browser will silently drop the structured data.
+    -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -65,13 +73,25 @@
         "name": "MyRecruiterCheck",
         "url": "https://recruitercheck.vercel.app/",
         "logo": "https://recruitercheck.vercel.app/icons/pwa-512x512.png",
-        "description": "MyRecruiterCheck compares your CV with a specific job description and gives you recruiter-style feedback before you apply."
+        "description": "MyRecruiterCheck compares your CV with a specific job description and gives you recruiter-style feedback before you apply.",
+        "sameAs": [
+          "https://www.linkedin.com/company/myrecruitercheck/",
+          "https://www.instagram.com/myrecruitercheck/"
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "MyRecruiterCheck",
+        "url": "https://recruitercheck.vercel.app/"
       }
     </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script>function loadScript(a){var b=document.getElementsByTagName("head")[0],c=document.createElement("script");c.type="text/javascript",c.src="https://tracker.metricool.com/resources/be.js",c.onreadystatechange=a,c.onload=a,b.appendChild(c)}loadScript(function(){beTracker.t({hash:"8b1b5a741d012ab82445b3c6168afe5d"})});</script>
+    <script src="/metricool-loader.js" defer></script>
   </body>
 </html>

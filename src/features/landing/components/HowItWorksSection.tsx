@@ -12,7 +12,7 @@ const steps = [
   {
     number: '02',
     title: 'See what a recruiter sees',
-    description: 'Get your Interview Probability, strengths, areas to improve, and prospects.',
+    description: 'Get your Interview Score, strengths, areas to improve, and prospects.',
   },
   {
     number: '03',
@@ -39,14 +39,14 @@ export function HowItWorksSection() {
       ref={sectionRef}
       className="scroll-mt-[88px] border-b border-border bg-background"
     >
-      <Container className="py-[32px] sm:py-12 lg:py-[88px]">
+      <Container className="py-[32px] sm:py-12 lg:py-[64px]">
         <div className="mx-auto max-w-xl text-center">
           <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl lg:text-[32px]">
             How it works
           </h2>
         </div>
 
-        <ol className="relative mx-auto mt-[24px] grid max-w-4xl items-stretch gap-[16px] sm:mt-8 sm:gap-6 sm:grid-cols-3 lg:gap-[24px]">
+        <ol className="relative mx-auto mt-[24px] grid max-w-4xl items-stretch gap-[16px] sm:mt-[32px] sm:gap-6 sm:grid-cols-3 lg:gap-[24px]">
           <div
             className="pointer-events-none absolute left-[16.5%] right-[16.5%] top-[52px] hidden h-px bg-border-strong lg:block"
             aria-hidden="true"

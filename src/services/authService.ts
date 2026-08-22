@@ -1,6 +1,19 @@
 import { supabase } from '@/lib/supabase'
 import type { Provider } from '@supabase/supabase-js'
 
+/**
+ * Maps raw Supabase auth errors to generic copy for sign-in/sign-up so a
+ * failed attempt can't be used to enumerate which emails already have an
+ * account (Supabase's own messages, e.g. "User already registered" or
+ * "Invalid login credentials", would otherwise leak that directly).
+ */
+export function mapAuthError(_err: unknown, context: 'sign-in' | 'sign-up'): string {
+  if (context === 'sign-up') {
+    return 'Could not create your account. Please check your details and try again.'
+  }
+  return 'Could not sign in. Check your email and password and try again.'
+}
+
 export async function signInWithGoogle() {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',

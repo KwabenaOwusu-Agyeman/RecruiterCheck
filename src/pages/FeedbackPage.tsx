@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { FeedbackBullet, getVerdictColor, splitFinding } from '@/components/feedback/FeedbackBullet'
 import { ProductFeedbackForm } from '@/features/feedback/components/ProductFeedbackForm'
 import { useAuth } from '@/hooks/useAuth'
+import { usePageMeta } from '@/hooks/usePageMeta'
 import { getScoreLabel } from '@/lib/scoring'
 import { trackEvent } from '@/lib/analytics'
 import {
@@ -55,6 +56,7 @@ function buildSummarySentence(score: number, improvements: string[]): string | n
 }
 
 export function FeedbackPage() {
+  usePageMeta({ title: 'Check Results | MyRecruiterCheck', description: 'Your Recruiter Check results.', path: '/checks/results', noindex: true })
   const { id } = useParams<{ id: string }>()
   const { user, profile } = useAuth()
   const [check, setCheck] = useState<CheckWithFeedback | null>(null)
@@ -197,7 +199,7 @@ export function FeedbackPage() {
               <p className="text-[2.125rem] font-bold tracking-tight text-white sm:text-[2.625rem]">
                 <NumberFlow value={score} suffix="%" willChange />{' '}
                 <span className="text-base font-semibold text-white/65 sm:text-lg">
-                  Interview Probability
+                  Interview Score
                 </span>
               </p>
               <p className={cn('mt-2 text-base font-semibold sm:text-lg', getVerdictColor(score, 'dark'))}>

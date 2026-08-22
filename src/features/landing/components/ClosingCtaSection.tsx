@@ -20,7 +20,7 @@ export function ClosingCtaSection() {
           <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl sm:text-white">
             Ready to improve your application?
           </h2>
-          <div className="mt-[20px] flex justify-center sm:mt-8">
+          <div className="mt-[20px] flex justify-center sm:mt-[32px]">
             <Button
               size="md"
               variant="ghost"

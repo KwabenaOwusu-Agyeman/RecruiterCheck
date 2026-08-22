@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { PageHeader } from '@/components/ui/Badge'
+import { usePageMeta } from '@/hooks/usePageMeta'
 import { createExtensionConnectCode } from '@/services/checkService'
 
 // The extension's OAuth-style callback always lives at
@@ -14,6 +15,7 @@ function isTrustedExtensionRedirect(url: URL): boolean {
 }
 
 export function ExtensionConnectPage() {
+  usePageMeta({ title: 'Connect Extension | MyRecruiterCheck', description: 'Connect the MyRecruiterCheck browser extension.', path: '/extension/connect', noindex: true })
   const [searchParams] = useSearchParams()
   const [connecting, setConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)

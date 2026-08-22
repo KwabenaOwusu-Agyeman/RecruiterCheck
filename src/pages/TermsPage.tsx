@@ -22,7 +22,7 @@ export function TermsPage() {
       <Section title="2. The Service">
         <p>
           MyRecruiterCheck lets you upload a CV and a job description to receive AI generated
-          feedback, an interview probability score, and, on paid plans, an improved CV draft, cover
+          feedback, an interview score, and, on paid plans, an improved CV draft, cover
           letter, and email for a recruiter. Outputs are generated automatically by an AI model and
           are provided for informational purposes only.
         </p>
@@ -81,7 +81,7 @@ export function TermsPage() {
             MyRecruiterCheck does not guarantee interviews, job offers, employment, or any
             particular recruiter or employer decision.
           </strong>{' '}
-          The interview probability score and feedback are an estimate to help you improve your
+          The interview score and feedback are an estimate to help you improve your
           application, not a prediction any specific employer will act on.
         </p>
       </Section>

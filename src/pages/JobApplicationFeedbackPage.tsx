@@ -17,7 +17,7 @@ export function JobApplicationFeedbackPage() {
       ]}
       steps={['Upload your CV.', 'Add the vacancy or job description.', 'Review the feedback and improve your application before submitting it.']}
       faqs={[
-        { question: 'What job application feedback will I receive?', answer: 'You receive an Interview Probability, strengths, areas to improve and prospects based on your CV and the target role.' },
+        { question: 'What job application feedback will I receive?', answer: 'You receive an Interview Score, strengths, areas to improve and prospects based on your CV and the target role.' },
         { question: 'Is the feedback specific to my job?', answer: 'Yes. Your CV is compared with the job description you provide, so the feedback reflects that particular application.' },
         { question: 'Can feedback improve my interview chances?', answer: 'It can help you present relevant evidence more clearly, but no tool can guarantee an interview or hiring decision.' },
         { question: 'Should I check every application?', answer: 'Checking is most useful when roles have different priorities or when you have tailored your documents for a specific employer.' },

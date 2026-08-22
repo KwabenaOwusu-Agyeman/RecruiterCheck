@@ -1,10 +1,11 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { ScrollToTop } from '@/components/ScrollToTop'
 import { AuthProvider } from '@/hooks/useAuth'
 import { AppLayout } from '@/layouts/AppLayout'
 import { PublicLayout } from '@/layouts/PublicLayout'
 import { AccountPage } from '@/pages/AccountPage'
+import { AboutPage } from '@/pages/AboutPage'
 import { AdministrativeAssistantResumeCheckerPage } from '@/pages/AdministrativeAssistantResumeCheckerPage'
 import { AtsResumeCheckerPage } from '@/pages/AtsResumeCheckerPage'
 import { ApplicationCheckerPage } from '@/pages/ApplicationCheckerPage'
@@ -30,10 +31,13 @@ import { MyRecruiterCheckVsResumeWordedPage } from '@/pages/MyRecruiterCheckVsRe
 import { MyRecruiterCheckVsTealPage } from '@/pages/MyRecruiterCheckVsTealPage'
 import { NewCheckPage } from '@/pages/NewCheckPage'
 import { NewsletterUnsubscribePage } from '@/pages/NewsletterUnsubscribePage'
+import { NotFoundPage } from '@/pages/NotFoundPage'
+import { PricingPage } from '@/pages/PricingPage'
 import { PrivacyPage } from '@/pages/PrivacyPage'
 import { ProjectManagerResumeCheckerPage } from '@/pages/ProjectManagerResumeCheckerPage'
 import { RegisteredNurseResumeCheckerPage } from '@/pages/RegisteredNurseResumeCheckerPage'
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage'
+import { RecruiterEvaluationPage } from '@/pages/RecruiterEvaluationPage'
 import { RecruiterMessageGeneratorPage } from '@/pages/RecruiterMessageGeneratorPage'
 import { ResumeStrengthsWeaknessesPage } from '@/pages/ResumeStrengthsWeaknessesPage'
 import { ResumeJobMatchPage } from '@/pages/ResumeJobMatchPage'
@@ -50,6 +54,7 @@ export function AppRoutes() {
         <Route path="sign-in" element={<LandingPage />} />
         <Route path="sign-up" element={<LandingPage />} />
         <Route path="example-check" element={<ExampleCheckPage />} />
+        <Route path="about" element={<AboutPage />} />
         <Route path="application-checker" element={<ApplicationCheckerPage />} />
         <Route path="free-cv-checker" element={<FreeCvCheckerPage />} />
         <Route path="ats-resume-checker" element={<AtsResumeCheckerPage />} />
@@ -59,6 +64,7 @@ export function AppRoutes() {
         <Route path="recruiter-message-generator" element={<RecruiterMessageGeneratorPage />} />
         <Route path="resume-strengths-and-weaknesses" element={<ResumeStrengthsWeaknessesPage />} />
         <Route path="job-application-feedback" element={<JobApplicationFeedbackPage />} />
+        <Route path="how-recruiters-evaluate-a-cv" element={<RecruiterEvaluationPage />} />
         <Route path="resume-job-description-match" element={<ResumeJobMatchPage />} />
         <Route path="interview-probability-score" element={<InterviewProbabilityPage />} />
         <Route path="software-engineer-resume-checker" element={<SoftwareEngineerResumeCheckerPage />} />
@@ -71,6 +77,8 @@ export function AppRoutes() {
         <Route path="myrecruitercheck-vs-teal" element={<MyRecruiterCheckVsTealPage />} />
         <Route path="myrecruitercheck-vs-rezi" element={<MyRecruiterCheckVsReziPage />} />
         <Route path="myrecruitercheck-vs-kickresume" element={<MyRecruiterCheckVsKickresumePage />} />
+        <Route path="pricing" element={<PricingPage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
 
       <Route path="auth/callback" element={<AuthCallbackPage />} />
@@ -93,8 +101,6 @@ export function AppRoutes() {
           <Route path="extension/connect" element={<ExtensionConnectPage />} />
         </Route>
       </Route>
-
-      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }

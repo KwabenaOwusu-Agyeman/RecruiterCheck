@@ -7,9 +7,11 @@ import { PricingCards } from '@/components/ui/PricingCards'
 import { PRICING_PLANS } from '@/lib/constants'
 import { trackEvent } from '@/lib/analytics'
 import { useAuth } from '@/hooks/useAuth'
+import { usePageMeta } from '@/hooks/usePageMeta'
 import { createCheckoutSession, createPortalSession } from '@/services/checkService'
 
 export function BillingPage() {
+  usePageMeta({ title: 'Billing | MyRecruiterCheck', description: 'Manage your MyRecruiterCheck subscription and billing.', path: '/account/billing', noindex: true })
   const { profile, refreshProfile } = useAuth()
   const [searchParams] = useSearchParams()
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)

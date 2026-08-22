@@ -17,7 +17,7 @@ export function MyRecruiterCheckVsTealPage() {
       steps={[
         'Upload your resume in PDF or DOCX format.',
         'Paste the job description for the role you want.',
-        'Get an Interview Probability and recruiter-style feedback tied to that exact job.',
+        'Get an Interview Score and recruiter-style feedback tied to that exact job.',
       ]}
       comparison={{
         competitor: 'Teal',
@@ -35,7 +35,7 @@ export function MyRecruiterCheckVsTealPage() {
       relatedLinks={[
         { label: 'Free CV Checker', to: '/free-cv-checker' },
         { label: 'Resume Job Match', to: '/resume-job-description-match' },
-        { label: 'Interview Probability', to: '/interview-probability-score' },
+        { label: 'Interview Score', to: '/interview-probability-score' },
       ]}
     />
   )

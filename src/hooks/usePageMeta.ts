@@ -7,6 +7,10 @@ interface PageMetaOptions {
   title: string
   description: string
   path: string
+  /** Sets `<meta name="robots" content="noindex">` for pages that must never
+   * be indexed even if they're ever requested directly (private/app routes,
+   * the 404 page) — defense-in-depth alongside the robots.txt disallow rules. */
+  noindex?: boolean
 }
 
 /**
@@ -15,7 +19,7 @@ interface PageMetaOptions {
  * prerender script can read back the title/description/canonical that a
  * page actually rendered with and bake them into the static HTML head.
  */
-let ssrMeta: { title: string; description: string; url: string } | null = null
+let ssrMeta: { title: string; description: string; url: string; noindex: boolean } | null = null
 
 export function resetSsrMeta() {
   ssrMeta = null
@@ -50,15 +54,17 @@ function setMetaTag(selector: string, attr: string, value: string) {
  * public routes, so a tiny effect-based hook covers it without a new
  * dependency.
  */
-export function usePageMeta({ title, description, path }: PageMetaOptions) {
+export function usePageMeta({ title, description, path, noindex = false }: PageMetaOptions) {
   const url = `${SITE_URL}${path}`
 
   if (typeof document === 'undefined') {
-    ssrMeta = { title, description, url }
+    ssrMeta = { title, description, url, noindex }
   }
 
   useEffect(() => {
     const previousTitle = document.title
+    const robotsTag = document.head.querySelector<HTMLMetaElement>('meta[name="robots"]')
+    const previousRobots = robotsTag?.getAttribute('content') ?? null
 
     document.title = title
     setMetaTag('meta[name="description"]', 'content', description)
@@ -66,9 +72,15 @@ export function usePageMeta({ title, description, path }: PageMetaOptions) {
     setMetaTag('meta[property="og:title"]', 'content', title)
     setMetaTag('meta[property="og:description"]', 'content', description)
     setMetaTag('meta[property="og:url"]', 'content', url)
+    if (noindex) {
+      setMetaTag('meta[name="robots"]', 'content', 'noindex, nofollow')
+    }
 
     return () => {
       document.title = previousTitle
+      if (noindex && previousRobots !== null) {
+        robotsTag?.setAttribute('content', previousRobots)
+      }
     }
-  }, [title, description, url])
+  }, [title, description, url, noindex])
 }
