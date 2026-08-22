@@ -8,7 +8,7 @@ const linkClassName =
 const headingClassName = 'text-xs font-semibold uppercase tracking-wide text-text-primary'
 
 const socialLinkClassName =
-  'flex h-8 w-8 items-center justify-center rounded-full text-text-secondary transition-colors duration-150 hover:bg-background hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue'
+  'flex h-[36px] w-[36px] items-center justify-center rounded-full text-text-secondary transition-colors duration-150 hover:bg-background hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue'
 
 const socialLinks = [
   {
