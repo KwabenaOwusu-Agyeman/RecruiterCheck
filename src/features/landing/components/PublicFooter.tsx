@@ -117,7 +117,7 @@ export function PublicFooter() {
               </p>
               <p className="mt-0.5 text-text-secondary">{BRAND.tagline}</p>
             </div>
-            <nav aria-label="Social profiles" className="flex items-center gap-2">
+            <nav aria-label="Social profiles" className="flex w-fit shrink-0 items-center gap-1 self-start sm:self-auto">
               {socialLinks.map((social) => (
                 <a
                   key={social.href}
