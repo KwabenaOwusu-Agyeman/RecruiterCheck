@@ -12,7 +12,7 @@ const socialLinkClassName =
 
 const socialLinks = [
   {
-    href: 'https://www.linkedin.com/company/myrecruitercheck/',
+    href: 'https://www.linkedin.com/company/myrecruitercheck/?viewAsMember=true',
     label: 'MyRecruiterCheck on LinkedIn',
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
