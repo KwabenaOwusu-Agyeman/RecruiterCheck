@@ -5,4 +5,4 @@
 export const SUPABASE_URL = 'https://lqhpjluskinuocumwtml.supabase.co'
 export const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxaHBqbHVza2ludW9jdW13dG1sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwOTgyNjMsImV4cCI6MjEwMTY3NDI2M30.fYDO3HhTclq5dcnae8Rbnmu_xSJ9MQecpRIvn-nu67E'
-export const WEB_APP_URL = 'https://recruitercheck.vercel.app'
+export const WEB_APP_URL = 'https://myrecruitercheck.com'

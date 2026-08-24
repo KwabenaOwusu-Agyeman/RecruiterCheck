@@ -36,9 +36,9 @@ WHAT IT DOESN'T DO
 - Does not run on any page until you explicitly click Capture.
 
 A MyRecruiterCheck account is required (free tier available) — sign up at
-https://recruitercheck.vercel.app.
+https://myrecruitercheck.com.
 
-Privacy policy: https://recruitercheck.vercel.app/privacy
+Privacy policy: https://myrecruitercheck.com/privacy
 
 ## Single-purpose description (for the mandatory Chrome Web Store field)
 Captures the job posting the user is currently viewing, on explicit click

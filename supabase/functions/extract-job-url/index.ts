@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 import { parseHTML } from 'npm:linkedom@0.16.11'
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://recruitercheck.vercel.app',
+  'Access-Control-Allow-Origin': 'https://myrecruitercheck.com',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
@@ -261,7 +261,7 @@ async function fetchWithSsrfGuard(initialUrl: URL, timeoutMs: number): Promise<R
           // A plain, honest identification — not spoofing a real browser to
           // get around bot detection. If a site blocks this, that's a
           // legitimate failure, not something to work around.
-          'User-Agent': 'Mozilla/5.0 (compatible; MyRecruiterCheckBot/1.0; +https://recruitercheck.vercel.app)',
+          'User-Agent': 'Mozilla/5.0 (compatible; MyRecruiterCheckBot/1.0; +https://myrecruitercheck.com)',
           Accept: 'text/html',
         },
         redirect: 'manual',

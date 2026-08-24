@@ -1,90 +1,90 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://recruitercheck.vercel.app/</loc>
+    <loc>https://myrecruitercheck.com/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://recruitercheck.vercel.app/pricing</loc>
+    <loc>https://myrecruitercheck.com/pricing</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://recruitercheck.vercel.app/example-check</loc>
+    <loc>https://myrecruitercheck.com/example-check</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://recruitercheck.vercel.app/about</loc>
+    <loc>https://myrecruitercheck.com/about</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://recruitercheck.vercel.app/faq</loc>
+    <loc>https://myrecruitercheck.com/faq</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://recruitercheck.vercel.app/privacy</loc>
+    <loc>https://myrecruitercheck.com/privacy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://recruitercheck.vercel.app/terms</loc>
+    <loc>https://myrecruitercheck.com/terms</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://recruitercheck.vercel.app/disclaimer</loc>
+    <loc>https://myrecruitercheck.com/disclaimer</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://recruitercheck.vercel.app/cookies</loc>
+    <loc>https://myrecruitercheck.com/cookies</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://recruitercheck.vercel.app/application-checker</loc>
+    <loc>https://myrecruitercheck.com/application-checker</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://recruitercheck.vercel.app/resume-job-description-match</loc>
+    <loc>https://myrecruitercheck.com/resume-job-description-match</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://recruitercheck.vercel.app/interview-probability-score</loc>
+    <loc>https://myrecruitercheck.com/interview-probability-score</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://recruitercheck.vercel.app/free-cv-checker</loc>
+    <loc>https://myrecruitercheck.com/free-cv-checker</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://recruitercheck.vercel.app/ats-resume-checker</loc>
+    <loc>https://myrecruitercheck.com/ats-resume-checker</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
-  <url><loc>https://recruitercheck.vercel.app/tailor-cv-to-job-description</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://recruitercheck.vercel.app/cv-keyword-checker</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://recruitercheck.vercel.app/cover-letter-generator</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://recruitercheck.vercel.app/recruiter-message-generator</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://recruitercheck.vercel.app/resume-strengths-and-weaknesses</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://recruitercheck.vercel.app/job-application-feedback</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://recruitercheck.vercel.app/how-recruiters-evaluate-a-cv</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://recruitercheck.vercel.app/software-engineer-resume-checker</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://recruitercheck.vercel.app/registered-nurse-resume-checker</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://recruitercheck.vercel.app/project-manager-resume-checker</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://recruitercheck.vercel.app/sales-resume-checker</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://recruitercheck.vercel.app/administrative-assistant-resume-checker</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://recruitercheck.vercel.app/myrecruitercheck-vs-jobscan</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://recruitercheck.vercel.app/myrecruitercheck-vs-resume-worded</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://recruitercheck.vercel.app/myrecruitercheck-vs-teal</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://recruitercheck.vercel.app/myrecruitercheck-vs-rezi</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://recruitercheck.vercel.app/myrecruitercheck-vs-kickresume</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://myrecruitercheck.com/tailor-cv-to-job-description</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://myrecruitercheck.com/cv-keyword-checker</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://myrecruitercheck.com/cover-letter-generator</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://myrecruitercheck.com/recruiter-message-generator</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://myrecruitercheck.com/resume-strengths-and-weaknesses</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://myrecruitercheck.com/job-application-feedback</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://myrecruitercheck.com/how-recruiters-evaluate-a-cv</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://myrecruitercheck.com/software-engineer-resume-checker</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://myrecruitercheck.com/registered-nurse-resume-checker</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://myrecruitercheck.com/project-manager-resume-checker</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://myrecruitercheck.com/sales-resume-checker</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://myrecruitercheck.com/administrative-assistant-resume-checker</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://myrecruitercheck.com/myrecruitercheck-vs-jobscan</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://myrecruitercheck.com/myrecruitercheck-vs-resume-worded</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://myrecruitercheck.com/myrecruitercheck-vs-teal</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://myrecruitercheck.com/myrecruitercheck-vs-rezi</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://myrecruitercheck.com/myrecruitercheck-vs-kickresume</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
 </urlset>

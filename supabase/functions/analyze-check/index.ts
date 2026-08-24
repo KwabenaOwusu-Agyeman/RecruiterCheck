@@ -5,7 +5,7 @@ import { extractText as extractPdfText, getDocumentProxy } from 'npm:unpdf@0.12.
 import { normalizeAnalysis, type AnalysisResult, type RawAnalysis } from './logic.ts'
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://recruitercheck.vercel.app',
+  'Access-Control-Allow-Origin': 'https://myrecruitercheck.com',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 

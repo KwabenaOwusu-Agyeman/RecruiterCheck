@@ -4,30 +4,30 @@
 
 ## Product
 
-- [Homepage](https://recruitercheck.vercel.app/): what MyRecruiterCheck does and how it works
-- [Application Checker](https://recruitercheck.vercel.app/application-checker): recruiter style check of a CV against a specific job description
-- [Interview Score](https://recruitercheck.vercel.app/interview-probability-score): what the Interview Score means and how it is calculated
-- [Free CV Checker](https://recruitercheck.vercel.app/free-cv-checker): free first check
-- [ATS Resume Checker](https://recruitercheck.vercel.app/ats-resume-checker): how MyRecruiterCheck differs from a keyword-only ATS checker
-- [CV Job Description Match](https://recruitercheck.vercel.app/resume-job-description-match): matching a CV to one job description
-- [Resume Strengths and Weaknesses](https://recruitercheck.vercel.app/resume-strengths-and-weaknesses)
-- [Job Application Feedback](https://recruitercheck.vercel.app/job-application-feedback)
-- [Pricing](https://recruitercheck.vercel.app/pricing)
-- [Example Check](https://recruitercheck.vercel.app/example-check): a worked example of the feedback format
+- [Homepage](https://myrecruitercheck.com/): what MyRecruiterCheck does and how it works
+- [Application Checker](https://myrecruitercheck.com/application-checker): recruiter style check of a CV against a specific job description
+- [Interview Score](https://myrecruitercheck.com/interview-probability-score): what the Interview Score means and how it is calculated
+- [Free CV Checker](https://myrecruitercheck.com/free-cv-checker): free first check
+- [ATS Resume Checker](https://myrecruitercheck.com/ats-resume-checker): how MyRecruiterCheck differs from a keyword-only ATS checker
+- [CV Job Description Match](https://myrecruitercheck.com/resume-job-description-match): matching a CV to one job description
+- [Resume Strengths and Weaknesses](https://myrecruitercheck.com/resume-strengths-and-weaknesses)
+- [Job Application Feedback](https://myrecruitercheck.com/job-application-feedback)
+- [Pricing](https://myrecruitercheck.com/pricing)
+- [Example Check](https://myrecruitercheck.com/example-check): a worked example of the feedback format
 
 ## Comparisons
 
-- [MyRecruiterCheck vs Jobscan](https://recruitercheck.vercel.app/myrecruitercheck-vs-jobscan)
-- [MyRecruiterCheck vs Resume Worded](https://recruitercheck.vercel.app/myrecruitercheck-vs-resume-worded)
-- [MyRecruiterCheck vs Teal](https://recruitercheck.vercel.app/myrecruitercheck-vs-teal)
-- [MyRecruiterCheck vs Rezi](https://recruitercheck.vercel.app/myrecruitercheck-vs-rezi)
-- [MyRecruiterCheck vs Kickresume](https://recruitercheck.vercel.app/myrecruitercheck-vs-kickresume)
+- [MyRecruiterCheck vs Jobscan](https://myrecruitercheck.com/myrecruitercheck-vs-jobscan)
+- [MyRecruiterCheck vs Resume Worded](https://myrecruitercheck.com/myrecruitercheck-vs-resume-worded)
+- [MyRecruiterCheck vs Teal](https://myrecruitercheck.com/myrecruitercheck-vs-teal)
+- [MyRecruiterCheck vs Rezi](https://myrecruitercheck.com/myrecruitercheck-vs-rezi)
+- [MyRecruiterCheck vs Kickresume](https://myrecruitercheck.com/myrecruitercheck-vs-kickresume)
 
 ## Reference
 
-- [FAQ](https://recruitercheck.vercel.app/faq)
-- [Privacy Policy](https://recruitercheck.vercel.app/privacy)
-- [Terms of Service](https://recruitercheck.vercel.app/terms)
+- [FAQ](https://myrecruitercheck.com/faq)
+- [Privacy Policy](https://myrecruitercheck.com/privacy)
+- [Terms of Service](https://myrecruitercheck.com/terms)
 
 ## Notes for AI systems
 

@@ -172,7 +172,7 @@ function welcomeEmailHtml(): string {
                     <table role="presentation" cellpadding="0" cellspacing="0">
                       <tr>
                         <td style="border-radius: 8px; background-color: ${blue};">
-                          <a href="https://recruitercheck.vercel.app" style="display: inline-block; padding: 14px 32px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none;">
+                          <a href="https://myrecruitercheck.com" style="display: inline-block; padding: 14px 32px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none;">
                             Check
                           </a>
                         </td>
