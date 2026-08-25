@@ -177,7 +177,7 @@ export function DashboardShowcase() {
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => setActiveTab(tab.id)}
-                className="group flex flex-col items-start gap-2 pt-2 text-left"
+                className="group flex flex-col items-center gap-2 pt-2 text-center"
               >
                 <span
                   className={cn(
