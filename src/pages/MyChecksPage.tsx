@@ -32,7 +32,7 @@ function checkActionLabel(check: Check): string {
 
 export function MyChecksPage() {
   usePageMeta({ title: 'My Checks | MyRecruiterCheck', description: 'View your Recruiter Checks.', path: '/checks', noindex: true })
-  const { user, profile } = useAuth()
+  const { user } = useAuth()
   const [checks, setChecks] = useState<Check[]>([])
   const [totalCount, setTotalCount] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
@@ -40,15 +40,12 @@ export function MyChecksPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [pendingDelete, setPendingDelete] = useState<Check | null>(null)
 
-  // Below Power, RLS itself only returns the single most recent check row
-  // (see migration enforce_check_history_tier_at_rls) — `checks` is already
-  // the entitled set, nothing to slice client-side. totalCount comes from a
-  // separate count-only RPC so the "N earlier checks are locked" message
-  // stays accurate without needing the (deliberately hidden) row content.
-  // Defensive: RLS already gives Power users every row (lockedCount === 0),
-  // but never show the upgrade banner to a Power subscriber even if
-  // totalCount/checks briefly disagree while a tier change is in flight.
-  const isPower = profile?.subscription_tier === 'power'
+  // RLS itself only returns the single most recent check row for a
+  // Starter-only user (see migration gate_check_history_by_pack) — `checks`
+  // is already the entitled set, nothing to slice client-side. totalCount
+  // comes from a separate count-only RPC so the "N earlier checks are
+  // locked" message stays accurate without needing the (deliberately
+  // hidden) row content.
   const lockedCount = totalCount !== null ? totalCount - checks.length : 0
 
   useEffect(() => {
@@ -95,6 +92,13 @@ export function MyChecksPage() {
       <PageHeader
         title="My Checks"
         description="View your checks, scores, and feedback in one place."
+        action={
+          <Link to="/checks/keyword-scan">
+            <Button variant="secondary" size="sm" className="w-full sm:w-auto">
+              Free Keyword Scan
+            </Button>
+          </Link>
+        }
       />
 
       {loading ? (
@@ -245,13 +249,14 @@ export function MyChecksPage() {
         </>
       )}
 
-      {lockedCount > 0 && !isPower ? (
+      {lockedCount > 0 ? (
         <Card className="mt-6 flex flex-col items-center gap-3 p-4 text-center sm:flex-row sm:justify-between sm:text-left">
-          <p className="text-sm font-medium text-navy">Upgrade to Power to see your full check history.</p>
-          <Link to="/account/billing" className="shrink-0">
-            <Button size="sm">
-              Upgrade to Power
-            </Button>
+          <p className="text-sm font-medium text-navy">
+            {lockedCount} earlier {lockedCount === 1 ? 'check is' : 'checks are'} locked. Active and
+            Power packs unlock your full check history.
+          </p>
+          <Link to="/pricing" className="shrink-0">
+            <Button size="sm">View packs</Button>
           </Link>
         </Card>
       ) : null}

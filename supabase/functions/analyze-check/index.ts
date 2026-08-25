@@ -134,19 +134,9 @@ Deno.serve(async (req) => {
           429,
         )
       }
-      if (reason === 'period_limit') {
-        const { data: limitProfile } = await adminClient
-          .from('profiles')
-          .select('period_checks_limit')
-          .eq('id', user.id)
-          .single()
-        const limit = limitProfile?.period_checks_limit
+      if (reason === 'no_checks_balance') {
         return jsonResponse(
-          {
-            error: limit
-              ? `You have used all ${limit} checks on your plan this week. More checks unlock when your plan renews, or upgrade for a bigger weekly allotment.`
-              : 'You have used all your checks for this week. More checks unlock when your plan renews.',
-          },
+          { error: 'You have no checks left. Buy a check pack to continue.', pricingUrl: '/pricing' },
           429,
         )
       }

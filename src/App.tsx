@@ -22,6 +22,7 @@ import { FreeCvCheckerPage } from '@/pages/FreeCvCheckerPage'
 import { LandingPage } from '@/pages/LandingPage'
 import { InterviewProbabilityPage } from '@/pages/InterviewProbabilityPage'
 import { JobApplicationFeedbackPage } from '@/pages/JobApplicationFeedbackPage'
+import { KeywordScanPage } from '@/pages/KeywordScanPage'
 import { MyChecksPage } from '@/pages/MyChecksPage'
 import { MyRecruiterCheckVsJobscanPage } from '@/pages/MyRecruiterCheckVsJobscanPage'
 import { MyRecruiterCheckVsChatGptPage } from '@/pages/MyRecruiterCheckVsChatGptPage'
@@ -93,6 +94,7 @@ export function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="checks" element={<MyChecksPage />} />
+          <Route path="checks/keyword-scan" element={<KeywordScanPage />} />
           <Route path="checks/new" element={<NewCheckPage />} />
           <Route path="checks/:id/edit" element={<NewCheckPage />} />
           <Route path="checks/:id" element={<FeedbackPage />} />

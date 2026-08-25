@@ -98,34 +98,6 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Too many document generation requests. Please try again later.' }, 429)
     }
 
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('subscription_tier')
-      .eq('id', user.id)
-      .single()
-
-    if (profileError || !profile) {
-      return jsonResponse({ error: 'Profile not found' }, 404)
-    }
-
-    // Document entitlement escalates by plan: Starter (and Free) get no
-    // generated documents, Active gets the improved CV draft only, Power
-    // gets the full kit (CV draft, cover letter, recruiter message). Kept
-    // in sync with PRICING_PLANS in src/lib/constants.ts.
-    const tier = profile.subscription_tier as 'free' | 'starter' | 'active' | 'power'
-    const entitlement = {
-      cv: tier === 'active' || tier === 'power',
-      coverLetter: tier === 'power',
-      recruiterMessage: tier === 'power',
-    }
-
-    if (!entitlement.cv) {
-      return jsonResponse(
-        { error: 'Documents are available on the Active plan or higher. Upgrade to unlock your improved CV draft.' },
-        403,
-      )
-    }
-
     const { data: check, error: checkError } = await adminClient
       .from('checks')
       .select('*, feedback(*)')
@@ -139,6 +111,28 @@ Deno.serve(async (req) => {
 
     if (check.status !== 'completed') {
       return jsonResponse({ error: 'This check has not completed analysis yet' }, 400)
+    }
+
+    // Document entitlement is keyed on which pack's credit batch funded this
+    // specific check (set once, at completion, by complete_check_analysis) —
+    // not the user's current balance or any other check. A free-tier check
+    // (funding_pack_id null) is treated the same as Small: no documents.
+    // Kept in sync with CHECK_PACKS in src/lib/constants.ts.
+    const fundingPackId = check.funding_pack_id as 'small' | 'medium' | 'large' | null
+    const entitlement = {
+      cv: fundingPackId === 'medium' || fundingPackId === 'large',
+      coverLetter: fundingPackId === 'large',
+      recruiterMessage: fundingPackId === 'large',
+    }
+
+    if (!entitlement.cv) {
+      return jsonResponse(
+        {
+          error:
+            'This check only includes the Interview Score and Recruiter Feedback. Buy a Medium or Large pack for your next check to unlock the Improved CV Draft, and Large for the Cover Letter and Recruiter Message too.',
+        },
+        403,
+      )
     }
 
     // A score of 60 or below is "Not a Fit" (see getScoreLabel in
@@ -201,8 +195,8 @@ Deno.serve(async (req) => {
 
     // The OpenAI call above always produces all three documents in one shot
     // (the prompt/schema aren't split by tier — cheaper to keep one call than
-    // to maintain a second schema for a lesser bundle), but only the
-    // entitled subset is rendered, stored, and returned below.
+    // to maintain a second schema), but only the entitled subset is
+    // rendered, stored, and returned below.
     const basePath = `${user.id}/${checkId}`
     const files: Record<string, Uint8Array> = {}
 

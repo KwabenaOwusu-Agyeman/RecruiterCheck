@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import type { Check, CheckWithFeedback, Feedback, Profile, Subscription } from '@/types'
+import type { Check, CheckLedgerEntry, CheckWithFeedback, Feedback, KeywordScanResult, PackId, Profile } from '@/types'
 
 /**
  * Storage path extensions are derived from the browser-reported MIME type,
@@ -86,19 +86,6 @@ export async function updateProfile(
   return mapProfile(data as Profile)
 }
 
-export async function getSubscription(userId: string): Promise<Subscription | null> {
-  const { data, error } = await supabase
-    .from('subscriptions')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  if (error) throw error
-  return data as Subscription | null
-}
-
 export async function deleteAccount(): Promise<void> {
   const { data, error } = await supabase.functions.invoke('delete-account', { body: {} })
 
@@ -107,10 +94,11 @@ export async function deleteAccount(): Promise<void> {
 }
 
 /**
- * Below Power, RLS itself only returns the single most recent check row
- * (see migration enforce_check_history_tier_at_rls) — this is not a
- * client-side filter, the extra rows never come back from the server at
- * all, so there's nothing to bypass via devtools or a direct API call.
+ * Full check history is an Active/Power pack perk (RLS itself only returns
+ * every row for a user who has ever purchased one of those packs — see
+ * migration gate_check_history_by_pack — otherwise just the single most
+ * recent check comes back). This is not a client-side filter, the extra
+ * rows never leave the server for a Starter-only user in the first place.
  */
 export async function getChecks(userId: string): Promise<Check[]> {
   const { data, error } = await supabase
@@ -124,10 +112,10 @@ export async function getChecks(userId: string): Promise<Check[]> {
 }
 
 /**
- * Total check count regardless of tier, via a security-definer RPC rather
- * than counting the rows getChecks() returns — those are already
- * RLS-restricted to the visible subset, so counting them would always
- * equal what's visible and could never reveal how many are locked.
+ * Total check count regardless of history-access tier, via a
+ * security-definer RPC rather than counting the rows getChecks() returns —
+ * those are already RLS-restricted to the visible subset, so counting them
+ * could never reveal how many are locked.
  */
 export async function getCheckCount(userId: string): Promise<number> {
   const { data, error } = await supabase.rpc('get_check_count', { p_user_id: userId })
@@ -159,30 +147,24 @@ export async function getCheckWithFeedback(checkId: string): Promise<CheckWithFe
 
 export const FREE_TIER_LIFETIME_LIMIT = 1
 
-export type CheckGateReason = 'free-tier' | 'period-limit' | null
+export type CheckGateReason = 'free-tier' | 'no-balance' | null
 
 /**
- * Free tier: 1 completed check ever, per the locked spec. Paid tiers
- * (Starter/Active/Power) each get a fixed number of checks per weekly
- * billing period, with no rollover. This reads the durable counters on the
- * profile row (lifetime_checks_consumed / period_checks_consumed /
- * period_checks_limit, see migration switch_to_weekly_allotment_plans)
- * rather than counting `checks` rows — counting rows would let a deleted
- * completed check silently restore the allowance, which is exactly what the
- * durable counters exist to prevent. period_checks_consumed is always
- * current by construction: the Stripe webhook resets it to 0 on every
- * successful weekly charge, so unlike the old daily cap there's no
- * client-side staleness check needed here. This is a client-side pre-check
- * only, for UI gating before the user even starts a draft; the
- * authoritative, atomic enforcement lives server-side in the
- * reserve_check_analysis Postgres function, which this mirrors.
+ * Free lifetime check first, then checks_balance funds everything after
+ * (see migration 20260825120000_check_pack_system.sql) — this reads the
+ * durable counters on the profile row rather than counting `checks` rows,
+ * since counting rows would let a deleted completed check silently restore
+ * the allowance. This is a client-side pre-check only, for UI gating before
+ * the user even starts a draft; the authoritative, atomic enforcement lives
+ * server-side in the reserve_check_analysis Postgres function, which this
+ * mirrors.
  */
 export function getCheckGateReason(profile: Profile): CheckGateReason {
-  if (profile.subscription_tier === 'free') {
-    return profile.lifetime_checks_consumed >= FREE_TIER_LIFETIME_LIMIT ? 'free-tier' : null
+  if (profile.lifetime_checks_consumed < FREE_TIER_LIFETIME_LIMIT) {
+    return null
   }
 
-  return profile.period_checks_consumed < profile.period_checks_limit ? null : 'period-limit'
+  return profile.checks_balance > 0 ? null : 'no-balance'
 }
 
 export async function getCheck(checkId: string): Promise<Check | null> {
@@ -330,7 +312,7 @@ export async function extractJobDescriptionFromFile(file: File): Promise<string>
 
 export interface GeneratedDocuments {
   cv: string
-  // Undefined below Power, where only the improved CV draft is entitled.
+  // Undefined below Large, where only the improved CV draft is entitled.
   coverLetter?: string
   emailForRecruiter?: string
   // Undefined whenever only one document was generated (nothing to bundle).
@@ -347,39 +329,93 @@ export async function generateDocuments(checkId: string): Promise<GeneratedDocum
   return data as GeneratedDocuments
 }
 
-export type CheckoutResult = { kind: 'redirect'; url: string } | { kind: 'updated' }
-
 /**
- * A user with no active subscription gets a Stripe Checkout url to redirect
- * to. A user switching plans while already subscribed instead has their
- * existing subscription modified in place server-side (see
- * changeExistingSubscription in create-checkout-session) — no Checkout
- * session, no redirect, just an { updated: true } signal so the caller can
- * refresh the profile and show the new plan immediately.
+ * Every pack purchase is an independent one-time Stripe Checkout session —
+ * packs are additive, never a plan swap, so there's no "update in place"
+ * path any more (see create-checkout-session).
  */
-export async function createCheckoutSession(
-  plan: 'starter' | 'active' | 'power',
-): Promise<CheckoutResult> {
+export async function createCheckoutSession(packId: PackId): Promise<string> {
   const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-    body: { plan },
+    body: { packId },
   })
 
   if (error) throw await resolveFunctionError(error)
-  if (data?.updated) return { kind: 'updated' }
   if (!data?.url) throw new Error('Could not start checkout')
-  return { kind: 'redirect', url: data.url as string }
+  return data.url as string
 }
 
-export async function createPortalSession(): Promise<string> {
-  const { data, error } = await supabase.functions.invoke('create-portal-session', {
-    body: {},
+/**
+ * The full purchase/use/refund/expiry audit trail for the signed-in user,
+ * most recent first — RLS restricts this to the caller's own rows (see
+ * migration 20260825120000_check_pack_system.sql).
+ */
+export async function getLedgerHistory(userId: string): Promise<CheckLedgerEntry[]> {
+  const { data, error } = await supabase
+    .from('check_ledger')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return (data ?? []) as CheckLedgerEntry[]
+}
+
+/**
+ * The soonest expiry among the user's batches that still have an unused
+ * balance, for the "N checks left, some expire on <date>" display — null if
+ * the user has no purchased balance (nothing to expire) or every remaining
+ * batch happens to be a never-expiring manual adjustment.
+ */
+export async function getNearestBatchExpiry(userId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('credit_batches')
+    .select('expires_at')
+    .eq('user_id', userId)
+    .gt('checks_remaining', 0)
+    .not('expires_at', 'is', null)
+    .order('expires_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) throw error
+  return data?.expires_at ?? null
+}
+
+/**
+ * The free keyword-scan feature — entirely separate from analyzeCheck, no
+ * shared code path, no persistence. The CV file is sent directly as base64
+ * rather than uploaded to Storage first, since nothing about this feature is
+ * ever saved.
+ */
+export async function runKeywordScan(cvFile: File, jobDescription: string): Promise<KeywordScanResult> {
+  const cvBase64 = await fileToBase64(cvFile)
+
+  const { data, error } = await supabase.functions.invoke('keyword-scan', {
+    body: {
+      cvBase64,
+      cvFileName: cvFile.name,
+      cvMimeType: cvFile.type,
+      jobDescription,
+    },
   })
 
   if (error) throw await resolveFunctionError(error)
   if (data?.error) throw new Error(String(data.error))
-  if (!data?.url) throw new Error('Could not open billing portal')
-  return data.url as string
+  return data as KeywordScanResult
 }
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      resolve(result.slice(result.indexOf(',') + 1))
+    }
+    reader.onerror = () => reject(reader.error ?? new Error('Could not read file'))
+    reader.readAsDataURL(file)
+  })
+}
+
 
 export async function submitCheckSentiment(
   checkId: string,

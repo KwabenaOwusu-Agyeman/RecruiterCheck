@@ -66,7 +66,6 @@ export function FeedbackPage() {
   const [documents, setDocuments] = useState<GeneratedDocuments | null>(null)
   const [generatingDocs, setGeneratingDocs] = useState(false)
   const [documentsError, setDocumentsError] = useState<string | null>(null)
-  const tier = profile?.subscription_tier ?? 'free'
 
   useEffect(() => {
     async function loadCheck() {
@@ -155,6 +154,7 @@ export function FeedbackPage() {
   // candidate's CV doesn't support would be bad advice, not helpful. No tier
   // gets documents below this line; the server enforces the same rule.
   const isLowFit = score !== null && score < 61
+  const fundingPackId = check.funding_pack_id
   const resultTone = getResultTone(score)
   const isDark = resultTone === 'dark'
   const textTone: 'light' | 'dark' = isDark ? 'dark' : 'light'
@@ -318,21 +318,23 @@ export function FeedbackPage() {
               <CardHeader className="px-5 py-3">
                 <h2 className="text-base font-semibold text-text-primary">Recommendation</h2>
                 <p className="mt-1 text-xs text-text-secondary">
-                  {tier === 'power'
+                  {fundingPackId === 'large'
                     ? 'An improved CV draft, cover letter, and recruiter message based on your feedback. Your CV draft may include placeholder figures (e.g. "X%") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with real numbers before submitting.'
-                    : 'An improved CV draft based on your feedback. Your CV draft may include placeholder figures (e.g. "X%") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with real numbers before submitting.'}
+                    : fundingPackId === 'medium'
+                      ? 'An improved CV draft based on your feedback. Your CV draft may include placeholder figures (e.g. "X%") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with real numbers before submitting.'
+                      : 'This check includes your Interview Score and Recruiter Feedback only.'}
                 </p>
               </CardHeader>
               <CardContent className="px-5 py-4">
-                {tier === 'free' || tier === 'starter' ? (
+                {fundingPackId !== 'medium' && fundingPackId !== 'large' ? (
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-sm text-text-secondary">
                       Your improved CV draft, cover letter, and recruiter message are available on
-                      the Active and Power plans.
+                      checks from the Medium and Large packs.
                     </p>
-                    <Link to="/account/billing">
+                    <Link to="/pricing">
                       <Button size="sm" className="shrink-0">
-                        Upgrade
+                        View packs
                       </Button>
                     </Link>
                   </div>
@@ -378,18 +380,16 @@ export function FeedbackPage() {
                         <Button variant="secondary" size="sm">Download All</Button>
                       </a>
                     ) : null}
-                    {tier === 'active' ? (
-                      <Link to="/account/billing" className="ml-auto">
-                        <Button size="sm">
-                          Upgrade
-                        </Button>
+                    {fundingPackId === 'medium' ? (
+                      <Link to="/pricing" className="ml-auto">
+                        <Button size="sm">View packs</Button>
                       </Link>
                     ) : null}
                   </motion.div>
                 ) : (
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-sm text-text-secondary">
-                      {tier === 'power'
+                      {fundingPackId === 'large'
                         ? 'Generate an improved CV draft, cover letter, and recruiter message for this application.'
                         : 'Generate an improved CV draft for this application.'}
                     </p>

@@ -15,12 +15,12 @@ export type AnalyticsEventType =
   | 'feedback_viewed'
   | 'referral_shared'
   | 'recruiter_recommendation_accessed'
-  | 'upgrade_started'
-  | 'downgrade_started'
-  | 'subscription_completed'
+  | 'checkout_started'
+  | 'purchase_completed'
   | 'refund_requested'
   | 'check_sentiment_positive'
   | 'check_sentiment_negative'
+  | 'keyword_scan_completed'
 
 export type DomainCategory = 'linkedin' | 'indeed' | 'greenhouse' | 'lever' | 'workday' | 'other'
 

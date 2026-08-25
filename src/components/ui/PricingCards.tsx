@@ -1,142 +1,99 @@
 import { ArrowRight, Check } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import type { PricingPlan } from '@/types'
+import type { CheckPack } from '@/types'
 import { cn } from '@/utils/cn'
 
-const TIER_RANK: Record<string, number> = {
-  free: 0,
-  starter: 1,
-  active: 2,
-  power: 3,
-}
-
 interface PricingCardsProps {
-  plans: PricingPlan[]
-  currentTier: string
-  loadingPlan: string | null
-  managingBilling: boolean
-  onUpgrade: (planId: 'starter' | 'active' | 'power') => void
-  onDowngrade: (planId: 'starter' | 'active' | 'power') => void
-  onManageBilling: () => void
+  packs: CheckPack[]
+  loadingPack: string | null
+  onBuy: (packId: CheckPack['id']) => void
 }
 
-export function PricingCards({
-  plans,
-  currentTier,
-  loadingPlan,
-  managingBilling,
-  onUpgrade,
-  onDowngrade,
-  onManageBilling,
-}: PricingCardsProps) {
-  const currentRank = TIER_RANK[currentTier] ?? 0
-
+function CornerMark({ className }: { className: string }) {
   return (
-    <div className="mx-auto mt-3 grid gap-3 md:grid-cols-3">
-      {plans.map((plan) => {
-        const isCurrent = currentTier === plan.id
-        const isHighlighted = Boolean(plan.highlighted)
-        const planRank = TIER_RANK[plan.id] ?? 0
-        const isDowngrade = !isCurrent && planRank < currentRank
+    <span className={cn('pointer-events-none absolute text-lg font-light leading-none text-border-strong', className)} aria-hidden="true">
+      +
+    </span>
+  )
+}
 
-        return (
-          <div key={plan.id} className="relative h-full">
-            <div
-              className={cn(
-                'relative flex h-full flex-col rounded-2xl border bg-navy p-4 shadow-elevated transition-transform duration-200 hover:-translate-y-1 sm:p-5',
-                isHighlighted ? 'border-blue-light/40' : 'border-white/10',
-              )}
-            >
-              <div className="flex items-center justify-between gap-2">
-                {plan.badge ? (
-                  <span className="text-xs font-bold uppercase tracking-wider text-blue-light">
-                    {plan.badge}
-                  </span>
-                ) : (
-                  // Reserves the same row height as the badge above without
-                  // repeating the plan name, which sits right below anyway.
-                  <span className="text-xs font-bold uppercase tracking-wider text-transparent" aria-hidden="true">
-                    &nbsp;
-                  </span>
+export function PricingCards({ packs, loadingPack, onBuy }: PricingCardsProps) {
+  return (
+    <div className="relative rounded-[28px] border border-border-soft bg-background p-3 sm:p-5">
+      <CornerMark className="left-2 top-2 sm:left-4 sm:top-4" />
+      <CornerMark className="right-2 top-2 sm:right-4 sm:top-4" />
+      <CornerMark className="bottom-2 left-2 sm:bottom-4 sm:left-4" />
+      <CornerMark className="bottom-2 right-2 sm:bottom-4 sm:right-4" />
+
+      <div className="relative mx-auto grid gap-3 sm:gap-4 md:grid-cols-3 md:items-start">
+        {packs.map((pack) => {
+          const isHighlighted = Boolean(pack.highlighted)
+
+          return (
+            <div key={pack.id} className="relative">
+              {pack.badge ? (
+                <span
+                  className={cn(
+                    'absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide',
+                    isHighlighted ? 'bg-blue text-white' : 'bg-border-soft text-text-secondary',
+                  )}
+                >
+                  {pack.badge}
+                </span>
+              ) : null}
+              <div
+                className={cn(
+                  'flex flex-col rounded-[20px] border p-4 pt-6 shadow-card sm:p-5 sm:pt-7',
+                  isHighlighted ? 'border-navy bg-navy shadow-elevated' : 'border-border-soft bg-surface',
                 )}
-                {isCurrent ? (
-                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-semibold text-white">
-                    Current
-                  </span>
-                ) : null}
-              </div>
-              <h2 className="font-display mt-1.5 text-2xl font-semibold text-white sm:text-[28px]">{plan.name}</h2>
-              <p className="mt-1 text-sm leading-snug text-white/60">{plan.description}</p>
+              >
+                <h2 className={cn('font-display text-lg font-semibold sm:text-xl', isHighlighted ? 'text-white' : 'text-text-primary')}>
+                  {pack.name}
+                </h2>
+                <p className={cn('text-xs', isHighlighted ? 'text-white/60' : 'text-text-secondary')}>{pack.description}</p>
 
-              <div className="mt-2.5 border-t border-white/10 pt-2.5">
-                <p className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-                  {plan.price}
-                  {plan.interval ? (
-                    <span className="text-base font-normal text-white/50">/{plan.interval}</span>
-                  ) : null}
+                <p className={cn('mt-2 flex items-baseline gap-1 tracking-tight', isHighlighted ? 'text-white' : 'text-text-primary')}>
+                  <span className="text-xl font-bold">€</span>
+                  <span className="text-4xl font-bold sm:text-5xl">{pack.price.replace('€', '')}</span>
                 </p>
-                {plan.interval ? (
-                  <p className="mt-1 text-xs text-white/50">Renews {plan.interval}ly. Cancel anytime.</p>
-                ) : null}
-              </div>
+                <p className={cn('mt-0.5 text-xs', isHighlighted ? 'text-white/60' : 'text-text-secondary')}>
+                  One-time · expires in 90 days
+                </p>
 
-              <ul className="mt-2.5 flex-1 space-y-1.5 border-t border-white/10 pt-2.5 text-sm text-white/90">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-center gap-2">
-                    <Check className="h-4 w-4 shrink-0 text-blue-light" strokeWidth={2.5} />
-                    <span className={feature === plan.highlightFeature ? 'font-semibold text-white' : undefined}>
-                      {feature}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+                <ul
+                  className={cn(
+                    'mt-3 space-y-1.5 border-t pt-3 text-xs sm:text-sm',
+                    isHighlighted ? 'border-white/15 text-white/90' : 'border-border text-text-primary',
+                  )}
+                >
+                  {pack.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-1.5">
+                      <Check
+                        className={cn('mt-0.5 h-3.5 w-3.5 shrink-0', isHighlighted ? 'text-blue-light' : 'text-blue')}
+                        strokeWidth={2.5}
+                      />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
 
-              <div className="mt-3">
-                {isCurrent && plan.id !== 'free' ? (
+                <div className="mt-4">
                   <Button
-                    variant="light"
-                    className="w-full justify-center"
-                    size="lg"
-                    disabled={managingBilling}
-                    onClick={onManageBilling}
+                    variant={isHighlighted ? 'light' : 'primary'}
+                    className="w-full justify-center gap-2 whitespace-nowrap"
+                    size="md"
+                    disabled={loadingPack !== null}
+                    onClick={() => onBuy(pack.id)}
                   >
-                    {managingBilling ? 'Opening...' : 'Manage Billing'}
+                    {loadingPack === pack.id ? 'Redirecting...' : 'Buy pack'}
+                    {loadingPack === pack.id ? null : <ArrowRight className="h-4 w-4" />}
                   </Button>
-                ) : isCurrent ? (
-                  <Button variant="light" className="w-full justify-center" size="lg" disabled>
-                    Current Plan
-                  </Button>
-                ) : isDowngrade ? (
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-center border-white/20 text-white hover:bg-white/10"
-                    size="lg"
-                    disabled={loadingPlan !== null}
-                    onClick={() => onDowngrade(plan.id as 'starter' | 'active' | 'power')}
-                  >
-                    {loadingPlan === plan.id ? 'Updating...' : 'Downgrade'}
-                  </Button>
-                ) : (
-                  <Button
-                    variant="accent"
-                    className="w-full justify-center gap-2"
-                    size="lg"
-                    disabled={loadingPlan !== null}
-                    onClick={() => onUpgrade(plan.id as 'starter' | 'active' | 'power')}
-                  >
-                    {loadingPlan === plan.id
-                      ? 'Redirecting...'
-                      : currentRank === 0
-                        ? 'Get Started'
-                        : 'Upgrade'}
-                    {loadingPlan === plan.id ? null : <ArrowRight className="h-4 w-4" />}
-                  </Button>
-                )}
+                </div>
               </div>
             </div>
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
     </div>
   )
 }

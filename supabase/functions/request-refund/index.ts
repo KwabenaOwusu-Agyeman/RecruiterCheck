@@ -64,14 +64,33 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Too many refund requests. Please try again later.' }, 429)
     }
 
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('stripe_customer_id')
-      .eq('id', user.id)
-      .single()
+    // Refund policy for packs: the most recent purchased batch only, and
+    // only if it's still 100% unused (checks_remaining === checks_granted)
+    // and within 7 days of purchase. Because checks are always consumed
+    // earliest-expiring-batch-first (see complete_check_analysis), "was this
+    // specific batch touched" is well-defined even with several packs
+    // stacked — a batch with checks_remaining < checks_granted was
+    // definitely drawn from, a batch with no draws yet is untouched.
+    const { data: batch, error: batchError } = await adminClient
+      .from('credit_batches')
+      .select('id, checks_granted, checks_remaining, stripe_payment_intent_id, granted_at')
+      .eq('user_id', user.id)
+      .eq('source', 'purchase')
+      .order('granted_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
 
-    if (profileError || !profile?.stripe_customer_id) {
-      return jsonResponse({ error: 'No billing history found for this account' }, 404)
+    if (batchError || !batch || !batch.stripe_payment_intent_id) {
+      return jsonResponse({ error: 'No eligible purchase found for this account' }, 404)
+    }
+
+    if (batch.checks_remaining !== batch.checks_granted) {
+      return jsonResponse({ error: 'This pack has already been used and is no longer refundable' }, 403)
+    }
+
+    const purchaseAgeMs = Date.now() - new Date(batch.granted_at).getTime()
+    if (purchaseAgeMs > GUARANTEE_WINDOW_MS) {
+      return jsonResponse({ error: 'The 7 day refund window for this pack has passed' }, 403)
     }
 
     const stripe = new Stripe(stripeSecretKey, {
@@ -79,85 +98,45 @@ Deno.serve(async (req) => {
       httpClient: Stripe.createFetchHttpClient(),
     })
 
-    // The guarantee applies to a customer's very first paid invoice only.
-    // Listing up to 100 invoices and taking the last one is enough to find
-    // it in practice — a customer would need 100+ weekly invoices (roughly
-    // two years) before this stopped being the oldest one in a single page,
-    // and by then the 7 day window below would already exclude them anyway.
-    const invoices = await stripe.invoices.list({
-      customer: profile.stripe_customer_id,
-      status: 'paid',
-      limit: 100,
-    })
-
-    const firstInvoice = invoices.data[invoices.data.length - 1]
-    if (!firstInvoice) {
-      return jsonResponse({ error: 'No paid invoice found for this account' }, 404)
+    const paymentIntent = await stripe.paymentIntents.retrieve(batch.stripe_payment_intent_id)
+    if (paymentIntent.status !== 'succeeded') {
+      return jsonResponse({ error: 'This purchase cannot be refunded' }, 409)
     }
 
-    const invoiceAgeMs = Date.now() - firstInvoice.created * 1000
-    if (invoiceAgeMs > GUARANTEE_WINDOW_MS) {
-      return jsonResponse(
-        { error: 'The 7 day refund window for your first paid check has passed' },
-        403,
-      )
+    const existingRefunds = await stripe.refunds.list({ payment_intent: batch.stripe_payment_intent_id, limit: 1 })
+    if (existingRefunds.data.length > 0) {
+      return jsonResponse({ error: 'This pack has already been refunded' }, 409)
     }
 
-    const chargeId =
-      typeof firstInvoice.charge === 'string' ? firstInvoice.charge : firstInvoice.charge?.id
-    if (!chargeId) {
-      return jsonResponse({ error: 'No charge found for your first paid check' }, 404)
-    }
+    await stripe.refunds.create({ payment_intent: batch.stripe_payment_intent_id })
 
-    const charge = await stripe.charges.retrieve(chargeId)
-    if (charge.refunded) {
-      return jsonResponse({ error: 'Your first paid check has already been refunded' }, 409)
-    }
-
-    await stripe.refunds.create({ charge: chargeId })
-
-    // Cancel whichever subscription is currently active, not necessarily the
-    // plan the refunded invoice was for — the customer may have upgraded
-    // since that first payment, and the guarantee ends paid access
-    // entirely, not just reverts a plan change.
-    const { data: activeSubscription } = await adminClient
-      .from('subscriptions')
-      .select('stripe_subscription_id')
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .not('stripe_subscription_id', 'is', null)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    if (activeSubscription?.stripe_subscription_id) {
-      try {
-        await stripe.subscriptions.cancel(activeSubscription.stripe_subscription_id)
-      } catch (error) {
-        // The refund itself already succeeded above — a subscription that's
-        // already cancelled (e.g. the customer cancelled it themselves
-        // first) isn't fatal to the refund having gone through.
-        console.error('request-refund: could not cancel subscription', error)
-      }
-      await adminClient
-        .from('subscriptions')
-        .update({ status: 'cancelled' })
-        .eq('stripe_subscription_id', activeSubscription.stripe_subscription_id)
-    }
-
-    // Written synchronously so the billing page reflects the downgrade
-    // immediately, same convention as changeExistingSubscription in
-    // create-checkout-session — the charge.refunded webhook re-applies the
-    // same values when it lands, a harmless no-op.
-    await adminClient
+    // Written synchronously so the billing page reflects the refund
+    // immediately — the charge.refunded webhook re-applies the same
+    // claw-back when it lands, a harmless no-op against an already-zeroed
+    // batch.
+    const { data: profile } = await adminClient
       .from('profiles')
-      .update({
-        subscription_tier: 'free',
-        subscription_status: 'cancelled',
-        period_checks_consumed: 0,
-        period_checks_limit: 0,
-      })
+      .select('checks_balance')
       .eq('id', user.id)
+      .single()
+
+    const clawback = Math.min(batch.checks_remaining, profile?.checks_balance ?? 0)
+
+    await adminClient.from('credit_batches').update({ checks_remaining: 0 }).eq('id', batch.id)
+    if (profile) {
+      await adminClient
+        .from('profiles')
+        .update({ checks_balance: profile.checks_balance - clawback })
+        .eq('id', user.id)
+    }
+    await adminClient.from('check_ledger').insert({
+      user_id: user.id,
+      batch_id: batch.id,
+      entry_type: 'refunded',
+      amount: -clawback,
+      related_stripe_payment_intent_id: batch.stripe_payment_intent_id,
+      note: 'self-service request-refund',
+    })
 
     return jsonResponse({ refunded: true })
   } catch (error) {

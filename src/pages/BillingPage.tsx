@@ -4,90 +4,68 @@ import { Alert } from '@/components/ui/Alert'
 import { BackLink } from '@/components/ui/BackLink'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { PricingCards } from '@/components/ui/PricingCards'
-import { PRICING_PLANS } from '@/lib/constants'
+import { CHECK_PACKS } from '@/lib/constants'
 import { trackEvent } from '@/lib/analytics'
 import { useAuth } from '@/hooks/useAuth'
 import { usePageMeta } from '@/hooks/usePageMeta'
-import { createCheckoutSession, createPortalSession, requestRefund } from '@/services/checkService'
+import { createCheckoutSession, getLedgerHistory, requestRefund } from '@/services/checkService'
+import type { CheckLedgerEntry } from '@/types'
+
+const LEDGER_LABELS: Record<CheckLedgerEntry['entry_type'], string> = {
+  purchased: 'Purchased',
+  used: 'Used',
+  refunded: 'Refunded',
+  expired: 'Expired',
+  manual_adjustment: 'Adjustment',
+}
 
 export function BillingPage() {
-  usePageMeta({ title: 'Billing | MyRecruiterCheck', description: 'Manage your MyRecruiterCheck subscription and billing.', path: '/account/billing', noindex: true })
-  const { profile, refreshProfile } = useAuth()
+  usePageMeta({ title: 'Billing | MyRecruiterCheck', description: 'Manage your MyRecruiterCheck check packs and billing.', path: '/account/billing', noindex: true })
+  const { user, profile, refreshProfile } = useAuth()
   const [searchParams] = useSearchParams()
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
-  const [managingBilling, setManagingBilling] = useState(false)
+  const [loadingPack, setLoadingPack] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [planUpdated, setPlanUpdated] = useState(false)
-  const [downgradeTarget, setDowngradeTarget] = useState<'starter' | 'active' | 'power' | null>(null)
   const [refundDialogOpen, setRefundDialogOpen] = useState(false)
   const [refundLoading, setRefundLoading] = useState(false)
   const [refundSuccess, setRefundSuccess] = useState(false)
+  const [ledger, setLedger] = useState<CheckLedgerEntry[]>([])
 
   const checkoutStatus = searchParams.get('status')
 
   useEffect(() => {
-    // A brand new subscriber lands here after a Stripe Checkout redirect —
-    // the webhook writes their tier, but this tab's `profile` was loaded
-    // before that happened, so it must be re-fetched or the rest of the
-    // session keeps showing stale (pre-upgrade) limits until a hard reload.
+    if (!user) return
+    let cancelled = false
+    void getLedgerHistory(user.id).then((data) => {
+      if (!cancelled) setLedger(data)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [user])
+
+  useEffect(() => {
+    // A brand new purchase lands here after a Stripe Checkout redirect — the
+    // webhook grants the credits, but this tab's `profile` was loaded before
+    // that happened, so it must be re-fetched or the balance keeps showing
+    // stale (pre-purchase) numbers until a hard reload.
     if (checkoutStatus === 'success') {
-      trackEvent('subscription_completed')
+      trackEvent('purchase_completed')
       void refreshProfile()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkoutStatus])
 
-  async function switchPlan(plan: 'starter' | 'active' | 'power') {
-    setLoadingPlan(plan)
+  async function handleBuy(packId: (typeof CHECK_PACKS)[number]['id']) {
+    setLoadingPack(packId)
     setError(null)
-    setPlanUpdated(false)
+    trackEvent('checkout_started')
 
     try {
-      const result = await createCheckoutSession(plan)
-      if (result.kind === 'redirect') {
-        window.location.href = result.url
-        return
-      }
-      // Already-subscribed user switching plans: the existing subscription
-      // was modified in place server-side, not a new Checkout session, so
-      // there's nothing to redirect to — just pick up the new tier.
-      await refreshProfile()
-      trackEvent('subscription_completed')
-      setPlanUpdated(true)
-      setLoadingPlan(null)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not start checkout')
-      setLoadingPlan(null)
-    }
-  }
-
-  function handleUpgrade(plan: 'starter' | 'active' | 'power') {
-    trackEvent('upgrade_started')
-    void switchPlan(plan)
-  }
-
-  function handleDowngrade(plan: 'starter' | 'active' | 'power') {
-    setDowngradeTarget(plan)
-  }
-
-  async function confirmDowngrade() {
-    if (!downgradeTarget) return
-    trackEvent('downgrade_started')
-    const plan = downgradeTarget
-    setDowngradeTarget(null)
-    await switchPlan(plan)
-  }
-
-  async function handleManageBilling() {
-    setManagingBilling(true)
-    setError(null)
-
-    try {
-      const url = await createPortalSession()
+      const url = await createCheckoutSession(packId)
       window.location.href = url
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not open billing portal')
-      setManagingBilling(false)
+      setError(err instanceof Error ? err.message : 'Could not start checkout')
+      setLoadingPack(null)
     }
   }
 
@@ -108,25 +86,23 @@ export function BillingPage() {
     }
   }
 
-  const isPaidPlan = !!profile?.subscription_tier && profile.subscription_tier !== 'free'
-
   return (
     <>
       <BackLink to="/account" />
 
       <div className="mx-auto mt-1 max-w-2xl text-center lg:max-w-[1080px]">
-        <p className="text-xs font-bold uppercase tracking-wider text-blue">Recruiter Check Plans</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-blue">Check Packs</p>
         <h1 className="font-display mt-1.5 text-2xl font-bold tracking-tight text-text-primary sm:text-[32px]">
-          Choose your plan
+          {profile ? `${profile.checks_balance} checks remaining` : 'Your check balance'}
         </h1>
         <p className="mx-auto mt-2 max-w-none text-sm text-text-secondary sm:whitespace-nowrap sm:text-base">
-          Get more Recruiter Checks and tailored application documents when you need them.
+          One-time payment. No subscription. No automatic renewal.
         </p>
       </div>
 
       {checkoutStatus === 'success' ? (
         <Alert variant="success" className="mx-auto mt-6 max-w-2xl">
-          Payment received. Your plan will update shortly.
+          Payment received. Your checks will appear shortly.
         </Alert>
       ) : null}
 
@@ -136,52 +112,43 @@ export function BillingPage() {
         </Alert>
       ) : null}
 
-      {planUpdated ? (
-        <Alert variant="success" className="mx-auto mt-6 max-w-2xl">
-          Your plan has been updated.
-        </Alert>
-      ) : null}
-
       {refundSuccess ? (
         <Alert variant="success" className="mx-auto mt-6 max-w-2xl">
-          Your refund has been processed and your plan has been cancelled. It may take a few
-          business days to appear on your statement.
+          Your refund has been processed. It may take a few business days to appear on your
+          statement.
         </Alert>
       ) : null}
 
       {error ? <Alert variant="error" className="mx-auto mt-6 max-w-2xl">{error}</Alert> : null}
 
-      <PricingCards
-        plans={PRICING_PLANS.filter((plan) => plan.id !== 'free')}
-        currentTier={profile?.subscription_tier ?? 'free'}
-        loadingPlan={loadingPlan}
-        managingBilling={managingBilling}
-        onUpgrade={handleUpgrade}
-        onDowngrade={handleDowngrade}
-        onManageBilling={() => void handleManageBilling()}
-      />
+      <PricingCards packs={CHECK_PACKS} loadingPack={loadingPack} onBuy={(packId) => void handleBuy(packId)} />
 
-      <ConfirmDialog
-        open={downgradeTarget !== null}
-        title="Downgrade plan?"
-        description={
-          downgradeTarget
-            ? `You'll move to ${PRICING_PLANS.find((plan) => plan.id === downgradeTarget)?.name} right away, with a prorated credit for the time remaining on your current plan. Your check allotment will drop to match the new plan immediately.`
-            : null
-        }
-        confirmLabel="Downgrade"
-        confirmingLabel="Updating..."
-        cancelLabel="Keep current plan"
-        busy={loadingPlan !== null}
-        destructive={false}
-        onConfirm={() => void confirmDowngrade()}
-        onCancel={() => setDowngradeTarget(null)}
-      />
+      {ledger.length > 0 ? (
+        <div className="mx-auto mt-8 max-w-2xl">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-text-secondary">
+            Transaction history
+          </h2>
+          <div className="mt-3 divide-y divide-border rounded-[16px] border border-border-soft bg-surface shadow-card">
+            {ledger.map((entry) => (
+              <div key={entry.id} className="flex items-center justify-between px-4 py-3 text-sm">
+                <span className="text-text-primary">{LEDGER_LABELS[entry.entry_type]}</span>
+                <span className={entry.amount >= 0 ? 'text-green-600' : 'text-text-secondary'}>
+                  {entry.amount >= 0 ? '+' : ''}
+                  {entry.amount}
+                </span>
+                <span className="text-text-secondary">
+                  {new Date(entry.created_at).toLocaleDateString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <ConfirmDialog
         open={refundDialogOpen}
         title="Request a refund?"
-        description="If you're within 7 days of your first paid check, we'll refund that payment in full and cancel your plan right away. This can't be undone."
+        description="If your most recent pack is still fully unused and within 7 days of purchase, we'll refund that payment in full. This can't be undone."
         confirmLabel="Request refund"
         confirmingLabel="Processing..."
         cancelLabel="Never mind"
@@ -204,19 +171,16 @@ export function BillingPage() {
           </svg>
           <span>Payments securely processed by Stripe. We never see or store your card details.</span>
         </div>
-        <span>Cancel anytime from your billing portal.</span>
-        {isPaidPlan ? (
-          <span>
-            Not happy with your first paid check?{' '}
-            <button
-              type="button"
-              className="font-medium text-blue hover:underline"
-              onClick={() => setRefundDialogOpen(true)}
-            >
-              Request a refund
-            </button>
-          </span>
-        ) : null}
+        <span>
+          Not happy with your last purchase?{' '}
+          <button
+            type="button"
+            className="font-medium text-blue hover:underline"
+            onClick={() => setRefundDialogOpen(true)}
+          >
+            Request a refund
+          </button>
+        </span>
         <span>
           Have questions?{' '}
           <Link to="/faq" className="font-medium text-blue hover:underline">

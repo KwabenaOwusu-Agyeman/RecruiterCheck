@@ -72,6 +72,64 @@ export type Database = {
           },
         ]
       }
+      check_ledger: {
+        Row: {
+          amount: number
+          batch_id: string | null
+          created_at: string
+          entry_type: string
+          id: number
+          note: string | null
+          related_check_id: string | null
+          related_stripe_payment_intent_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          batch_id?: string | null
+          created_at?: string
+          entry_type: string
+          id?: never
+          note?: string | null
+          related_check_id?: string | null
+          related_stripe_payment_intent_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          batch_id?: string | null
+          created_at?: string
+          entry_type?: string
+          id?: never
+          note?: string | null
+          related_check_id?: string | null
+          related_stripe_payment_intent_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "check_ledger_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "credit_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "check_ledger_related_check_id_fkey"
+            columns: ["related_check_id"]
+            isOneToOne: false
+            referencedRelation: "checks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "check_ledger_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       check_sentiment: {
         Row: {
           check_id: string
@@ -122,6 +180,7 @@ export type Database = {
           documents_purged_at: string | null
           error_message: string | null
           experience_score: number | null
+          funding_pack_id: string | null
           id: string
           interview_probability_score: number | null
           job_description: string
@@ -146,6 +205,7 @@ export type Database = {
           documents_purged_at?: string | null
           error_message?: string | null
           experience_score?: number | null
+          funding_pack_id?: string | null
           id?: string
           interview_probability_score?: number | null
           job_description?: string
@@ -170,6 +230,7 @@ export type Database = {
           documents_purged_at?: string | null
           error_message?: string | null
           experience_score?: number | null
+          funding_pack_id?: string | null
           id?: string
           interview_probability_score?: number | null
           job_description?: string
@@ -187,6 +248,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "checks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_batches: {
+        Row: {
+          checks_granted: number
+          checks_remaining: number
+          expires_at: string | null
+          granted_at: string
+          id: string
+          pack_id: string | null
+          source: string
+          stripe_checkout_session_id: string | null
+          stripe_payment_intent_id: string | null
+          user_id: string
+        }
+        Insert: {
+          checks_granted: number
+          checks_remaining: number
+          expires_at?: string | null
+          granted_at?: string
+          id?: string
+          pack_id?: string | null
+          source: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          user_id: string
+        }
+        Update: {
+          checks_granted?: number
+          checks_remaining?: number
+          expires_at?: string | null
+          granted_at?: string
+          id?: string
+          pack_id?: string | null
+          source?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_batches_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -465,42 +573,33 @@ export type Database = {
       }
       profiles: {
         Row: {
+          checks_balance: number
           created_at: string
           email: string
           full_name: string | null
           id: string
+          keyword_scans_consumed: number
           lifetime_checks_consumed: number
-          period_checks_consumed: number
-          period_checks_limit: number
-          stripe_customer_id: string | null
-          subscription_status: Database["public"]["Enums"]["subscription_status"]
-          subscription_tier: Database["public"]["Enums"]["subscription_tier"]
           updated_at: string
         }
         Insert: {
+          checks_balance?: number
           created_at?: string
           email: string
           full_name?: string | null
           id: string
+          keyword_scans_consumed?: number
           lifetime_checks_consumed?: number
-          period_checks_consumed?: number
-          period_checks_limit?: number
-          stripe_customer_id?: string | null
-          subscription_status?: Database["public"]["Enums"]["subscription_status"]
-          subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
           updated_at?: string
         }
         Update: {
+          checks_balance?: number
           created_at?: string
           email?: string
           full_name?: string | null
           id?: string
+          keyword_scans_consumed?: number
           lifetime_checks_consumed?: number
-          period_checks_consumed?: number
-          period_checks_limit?: number
-          stripe_customer_id?: string | null
-          subscription_status?: Database["public"]["Enums"]["subscription_status"]
-          subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
           updated_at?: string
         }
         Relationships: []
@@ -540,47 +639,6 @@ export type Database = {
           id?: string
         }
         Relationships: []
-      }
-      subscriptions: {
-        Row: {
-          created_at: string
-          current_period_end: string | null
-          id: string
-          plan: Database["public"]["Enums"]["subscription_tier"]
-          status: Database["public"]["Enums"]["subscription_status"]
-          stripe_subscription_id: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          current_period_end?: string | null
-          id?: string
-          plan: Database["public"]["Enums"]["subscription_tier"]
-          status?: Database["public"]["Enums"]["subscription_status"]
-          stripe_subscription_id?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          current_period_end?: string | null
-          id?: string
-          plan?: Database["public"]["Enums"]["subscription_tier"]
-          status?: Database["public"]["Enums"]["subscription_status"]
-          stripe_subscription_id?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "subscriptions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       upload_purge_log: {
         Row: {
@@ -665,10 +723,24 @@ export type Database = {
         }
         Returns: undefined
       }
+      expire_credit_batches: { Args: never; Returns: undefined }
       get_check_count: { Args: { p_user_id: string }; Returns: number }
-      is_most_recent_check: {
-        Args: { p_created_at: string; p_user_id: string }
-        Returns: boolean
+      grant_check_credits: {
+        Args: {
+          p_amount: number
+          p_expires_at?: string
+          p_pack_id?: string
+          p_source: string
+          p_stripe_checkout_session_id?: string
+          p_stripe_payment_intent_id?: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      most_recent_check_id: { Args: { p_user_id: string }; Returns: string }
+      refund_check_credit: {
+        Args: { p_check_id: string; p_user_id: string }
+        Returns: undefined
       }
       reserve_check_analysis: {
         Args: { p_check_id: string; p_user_id: string }
@@ -682,8 +754,6 @@ export type Database = {
     }
     Enums: {
       check_status: "draft" | "processing" | "completed" | "failed"
-      subscription_status: "active" | "cancelled" | "past_due" | "trialing"
-      subscription_tier: "free" | "starter" | "active" | "power"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -812,8 +882,6 @@ export const Constants = {
   public: {
     Enums: {
       check_status: ["draft", "processing", "completed", "failed"],
-      subscription_status: ["active", "cancelled", "past_due", "trialing"],
-      subscription_tier: ["free", "starter", "active", "power"],
     },
   },
 } as const

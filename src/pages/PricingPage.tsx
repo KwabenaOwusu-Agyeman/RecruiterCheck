@@ -1,10 +1,14 @@
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { Container } from '@/components/ui/Container'
+import { Alert } from '@/components/ui/Alert'
 import { PricingCards } from '@/components/ui/PricingCards'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthModal } from '@/features/auth/context/AuthModalContext'
 import { usePageMeta } from '@/hooks/usePageMeta'
-import { PRICING_PLANS } from '@/lib/constants'
+import { CHECK_PACKS } from '@/lib/constants'
+import { trackEvent } from '@/lib/analytics'
+import { createCheckoutSession } from '@/services/checkService'
+import type { CheckPack } from '@/types'
 
 const faqs = [
   {
@@ -12,8 +16,16 @@ const faqs = [
     answer: 'Yes. Every new account gets one free Recruiter Check, so you can see your Interview Score and recruiter style feedback before deciding whether you need more.',
   },
   {
-    question: 'Can I cancel anytime?',
-    answer: 'Yes. Plans renew weekly and can be cancelled at any time from your account billing page — you keep access until the end of the current period.',
+    question: 'Is there a free keyword scan too?',
+    answer: 'Yes. Before you spend a check, run a free keyword scan to see how well your CV matches a job description. You get 3 free scans, and unlimited scans once you’ve bought any check pack.',
+  },
+  {
+    question: 'Do checks expire?',
+    answer: 'Purchased checks are valid for 90 days from the date you buy them. Your free check never expires.',
+  },
+  {
+    question: 'What happens when I run out?',
+    answer: 'Buy another pack whenever you need to. There is no subscription and nothing renews automatically.',
   },
   {
     question: 'What happens to my uploaded CV?',
@@ -21,26 +33,38 @@ const faqs = [
   },
   {
     question: 'What if I am not happy after paying?',
-    answer: 'If you are not satisfied with your first paid check, you can request a full refund within 7 days by emailing support@recruitercheck.app.',
+    answer: 'If your most recent pack is still fully unused and within 7 days of purchase, you can request a full refund from your billing page.',
   },
 ]
 
 export function PricingPage() {
   usePageMeta({
     title: 'Pricing | MyRecruiterCheck',
-    description: 'Simple, transparent pricing for Recruiter Checks. Your first check is free — plans from €10 per week for ongoing feedback on every application.',
+    description: 'Simple, transparent pricing for Recruiter Checks. Your first check is free — check packs from €10, no subscription.',
     path: '/pricing',
   })
 
-  const { user, profile } = useAuth()
+  const { user } = useAuth()
   const { open } = useAuthModal()
-  const navigate = useNavigate()
+  const [loadingPack, setLoadingPack] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  function handlePlanCta() {
-    if (user) {
-      navigate('/account/billing')
-    } else {
+  async function handleBuy(packId: CheckPack['id']) {
+    if (!user) {
       open('sign-up')
+      return
+    }
+
+    setLoadingPack(packId)
+    setError(null)
+    trackEvent('checkout_started')
+
+    try {
+      const url = await createCheckoutSession(packId)
+      window.location.href = url
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not start checkout')
+      setLoadingPack(null)
     }
   }
 
@@ -51,10 +75,12 @@ export function PricingPage() {
           <div className="mx-auto max-w-2xl text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue">Pricing</p>
             <h1 className="font-display mt-4 text-3xl font-semibold tracking-tight text-text-primary sm:text-4xl lg:text-[44px]">
-              Simple pricing for every job search
+              Choose how you use your checks
             </h1>
             <p className="mx-auto mt-5 max-w-xl text-lg leading-8 text-text-secondary">
-              Your first Recruiter Check is free. Choose a plan when you're ready for ongoing feedback on every application.
+              Your first Recruiter Check is free, no credit card required, plus 3 free keyword
+              scans to check your fit before you spend one. After that, buy a pack of checks
+              whenever you need them. No subscription and no automatic renewal.
             </p>
           </div>
         </Container>
@@ -62,16 +88,13 @@ export function PricingPage() {
 
       <section className="py-10 sm:py-14">
         <Container>
-          <div className="mx-auto max-w-5xl">
-            <PricingCards
-              plans={PRICING_PLANS.filter((plan) => plan.id !== 'free')}
-              currentTier={profile?.subscription_tier ?? ''}
-              loadingPlan={null}
-              managingBilling={false}
-              onUpgrade={handlePlanCta}
-              onDowngrade={handlePlanCta}
-              onManageBilling={() => navigate('/account/billing')}
-            />
+          <div className="mx-auto">
+            {error ? <Alert variant="error" className="mx-auto mb-6 max-w-2xl">{error}</Alert> : null}
+            <PricingCards packs={CHECK_PACKS} loadingPack={loadingPack} onBuy={(packId) => void handleBuy(packId)} />
+            <p className="mx-auto mt-6 max-w-2xl text-center text-sm text-text-secondary">
+              A Recruiter Check uses 1 check from your balance. Purchased checks expire 90 days after
+              purchase.
+            </p>
           </div>
         </Container>
       </section>

@@ -9,60 +9,59 @@ export const FEATURE_FLAGS = {
   linkedInAuth: false,
 } as const
 
-import type { PricingPlan } from '@/types'
+import type { CheckPack } from '@/types'
 
-// Kept in sync with PLAN_PRICES in create-checkout-session and
-// PLAN_CHECK_LIMITS in stripe-webhook.
-export const PRICING_PLANS: PricingPlan[] = [
+// Display names reuse Starter/Active/Power from the old weekly-subscription
+// model (fully removed — see migration remove_subscription_system) purely
+// as naming, not resurrected code: `id` stays 'small'|'medium'|'large',
+// since that's the value already threaded through Stripe metadata,
+// credit_batches.pack_id, and checks.funding_pack_id. Kept in sync with
+// PACKS in create-checkout-session and stripe-webhook, and with the
+// entitlement gate in generate-documents. Packs differ in both check count
+// AND what a check from that pack unlocks — a check drawn from a Starter
+// batch only ever gets score + feedback, regardless of which pack the user
+// might buy later. Purchased checks expire 90 days after purchase.
+export const CHECK_PACKS: CheckPack[] = [
   {
-    id: 'free' as const,
-    name: 'Free',
-    price: '€0',
-    description: 'Get started with your first Recruiter Check.',
-    features: ['1 Recruiter Check', 'Interview Score', 'Recruiter Feedback'],
-  },
-  {
-    id: 'starter' as const,
+    id: 'small',
     name: 'Starter',
     price: '€10',
-    interval: 'week',
-    description: 'Get your applications moving.',
-    features: ['5 Recruiter Checks per week', 'Interview Score', 'Recruiter Feedback'],
-    perCheckPrice: '€2.00 / check',
+    checks: 5,
+    description: 'Try it out.',
+    features: ['5 Checks', 'Interview Score', 'Recruiter Feedback'],
   },
   {
-    id: 'active' as const,
+    id: 'medium',
     name: 'Active',
-    price: '€15',
-    interval: 'week',
-    description: 'For a job search in full swing.',
+    price: '€20',
+    checks: 15,
+    description: 'For an active search.',
     features: [
-      '10 Recruiter Checks per week',
+      '15 Checks',
       'Interview Score',
       'Recruiter Feedback',
       'Improved CV Draft',
+      'Access to check history',
     ],
     badge: 'Most Popular',
     highlighted: true,
-    perCheckPrice: '€1.50 / check',
-    highlightFeature: 'Improved CV Draft',
   },
   {
-    id: 'power' as const,
+    id: 'large',
     name: 'Power',
-    price: '€20',
-    interval: 'week',
+    price: '€40',
+    checks: 40,
     description: 'For applying at volume.',
     features: [
-      '20 Recruiter Checks per week',
-      'Everything in Active',
+      '40 Checks',
+      'Interview Score',
+      'Recruiter Feedback',
+      'Improved CV Draft',
       'Cover Letter',
       'Recruiter Message',
       'Access to check history',
     ],
     badge: 'Best Value',
-    perCheckPrice: '€1.00 / check',
-    highlightFeature: 'Access to check history',
   },
 ]
 

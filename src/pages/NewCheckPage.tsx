@@ -42,11 +42,6 @@ function textToCvFile(text: string): File {
   return new File([text], PASTED_CV_FILE_NAME, { type: 'text/plain' })
 }
 
-/**
- * The daily allowance resets at UTC midnight (matches reserve_check_analysis's
- * own day boundary), so this is computed from wall-clock time rather than
- * stored anywhere — it's only ever off by the seconds since the page loaded.
- */
 type SaveState = 'idle' | 'saving' | 'saved' | 'error'
 type CvInputMode = 'file' | 'paste'
 type JobInputMode = 'paste' | 'url' | 'upload'
@@ -407,7 +402,7 @@ export function NewCheckPage() {
     )
   }
 
-  if (gateReason === 'period-limit') {
+  if (gateReason === 'no-balance') {
     return (
       <>
         <BackLink to="/checks" />
@@ -419,15 +414,15 @@ export function NewCheckPage() {
             <Sparkles className="h-5 w-5 text-navy" strokeWidth={2} />
           </div>
           <h2 className="mt-4 text-base font-semibold text-text-primary">
-            You've used all your checks this week
+            You're out of checks
           </h2>
           <p className="mt-2 text-sm text-text-secondary">
-            You're on a roll. Upgrade and keep going.
+            You're on a roll. Buy a check pack to keep going.
           </p>
           <div className="mt-6 flex justify-center">
             <Link to="/account/billing">
               <Button size="sm" className="w-full sm:w-auto">
-                Upgrade
+                Get checks
               </Button>
             </Link>
           </div>

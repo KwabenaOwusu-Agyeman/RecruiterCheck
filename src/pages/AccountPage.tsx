@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { PageHeader } from '@/components/ui/Badge'
 import { PasswordInput } from '@/components/ui/PasswordInput'
-import { PRICING_PLANS } from '@/lib/constants'
 import { useAuth } from '@/hooks/useAuth'
 import { usePageMeta } from '@/hooks/usePageMeta'
 import { supabase } from '@/lib/supabase'
@@ -17,14 +16,9 @@ import { signOut, updatePassword } from '@/services/authService'
 import {
   deleteAccount,
   FREE_TIER_LIFETIME_LIMIT,
-  getSubscription,
+  getNearestBatchExpiry,
   updateProfile,
 } from '@/services/checkService'
-import type { Subscription } from '@/types'
-
-function formatPlanLabel(tier: string): string {
-  return PRICING_PLANS.find((plan) => plan.id === tier)?.name ?? 'Free'
-}
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat('en-GB', {
@@ -42,7 +36,7 @@ export function AccountPage() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [subscription, setSubscription] = useState<Subscription | null>(null)
+  const [nearestExpiry, setNearestExpiry] = useState<string | null>(null)
   const [freeCheckUsed, setFreeCheckUsed] = useState<boolean | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
@@ -59,23 +53,18 @@ export function AccountPage() {
   }, [profile?.full_name])
 
   // Usage counts read straight off the profile's durable counters (see
-  // migration durable_usage_counters) rather than counting `checks` rows —
-  // counting rows would let a deleted completed check make this page show
-  // "free check available" when the server would still reject a new one.
+  // migration durable_usage_counters/check_pack_system) rather than counting
+  // `checks` rows — counting rows would let a deleted completed check make
+  // this page show "free check available" when the server would still
+  // reject a new one.
   useEffect(() => {
     if (!user || !profile) return
 
-    if (profile.subscription_tier === 'free') {
-      setSubscription(null)
-      setFreeCheckUsed(profile.lifetime_checks_consumed >= FREE_TIER_LIFETIME_LIMIT)
-      return
-    }
-
-    setFreeCheckUsed(null)
+    setFreeCheckUsed(profile.lifetime_checks_consumed >= FREE_TIER_LIFETIME_LIMIT)
 
     let cancelled = false
-    void getSubscription(user.id).then((data) => {
-      if (!cancelled) setSubscription(data)
+    void getNearestBatchExpiry(user.id).then((expiresAt) => {
+      if (!cancelled) setNearestExpiry(expiresAt)
     })
     return () => {
       cancelled = true
@@ -140,12 +129,7 @@ export function AccountPage() {
   }
 
   const passwordMismatch = confirmNewPassword.length > 0 && newPassword !== confirmNewPassword
-  const isFree = (profile?.subscription_tier ?? 'free') === 'free'
-  const planDateLabel = subscription?.current_period_end
-    ? `Renews ${formatDate(subscription.current_period_end)}`
-    : subscription?.created_at
-      ? `Started ${formatDate(subscription.created_at)}`
-      : null
+  const hasBalance = (profile?.checks_balance ?? 0) > 0
 
   return (
     <>
@@ -206,41 +190,29 @@ export function AccountPage() {
 
         <Card tone="light-elevated" className="flex h-full flex-col">
           <CardHeader className="py-3.5 sm:py-5">
-            <h2 className="font-display text-lg font-semibold text-text-primary sm:text-xl">Plan</h2>
+            <h2 className="font-display text-lg font-semibold text-text-primary sm:text-xl">Checks</h2>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col space-y-2 py-4 text-sm sm:space-y-3 sm:py-6">
             <div className="flex items-center justify-between">
-              <span className="text-text-secondary">Current plan</span>
+              <span className="text-text-secondary">Free Recruiter Check</span>
               <span className="font-medium text-text-primary">
-                {formatPlanLabel(profile?.subscription_tier ?? 'free')}
+                {freeCheckUsed === null
+                  ? '...'
+                  : freeCheckUsed
+                    ? `${FREE_TIER_LIFETIME_LIMIT} of ${FREE_TIER_LIFETIME_LIMIT} used`
+                    : `${FREE_TIER_LIFETIME_LIMIT} available`}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-text-secondary">Recruiter Checks</span>
+              <span className="text-text-secondary">Purchased checks</span>
               <span className="font-medium text-text-primary">
-                {isFree
-                  ? freeCheckUsed === null
-                    ? '...'
-                    : freeCheckUsed
-                      ? `${FREE_TIER_LIFETIME_LIMIT} of ${FREE_TIER_LIFETIME_LIMIT} used`
-                      : `${FREE_TIER_LIFETIME_LIMIT} total`
-                  : profile
-                    ? `${profile.period_checks_consumed} of ${profile.period_checks_limit} used this week`
-                    : '...'}
+                {profile ? `${profile.checks_balance} remaining` : '...'}
               </span>
             </div>
-            {!isFree ? (
+            {hasBalance && nearestExpiry ? (
               <div className="flex items-center justify-between">
-                <span className="text-text-secondary">Resets</span>
-                <span className="font-medium text-text-primary">Weekly</span>
-              </div>
-            ) : null}
-            {planDateLabel ? (
-              <div className="flex items-center justify-between">
-                <span className="text-text-secondary">
-                  {subscription?.current_period_end ? 'Next billing date' : 'Member since'}
-                </span>
-                <span className="font-medium text-text-primary">{planDateLabel}</span>
+                <span className="text-text-secondary">Next expiry</span>
+                <span className="font-medium text-text-primary">{formatDate(nearestExpiry)}</span>
               </div>
             ) : null}
 
@@ -248,7 +220,7 @@ export function AccountPage() {
 
             <Link to="/account/billing">
               <Button size="sm" className="w-full">
-                {isFree ? 'Upgrade' : 'Manage Billing'}
+                {hasBalance ? 'Buy more checks' : 'Get checks'}
               </Button>
             </Link>
           </CardContent>
