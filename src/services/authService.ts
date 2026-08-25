@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import type { Provider } from '@supabase/supabase-js'
+import type { Provider, Session } from '@supabase/supabase-js'
 
 /**
  * Maps raw Supabase auth errors to generic copy for sign-in/sign-up so a
@@ -30,20 +30,31 @@ export async function signInWithLinkedIn() {
   if (error) throw error
 }
 
-/** Returns true if the account needs email confirmation before it can sign in. */
-export async function signUpWithPassword(email: string, password: string): Promise<boolean> {
+/**
+ * Returns the new session (null if the account needs email confirmation
+ * before it can sign in) — the caller must push this into AuthContext
+ * itself before navigating anywhere that depends on it (e.g. a protected
+ * route), rather than waiting on AuthProvider's own onAuthStateChange
+ * listener to catch up on its own async schedule.
+ */
+export async function signUpWithPassword(
+  email: string,
+  password: string,
+): Promise<{ session: Session | null }> {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
   })
   if (error) throw error
-  return !data.session
+  return { session: data.session }
 }
 
-export async function signInWithPassword(email: string, password: string) {
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
+/** Returns the new session — see signUpWithPassword for why the caller must apply it directly. */
+export async function signInWithPassword(email: string, password: string): Promise<Session> {
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) throw error
+  return data.session
 }
 
 export async function resetPasswordForEmail(email: string) {

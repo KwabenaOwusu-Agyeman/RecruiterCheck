@@ -13,10 +13,10 @@
 - [Resume Strengths and Weaknesses](https://myrecruitercheck.com/resume-strengths-and-weaknesses)
 - [Job Application Feedback](https://myrecruitercheck.com/job-application-feedback)
 - [Pricing](https://myrecruitercheck.com/pricing)
-- [Example Check](https://myrecruitercheck.com/example-check): a worked example of the feedback format
 
 ## Comparisons
 
+- [MyRecruiterCheck vs ChatGPT](https://myrecruitercheck.com/myrecruitercheck-vs-chatgpt): why a structured recruiter-style check differs from pasting a CV into a general-purpose chat
 - [MyRecruiterCheck vs Jobscan](https://myrecruitercheck.com/myrecruitercheck-vs-jobscan)
 - [MyRecruiterCheck vs Resume Worded](https://myrecruitercheck.com/myrecruitercheck-vs-resume-worded)
 - [MyRecruiterCheck vs Teal](https://myrecruitercheck.com/myrecruitercheck-vs-teal)

@@ -17,7 +17,7 @@ export function MyRecruiterCheckVsJobscanPage() {
       steps={[
         'Upload your resume in PDF or DOCX format.',
         'Paste the job description for the role you want.',
-        'Get an Interview Score and recruiter-style feedback, not just a keyword match rate.',
+        'Get an Interview Score and recruiter style feedback, not just a keyword match rate.',
       ]}
       comparison={{
         competitor: 'Jobscan',

@@ -4,7 +4,7 @@ export function FreeCvCheckerPage() {
   return (
     <SeoLandingPage
       title="Free CV Checker for Job Applications | MyRecruiterCheck"
-      description="Check your CV against a specific job description. Get an Interview Score, recruiter-style feedback and clear improvements before you apply."
+      description="Check your CV against a specific job description. Get an Interview Score, recruiter style feedback and clear improvements before you apply."
       path="/free-cv-checker"
       eyebrow="Free CV Checker"
       heading="Check your CV before a recruiter does"

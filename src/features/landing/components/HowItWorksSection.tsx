@@ -46,7 +46,7 @@ export function HowItWorksSection() {
           </h2>
         </div>
 
-        <ol className="relative mx-auto mt-[24px] grid max-w-4xl items-stretch gap-[16px] sm:mt-[32px] sm:gap-6 sm:grid-cols-3 lg:gap-[24px]">
+        <ol className="relative mx-auto mt-5 grid max-w-4xl items-stretch gap-[16px] sm:mt-[32px] sm:gap-6 sm:grid-cols-3 lg:gap-[24px]">
           <div
             className="pointer-events-none absolute left-[16.5%] right-[16.5%] top-[52px] hidden h-px bg-border-strong lg:block"
             aria-hidden="true"
@@ -58,15 +58,15 @@ export function HowItWorksSection() {
               animationNum={index}
               timelineRef={sectionRef}
               customVariants={stepVariants}
-              className="relative flex h-full flex-col rounded-[16px] border border-border-soft bg-surface p-[16px] shadow-card sm:p-5 lg:p-[24px]"
+              className="relative flex h-full flex-col rounded-[16px] border border-border-soft bg-surface p-3.5 shadow-card sm:p-5 lg:p-[24px]"
             >
-              <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-navy text-lg font-bold text-white">
+              <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-navy text-base font-bold text-white sm:h-10 sm:w-10 sm:text-lg">
                 {Number(step.number)}
               </span>
-              <h3 className="mt-3 min-h-[56px] font-display text-lg font-semibold leading-[1.4] text-text-primary sm:min-h-[64px] sm:text-xl">
+              <h3 className="mt-2.5 font-display text-base font-semibold leading-[1.4] text-text-primary sm:mt-3 sm:min-h-[64px] sm:text-xl">
                 {step.title}
               </h3>
-              <p className="mt-2 text-sm leading-relaxed text-text-secondary">
+              <p className="mt-1.5 text-sm leading-relaxed text-text-secondary sm:mt-2">
                 {step.description}
               </p>
             </TimelineContent>

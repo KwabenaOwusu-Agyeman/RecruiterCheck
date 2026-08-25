@@ -4,7 +4,7 @@ export function SalesResumeCheckerPage() {
   return (
     <SeoLandingPage
       title="Sales Resume Checker | MyRecruiterCheck"
-      description="See what recruiters actually check on a sales resume before you apply. Free recruiter-style feedback against the job description."
+      description="See what recruiters actually check on a sales resume before you apply. Free recruiter style feedback against the job description."
       path="/sales-resume-checker"
       eyebrow="Sales"
       heading="What recruiters actually check on a sales resume"

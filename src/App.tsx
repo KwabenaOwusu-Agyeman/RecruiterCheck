@@ -15,7 +15,6 @@ import { CookiePage } from '@/pages/CookiePage'
 import { CoverLetterGeneratorPage } from '@/pages/CoverLetterGeneratorPage'
 import { CvKeywordCheckerPage } from '@/pages/CvKeywordCheckerPage'
 import { DisclaimerPage } from '@/pages/DisclaimerPage'
-import { ExampleCheckPage } from '@/pages/ExampleCheckPage'
 import { ExtensionConnectPage } from '@/pages/ExtensionConnectPage'
 import { FaqPage } from '@/pages/FaqPage'
 import { FeedbackPage } from '@/pages/FeedbackPage'
@@ -25,6 +24,7 @@ import { InterviewProbabilityPage } from '@/pages/InterviewProbabilityPage'
 import { JobApplicationFeedbackPage } from '@/pages/JobApplicationFeedbackPage'
 import { MyChecksPage } from '@/pages/MyChecksPage'
 import { MyRecruiterCheckVsJobscanPage } from '@/pages/MyRecruiterCheckVsJobscanPage'
+import { MyRecruiterCheckVsChatGptPage } from '@/pages/MyRecruiterCheckVsChatGptPage'
 import { MyRecruiterCheckVsKickresumePage } from '@/pages/MyRecruiterCheckVsKickresumePage'
 import { MyRecruiterCheckVsReziPage } from '@/pages/MyRecruiterCheckVsReziPage'
 import { MyRecruiterCheckVsResumeWordedPage } from '@/pages/MyRecruiterCheckVsResumeWordedPage'
@@ -53,7 +53,6 @@ export function AppRoutes() {
         <Route index element={<LandingPage />} />
         <Route path="sign-in" element={<LandingPage />} />
         <Route path="sign-up" element={<LandingPage />} />
-        <Route path="example-check" element={<ExampleCheckPage />} />
         <Route path="about" element={<AboutPage />} />
         <Route path="application-checker" element={<ApplicationCheckerPage />} />
         <Route path="free-cv-checker" element={<FreeCvCheckerPage />} />
@@ -77,6 +76,7 @@ export function AppRoutes() {
         <Route path="myrecruitercheck-vs-teal" element={<MyRecruiterCheckVsTealPage />} />
         <Route path="myrecruitercheck-vs-rezi" element={<MyRecruiterCheckVsReziPage />} />
         <Route path="myrecruitercheck-vs-kickresume" element={<MyRecruiterCheckVsKickresumePage />} />
+        <Route path="myrecruitercheck-vs-chatgpt" element={<MyRecruiterCheckVsChatGptPage />} />
         <Route path="pricing" element={<PricingPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>

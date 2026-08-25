@@ -4,7 +4,7 @@ export function ProjectManagerResumeCheckerPage() {
   return (
     <SeoLandingPage
       title="Project Manager Resume Checker | MyRecruiterCheck"
-      description="See what recruiters actually check on a project manager resume before you apply. Free recruiter-style feedback against the job description."
+      description="See what recruiters actually check on a project manager resume before you apply. Free recruiter style feedback against the job description."
       path="/project-manager-resume-checker"
       eyebrow="Project Manager"
       heading="What recruiters actually check on a project manager resume"

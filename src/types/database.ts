@@ -72,6 +72,45 @@ export type Database = {
           },
         ]
       }
+      check_sentiment: {
+        Row: {
+          check_id: string
+          created_at: string
+          note: string | null
+          sentiment: string
+          user_id: string
+        }
+        Insert: {
+          check_id: string
+          created_at?: string
+          note?: string | null
+          sentiment: string
+          user_id: string
+        }
+        Update: {
+          check_id?: string
+          created_at?: string
+          note?: string | null
+          sentiment?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "check_sentiment_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: true
+            referencedRelation: "checks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "check_sentiment_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checks: {
         Row: {
           company_name: string | null
@@ -79,6 +118,8 @@ export type Database = {
           cv_file_name: string
           cv_storage_path: string
           detected_language: string | null
+          documents_purged: boolean
+          documents_purged_at: string | null
           error_message: string | null
           experience_score: number | null
           id: string
@@ -101,6 +142,8 @@ export type Database = {
           cv_file_name: string
           cv_storage_path: string
           detected_language?: string | null
+          documents_purged?: boolean
+          documents_purged_at?: string | null
           error_message?: string | null
           experience_score?: number | null
           id?: string
@@ -123,6 +166,8 @@ export type Database = {
           cv_file_name?: string
           cv_storage_path?: string
           detected_language?: string | null
+          documents_purged?: boolean
+          documents_purged_at?: string | null
           error_message?: string | null
           experience_score?: number | null
           id?: string
@@ -218,6 +263,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      instagram_audit_log: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          request_summary: Json
+          result_summary: Json | null
+          status: string
+          test_mode: boolean
+          tool_name: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          request_summary: Json
+          result_summary?: Json | null
+          status: string
+          test_mode: boolean
+          tool_name: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          request_summary?: Json
+          result_summary?: Json | null
+          status?: string
+          test_mode?: boolean
+          tool_name?: string
+        }
+        Relationships: []
+      }
+      instagram_connection: {
+        Row: {
+          access_token: string
+          connected_at: string
+          id: boolean
+          ig_user_id: string
+          ig_username: string
+          scopes: string
+          token_expires_at: string
+          updated_at: string
+        }
+        Insert: {
+          access_token: string
+          connected_at?: string
+          id?: boolean
+          ig_user_id: string
+          ig_username: string
+          scopes: string
+          token_expires_at: string
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          connected_at?: string
+          id?: boolean
+          ig_user_id?: string
+          ig_username?: string
+          scopes?: string
+          token_expires_at?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       job_captures: {
         Row: {
@@ -505,7 +616,30 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_testimonials: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          display_name: string | null
+          rating: number | null
+          target_role: string | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          rating?: number | null
+          target_role?: string | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          rating?: number | null
+          target_role?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       check_and_record_rate_limit: {
@@ -532,6 +666,10 @@ export type Database = {
         Returns: undefined
       }
       get_check_count: { Args: { p_user_id: string }; Returns: number }
+      is_most_recent_check: {
+        Args: { p_created_at: string; p_user_id: string }
+        Returns: boolean
+      }
       reserve_check_analysis: {
         Args: { p_check_id: string; p_user_id: string }
         Returns: {
@@ -555,7 +693,7 @@ export type Database = {
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type DefaultSchema = DatabaseWithoutInternals["public"]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends

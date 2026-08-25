@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuthModal } from '@/features/auth/context/AuthModalContext'
+import { storePostAuthRedirect } from '@/features/auth/postAuthRedirect'
 import { useAuth } from '@/hooks/useAuth'
 
 /**
@@ -17,6 +18,10 @@ export function useCheckCta() {
     if (user) {
       navigate('/checks/new')
     } else {
+      // Without this, a signed-out visitor who signs up from this button
+      // lands on the generic /checks default after auth instead of actually
+      // starting the check they clicked through for.
+      storePostAuthRedirect('/checks/new')
       open('sign-up')
     }
   }

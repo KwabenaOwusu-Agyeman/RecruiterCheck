@@ -1,3 +1,4 @@
+import { motion } from 'motion/react'
 import { cn } from '@/utils/cn'
 
 interface StepIndicatorProps {
@@ -47,11 +48,15 @@ export function StepIndicator({ steps, currentIndex, className }: StepIndicatorP
             {!isLast ? (
               <span
                 aria-hidden="true"
-                className={cn(
-                  'mx-2 h-px flex-1 transition-colors duration-300 sm:mx-3',
-                  state === 'done' ? 'bg-navy' : 'bg-border-strong',
-                )}
-              />
+                className="relative mx-2 h-px flex-1 overflow-hidden bg-border-strong sm:mx-3"
+              >
+                <motion.span
+                  className="absolute inset-y-0 left-0 bg-navy"
+                  initial={false}
+                  animate={{ width: state === 'done' ? '100%' : '0%' }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
+                />
+              </span>
             ) : null}
           </li>
         )

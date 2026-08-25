@@ -4,7 +4,7 @@ export function RegisteredNurseResumeCheckerPage() {
   return (
     <SeoLandingPage
       title="Registered Nurse Resume Checker | MyRecruiterCheck"
-      description="See what recruiters actually check on a registered nurse resume before you apply. Free recruiter-style feedback against the job description."
+      description="See what recruiters actually check on a registered nurse resume before you apply. Free recruiter style feedback against the job description."
       path="/registered-nurse-resume-checker"
       eyebrow="Registered Nurse"
       heading="What recruiters actually check on a registered nurse resume"

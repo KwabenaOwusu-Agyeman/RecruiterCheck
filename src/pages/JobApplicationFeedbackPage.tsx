@@ -4,7 +4,7 @@ export function JobApplicationFeedbackPage() {
   return (
     <SeoLandingPage
       title="Job Application Feedback Before You Apply | MyRecruiterCheck"
-      description="Get recruiter-style feedback on your CV and job description, including strengths, areas to improve and prospects."
+      description="Get recruiter style feedback on your CV and job description, including strengths, areas to improve and prospects."
       path="/job-application-feedback"
       eyebrow="Job Application Feedback"
       heading="Get feedback before you submit your application"

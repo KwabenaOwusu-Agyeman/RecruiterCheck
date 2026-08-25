@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/Label'
 import { PasswordInput } from '@/components/ui/PasswordInput'
 import { useAuthModal } from '@/features/auth/context/AuthModalContext'
 import { consumePostAuthRedirect } from '@/features/auth/postAuthRedirect'
+import { useAuth } from '@/hooks/useAuth'
 import { trackEvent } from '@/lib/analytics'
 import { FEATURE_FLAGS } from '@/lib/constants'
 import {
@@ -24,6 +25,7 @@ const FOCUSABLE_SELECTOR =
 
 export function AuthModal() {
   const { mode, close, setMode } = useAuthModal()
+  const { setSessionImmediate } = useAuth()
   const navigate = useNavigate()
   const dialogRef = useRef<HTMLDivElement>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
@@ -149,16 +151,18 @@ export function AuthModal() {
 
     try {
       if (mode === 'sign-up') {
-        const needsConfirmation = await signUpWithPassword(email.trim(), password)
+        const { session } = await signUpWithPassword(email.trim(), password)
         trackEvent('signup_completed')
-        if (needsConfirmation) {
+        if (!session) {
           setMessage('Check your email to confirm your account.')
         } else {
+          setSessionImmediate(session)
           close()
           navigate(consumePostAuthRedirect())
         }
       } else {
-        await signInWithPassword(email.trim(), password)
+        const session = await signInWithPassword(email.trim(), password)
+        setSessionImmediate(session)
         close()
         navigate(consumePostAuthRedirect())
       }

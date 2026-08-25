@@ -1,12 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import type {
-  Check,
-  CheckWithFeedback,
-  Feedback,
-  Profile,
-  ProductFeedback,
-  Subscription,
-} from '@/types'
+import type { Check, CheckWithFeedback, Feedback, Profile, Subscription } from '@/types'
 
 /**
  * Storage path extensions are derived from the browser-reported MIME type,
@@ -104,47 +97,6 @@ export async function getSubscription(userId: string): Promise<Subscription | nu
 
   if (error) throw error
   return data as Subscription | null
-}
-
-export async function getProductFeedback(userId: string): Promise<ProductFeedback | null> {
-  const { data, error } = await supabase
-    .from('product_feedback')
-    .select('*')
-    .eq('user_id', userId)
-    .maybeSingle()
-
-  if (error) throw error
-  return data as ProductFeedback | null
-}
-
-export async function submitProductFeedback(
-  userId: string,
-  email: string,
-  checkId: string,
-  firstName: string | null,
-  targetRole: string | null,
-  rating: number,
-  comment: string,
-  featureConsent: boolean,
-): Promise<ProductFeedback> {
-  const { data, error } = await supabase
-    .from('product_feedback')
-    .insert({
-      user_id: userId,
-      email,
-      check_id: checkId,
-      display_name: firstName,
-      target_role: targetRole,
-      rating,
-      comment: comment.trim() || null,
-      feature_consent: featureConsent,
-      feature_consent_at: featureConsent ? new Date().toISOString() : null,
-    })
-    .select('*')
-    .single()
-
-  if (error) throw error
-  return data as ProductFeedback
 }
 
 export async function deleteAccount(): Promise<void> {
@@ -427,6 +379,33 @@ export async function createPortalSession(): Promise<string> {
   if (data?.error) throw new Error(String(data.error))
   if (!data?.url) throw new Error('Could not open billing portal')
   return data.url as string
+}
+
+export async function submitCheckSentiment(
+  checkId: string,
+  sentiment: 'positive' | 'negative',
+  note?: string,
+): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not signed in')
+
+  const { error } = await supabase
+    .from('check_sentiment')
+    .upsert(
+      { check_id: checkId, user_id: user.id, sentiment, note: note?.trim() || null },
+      { onConflict: 'check_id' },
+    )
+
+  if (error) throw new Error(error.message)
+}
+
+export async function requestRefund(): Promise<void> {
+  const { data, error } = await supabase.functions.invoke('request-refund', {
+    body: {},
+  })
+
+  if (error) throw await resolveFunctionError(error)
+  if (data?.error) throw new Error(String(data.error))
 }
 
 export async function deleteCheck(checkId: string): Promise<void> {

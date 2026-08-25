@@ -94,7 +94,12 @@ export function TermsPage() {
           applicable taxes.
         </p>
         <p>
-          All payments are final. MyRecruiterCheck does not offer refunds or credits for partial
+          If you are not satisfied with your first paid check, you may request a full refund
+          within 7 days of that payment by contacting{' '}
+          <a href="mailto:support@recruitercheck.app" className="font-medium text-blue hover:underline">
+            support@recruitercheck.app
+          </a>
+          . Beyond this guarantee, MyRecruiterCheck does not offer refunds or credits for partial
           billing periods, unused checks, or dissatisfaction with generated results, except where
           required by mandatory law. You can cancel at any time from the billing portal to stop
           future renewals; your plan remains active until the end of the current billing period.

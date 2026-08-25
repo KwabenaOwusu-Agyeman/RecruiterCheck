@@ -1,3 +1,5 @@
+import { useId } from 'react'
+import { motion } from 'motion/react'
 import { cn } from '@/utils/cn'
 
 interface SegmentedControlOption<T extends string> {
@@ -20,6 +22,8 @@ export function SegmentedControl<T extends string>({
   className,
   'aria-label': ariaLabel,
 }: SegmentedControlProps<T>) {
+  const layoutId = useId()
+
   return (
     <div
       role="tablist"
@@ -36,11 +40,18 @@ export function SegmentedControl<T extends string>({
             aria-selected={active}
             onClick={() => onChange(option.value)}
             className={cn(
-              'min-h-[36px] touch-manipulation rounded-md px-3 py-1 text-xs font-medium transition-colors duration-150',
-              active ? 'bg-navy text-white shadow-sm' : 'text-text-secondary hover:text-text-primary',
+              'relative min-h-[36px] touch-manipulation rounded-md px-3 py-1 text-xs font-medium transition-colors duration-150',
+              active ? 'text-white' : 'text-text-secondary hover:text-text-primary',
             )}
           >
-            {option.label}
+            {active ? (
+              <motion.span
+                layoutId={`segmented-pill-${layoutId}`}
+                className="absolute inset-0 rounded-md bg-navy shadow-sm"
+                transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
+              />
+            ) : null}
+            <span className="relative">{option.label}</span>
           </button>
         )
       })}

@@ -29,6 +29,7 @@ const RATE_LIMIT_WINDOW_SECONDS = 3600
 // Brand blue (tailwind.config.js `blue`), reused so generated PDFs match the app.
 const BLUE = rgb(0x19 / 255, 0x4a / 255, 0x9f / 255)
 const BLACK = rgb(0.02, 0.02, 0.05)
+const FOOTER_GREY = rgb(0.58, 0.58, 0.62)
 
 interface GenerateRequest {
   checkId: string
@@ -806,6 +807,23 @@ function drawDraftWatermark(page: PDFPage, font: PDFFont, pageWidth: number, pag
   })
 }
 
+// Small, centered footer credit on the cover letter and recruiter message —
+// both are meant to be sent as-is (unlike the CV draft's placeholder-safety
+// watermark), so this stays understated: a single muted line, not a logo or
+// promotional copy, consistent across every generated document.
+function drawBrandFooter(page: PDFPage, font: PDFFont, pageWidth: number) {
+  const text = 'Prepared with MyRecruiterCheck.com'
+  const size = 8
+  const width = font.widthOfTextAtSize(text, size)
+  page.drawText(text, {
+    x: (pageWidth - width) / 2,
+    y: 28,
+    size,
+    font,
+    color: FOOTER_GREY,
+  })
+}
+
 async function renderCvPdf(cv: TailoredCv): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create()
   const regular = await pdfDoc.embedFont(StandardFonts.Helvetica)
@@ -868,6 +886,7 @@ function layoutCoverLetter(
   const maxWidth = pageWidth - margin * 2
   const bodySize = 11 * scale
   const metaSize = bodySize
+  const gapTiny = 6 * scale
   const gapSmall = 10 * scale
   const gapMedium = 16 * scale
   const gapHeader = 22 * scale
@@ -904,6 +923,24 @@ function layoutCoverLetter(
     if (stretchable) totalGap += extraGap
   }
 
+  // Centered letterhead line (candidate name, contact info) — same
+  // convention as addLeft/addRight but horizontally centered.
+  function addCentered(
+    text: string,
+    size: number,
+    font: PDFFont,
+    color: ReturnType<typeof rgb>,
+    extraGap = 0,
+    stretchable = true,
+  ) {
+    const width = font.widthOfTextAtSize(text, size)
+    const appliedGap = stretchable ? extraGap * gapStretch : extraGap
+    const advance = size * 1.3 + appliedGap
+    lines.push({ text, size, font, color, x: margin + Math.max(0, (maxWidth - width) / 2), advance })
+    totalHeight += advance
+    if (stretchable) totalGap += extraGap
+  }
+
   // Modified-block convention: the date sits right-aligned while the rest
   // of the letter stays flush-left.
   function addRight(
@@ -936,6 +973,15 @@ function layoutCoverLetter(
       totalHeight += lineHeight + gap
       if (i === wrapped.length - 1) totalGap += extraGapAfter
     })
+  }
+
+  // Letterhead: candidate name in the brand blue used across every
+  // generated document, plus their contact line, so the CV and cover
+  // letter read as one consistent, professionally branded set rather than
+  // two documents from different templates.
+  addCentered(cv.full_name, 18 * scale, fonts.bold, BLUE, gapTiny, false)
+  if (cv.contact_line) {
+    addCentered(cv.contact_line, metaSize, fonts.regular, BLACK, gapHeader, false)
   }
 
   const hasCompanyBlock = Boolean(companyName || letter.company_location)
@@ -1070,12 +1116,16 @@ async function renderCoverLetterPdf(
     cursorY -= line.advance - line.size * 1.05
   }
 
+  drawBrandFooter(page, regular, pageWidth)
+
   return pdfDoc.save()
 }
 
 /**
  * Renders as an actual email/message would read: flush-left, no title
- * heading inside the document.
+ * heading inside the document — the brand footer is the only branded
+ * element here, deliberately, since a heavily styled letterhead would
+ * look out of place inside what's meant to read as a plain email body.
  */
 async function renderRecruiterEmailPdf(message: RecruiterMessage, fullName: string): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create()
@@ -1116,6 +1166,8 @@ async function renderRecruiterEmailPdf(message: RecruiterMessage, fullName: stri
   drawLeft(message.sign_off, bodySize, font, BLACK)
   cursorY -= lineHeight
   drawLeft(fullName, bodySize, boldFont, BLACK)
+
+  for (const p of pdfDoc.getPages()) drawBrandFooter(p, font, pageWidth)
 
   return pdfDoc.save()
 }

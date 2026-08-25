@@ -18,6 +18,9 @@ export type AnalyticsEventType =
   | 'upgrade_started'
   | 'downgrade_started'
   | 'subscription_completed'
+  | 'refund_requested'
+  | 'check_sentiment_positive'
+  | 'check_sentiment_negative'
 
 export type DomainCategory = 'linkedin' | 'indeed' | 'greenhouse' | 'lever' | 'workday' | 'other'
 

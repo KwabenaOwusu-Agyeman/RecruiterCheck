@@ -8,7 +8,7 @@ import { PRICING_PLANS } from '@/lib/constants'
 import { trackEvent } from '@/lib/analytics'
 import { useAuth } from '@/hooks/useAuth'
 import { usePageMeta } from '@/hooks/usePageMeta'
-import { createCheckoutSession, createPortalSession } from '@/services/checkService'
+import { createCheckoutSession, createPortalSession, requestRefund } from '@/services/checkService'
 
 export function BillingPage() {
   usePageMeta({ title: 'Billing | MyRecruiterCheck', description: 'Manage your MyRecruiterCheck subscription and billing.', path: '/account/billing', noindex: true })
@@ -19,6 +19,9 @@ export function BillingPage() {
   const [error, setError] = useState<string | null>(null)
   const [planUpdated, setPlanUpdated] = useState(false)
   const [downgradeTarget, setDowngradeTarget] = useState<'starter' | 'active' | 'power' | null>(null)
+  const [refundDialogOpen, setRefundDialogOpen] = useState(false)
+  const [refundLoading, setRefundLoading] = useState(false)
+  const [refundSuccess, setRefundSuccess] = useState(false)
 
   const checkoutStatus = searchParams.get('status')
 
@@ -88,6 +91,25 @@ export function BillingPage() {
     }
   }
 
+  async function confirmRequestRefund() {
+    setRefundLoading(true)
+    setError(null)
+
+    try {
+      await requestRefund()
+      setRefundDialogOpen(false)
+      setRefundSuccess(true)
+      trackEvent('refund_requested')
+      await refreshProfile()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not process your refund')
+    } finally {
+      setRefundLoading(false)
+    }
+  }
+
+  const isPaidPlan = !!profile?.subscription_tier && profile.subscription_tier !== 'free'
+
   return (
     <>
       <BackLink to="/account" />
@@ -120,6 +142,13 @@ export function BillingPage() {
         </Alert>
       ) : null}
 
+      {refundSuccess ? (
+        <Alert variant="success" className="mx-auto mt-6 max-w-2xl">
+          Your refund has been processed and your plan has been cancelled. It may take a few
+          business days to appear on your statement.
+        </Alert>
+      ) : null}
+
       {error ? <Alert variant="error" className="mx-auto mt-6 max-w-2xl">{error}</Alert> : null}
 
       <PricingCards
@@ -149,6 +178,19 @@ export function BillingPage() {
         onCancel={() => setDowngradeTarget(null)}
       />
 
+      <ConfirmDialog
+        open={refundDialogOpen}
+        title="Request a refund?"
+        description="If you're within 7 days of your first paid check, we'll refund that payment in full and cancel your plan right away. This can't be undone."
+        confirmLabel="Request refund"
+        confirmingLabel="Processing..."
+        cancelLabel="Never mind"
+        busy={refundLoading}
+        destructive
+        onConfirm={() => void confirmRequestRefund()}
+        onCancel={() => setRefundDialogOpen(false)}
+      />
+
       <div className="mt-6 flex flex-col items-center gap-1.5 text-center text-xs text-text-secondary">
         <div className="flex items-center gap-1.5">
           <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5 shrink-0" aria-hidden="true">
@@ -163,6 +205,18 @@ export function BillingPage() {
           <span>Payments securely processed by Stripe. We never see or store your card details.</span>
         </div>
         <span>Cancel anytime from your billing portal.</span>
+        {isPaidPlan ? (
+          <span>
+            Not happy with your first paid check?{' '}
+            <button
+              type="button"
+              className="font-medium text-blue hover:underline"
+              onClick={() => setRefundDialogOpen(true)}
+            >
+              Request a refund
+            </button>
+          </span>
+        ) : null}
         <span>
           Have questions?{' '}
           <Link to="/faq" className="font-medium text-blue hover:underline">

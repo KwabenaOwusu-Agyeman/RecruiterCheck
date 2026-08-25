@@ -8,10 +8,10 @@ import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { FeedbackBullet, getVerdictColor, splitFinding } from '@/components/feedback/FeedbackBullet'
-import { ProductFeedbackForm } from '@/features/feedback/components/ProductFeedbackForm'
+import { SentimentPrompt } from '@/components/feedback/SentimentPrompt'
 import { useAuth } from '@/hooks/useAuth'
 import { usePageMeta } from '@/hooks/usePageMeta'
-import { getScoreLabel } from '@/lib/scoring'
+import { getResultTone, getScoreLabel } from '@/lib/scoring'
 import { trackEvent } from '@/lib/analytics'
 import {
   analyzeCheck,
@@ -58,7 +58,7 @@ function buildSummarySentence(score: number, improvements: string[]): string | n
 export function FeedbackPage() {
   usePageMeta({ title: 'Check Results | MyRecruiterCheck', description: 'Your Recruiter Check results.', path: '/checks/results', noindex: true })
   const { id } = useParams<{ id: string }>()
-  const { user, profile } = useAuth()
+  const { profile } = useAuth()
   const [check, setCheck] = useState<CheckWithFeedback | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -155,6 +155,20 @@ export function FeedbackPage() {
   // candidate's CV doesn't support would be bad advice, not helpful. No tier
   // gets documents below this line; the server enforces the same rule.
   const isLowFit = score !== null && score < 61
+  const resultTone = getResultTone(score)
+  const isDark = resultTone === 'dark'
+  const textTone: 'light' | 'dark' = isDark ? 'dark' : 'light'
+  const nestedTone = isDark ? 'nested' : 'nested-light'
+  const t = {
+    container: isDark ? 'border-white/10 bg-navy' : resultTone === 'muted' ? 'border-border-strong bg-border-soft' : 'border-border-soft bg-surface',
+    border: isDark ? 'border-white/10' : 'border-border',
+    heading: isDark ? 'text-white' : 'text-text-primary',
+    sub: isDark ? 'text-white/75' : 'text-text-secondary',
+    subtle: isDark ? 'text-white/65' : 'text-text-secondary',
+    faint: isDark ? 'text-white/55' : 'text-text-secondary',
+    body: isDark ? 'text-white/85' : 'text-text-secondary',
+    accent: isDark ? 'text-blue-light' : 'text-blue',
+  }
   const firstName = profile?.full_name?.trim().split(/\s+/)[0]
   const visibleImprovements = feedback
     ? score === 100
@@ -174,43 +188,43 @@ export function FeedbackPage() {
 
   return (
     <div className="lg:mx-auto lg:max-w-[1000px]">
-      <div className="rounded-[20px] border border-white/10 bg-navy p-4 shadow-elevated sm:p-6 lg:p-8">
-        <div className="border-b border-white/10 pb-5 sm:pb-7">
-          <p className="text-sm font-semibold text-white/75">
+      <div className={cn('rounded-[20px] border p-4 shadow-elevated sm:p-6 lg:p-8', t.container)}>
+        <div className={cn('border-b pb-5 sm:pb-7', t.border)}>
+          <p className={cn('text-sm font-semibold', t.sub)}>
             {firstName ? `Hi ${firstName},` : 'Hi,'}
           </p>
-          <h1 className="font-display mt-1 text-2xl font-semibold tracking-tight text-white sm:text-[28px]">
+          <h1 className={cn('font-display mt-1 text-2xl font-semibold tracking-tight sm:text-[28px]', t.heading)}>
             {check.job_title || 'Recruiter Feedback'}
           </h1>
           {check.company_name ? (
-            <p className="mt-1 text-base font-semibold text-blue-light">{check.company_name}</p>
+            <p className={cn('mt-1 text-base font-semibold', t.accent)}>{check.company_name}</p>
           ) : null}
           <div className="mt-2">
-            <StatusBadge status={check.status} tone="dark" />
+            <StatusBadge status={check.status} tone={isDark ? 'dark' : 'light'} />
           </div>
 
           {score !== null ? (
             <motion.div
-              className="mt-5 border-t border-white/10 pt-5"
+              className={cn('mt-5 border-t pt-5', t.border)}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, ease: 'easeOut' }}
             >
-              <p className="text-[2.125rem] font-bold tracking-tight text-white sm:text-[2.625rem]">
+              <p className={cn('text-[2.125rem] font-bold tracking-tight sm:text-[2.625rem]', t.heading)}>
                 <NumberFlow value={score} suffix="%" willChange />{' '}
-                <span className="text-base font-semibold text-white/65 sm:text-lg">
+                <span className={cn('text-base font-semibold sm:text-lg', t.subtle)}>
                   Interview Score
                 </span>
               </p>
-              <p className={cn('mt-2 text-base font-semibold sm:text-lg', getVerdictColor(score, 'dark'))}>
+              <p className={cn('mt-2 text-base font-semibold sm:text-lg', getVerdictColor(score, textTone))}>
                 {getScoreLabel(score)}
               </p>
               {feedback && buildSummarySentence(score, visibleImprovements) ? (
-                <p className="mt-2 max-w-xl text-sm text-white/85">
+                <p className={cn('mt-2 max-w-xl text-sm', t.body)}>
                   {buildSummarySentence(score, visibleImprovements)}
                 </p>
               ) : null}
-              <p className="mt-2 max-w-xl text-xs text-white/55">
+              <p className={cn('mt-2 max-w-xl text-xs', t.faint)}>
                 Based on the information provided. Hiring decisions and competition may affect the outcome.
               </p>
             </motion.div>
@@ -242,22 +256,22 @@ export function FeedbackPage() {
         {feedback ? (
           <div className="mt-5 space-y-5 sm:mt-7">
             <div className="grid gap-5 md:grid-cols-2">
-              {feedback.strengths.length > 0 ? <Card tone="nested">
-                <CardHeader tone="nested" className="px-5 py-3">
-                  <h2 className="text-base font-semibold text-white">Strengths</h2>
+              {feedback.strengths.length > 0 ? <Card tone={nestedTone}>
+                <CardHeader tone={nestedTone} className="px-5 py-3">
+                  <h2 className={cn('text-base font-semibold', t.heading)}>Strengths</h2>
                 </CardHeader>
                 <CardContent className="px-5 py-4">
                   <ul className="space-y-3">
                     {feedback.strengths.map((item) => (
-                      <FeedbackBullet key={item} text={item} tone="dark" />
+                      <FeedbackBullet key={item} text={item} tone={textTone} />
                     ))}
                   </ul>
                 </CardContent>
               </Card> : null}
 
-              <Card tone="nested">
-                <CardHeader tone="nested" className="px-5 py-3">
-                  <h2 className="text-base font-semibold text-white">
+              <Card tone={nestedTone}>
+                <CardHeader tone={nestedTone} className="px-5 py-3">
+                  <h2 className={cn('text-base font-semibold', t.heading)}>
                     {score === 100 ? 'Ready to Apply' : 'Areas to Improve'}
                   </h2>
                 </CardHeader>
@@ -265,11 +279,11 @@ export function FeedbackPage() {
                   {visibleImprovements.length > 0 ? (
                     <ul className="space-y-3">
                       {visibleImprovements.map((item) => (
-                        <FeedbackBullet key={item} text={item} tone="dark" />
+                        <FeedbackBullet key={item} text={item} tone={textTone} />
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-sm text-white/75">
+                    <p className={cn('text-sm', t.sub)}>
                       {score === 100
                         ? 'No material improvements identified.'
                         : 'No evidence based improvements identified.'}
@@ -279,10 +293,10 @@ export function FeedbackPage() {
               </Card>
             </div>
 
-            {visibleProspects.length > 0 ? <Card tone="nested">
-              <CardHeader tone="nested" className="px-5 py-3">
-                <h2 className="text-base font-semibold text-white">Prospects</h2>
-                <p className="mt-0.5 text-xs text-white/75">
+            {visibleProspects.length > 0 ? <Card tone={nestedTone}>
+              <CardHeader tone={nestedTone} className="px-5 py-3">
+                <h2 className={cn('text-base font-semibold', t.heading)}>Prospects</h2>
+                <p className={cn('mt-0.5 text-xs', t.sub)}>
                   What could improve your chances of getting an interview.
                 </p>
               </CardHeader>
@@ -290,25 +304,15 @@ export function FeedbackPage() {
                 <ul className="space-y-2">
                   {visibleProspects.map((item) => (
                     <li key={item} className="flex gap-2">
-                      <span className="text-blue-light" aria-hidden="true">
+                      <span className={t.accent} aria-hidden="true">
                         •
                       </span>
-                      <span className="text-sm leading-snug text-white/85">{item}</span>
+                      <span className={cn('text-sm leading-snug', t.body)}>{item}</span>
                     </li>
                   ))}
                 </ul>
               </CardContent>
             </Card> : null}
-
-            {user?.email ? (
-              <ProductFeedbackForm
-                userId={user.id}
-                email={user.email}
-                checkId={check.id}
-                firstName={firstName || null}
-                targetRole={check.job_title}
-              />
-            ) : null}
 
             <Card>
               <CardHeader className="px-5 py-3">
@@ -406,6 +410,8 @@ export function FeedbackPage() {
                 ) : null}
               </CardContent>
             </Card>
+
+            <SentimentPrompt checkId={check.id} />
 
           </div>
         ) : check.status === 'completed' ? (

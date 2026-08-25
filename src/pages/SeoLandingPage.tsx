@@ -61,7 +61,7 @@ export function SeoLandingPage({
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button size="lg" onClick={handleCheckCta}>Check My Application</Button>
-              <Link to="/example-check" className={secondaryLinkClassName}>
+              <Link to="/#example" className={secondaryLinkClassName}>
                 See an example
               </Link>
             </div>

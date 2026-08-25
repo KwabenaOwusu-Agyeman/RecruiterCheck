@@ -18,6 +18,7 @@ interface AuthContextValue {
   profile: Profile | null
   loading: boolean
   refreshProfile: () => Promise<void>
+  setSessionImmediate: (session: Session) => void
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -36,6 +37,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!session?.user.id) return
     await loadProfile(session.user.id)
   }, [loadProfile, session?.user.id])
+
+  // Called right after a successful email/password sign-in or sign-up, so
+  // ProtectedRoute sees the new session on its very next render instead of
+  // waiting for the separate async onAuthStateChange listener below to fire
+  // on its own schedule — that race is what was bouncing a just-logged-in
+  // user back to /sign-in before their session had "arrived" in context.
+  const setSessionImmediate = useCallback(
+    (nextSession: Session) => {
+      setSession(nextSession)
+      setLoading(false)
+      void loadProfile(nextSession.user.id)
+    },
+    [loadProfile],
+  )
 
   useEffect(() => {
     let mounted = true
@@ -88,8 +103,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       loading,
       refreshProfile,
+      setSessionImmediate,
     }),
-    [session, profile, loading, refreshProfile],
+    [session, profile, loading, refreshProfile, setSessionImmediate],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

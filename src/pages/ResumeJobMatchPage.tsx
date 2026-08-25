@@ -22,8 +22,8 @@ export function ResumeJobMatchPage() {
       ]}
       example={{
         title: 'A worked example',
-        scenario: 'A candidate applied for a "Product Manager" role that listed "experience with A/B testing" and "cross-functional collaboration with engineering and design" as core requirements. Their CV mentioned "worked closely with engineering teams" but had no reference to experimentation of any kind.',
-        insight: 'The cross-functional requirement was there, just thin — one vague phrase instead of a specific project. The A/B testing requirement was missing entirely, and no amount of rewording could fix that if the candidate genuinely hadn\'t done it. The match report separated these two cases clearly: one needed a stronger example, the other needed an honest decision about whether to apply, learn the gap first, or highlight a closely related skill instead.',
+        scenario: 'A candidate applied for a "Product Manager" role that listed "experience with A/B testing" and "cross functional collaboration with engineering and design" as core requirements. Their CV mentioned "worked closely with engineering teams" but had no reference to experimentation of any kind.',
+        insight: 'The cross functional requirement was there, just thin — one vague phrase instead of a specific project. The A/B testing requirement was missing entirely, and no amount of rewording could fix that if the candidate genuinely hadn\'t done it. The match report separated these two cases clearly: one needed a stronger example, the other needed an honest decision about whether to apply, learn the gap first, or highlight a closely related skill instead.',
       }}
       faqs={[
         { question: 'What is a resume job description match?', answer: 'It\'s a comparison between your CV and a specific job posting that checks whether your experience level, skills and overall value are clearly demonstrated for that exact role.' },

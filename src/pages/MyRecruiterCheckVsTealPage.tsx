@@ -17,7 +17,7 @@ export function MyRecruiterCheckVsTealPage() {
       steps={[
         'Upload your resume in PDF or DOCX format.',
         'Paste the job description for the role you want.',
-        'Get an Interview Score and recruiter-style feedback tied to that exact job.',
+        'Get an Interview Score and recruiter style feedback tied to that exact job.',
       ]}
       comparison={{
         competitor: 'Teal',

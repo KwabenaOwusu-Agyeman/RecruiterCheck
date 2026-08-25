@@ -12,7 +12,6 @@ const serverEntry = path.join(rootDir, 'dist-ssr', 'entry-server.js')
 
 const ROUTES = [
   '/',
-  '/example-check',
   '/about',
   '/faq',
   '/terms',

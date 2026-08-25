@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { motion } from 'motion/react'
 import { Alert } from '@/components/ui/Alert'
 import { ScoreBadge, StatusBadge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -145,8 +146,14 @@ export function MyChecksPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-surface">
-                {checks.map((check) => (
-                  <tr key={check.id} className="transition-colors duration-150 hover:bg-navy-tint/60">
+                {checks.map((check, index) => (
+                  <motion.tr
+                    key={check.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: Math.min(index, 8) * 0.04, ease: 'easeOut' }}
+                    className="transition-colors duration-150 hover:bg-navy-tint/60"
+                  >
                     <td className="px-4 py-4 lg:px-6 lg:py-5">
                       <div className="text-sm font-medium text-text-primary">
                         {check.job_title || 'Untitled role'}
@@ -182,7 +189,7 @@ export function MyChecksPage() {
                         </button>
                       </div>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))}
               </tbody>
             </table>
@@ -190,8 +197,14 @@ export function MyChecksPage() {
 
           {/* Mobile compact list */}
           <Card className="divide-y divide-border md:hidden">
-            {checks.map((check) => (
-              <div key={check.id} className="flex items-center justify-between gap-3 px-4 py-3">
+            {checks.map((check, index) => (
+              <motion.div
+                key={check.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: Math.min(index, 8) * 0.04, ease: 'easeOut' }}
+                className="flex items-center justify-between gap-3 px-4 py-3"
+              >
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium text-text-primary">
                     {check.job_title || 'Untitled role'}
@@ -226,7 +239,7 @@ export function MyChecksPage() {
                     Delete
                   </button>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </Card>
         </>

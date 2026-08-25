@@ -23,8 +23,7 @@ export function ClosingCtaSection() {
           <div className="mt-[20px] flex justify-center sm:mt-[32px]">
             <Button
               size="md"
-              variant="ghost"
-              className="sm:!h-12 sm:bg-white sm:px-6 sm:text-base sm:text-navy sm:hover:!bg-white/90"
+              className="sm:!h-12 sm:bg-white sm:px-6 sm:text-base sm:!text-navy sm:hover:!bg-white/90"
               onClick={handleCheckCta}
             >
               Check My Application

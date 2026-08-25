@@ -22,7 +22,7 @@ export function AtsResumeCheckerPage() {
       ]}
       example={{
         title: 'A worked example',
-        scenario: 'A candidate applying for a "Senior Data Analyst" role listed "SQL, Python, stakeholder reporting" in their skills section, matching three keywords from the posting. The job description also specified "3+ years leading analytics for a cross-functional team" and "experience presenting findings to non-technical stakeholders."',
+        scenario: 'A candidate applying for a "Senior Data Analyst" role listed "SQL, Python, stakeholder reporting" in their skills section, matching three keywords from the posting. The job description also specified "3+ years leading analytics for a cross functional team" and "experience presenting findings to non-technical stakeholders."',
         insight: 'The keyword match alone looked strong. But the resume had no mention of team leadership, and "stakeholder reporting" was never tied to a concrete example. MyRecruiterCheck flagged both as unsupported requirements, not missing keywords — the fix was adding one line about leading a three-person analytics pod and one sentence describing a specific stakeholder presentation, not stuffing in more synonyms.',
       }}
       faqs={[

@@ -67,6 +67,7 @@ const columns: FooterColumn[] = [
     heading: 'Compare',
     ariaLabel: 'Comparisons',
     links: [
+      { to: '/myrecruitercheck-vs-chatgpt', label: 'vs ChatGPT' },
       { to: '/myrecruitercheck-vs-jobscan', label: 'vs Jobscan' },
       { to: '/myrecruitercheck-vs-resume-worded', label: 'vs Resume Worded' },
       { to: '/myrecruitercheck-vs-teal', label: 'vs Teal' },

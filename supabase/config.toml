@@ -43,3 +43,19 @@ verify_jwt = false
 
 [functions.newsletter-unsubscribe]
 verify_jwt = false
+
+# Instagram integration. instagram-oauth-start/callback are hit directly by
+# the operator's browser (Meta's redirect carries no Supabase JWT) and are
+# instead gated by INSTAGRAM_ADMIN_TOKEN / the signed OAuth state — see
+# their source for details. instagram-mcp is called by Claude's remote MCP
+# connector with its own bearer token (MCP_SERVER_TOKEN), not a Supabase
+# JWT, so Supabase's built-in JWT gate must be off here too; auth is
+# enforced explicitly in the function itself.
+[functions.instagram-oauth-start]
+verify_jwt = false
+
+[functions.instagram-oauth-callback]
+verify_jwt = false
+
+[functions.instagram-mcp]
+verify_jwt = false

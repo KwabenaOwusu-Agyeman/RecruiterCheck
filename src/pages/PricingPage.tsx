@@ -9,7 +9,7 @@ import { PRICING_PLANS } from '@/lib/constants'
 const faqs = [
   {
     question: 'Is there a free Recruiter Check?',
-    answer: 'Yes. Every new account gets one free Recruiter Check, so you can see your Interview Score and recruiter-style feedback before deciding whether you need more.',
+    answer: 'Yes. Every new account gets one free Recruiter Check, so you can see your Interview Score and recruiter style feedback before deciding whether you need more.',
   },
   {
     question: 'Can I cancel anytime?',
@@ -18,6 +18,10 @@ const faqs = [
   {
     question: 'What happens to my uploaded CV?',
     answer: 'Uploads are deleted within 24 hours of being processed. See our Privacy Policy for full details on data retention.',
+  },
+  {
+    question: 'What if I am not happy after paying?',
+    answer: 'If you are not satisfied with your first paid check, you can request a full refund within 7 days by emailing support@recruitercheck.app.',
   },
 ]
 

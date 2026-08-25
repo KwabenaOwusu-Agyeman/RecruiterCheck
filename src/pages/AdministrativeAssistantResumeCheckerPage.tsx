@@ -4,7 +4,7 @@ export function AdministrativeAssistantResumeCheckerPage() {
   return (
     <SeoLandingPage
       title="Administrative Assistant Resume Checker | MyRecruiterCheck"
-      description="See what recruiters actually check on an administrative assistant resume before you apply. Free recruiter-style feedback against the job description."
+      description="See what recruiters actually check on an administrative assistant resume before you apply. Free recruiter style feedback against the job description."
       path="/administrative-assistant-resume-checker"
       eyebrow="Administrative Assistant"
       heading="What recruiters actually check on an administrative assistant resume"

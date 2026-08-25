@@ -1,15 +1,25 @@
+import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import { Container } from '@/components/ui/Container'
-import { useAuthModal } from '@/features/auth/context/AuthModalContext'
 import { useCheckCta } from '@/hooks/useCheckCta'
 import { BRAND } from '@/lib/constants'
 
 export function HeroSection() {
-  const { open } = useAuthModal()
   const handleCheckCta = useCheckCta()
 
   return (
     <section className="relative overflow-hidden border-b border-border bg-background">
+      {/* Faint dot-grid backdrop, the same "quiet technical texture" pattern
+          Linear/Vercel use on light hero sections — radial-masked so it
+          reads as depth near the edges rather than noise behind the text. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,rgba(2,12,56,0.12)_1px,transparent_1px)] bg-[length:28px_28px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,black_0%,transparent_75%)]"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-[-120px] h-[420px] w-[720px] -translate-x-1/2 rounded-full bg-blue/10 blur-[100px]"
+      />
       <Container className="relative py-[40px] sm:py-12 lg:py-[64px]">
         <div className="mx-auto max-w-2xl text-center lg:max-w-[800px]">
           <p className="mb-4 text-xl font-bold text-navy sm:text-2xl">{BRAND.tagline}</p>
@@ -20,23 +30,25 @@ export function HeroSection() {
           <p className="mx-auto mt-[16px] max-w-none text-lg leading-relaxed text-text-secondary sm:mt-5 lg:max-w-[680px] lg:text-xl">
             See what recruiters see. Improve your application before you apply.
           </p>
+          <p className="mx-auto mt-2 max-w-none text-sm font-semibold text-blue lg:max-w-[680px]">
+            Built for AI, machine learning, data and tech roles, 0 to 5 years of experience.
+          </p>
           <div className="mt-[20px] flex flex-col items-center justify-center gap-3 sm:mt-6">
             <Button size="md" className="sm:!h-12 sm:px-6 sm:text-base" onClick={handleCheckCta}>
               Check My Application
             </Button>
+            <p className="text-xs font-medium text-text-secondary">First check free. No card required.</p>
           </div>
-          <p className="mt-4 text-sm text-text-secondary">
-            Built on what real recruiters flag first.
-          </p>
-          <p className="mt-2 text-sm text-text-secondary">
-            Already have an account?{' '}
-            <button
-              type="button"
-              className="font-semibold text-blue hover:underline"
-              onClick={() => open('sign-in')}
-            >
-              Sign in
-            </button>
+          <p className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-text-secondary">
+            <Link to="/privacy" className="font-semibold text-blue hover:underline">
+              CV deleted in 24h
+            </Link>
+            <span aria-hidden="true">&middot;</span>
+            <span>7 day refund</span>
+            <span aria-hidden="true">&middot;</span>
+            <Link to="/myrecruitercheck-vs-chatgpt" className="font-semibold text-blue hover:underline">
+              Why not ChatGPT?
+            </Link>
           </p>
         </div>
       </Container>

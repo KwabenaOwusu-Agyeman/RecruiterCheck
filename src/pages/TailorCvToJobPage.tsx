@@ -4,7 +4,7 @@ export function TailorCvToJobPage() {
   return (
     <SeoLandingPage
       title="Tailor Your CV to a Job Description | MyRecruiterCheck"
-      description="Tailor your CV to a specific job description with recruiter-style feedback, relevant evidence and clear application improvements."
+      description="Tailor your CV to a specific job description with recruiter style feedback, relevant evidence and clear application improvements."
       path="/tailor-cv-to-job-description"
       eyebrow="Tailor CV to Job"
       heading="Tailor your CV to the job you want"

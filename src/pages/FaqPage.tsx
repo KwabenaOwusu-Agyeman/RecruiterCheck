@@ -12,7 +12,7 @@ const FAQ_ITEMS = [
   {
     question: 'Does MyRecruiterCheck guarantee an interview?',
     answer:
-      'No. MyRecruiterCheck does not guarantee an interview, a job offer, or employment. It gives you an honest, recruiter-style read on your application so you can decide how to strengthen it before you apply.',
+      'No. MyRecruiterCheck does not guarantee an interview, a job offer, or employment. It gives you an honest, recruiter style read on your application so you can decide how to strengthen it before you apply.',
   },
   {
     question: 'Is my CV and personal information secure?',

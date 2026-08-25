@@ -90,6 +90,10 @@ Deno.serve(async (req) => {
         await handleInvoicePaymentSucceeded(adminClient, stripe, event.data.object as Stripe.Invoice)
         break
       }
+      case 'charge.refunded': {
+        await handleChargeRefunded(adminClient, stripe, event.data.object as Stripe.Charge)
+        break
+      }
       default:
         break
     }
@@ -277,6 +281,71 @@ async function handleInvoicePaymentSucceeded(
   } catch (error) {
     console.error('stripe-webhook: could not refresh subscription after payment success', error)
   }
+}
+
+/**
+ * Safety net for a refund issued outside the self-service request-refund
+ * function (a manual Stripe Dashboard refund, or a dispute) — ensures the
+ * customer's paid access is removed no matter which path issued the refund,
+ * rather than relying on every refund path remembering to also cancel the
+ * subscription and downgrade the profile. When request-refund itself issued
+ * the refund, this fires afterward and just re-applies the same already-
+ * applied values, a harmless no-op (a subscription already cancelled simply
+ * fails to cancel again, which is caught and logged, not fatal).
+ */
+async function handleChargeRefunded(
+  adminClient: ReturnType<typeof createClient>,
+  stripe: Stripe,
+  charge: Stripe.Charge,
+) {
+  const customerId = typeof charge.customer === 'string' ? charge.customer : charge.customer?.id
+  if (!customerId) {
+    console.error('stripe-webhook: charge.refunded missing customer id')
+    return
+  }
+
+  const { data: profile } = await adminClient
+    .from('profiles')
+    .select('id')
+    .eq('stripe_customer_id', customerId)
+    .maybeSingle()
+
+  if (!profile) {
+    console.error('stripe-webhook: charge.refunded — no profile for customer', customerId)
+    return
+  }
+
+  const { data: activeSubscription } = await adminClient
+    .from('subscriptions')
+    .select('stripe_subscription_id')
+    .eq('user_id', profile.id)
+    .eq('status', 'active')
+    .not('stripe_subscription_id', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (activeSubscription?.stripe_subscription_id) {
+    try {
+      await stripe.subscriptions.cancel(activeSubscription.stripe_subscription_id)
+    } catch (error) {
+      console.error('stripe-webhook: could not cancel subscription after refund', error)
+    }
+    await adminClient
+      .from('subscriptions')
+      .update({ status: 'cancelled' })
+      .eq('stripe_subscription_id', activeSubscription.stripe_subscription_id)
+  }
+
+  await adminClient
+    .from('profiles')
+    .update({
+      subscription_tier: 'free',
+      subscription_status: 'cancelled',
+      period_checks_consumed: 0,
+      period_checks_limit: 0,
+    })
+    .eq('id', profile.id)
 }
 
 /**

@@ -34,7 +34,7 @@ export function AuthCallbackPage() {
       <Container className="flex flex-1 flex-col items-center justify-center py-16">
         {error ? (
           <AuthCard className="text-center">
-            <AuthCardHeader title="Sign-in failed" />
+            <AuthCardHeader title="Sign in failed" />
             <div className="space-y-4">
               <Alert variant="error">{error}</Alert>
               <Link to="/" className="text-sm font-medium text-blue hover:underline">

@@ -4,7 +4,7 @@ export function SoftwareEngineerResumeCheckerPage() {
   return (
     <SeoLandingPage
       title="Software Engineer Resume Checker | MyRecruiterCheck"
-      description="See what recruiters actually check on a software engineer resume before you apply. Free recruiter-style feedback against the job description."
+      description="See what recruiters actually check on a software engineer resume before you apply. Free recruiter style feedback against the job description."
       path="/software-engineer-resume-checker"
       eyebrow="Software Engineer"
       heading="What recruiters actually check on a software engineer resume"

@@ -22,13 +22,16 @@ export function PublicHeader() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     if (!mobileNavOpen) return
 
     const menuButton = menuButtonRef.current
-    const initialFocusTarget = panelRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR)
-    initialFocusTarget?.focus()
+    // Focus the close button, not just "the first focusable element in the
+    // panel" — that would be the logo link, which visibly focus-rings on
+    // open for no reason a keyboard/screen-reader user would expect.
+    closeButtonRef.current?.focus()
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
@@ -129,6 +132,7 @@ export function PublicHeader() {
             <div className="mb-2 flex items-center justify-between">
               <Logo />
               <button
+                ref={closeButtonRef}
                 type="button"
                 aria-label="Close menu"
                 onClick={closeMobileNav}

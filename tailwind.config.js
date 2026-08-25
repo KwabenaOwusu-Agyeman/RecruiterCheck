@@ -34,6 +34,20 @@ export default {
       backgroundImage: {
         'gradient-surface': 'linear-gradient(180deg, #FFFFFF 0%, #F8F6F2 100%)',
       },
+      keyframes: {
+        marquee: {
+          from: { transform: 'translateX(0)' },
+          to: { transform: 'translateX(-50%)' },
+        },
+        'fill-bar': {
+          from: { transform: 'scaleX(0)' },
+          to: { transform: 'scaleX(1)' },
+        },
+      },
+      animation: {
+        marquee: 'marquee 36s linear infinite',
+        'fill-bar': 'fill-bar 4.5s linear forwards',
+      },
       spacing: {
         1: '0.5rem',
         2: '1rem',
