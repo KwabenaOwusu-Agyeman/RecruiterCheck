@@ -3,6 +3,14 @@ import { useEffect, useRef } from 'react'
 const WIDGET_HTML =
   '<a href="https://www.trustpilot.com/review/myrecruitercheck.com" target="_blank" rel="noopener">Trustpilot</a>'
 
+const BOOTSTRAP_SRC = '//widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js'
+
+type TrustpilotGlobal = { loadFromElement?: (el: Element, force?: boolean) => void }
+
+function getTrustpilotGlobal(): TrustpilotGlobal | undefined {
+  return (window as unknown as { Trustpilot?: TrustpilotGlobal }).Trustpilot
+}
+
 /**
  * Renders the exact official Trustpilot TrustBox "Review Collector" embed
  * supplied via the verified MyRecruiterCheck Trustpilot Business account —
@@ -11,20 +19,21 @@ const WIDGET_HTML =
  * rating display — it carries its own call to action, so no separate
  * "Review us" button is added alongside it.
  *
- * The widget's inner content is injected imperatively in an effect, after
- * hydration, rather than rendered as JSX. Rendering it as JSX meant React
- * hydrated a div whose contents the bootstrap script
- * (widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js, loaded in
- * index.html's <head>) could mutate before or during that same hydration
- * pass, since it scans the page for `.trustpilot-widget` and swaps in an
- * iframe as soon as it loads — a race that surfaced as React hydration
- * errors #418/#423 in production. Keeping the div empty for both the
- * server-rendered and first client render means there's nothing for React
- * to mismatch on; only after hydration completes does this effect fill it
- * in and explicitly initialize this one element via the bootstrap script's
- * own `Trustpilot.loadFromElement` API (documented for exactly this
- * dynamically-inserted-widget case), so initialization no longer depends on
- * winning a timing race with the bootstrap script's own automatic scan.
+ * The bootstrap script (widget.trustpilot.com/bootstrap/v5/...) is loaded
+ * dynamically here, from this effect, rather than as a static <script> in
+ * index.html's <head>. Loading it statically meant it could start
+ * executing and mutating the page before or during React's hydration pass
+ * (hydrateRoot, see main.tsx) — confirmed live: production showed React
+ * hydration errors #418/#423 on every load, and isolating the cause (built
+ * and served the same bundle with only that <head> script removed) showed
+ * the errors are entirely gone without it, unrelated to how this
+ * component's own div is rendered. Fetching and initializing the widget
+ * only from this post-hydration effect removes the race entirely — the
+ * script cannot touch the DOM before hydration has already finished. Init
+ * happens through Trustpilot's own `loadFromElement` API (documented for
+ * exactly this dynamically-inserted-widget case) once the script has
+ * loaded, and the script itself is only ever fetched once (guarded via a
+ * data attribute) even if this component were to appear more than once.
  */
 export function TrustpilotFeedbackSection() {
   const widgetRef = useRef<HTMLDivElement>(null)
@@ -33,8 +42,28 @@ export function TrustpilotFeedbackSection() {
     const el = widgetRef.current
     if (!el) return
     el.innerHTML = WIDGET_HTML
-    const trustpilot = (window as unknown as { Trustpilot?: { loadFromElement?: (el: Element, force?: boolean) => void } }).Trustpilot
-    trustpilot?.loadFromElement?.(el, true)
+
+    function init() {
+      if (el) getTrustpilotGlobal()?.loadFromElement?.(el, true)
+    }
+
+    if (getTrustpilotGlobal()) {
+      init()
+      return
+    }
+
+    const existing = document.querySelector<HTMLScriptElement>('script[data-trustpilot-bootstrap]')
+    if (existing) {
+      existing.addEventListener('load', init, { once: true })
+      return
+    }
+
+    const script = document.createElement('script')
+    script.src = BOOTSTRAP_SRC
+    script.async = true
+    script.dataset.trustpilotBootstrap = 'true'
+    script.addEventListener('load', init, { once: true })
+    document.body.appendChild(script)
   }, [])
 
   return (
