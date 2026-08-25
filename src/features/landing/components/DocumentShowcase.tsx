@@ -1,4 +1,4 @@
-import { useRef, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ChevronLeft, ChevronRight, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
@@ -248,10 +248,25 @@ function RecruiterMessageCard() {
 export function DocumentShowcase() {
   const handleCheckCta = useCheckCta()
   const scrollerRef = useRef<HTMLDivElement>(null)
+  const [atStart, setAtStart] = useState(true)
+  const [atEnd, setAtEnd] = useState(false)
+
+  function updateScrollBounds() {
+    const el = scrollerRef.current
+    if (!el) return
+    setAtStart(el.scrollLeft <= 1)
+    setAtEnd(el.scrollLeft >= el.scrollWidth - el.clientWidth - 1)
+  }
+
+  useEffect(() => {
+    updateScrollBounds()
+  }, [])
 
   function scrollByCard(direction: 1 | -1) {
     const el = scrollerRef.current
     if (!el) return
+    if (direction === -1 && atStart) return
+    if (direction === 1 && atEnd) return
     const cardWidth = el.firstElementChild?.getBoundingClientRect().width ?? el.clientWidth * 0.72
     el.scrollBy({ left: direction * (cardWidth + 20), behavior: 'smooth' })
   }
@@ -287,6 +302,7 @@ export function DocumentShowcase() {
       <div className="relative mt-5 sm:mt-6">
         <div
           ref={scrollerRef}
+          onScroll={updateScrollBounds}
           className="flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pl-[16px] pb-2 [scrollbar-width:none] sm:pl-6 lg:pl-8 [&::-webkit-scrollbar]:hidden"
         >
           <CvDraftCard />
@@ -298,12 +314,15 @@ export function DocumentShowcase() {
         {/* One shared set of controls, floating at the footer's vertical
             position (not mid-card) so it never sits over card body text.
             Fixed to the row itself, not per-card — desktop shows all three
-            cards at once and has nothing to scroll between. */}
+            cards at once and has nothing to scroll between. Disabled once
+            the scroller hits the first/last document so pressing an arrow
+            can never scroll past the ends. */}
         <button
           type="button"
           aria-label="Show previous document"
           onClick={() => scrollByCard(-1)}
-          className="absolute bottom-[13px] left-2 flex h-8 w-8 items-center justify-center rounded-full border border-border-strong bg-surface text-text-primary shadow-card sm:hidden"
+          disabled={atStart}
+          className="absolute bottom-[13px] left-2 flex h-8 w-8 items-center justify-center rounded-full border border-border-strong bg-surface text-text-primary shadow-card disabled:pointer-events-none disabled:opacity-40 sm:hidden"
         >
           <ChevronLeft className="h-4 w-4" aria-hidden="true" />
         </button>
@@ -311,7 +330,8 @@ export function DocumentShowcase() {
           type="button"
           aria-label="Show next document"
           onClick={() => scrollByCard(1)}
-          className="absolute bottom-[13px] right-2 flex h-8 w-8 items-center justify-center rounded-full border border-border-strong bg-surface text-text-primary shadow-card sm:hidden"
+          disabled={atEnd}
+          className="absolute bottom-[13px] right-2 flex h-8 w-8 items-center justify-center rounded-full border border-border-strong bg-surface text-text-primary shadow-card disabled:pointer-events-none disabled:opacity-40 sm:hidden"
         >
           <ChevronRight className="h-4 w-4" aria-hidden="true" />
         </button>

@@ -12,8 +12,8 @@ import { cn } from '@/utils/cn'
 type TabId = 'empty' | 'new' | 'checks'
 
 const TABS: { id: TabId; label: string }[] = [
-  { id: 'empty', label: 'Before your first check' },
-  { id: 'new', label: 'Add a job & CV' },
+  { id: 'empty', label: 'Before' },
+  { id: 'new', label: 'Add' },
   { id: 'checks', label: 'Track' },
 ]
 
@@ -49,7 +49,7 @@ function BrowserChrome({ children }: { children: ReactNode }) {
             myrecruitercheck.com/checks
           </span>
         </div>
-        <div className="p-5 sm:p-6">{children}</div>
+        <div className="min-h-[380px] p-5 sm:min-h-[400px] sm:p-6">{children}</div>
       </div>
     </GlowCard>
   )
@@ -73,11 +73,11 @@ function NewCheckMock() {
   return (
     <div className="space-y-5">
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
             Job description
           </p>
-          <div className="inline-flex rounded-full border border-border-soft bg-background p-0.5 text-xs font-medium">
+          <div className="inline-flex shrink-0 rounded-full border border-border-soft bg-background p-0.5 text-xs font-medium">
             <span className="rounded-full bg-blue px-3 py-1 text-white">Paste</span>
             <span className="px-3 py-1 text-text-secondary">URL</span>
             <span className="px-3 py-1 text-text-secondary">Upload</span>
