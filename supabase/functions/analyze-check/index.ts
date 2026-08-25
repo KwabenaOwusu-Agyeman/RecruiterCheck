@@ -3,7 +3,7 @@ import { Buffer } from 'node:buffer'
 import mammoth from 'npm:mammoth@1.8.0'
 import { extractText as extractPdfText, getDocumentProxy } from 'npm:unpdf@0.12.1'
 import { normalizeAnalysis, type AnalysisResult, type RawAnalysis } from './logic.ts'
-import { buildBrevoPayload, isTestAccountEmail } from './trustpilot-email.ts'
+import { buildBrevoPayload, isTestAccountEmail, resolveSendDecision } from './trustpilot-email.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': 'https://myrecruitercheck.com',
@@ -250,11 +250,18 @@ Deno.serve(async (req) => {
  * sends its own separate review invitation after its configured delay.
  *
  * Only called after complete_check_analysis has already succeeded (a real,
- * completed check), gated further here on: not a test account, and not
- * already sent. The "already sent" guard is an atomic UPDATE ... WHERE
- * trustpilot_notified_at IS NULL — this is the only place that column is
- * written, so it also serves as the once-per-check-id lock even across
- * concurrent/retried requests for the same check.
+ * completed check). Who actually receives a send, and whether the
+ * Trustpilot BCC is included, is decided by resolveSendDecision from
+ * TRUSTPILOT_EMAIL_TEST_MODE and whether this is a designated test account
+ * (see that function's doc comment for the full test-mode/production
+ * matrix). Duplicate prevention is a separate, unconditional guard: an
+ * atomic UPDATE ... WHERE trustpilot_notified_at IS NULL — this is the only
+ * place that column is written, so it also serves as the once-per-check-id
+ * lock even across concurrent/retried requests for the same check.
+ *
+ * Never logs the recipient's email address or any secret value (API key,
+ * Trustpilot BCC address) — only the check id and non-sensitive outcome
+ * fields (reason, whether a BCC was included, HTTP status, Brevo message id).
  */
 async function sendResultsReadyEmail(
   client: ReturnType<typeof createClient>,
@@ -273,14 +280,18 @@ async function sendResultsReadyEmail(
       return
     }
 
-    if (isTestAccountEmail(params.userEmail, Deno.env.get('TEST_ACCOUNT_EMAILS'))) {
-      console.log('analyze-check: skipping results email for test account', { checkId: params.checkId })
-      return
-    }
-
     const brevoApiKey = Deno.env.get('BREVO_API_KEY')
     if (!brevoApiKey) {
       console.warn('analyze-check: BREVO_API_KEY not set, skipping results email', { checkId: params.checkId })
+      return
+    }
+
+    const testMode = Deno.env.get('TRUSTPILOT_EMAIL_TEST_MODE') === 'true'
+    const isTestAccount = isTestAccountEmail(params.userEmail, Deno.env.get('TEST_ACCOUNT_EMAILS'))
+    const decision = resolveSendDecision(testMode, isTestAccount)
+
+    if (!decision.shouldSend) {
+      console.log('analyze-check: results email not sent', { checkId: params.checkId, reason: decision.reason })
       return
     }
 
@@ -312,8 +323,9 @@ async function sendResultsReadyEmail(
     const siteUrl = Deno.env.get('SITE_URL') ?? 'https://myrecruitercheck.com'
     const senderEmail = Deno.env.get('BREVO_SENDER_EMAIL') ?? 'notifications@myrecruitercheck.com'
     const senderName = Deno.env.get('BREVO_SENDER_NAME') ?? 'MyRecruiterCheck'
-    const trustpilotAfsEmail = Deno.env.get('TRUSTPILOT_AFS_EMAIL')
-    const testMode = Deno.env.get('TRUSTPILOT_EMAIL_TEST_MODE') === 'true'
+    // Only read the Trustpilot address into memory at all when it's actually
+    // going to be used — never fetched (and so never loggable) in test mode.
+    const trustpilotAfsEmail = decision.includeBcc ? Deno.env.get('TRUSTPILOT_AFS_EMAIL') : undefined
 
     const payload = buildBrevoPayload(
       {
@@ -328,19 +340,6 @@ async function sendResultsReadyEmail(
       senderName,
       trustpilotAfsEmail,
     )
-
-    if (testMode) {
-      // Safe test mode: exercises the exact same gating, idempotency claim,
-      // and payload construction as production, but never calls the Brevo
-      // API, so no email is sent and Trustpilot is never invited. Never log
-      // the recipient's email address itself.
-      console.log('analyze-check: TRUSTPILOT_EMAIL_TEST_MODE active, not sending', {
-        checkId: params.checkId,
-        hasBcc: Boolean(payload.bcc),
-        subject: payload.subject,
-      })
-      return
-    }
 
     const response = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
@@ -357,7 +356,17 @@ async function sendResultsReadyEmail(
         checkId: params.checkId,
         status: response.status,
       })
+      return
     }
+
+    const responseBody = (await response.json().catch(() => null)) as { messageId?: string } | null
+    console.log('analyze-check: results email sent', {
+      checkId: params.checkId,
+      testMode,
+      hasBcc: Boolean(payload.bcc),
+      status: response.status,
+      messageId: responseBody?.messageId,
+    })
   } catch (error) {
     console.error('analyze-check: results email error', {
       checkId: params.checkId,

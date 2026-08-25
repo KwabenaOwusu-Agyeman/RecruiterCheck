@@ -1,6 +1,6 @@
 // Run with: npx tsx supabase/functions/analyze-check/trustpilot-email.test.ts
 import assert from 'node:assert/strict'
-import { buildBrevoPayload, buildResultsEmailHtml, isTestAccountEmail } from './trustpilot-email.ts'
+import { buildBrevoPayload, buildResultsEmailHtml, isTestAccountEmail, resolveSendDecision } from './trustpilot-email.ts'
 
 let passed = 0
 async function test(name: string, fn: () => void | Promise<void>) {
@@ -85,6 +85,30 @@ async function run() {
     assert.equal(html.includes('<script>alert(1)</script>'), false)
     assert.match(html, /&lt;script&gt;/)
     assert.match(html, /A &amp; B &quot;Co&quot;/)
+  })
+
+  await test('resolveSendDecision: test mode + designated test account sends without BCC', () => {
+    assert.deepEqual(resolveSendDecision(true, true), { shouldSend: true, includeBcc: false, reason: 'send' })
+  })
+
+  await test('resolveSendDecision: test mode + non-test account is blocked', () => {
+    assert.deepEqual(resolveSendDecision(true, false), {
+      shouldSend: false,
+      includeBcc: false,
+      reason: 'blocked_not_test_account_in_test_mode',
+    })
+  })
+
+  await test('resolveSendDecision: production + non-test account sends with BCC', () => {
+    assert.deepEqual(resolveSendDecision(false, false), { shouldSend: true, includeBcc: true, reason: 'send' })
+  })
+
+  await test('resolveSendDecision: production + test account is skipped', () => {
+    assert.deepEqual(resolveSendDecision(false, true), {
+      shouldSend: false,
+      includeBcc: false,
+      reason: 'skipped_test_account_in_production',
+    })
   })
 
   console.log(`\n${passed} passed`)

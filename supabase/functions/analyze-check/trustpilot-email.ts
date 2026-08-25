@@ -20,8 +20,7 @@ export interface BrevoSendPayload {
 }
 
 /**
- * Test accounts are excluded from the Trustpilot BCC (and from receiving
- * this email at all) via a comma-separated allowlist in the
+ * Test accounts are identified via a comma-separated allowlist in the
  * TEST_ACCOUNT_EMAILS secret, matched case-insensitively. Never derived from
  * a DB flag, since none exists (see scripts/reset-test-users.ts).
  */
@@ -33,6 +32,38 @@ export function isTestAccountEmail(email: string, testAccountEmailsEnv: string |
     .map((entry) => entry.trim().toLowerCase())
     .filter(Boolean)
     .includes(normalized)
+}
+
+export type SendReason = 'send' | 'blocked_not_test_account_in_test_mode' | 'skipped_test_account_in_production'
+
+export interface SendDecision {
+  shouldSend: boolean
+  includeBcc: boolean
+  reason: SendReason
+}
+
+/**
+ * Decides whether this recipient gets a real send, and whether the
+ * Trustpilot BCC is included, for the current TRUSTPILOT_EMAIL_TEST_MODE
+ * state:
+ *
+ * - Test mode ON: only the designated test account (TEST_ACCOUNT_EMAILS)
+ *   receives a real email, and the Trustpilot BCC is always omitted for it
+ *   (so a real send can be verified through Brevo without ever inviting
+ *   Trustpilot). Every other account is blocked outright.
+ * - Test mode OFF (production): unchanged from before, test accounts never
+ *   receive this email at all, and every other account gets the real send
+ *   with the Trustpilot BCC included.
+ */
+export function resolveSendDecision(testMode: boolean, isTestAccount: boolean): SendDecision {
+  if (testMode) {
+    return isTestAccount
+      ? { shouldSend: true, includeBcc: false, reason: 'send' }
+      : { shouldSend: false, includeBcc: false, reason: 'blocked_not_test_account_in_test_mode' }
+  }
+  return isTestAccount
+    ? { shouldSend: false, includeBcc: false, reason: 'skipped_test_account_in_production' }
+    : { shouldSend: true, includeBcc: true, reason: 'send' }
 }
 
 export function buildResultsEmailHtml(params: {
