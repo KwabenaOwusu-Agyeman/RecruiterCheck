@@ -40,7 +40,7 @@ const faqs = [
 export function PricingPage() {
   usePageMeta({
     title: 'Pricing | MyRecruiterCheck',
-    description: 'Simple, transparent pricing for Recruiter Checks. Your first check is free — check packs from €10, no subscription.',
+    description: 'Simple, transparent pricing for Recruiter Checks. Your first check is free, check packs from €10, no subscription.',
     path: '/pricing',
   })
 

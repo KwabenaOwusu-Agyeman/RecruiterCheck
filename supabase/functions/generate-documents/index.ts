@@ -116,11 +116,13 @@ Deno.serve(async (req) => {
     // Document entitlement is keyed on which pack's credit batch funded this
     // specific check (set once, at completion, by complete_check_analysis) —
     // not the user's current balance or any other check. A free-tier check
-    // (funding_pack_id null) is treated the same as Small: no documents.
-    // Kept in sync with CHECK_PACKS in src/lib/constants.ts.
+    // (funding_pack_id null) gets no documents. Every paid pack (small,
+    // medium, large) includes the Improved CV Draft; only large additionally
+    // includes the Cover Letter and Recruiter Message, on every check funded
+    // by that pack. Kept in sync with CHECK_PACKS in src/lib/constants.ts.
     const fundingPackId = check.funding_pack_id as 'small' | 'medium' | 'large' | null
     const entitlement = {
-      cv: fundingPackId === 'medium' || fundingPackId === 'large',
+      cv: fundingPackId === 'small' || fundingPackId === 'medium' || fundingPackId === 'large',
       coverLetter: fundingPackId === 'large',
       recruiterMessage: fundingPackId === 'large',
     }
@@ -129,7 +131,7 @@ Deno.serve(async (req) => {
       return jsonResponse(
         {
           error:
-            'This check only includes the Interview Score and Recruiter Feedback. Buy a Medium or Large pack for your next check to unlock the Improved CV Draft, and Large for the Cover Letter and Recruiter Message too.',
+            'This check only includes the Interview Score and Recruiter Feedback. Buy any check pack for your next check to unlock the Improved CV Draft, and a Power pack to also get the Cover Letter and Recruiter Message.',
         },
         403,
       )
