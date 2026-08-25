@@ -188,6 +188,7 @@ export type Database = {
           output_language: string
           skills_score: number | null
           status: Database["public"]["Enums"]["check_status"]
+          trustpilot_notified_at: string | null
           updated_at: string
           upload_purge_attempts: number
           uploads_purged: boolean
@@ -213,6 +214,7 @@ export type Database = {
           output_language?: string
           skills_score?: number | null
           status?: Database["public"]["Enums"]["check_status"]
+          trustpilot_notified_at?: string | null
           updated_at?: string
           upload_purge_attempts?: number
           uploads_purged?: boolean
@@ -238,6 +240,7 @@ export type Database = {
           output_language?: string
           skills_score?: number | null
           status?: Database["public"]["Enums"]["check_status"]
+          trustpilot_notified_at?: string | null
           updated_at?: string
           upload_purge_attempts?: number
           uploads_purged?: boolean
@@ -737,7 +740,10 @@ export type Database = {
         }
         Returns: undefined
       }
-      most_recent_check_id: { Args: { p_user_id: string }; Returns: string }
+      is_most_recent_check: {
+        Args: { p_created_at: string; p_user_id: string }
+        Returns: boolean
+      }
       refund_check_credit: {
         Args: { p_check_id: string; p_user_id: string }
         Returns: undefined
@@ -763,7 +769,7 @@ export type Database = {
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-type DefaultSchema = DatabaseWithoutInternals["public"]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
