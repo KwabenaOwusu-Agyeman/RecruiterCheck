@@ -87,7 +87,7 @@ export function PricingPage() {
       </section>
 
       <section className="py-10 sm:py-14">
-        <Container>
+        <Container className="lg:max-w-[1400px]">
           <div className="mx-auto">
             {error ? <Alert variant="error" className="mx-auto mb-6 max-w-2xl">{error}</Alert> : null}
             <PricingCards packs={CHECK_PACKS} loadingPack={loadingPack} onBuy={(packId) => void handleBuy(packId)} />
