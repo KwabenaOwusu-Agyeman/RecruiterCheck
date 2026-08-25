@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Container } from '@/components/ui/Container'
 import { BRAND } from '@/lib/constants'
-import { trackEvent } from '@/lib/analytics'
 
 const linkClassName =
   'text-text-secondary transition-colors duration-150 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue rounded'
@@ -101,44 +100,6 @@ export function PublicFooter() {
     <footer className="border-t border-border bg-surface">
       <Container>
         <div className="py-8 lg:py-[48px]">
-          <a
-            href={BRAND.trustpilotReviewUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => trackEvent('trustpilot_footer_clicked')}
-            aria-label="Used MyRecruiterCheck? Share your experience on Trustpilot (opens in a new tab)"
-            className="group mb-8 flex flex-col gap-3 rounded-[16px] border border-border-strong bg-background px-4 py-3.5 transition-colors duration-150 hover:border-navy/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5 sm:py-4"
-          >
-            <div className="flex items-center gap-2.5">
-              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-success" aria-hidden="true" />
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
-                  Trustpilot
-                </p>
-                <p className="mt-0.5 text-sm font-semibold text-text-primary">Used MyRecruiterCheck?</p>
-              </div>
-            </div>
-            <span className="inline-flex shrink-0 items-center gap-1.5 self-start text-sm font-semibold text-navy sm:self-auto">
-              Share your experience
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 16 16"
-                fill="none"
-                aria-hidden="true"
-                className="transition-transform duration-150 group-hover:translate-x-0.5"
-              >
-                <path
-                  d="M3 8h10M9 4l4 4-4 4"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
-          </a>
-
           <div className="grid grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-4">
             {columns.map((column) => (
               <nav key={column.heading} aria-label={column.ariaLabel}>

@@ -8,6 +8,7 @@ import { HowItWorksSection } from '@/features/landing/components/HowItWorksSecti
 import { LlmComparisonSection } from '@/features/landing/components/LlmComparisonSection'
 import { RoleFeedbackShowcase } from '@/features/landing/components/RoleFeedbackShowcase'
 import { TestimonialsSection } from '@/features/landing/components/TestimonialsSection'
+import { TrustpilotFeedbackSection } from '@/features/landing/components/TrustpilotFeedbackSection'
 import { Reveal } from '@/components/ui/Reveal'
 import { trackEvent } from '@/lib/analytics'
 import { usePageMeta } from '@/hooks/usePageMeta'
@@ -60,6 +61,9 @@ export function LandingPage() {
       </Reveal>
       <Reveal>
         <ClosingCtaSection />
+      </Reveal>
+      <Reveal>
+        <TrustpilotFeedbackSection />
       </Reveal>
     </>
   )
