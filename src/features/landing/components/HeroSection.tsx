@@ -22,16 +22,15 @@ export function HeroSection() {
       />
       <Container className="relative py-[40px] sm:py-12 lg:py-[64px]">
         <div className="mx-auto max-w-2xl text-center lg:max-w-[800px]">
-          <p className="mb-4 text-xl font-bold text-navy sm:text-2xl">{BRAND.tagline}</p>
+          <p className="mb-4 text-xl font-bold text-navy sm:text-2xl">
+            {BRAND.tagline} Built for AI/ML, data and tech roles.
+          </p>
           <h1 className="text-4xl font-semibold tracking-tight text-text-primary sm:text-5xl lg:text-[54px] lg:leading-[1.1]">
             If you were the <span className="text-blue">recruiter</span>, would you invite yourself
             to an <span className="text-blue">interview</span>?
           </h1>
           <p className="mx-auto mt-[16px] max-w-none text-lg leading-relaxed text-text-secondary sm:mt-5 lg:max-w-[680px] lg:text-xl">
             See what recruiters see. Improve your application before you apply.
-          </p>
-          <p className="mx-auto mt-2 max-w-none text-sm font-semibold text-blue lg:max-w-[680px]">
-            Built for AI, machine learning, data and tech roles, 0 to 5 years of experience.
           </p>
           <div className="mt-[20px] flex flex-col items-center justify-center gap-3 sm:mt-6">
             <Button size="md" className="sm:!h-12 sm:px-6 sm:text-base" onClick={handleCheckCta}>
