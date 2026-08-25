@@ -37,6 +37,11 @@ import { categorizeUrlDomain, trackEvent } from '@/lib/analytics'
 
 const PASTED_CV_FILE_NAME = 'cv.txt'
 const MIN_PASTED_CV_LENGTH = 50
+// Duplicated from keyword-scan's own FREE_SCAN_LIMIT (and KeywordScanPage's
+// copy of the same) per this codebase's existing convention of duplicating
+// small constants across independently-deployable pieces rather than
+// sharing them.
+const FREE_SCAN_LIMIT = 3
 
 function textToCvFile(text: string): File {
   return new File([text], PASTED_CV_FILE_NAME, { type: 'text/plain' })
@@ -374,6 +379,14 @@ export function NewCheckPage() {
   }
 
   if (gateReason === 'free-tier') {
+    // Bizzy's funnel: FREE (1 full check) -> LIMITED (a few free keyword
+    // scans, builds the habit) -> WALL (upgrade, at peak motivation) -> BUY.
+    // A user who's used their one free check but still has scans left gets
+    // routed to the habit-building step instead of straight to the wall;
+    // the hard wall only appears once both free allowances are spent.
+    const scansLeft = Math.max(FREE_SCAN_LIMIT - (profile?.keyword_scans_consumed ?? 0), 0)
+    const hasKeywordScansLeft = scansLeft > 0
+
     return (
       <>
         <BackLink to="/checks" />
@@ -385,17 +398,35 @@ export function NewCheckPage() {
             <Sparkles className="h-5 w-5 text-navy" strokeWidth={2} />
           </div>
           <h2 className="mt-4 text-base font-semibold text-text-primary">
-            You've used your free Check
+            {hasKeywordScansLeft ? "You've used your free Check" : "You're out of free tasks"}
           </h2>
           <p className="mt-2 text-sm text-text-secondary">
-            Nice work getting this far. Upgrade to keep checking applications before you apply.
+            {hasKeywordScansLeft
+              ? `Try a free keyword scan while you decide (${scansLeft} of ${FREE_SCAN_LIMIT} left), or upgrade for a full Interview Score check.`
+              : 'Nice work getting this far. Upgrade to keep checking applications before you apply.'}
           </p>
-          <div className="mt-6 flex justify-center">
-            <Link to="/account/billing">
-              <Button size="sm" className="w-full sm:w-auto">
-                Upgrade
-              </Button>
-            </Link>
+          <div className="mt-6 flex flex-col items-center gap-3">
+            {hasKeywordScansLeft ? (
+              <>
+                <Link to="/checks/keyword-scan" className="w-full sm:w-auto">
+                  <Button size="sm" className="w-full sm:w-auto">
+                    Try a free keyword scan
+                  </Button>
+                </Link>
+                <Link
+                  to="/account/billing"
+                  className="text-sm font-medium text-text-secondary transition-colors hover:text-text-primary hover:underline"
+                >
+                  Or upgrade for full checks
+                </Link>
+              </>
+            ) : (
+              <Link to="/account/billing">
+                <Button size="sm" className="w-full sm:w-auto">
+                  Upgrade
+                </Button>
+              </Link>
+            )}
           </div>
         </Card>
       </>
