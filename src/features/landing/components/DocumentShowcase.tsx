@@ -309,7 +309,7 @@ export function DocumentShowcase() {
         <div
           ref={scrollerRef}
           onScroll={updateScrollBounds}
-          className="flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pl-[16px] pb-2 [scrollbar-width:none] sm:pl-6 lg:pl-8 [&::-webkit-scrollbar]:hidden"
+          className="flex snap-x snap-mandatory gap-5 overflow-x-auto overscroll-x-contain scroll-smooth pl-[16px] pb-2 [scrollbar-width:none] sm:pl-6 lg:pl-8 [&::-webkit-scrollbar]:hidden"
         >
           <CvDraftCard />
           <CoverLetterCard />
