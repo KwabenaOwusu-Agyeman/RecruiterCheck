@@ -21,6 +21,8 @@ export type AnalyticsEventType =
   | 'check_sentiment_positive'
   | 'check_sentiment_negative'
   | 'keyword_scan_completed'
+  | 'trustpilot_footer_clicked'
+  | 'trustpilot_results_clicked'
 
 export type DomainCategory = 'linkedin' | 'indeed' | 'greenhouse' | 'lever' | 'workday' | 'other'
 

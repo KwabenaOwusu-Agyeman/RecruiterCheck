@@ -20,7 +20,7 @@
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=()" },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' https://tracker.metricool.com 'sha256-azGiJof+JDm5WTz03i9j0lsQXUby74ZjTPaQ1bn9HOY=' 'sha256-an8vtlT0eMwuXFuqYPsRPbj29+KPJcA3bkmcYFVJprs=' 'sha256-MzFKPLXFnSfpqOmH4rlio+dxMPi7/9T10ZKF4Nktm38='; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://tracker.metricool.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+          "value": "default-src 'self'; script-src 'self' https://tracker.metricool.com 'sha256-3lK1virTqExEWtcoz6kcns9PzfCNLmnu+YnGVFEJptM=' 'sha256-mqt9tSAd1zFPuXHMsDoXx2BLwKRhNYDoPZd1uzbpRek=' 'sha256-y6nf9MolWiWWme2zcF055MXDrK7cqNVBbMti8zjcywE='; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://tracker.metricool.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
         }
       ]
     }

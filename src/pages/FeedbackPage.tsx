@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { FeedbackBullet, getVerdictColor, splitFinding } from '@/components/feedback/FeedbackBullet'
 import { SentimentPrompt } from '@/components/feedback/SentimentPrompt'
+import { TrustpilotResultsLink } from '@/components/feedback/TrustpilotResultsLink'
 import { useAuth } from '@/hooks/useAuth'
 import { usePageMeta } from '@/hooks/usePageMeta'
 import { getResultTone, getScoreLabel } from '@/lib/scoring'
@@ -412,6 +413,8 @@ export function FeedbackPage() {
             </Card>
 
             <SentimentPrompt checkId={check.id} />
+
+            <TrustpilotResultsLink userEmail={profile?.email} />
 
           </div>
         ) : check.status === 'completed' ? (

@@ -3,6 +3,7 @@ export const BRAND = {
   tagline: 'Think like a recruiter before you apply.',
   canonicalUrl: 'https://myrecruitercheck.com',
   googleReviewUrl: 'https://g.page/r/CZyC6CS2RdhiEBM/review',
+  trustpilotReviewUrl: 'https://www.trustpilot.com/review/myrecruitercheck.com',
 } as const
 
 export const FEATURE_FLAGS = {
