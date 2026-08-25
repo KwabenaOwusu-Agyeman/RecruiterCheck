@@ -3,6 +3,7 @@ import { Buffer } from 'node:buffer'
 import mammoth from 'npm:mammoth@1.8.0'
 import { extractText as extractPdfText, getDocumentProxy } from 'npm:unpdf@0.12.1'
 import { normalizeAnalysis, type AnalysisResult, type RawAnalysis } from './logic.ts'
+import { buildBrevoPayload, isTestAccountEmail } from './trustpilot-email.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': 'https://myrecruitercheck.com',
@@ -223,12 +224,147 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Could not save analysis result' }, 500)
     }
 
+    // Best effort and non-blocking: a failure here must never turn a
+    // successfully completed check into an error response for the user.
+    await sendResultsReadyEmail(adminClient, {
+      checkId,
+      userEmail: user.email ?? null,
+      recipientName: (user.user_metadata?.full_name as string | undefined) ?? null,
+      // Mirror complete_check_analysis's own coalesce(job_title, p_job_title)
+      // precedence so the email shows the same title/company as the stored row.
+      jobTitle: check.job_title || analysis.job_title || null,
+      companyName: check.company_name || analysis.company_name || null,
+      score: analysis.interview_probability_score,
+    })
+
     return jsonResponse({ success: true, checkId })
   } catch (error) {
     console.error('analyze-check error:', error)
     return jsonResponse({ error: 'Internal server error' }, 500)
   }
 })
+
+/**
+ * Sends the "Your Recruiter Check is ready" transactional email via Brevo,
+ * BCC'ing Trustpilot's Automatic Feedback Service address so Trustpilot
+ * sends its own separate review invitation after its configured delay.
+ *
+ * Only called after complete_check_analysis has already succeeded (a real,
+ * completed check), gated further here on: not a test account, and not
+ * already sent. The "already sent" guard is an atomic UPDATE ... WHERE
+ * trustpilot_notified_at IS NULL — this is the only place that column is
+ * written, so it also serves as the once-per-check-id lock even across
+ * concurrent/retried requests for the same check.
+ */
+async function sendResultsReadyEmail(
+  client: ReturnType<typeof createClient>,
+  params: {
+    checkId: string
+    userEmail: string | null
+    recipientName: string | null
+    jobTitle: string | null
+    companyName: string | null
+    score: number
+  },
+) {
+  try {
+    if (!params.userEmail) {
+      console.warn('analyze-check: skipping results email, user has no email', { checkId: params.checkId })
+      return
+    }
+
+    if (isTestAccountEmail(params.userEmail, Deno.env.get('TEST_ACCOUNT_EMAILS'))) {
+      console.log('analyze-check: skipping results email for test account', { checkId: params.checkId })
+      return
+    }
+
+    const brevoApiKey = Deno.env.get('BREVO_API_KEY')
+    if (!brevoApiKey) {
+      console.warn('analyze-check: BREVO_API_KEY not set, skipping results email', { checkId: params.checkId })
+      return
+    }
+
+    // Atomic claim: only the request that actually flips this row from null
+    // wins the right to send. Any retry, duplicate webhook, or concurrent
+    // request for the same check will affect zero rows here and return early.
+    const { data: claimed, error: claimError } = await client
+      .from('checks')
+      .update({ trustpilot_notified_at: new Date().toISOString() })
+      .eq('id', params.checkId)
+      .is('trustpilot_notified_at', null)
+      .select('id')
+
+    if (claimError) {
+      console.error('analyze-check: trustpilot_notified_at claim failed', {
+        checkId: params.checkId,
+        message: claimError.message,
+      })
+      return
+    }
+
+    if (!claimed || claimed.length === 0) {
+      console.log('analyze-check: results email already sent for this check, skipping', {
+        checkId: params.checkId,
+      })
+      return
+    }
+
+    const siteUrl = Deno.env.get('SITE_URL') ?? 'https://myrecruitercheck.com'
+    const senderEmail = Deno.env.get('BREVO_SENDER_EMAIL') ?? 'notifications@myrecruitercheck.com'
+    const senderName = Deno.env.get('BREVO_SENDER_NAME') ?? 'MyRecruiterCheck'
+    const trustpilotAfsEmail = Deno.env.get('TRUSTPILOT_AFS_EMAIL')
+    const testMode = Deno.env.get('TRUSTPILOT_EMAIL_TEST_MODE') === 'true'
+
+    const payload = buildBrevoPayload(
+      {
+        toEmail: params.userEmail,
+        recipientName: params.recipientName,
+        jobTitle: params.jobTitle,
+        companyName: params.companyName,
+        score: params.score,
+        resultsUrl: `${siteUrl}/checks/${params.checkId}`,
+      },
+      senderEmail,
+      senderName,
+      trustpilotAfsEmail,
+    )
+
+    if (testMode) {
+      // Safe test mode: exercises the exact same gating, idempotency claim,
+      // and payload construction as production, but never calls the Brevo
+      // API, so no email is sent and Trustpilot is never invited. Never log
+      // the recipient's email address itself.
+      console.log('analyze-check: TRUSTPILOT_EMAIL_TEST_MODE active, not sending', {
+        checkId: params.checkId,
+        hasBcc: Boolean(payload.bcc),
+        subject: payload.subject,
+      })
+      return
+    }
+
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': brevoApiKey,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+
+    if (!response.ok) {
+      console.error('analyze-check: results email failed', {
+        checkId: params.checkId,
+        status: response.status,
+      })
+    }
+  } catch (error) {
+    console.error('analyze-check: results email error', {
+      checkId: params.checkId,
+      message: error instanceof Error ? error.message : String(error),
+    })
+  }
+}
 
 async function markFailed(
   client: ReturnType<typeof createClient>,
