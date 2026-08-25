@@ -31,12 +31,12 @@ function HeroTagline() {
   const shouldReduceMotion = useReducedMotion()
 
   if (shouldReduceMotion) {
-    return <p className="mb-4 text-xl font-bold text-navy sm:text-2xl">{TAGLINE}</p>
+    return <p className="mb-4 text-lg font-bold text-navy lg:text-xl">{TAGLINE}</p>
   }
 
   return (
     <motion.p
-      className="mb-4 text-xl font-bold text-navy sm:text-2xl"
+      className="mb-4 text-lg font-bold text-navy lg:text-xl"
       variants={taglineContainer}
       initial="hidden"
       animate="visible"
