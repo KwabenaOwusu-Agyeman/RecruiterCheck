@@ -251,11 +251,17 @@ export function DocumentShowcase() {
   const [atStart, setAtStart] = useState(true)
   const [atEnd, setAtEnd] = useState(false)
 
+  // The row's own left padding (pl-[16px], larger at sm/lg) means the
+  // resting scroll-snap position for the first card isn't exactly 0, and
+  // the trailing spacer does the same at the end — so bounds are checked
+  // against a tolerance wide enough to absorb that padding, not just 1px.
+  const SCROLL_BOUNDS_TOLERANCE = 24
+
   function updateScrollBounds() {
     const el = scrollerRef.current
     if (!el) return
-    setAtStart(el.scrollLeft <= 1)
-    setAtEnd(el.scrollLeft >= el.scrollWidth - el.clientWidth - 1)
+    setAtStart(el.scrollLeft <= SCROLL_BOUNDS_TOLERANCE)
+    setAtEnd(el.scrollLeft >= el.scrollWidth - el.clientWidth - SCROLL_BOUNDS_TOLERANCE)
   }
 
   useEffect(() => {
