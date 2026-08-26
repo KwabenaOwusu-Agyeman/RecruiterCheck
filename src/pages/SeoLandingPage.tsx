@@ -1,9 +1,12 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Container } from '@/components/ui/Container'
 import { useCheckCta } from '@/hooks/useCheckCta'
 import { usePageMeta } from '@/hooks/usePageMeta'
+import { trackEvent } from '@/lib/analytics'
+import { BRAND } from '@/lib/constants'
 
 interface SeoLandingPageProps {
   title: string
@@ -20,6 +23,7 @@ interface SeoLandingPageProps {
   comparison?: {
     competitor: string
     rows: readonly { label: string; us: string; them: string }[]
+    lastReviewed?: string
   }
   faqs?: readonly { question: string; answer: string }[]
   relatedLinks?: readonly { label: string; to: string }[]
@@ -46,6 +50,10 @@ export function SeoLandingPage({
 }: SeoLandingPageProps) {
   const handleCheckCta = useCheckCta()
   usePageMeta({ title, description, path })
+
+  useEffect(() => {
+    trackEvent('landing_view')
+  }, [path])
 
   return (
     <main>
@@ -135,30 +143,44 @@ export function SeoLandingPage({
       {comparison && (
         <section className="py-10 sm:py-14">
           <Container>
-            <Card className="mx-auto max-w-3xl overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b border-border bg-background">
-                    <th className="p-4 text-sm font-semibold text-text-secondary"> </th>
-                    <th className="p-4 text-sm font-semibold text-text-primary">MyRecruiterCheck</th>
-                    <th className="p-4 text-sm font-semibold text-text-secondary">{comparison.competitor}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {comparison.rows.map((row) => (
-                    <tr key={row.label} className="border-b border-border last:border-b-0">
-                      <td className="p-4 text-sm font-medium text-text-primary">{row.label}</td>
-                      <td className="p-4 text-sm text-text-secondary">{row.us}</td>
-                      <td className="p-4 text-sm text-text-secondary">{row.them}</td>
+            <p className="mx-auto mb-2 max-w-3xl text-xs text-text-secondary sm:hidden" aria-hidden="true">
+              Scroll to see the full comparison →
+            </p>
+            <div className="relative mx-auto max-w-3xl">
+              <Card className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-border bg-background">
+                      <th className="p-4 text-sm font-semibold text-text-secondary"> </th>
+                      <th className="p-4 text-sm font-semibold text-text-primary">MyRecruiterCheck</th>
+                      <th className="p-4 text-sm font-semibold text-text-secondary">{comparison.competitor}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </Card>
+                  </thead>
+                  <tbody>
+                    {comparison.rows.map((row) => (
+                      <tr key={row.label} className="border-b border-border last:border-b-0">
+                        <td className="p-4 text-sm font-medium text-text-primary">{row.label}</td>
+                        <td className="p-4 text-sm text-text-secondary">{row.us}</td>
+                        <td className="p-4 text-sm text-text-secondary">{row.them}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Card>
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-y-0 right-0 w-10 rounded-r-[20px] bg-gradient-to-l from-surface to-transparent sm:hidden"
+              />
+            </div>
             <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
               <p className="text-text-secondary">See how your resume scores with MyRecruiterCheck</p>
               <Button onClick={handleCheckCta}>Check</Button>
             </div>
+            {comparison.lastReviewed && (
+              <p className="mx-auto mt-4 max-w-3xl text-xs text-text-secondary">
+                Last reviewed: {comparison.lastReviewed}. Competitor pricing and features change over time — verify current details on the competitor's own site before deciding.
+              </p>
+            )}
           </Container>
         </section>
       )}
@@ -234,6 +256,20 @@ export function SeoLandingPage({
           }}
         />
       )}
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: BRAND.canonicalUrl },
+              { '@type': 'ListItem', position: 2, name: heading, item: `${BRAND.canonicalUrl}${path}` },
+            ],
+          }),
+        }}
+      />
 
       {relatedLinks.length > 0 && (
         <section className="border-t border-border-soft bg-surface py-8">

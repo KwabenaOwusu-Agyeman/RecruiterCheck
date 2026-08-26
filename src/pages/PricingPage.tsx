@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Container } from '@/components/ui/Container'
 import { Alert } from '@/components/ui/Alert'
 import { PricingCards } from '@/components/ui/PricingCards'
@@ -48,6 +48,10 @@ export function PricingPage() {
   const { open } = useAuthModal()
   const [loadingPack, setLoadingPack] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    trackEvent('pricing_viewed')
+  }, [])
 
   async function handleBuy(packId: CheckPack['id']) {
     if (!user) {

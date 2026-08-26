@@ -21,10 +21,11 @@ export function MyRecruiterCheckVsResumeWordedPage() {
       ]}
       comparison={{
         competitor: 'Resume Worded',
+        lastReviewed: '26 August 2026',
         rows: [
           { label: 'Approach', us: 'Feedback matched to one specific job description', them: 'General resume and LinkedIn score' },
           { label: 'Free plan depth', us: 'Full feedback on your first check', them: 'Basic score with limited feedback' },
-          { label: 'Paid plans start at', us: '€10 per week', them: '$19 per month (annual plan)' },
+          { label: 'Paid packs start at', us: '€10 one-time for 5 checks, no subscription', them: '$19 per month (annual plan)' },
         ],
       }}
       faqs={[

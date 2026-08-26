@@ -21,14 +21,15 @@ export function MyRecruiterCheckVsJobscanPage() {
       ]}
       comparison={{
         competitor: 'Jobscan',
+        lastReviewed: '26 August 2026',
         rows: [
           { label: 'Approach', us: 'Recruiter judgment on your specific application', them: 'ATS keyword and skills match rate' },
           { label: 'Free access', us: 'First Recruiter Check free, no card required', them: '5 scans per month on the free plan' },
-          { label: 'Paid plans start at', us: '€10 per week', them: '$29.98 per month' },
+          { label: 'Paid packs start at', us: '€10 one-time for 5 checks, no subscription', them: '$29.98 per month' },
         ],
       }}
       faqs={[
-        { question: 'Is MyRecruiterCheck cheaper than Jobscan?', answer: 'Yes. MyRecruiterCheck\'s paid plans start at €10 per week, compared to Jobscan\'s lowest paid plan at $29.98 per month.' },
+        { question: 'Is MyRecruiterCheck cheaper than Jobscan?', answer: 'MyRecruiterCheck packs start at €10 one-time for 5 checks with no subscription, compared to Jobscan\'s lowest recurring paid plan at $29.98 per month.' },
         { question: 'Does MyRecruiterCheck check ATS compatibility too?', answer: 'MyRecruiterCheck focuses on how a recruiter reads your resume against the job description, not only formatting compatibility with applicant tracking software.' },
         { question: 'Which one should I use?', answer: 'If you want to know whether an algorithm will match keywords, Jobscan does that. If you want to know whether a recruiter would actually shortlist you for this specific role, that\'s what MyRecruiterCheck is built for.' },
       ]}

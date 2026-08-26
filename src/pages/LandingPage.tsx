@@ -17,9 +17,9 @@ export function LandingPage() {
   const location = useLocation()
 
   usePageMeta({
-    title: 'MyRecruiterCheck | Recruiter Style CV and Job Application Checker',
+    title: 'MyRecruiterCheck | CV Checker for Tech, AI and Data Roles',
     description:
-      'MyRecruiterCheck compares your CV with a specific job description and gives you recruiter style feedback on your experience, skills and candidate value, including an Interview Score, Strengths, Areas to Improve, and Prospects, before you apply.',
+      'MyRecruiterCheck compares your CV with a specific tech, AI, machine learning or data job and shows how clearly your application demonstrates the experience, skills and candidate value the role requires, before you apply.',
     path: '/',
   })
 

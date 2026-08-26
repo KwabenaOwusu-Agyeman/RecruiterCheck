@@ -21,15 +21,16 @@ export function MyRecruiterCheckVsTealPage() {
       ]}
       comparison={{
         competitor: 'Teal',
+        lastReviewed: '26 August 2026',
         rows: [
           { label: 'Approach', us: 'Recruiter judgment on your specific application', them: 'Job search organizer, tracker, and resume builder' },
           { label: 'Free plan limits', us: 'First Recruiter Check free with full feedback', them: 'AI features such as the job match scorer capped at 10 credits' },
-          { label: 'Paid plans start at', us: '€10 per week', them: '$79 per quarter (billed quarterly)' },
+          { label: 'Paid packs start at', us: '€10 one-time for 5 checks, no subscription', them: '$79 per quarter (billed quarterly)' },
         ],
       }}
       faqs={[
         { question: 'Does Teal check my resume against a specific job?', answer: 'Teal\'s free plan shows the top keywords from a job description, with the full numeric match score and unlimited use reserved for Teal+. MyRecruiterCheck includes full feedback matched to the job on your first free check.' },
-        { question: 'Is MyRecruiterCheck cheaper than Teal?', answer: 'Yes. MyRecruiterCheck\'s paid plans start at €10 per week, compared to Teal+\'s cheapest recurring option at $79 per quarter.' },
+        { question: 'Is MyRecruiterCheck cheaper than Teal?', answer: 'MyRecruiterCheck packs start at €10 one-time for 5 checks with no subscription, compared to Teal+\'s cheapest recurring option at $79 per quarter.' },
         { question: 'Which one should I use?', answer: 'If you want to organize and track your job search, Teal does that. If you want to know whether a recruiter would shortlist you for one specific job before you apply, that\'s what MyRecruiterCheck is built for.' },
       ]}
       relatedLinks={[

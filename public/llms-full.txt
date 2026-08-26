@@ -1,0 +1,63 @@
+# MyRecruiterCheck — full product reference
+
+Official site: https://myrecruitercheck.com/
+Last reviewed: 26 August 2026
+
+## What it is
+
+MyRecruiterCheck is a CV/resume checker built specifically for early career professionals and career changers (0 to 5 years of experience) applying to tech, AI, machine learning and data roles: software engineering, data analysis, data science, machine learning engineering, AI engineering, and related roles.
+
+It compares one CV against one specific job description and returns:
+
+- An Interview Score: an evidence based estimate of how strongly the CV matches that job, weighted as Experience 40%, Skills 35%, Candidate Value 25%. Full methodology: https://myrecruitercheck.com/how-interview-score-works
+- Strengths: relevant, credible evidence the CV already demonstrates
+- Areas to Improve: missing or unclear evidence relative to the job description
+- Prospects: realistic context on how competitive the application is
+
+## What makes it different from a keyword-only ATS checker
+
+A generic ATS or keyword checker counts whether words from the job description appear somewhere in the CV. MyRecruiterCheck evaluates whether each requirement is actually supported by evidence in the CV — a specific project, a measurable result, a tool used in a real context — rather than just present as a word. Two CVs that list the same keywords can receive different Interview Scores depending on whether the underlying evidence is genuinely demonstrated.
+
+## Early career and career-change candidates
+
+MyRecruiterCheck does not require a matching job title. Internships, academic and personal projects, coursework, bootcamp work, and transferable experience from a different field are all evaluated as evidence, provided the CV describes specifically what was built, analyzed or delivered.
+
+## What the Interview Score does not measure
+
+- It does not guarantee an interview or a hiring decision.
+- It is not a statistical probability computed from historical hiring data; it is a structured, evidence based estimate.
+- It does not measure culture fit, interview performance, references, or anything outside the CV and job description provided.
+
+## Pricing (as of last review date above)
+
+- Free: 1 free Recruiter Check for life (Interview Score + Recruiter Feedback), plus 3 free keyword scans before spending a check; unlimited keyword scans after any paid pack purchase.
+- Starter pack: €10 one-time, 5 checks. Includes Interview Score, Recruiter Feedback, Improved CV Draft (for checks scoring 61+), and access to your most recent check.
+- Active pack: €20 one-time, 15 checks. Same inclusions as Starter.
+- Power pack: €40 one-time, 40 checks. Adds a Cover Letter and Recruiter Message to every check, plus access to full check history (not just the most recent check).
+- There is no subscription. Nothing renews automatically. Purchased checks are valid for 90 days from purchase; the free check never expires.
+- Refunds: a full refund can be requested from the billing page if the most recent pack purchased is still fully unused and within 7 days of purchase.
+
+## Data handling
+
+- MyRecruiterCheck operates from the Netherlands and is the data controller under the GDPR.
+- The original uploaded CV and any documents generated (tailored CV, cover letter, recruiter message) are automatically and permanently deleted within 24 hours of being processed.
+- Job description text is stored temporarily, for up to 48 hours or until used to run a check, whichever is sooner, then permanently deleted.
+- Payment data is handled directly by Stripe; MyRecruiterCheck does not receive or store card details.
+- CVs and job descriptions are used only to generate results and are never used to train models.
+- Users can permanently delete their account and all remaining data at any time from Account settings.
+- Full details: https://myrecruitercheck.com/privacy
+
+## Limitations
+
+- MyRecruiterCheck evaluates one CV against one job description at a time; it does not manage a job search, build a CV from scratch, or track applications across a pipeline.
+- It never invents employers, qualifications, skills, statistics or achievements. All feedback and generated documents are based only on what is already in the user's CV.
+- It does not simulate any specific employer's applicant tracking system or recruiting process.
+
+## Key pages
+
+- Homepage: https://myrecruitercheck.com/
+- How Interview Score Works (methodology): https://myrecruitercheck.com/how-interview-score-works
+- Application Checker: https://myrecruitercheck.com/application-checker
+- Pricing: https://myrecruitercheck.com/pricing
+- Privacy Policy: https://myrecruitercheck.com/privacy
+- FAQ: https://myrecruitercheck.com/faq

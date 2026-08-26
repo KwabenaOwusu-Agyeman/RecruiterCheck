@@ -21,15 +21,16 @@ export function MyRecruiterCheckVsReziPage() {
       ]}
       comparison={{
         competitor: 'Rezi',
+        lastReviewed: '26 August 2026',
         rows: [
           { label: 'Approach', us: 'Recruiter judgment on your specific application', them: 'AI resume builder and formatter' },
           { label: 'Free plan limits', us: 'First Recruiter Check free with full feedback', them: '1 resume and 3 PDF downloads on the free plan' },
-          { label: 'Paid plans start at', us: '€10 per week', them: '$29 per month (or $149 lifetime)' },
+          { label: 'Paid packs start at', us: '€10 one-time for 5 checks, no subscription', them: '$29 per month (or $149 lifetime)' },
         ],
       }}
       faqs={[
         { question: 'Does Rezi check my resume against a specific job description?', answer: 'Rezi is primarily a resume builder with AI writing tools. MyRecruiterCheck is built specifically to evaluate an existing resume against a job description.' },
-        { question: 'Is MyRecruiterCheck cheaper than Rezi?', answer: 'Yes. MyRecruiterCheck\'s paid plans start at €10 per week, compared to Rezi Pro at $29 per month.' },
+        { question: 'Is MyRecruiterCheck cheaper than Rezi?', answer: 'MyRecruiterCheck packs start at €10 one-time for 5 checks with no subscription, compared to Rezi Pro at $29 per month.' },
         { question: 'Which one should I use?', answer: 'If you need help writing a resume from scratch, Rezi does that. If you already have a resume and want to know whether a recruiter would shortlist you for a specific job, that\'s what MyRecruiterCheck is built for.' },
       ]}
       relatedLinks={[

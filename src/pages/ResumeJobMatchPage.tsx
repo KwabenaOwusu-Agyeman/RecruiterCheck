@@ -35,6 +35,7 @@ export function ResumeJobMatchPage() {
         { label: 'ATS Resume Checker', to: '/ats-resume-checker' },
         { label: 'Free CV Checker', to: '/free-cv-checker' },
         { label: 'Interview Score', to: '/interview-probability-score' },
+        { label: 'How Interview Score Works', to: '/how-interview-score-works' },
         { label: 'Tailor CV to Job Description', to: '/tailor-cv-to-job-description' },
       ]}
     />

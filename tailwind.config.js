@@ -43,10 +43,25 @@ export default {
           from: { transform: 'scaleX(0)' },
           to: { transform: 'scaleX(1)' },
         },
+        'fade-in-up': {
+          from: { opacity: '0', transform: 'translateY(24px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        'fade-in': {
+          from: { opacity: '0' },
+          to: { opacity: '1' },
+        },
       },
       animation: {
         marquee: 'marquee 36s linear infinite',
         'fill-bar': 'fill-bar 4.5s linear forwards',
+        // Scroll-reveal and tab-crossfade animations (see Reveal.tsx,
+        // timeline-animation.tsx, ClosingCtaSection.tsx, DashboardShowcase.tsx).
+        // Plain CSS classes/keyframes from the compiled stylesheet, not
+        // motion/react inline `style` attributes, so none of this needs
+        // 'unsafe-inline' or a style-src hash.
+        'fade-in-up': 'fade-in-up 0.5s ease-out both',
+        'fade-in': 'fade-in 0.25s ease-out both',
       },
       spacing: {
         1: '0.5rem',

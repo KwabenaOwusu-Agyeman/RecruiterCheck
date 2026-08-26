@@ -6,7 +6,7 @@ import { AppLayout } from '@/layouts/AppLayout'
 import { PublicLayout } from '@/layouts/PublicLayout'
 import { AccountPage } from '@/pages/AccountPage'
 import { AboutPage } from '@/pages/AboutPage'
-import { AdministrativeAssistantResumeCheckerPage } from '@/pages/AdministrativeAssistantResumeCheckerPage'
+import { AiEngineerCvCheckerPage } from '@/pages/AiEngineerCvCheckerPage'
 import { AtsResumeCheckerPage } from '@/pages/AtsResumeCheckerPage'
 import { ApplicationCheckerPage } from '@/pages/ApplicationCheckerPage'
 import { AuthCallbackPage } from '@/pages/AuthCallbackPage'
@@ -14,15 +14,19 @@ import { BillingPage } from '@/pages/BillingPage'
 import { CookiePage } from '@/pages/CookiePage'
 import { CoverLetterGeneratorPage } from '@/pages/CoverLetterGeneratorPage'
 import { CvKeywordCheckerPage } from '@/pages/CvKeywordCheckerPage'
+import { DataAnalystCvCheckerPage } from '@/pages/DataAnalystCvCheckerPage'
+import { DataScientistCvCheckerPage } from '@/pages/DataScientistCvCheckerPage'
 import { DisclaimerPage } from '@/pages/DisclaimerPage'
 import { ExtensionConnectPage } from '@/pages/ExtensionConnectPage'
 import { FaqPage } from '@/pages/FaqPage'
 import { FeedbackPage } from '@/pages/FeedbackPage'
 import { FreeCvCheckerPage } from '@/pages/FreeCvCheckerPage'
+import { HowInterviewScoreWorksPage } from '@/pages/HowInterviewScoreWorksPage'
 import { LandingPage } from '@/pages/LandingPage'
 import { InterviewProbabilityPage } from '@/pages/InterviewProbabilityPage'
 import { JobApplicationFeedbackPage } from '@/pages/JobApplicationFeedbackPage'
 import { KeywordScanPage } from '@/pages/KeywordScanPage'
+import { MachineLearningEngineerCvCheckerPage } from '@/pages/MachineLearningEngineerCvCheckerPage'
 import { MyChecksPage } from '@/pages/MyChecksPage'
 import { MyRecruiterCheckVsJobscanPage } from '@/pages/MyRecruiterCheckVsJobscanPage'
 import { MyRecruiterCheckVsChatGptPage } from '@/pages/MyRecruiterCheckVsChatGptPage'
@@ -35,14 +39,11 @@ import { NewsletterUnsubscribePage } from '@/pages/NewsletterUnsubscribePage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { PricingPage } from '@/pages/PricingPage'
 import { PrivacyPage } from '@/pages/PrivacyPage'
-import { ProjectManagerResumeCheckerPage } from '@/pages/ProjectManagerResumeCheckerPage'
-import { RegisteredNurseResumeCheckerPage } from '@/pages/RegisteredNurseResumeCheckerPage'
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage'
 import { RecruiterEvaluationPage } from '@/pages/RecruiterEvaluationPage'
 import { RecruiterMessageGeneratorPage } from '@/pages/RecruiterMessageGeneratorPage'
 import { ResumeStrengthsWeaknessesPage } from '@/pages/ResumeStrengthsWeaknessesPage'
 import { ResumeJobMatchPage } from '@/pages/ResumeJobMatchPage'
-import { SalesResumeCheckerPage } from '@/pages/SalesResumeCheckerPage'
 import { SoftwareEngineerResumeCheckerPage } from '@/pages/SoftwareEngineerResumeCheckerPage'
 import { TailorCvToJobPage } from '@/pages/TailorCvToJobPage'
 import { TermsPage } from '@/pages/TermsPage'
@@ -67,11 +68,12 @@ export function AppRoutes() {
         <Route path="how-recruiters-evaluate-a-cv" element={<RecruiterEvaluationPage />} />
         <Route path="resume-job-description-match" element={<ResumeJobMatchPage />} />
         <Route path="interview-probability-score" element={<InterviewProbabilityPage />} />
+        <Route path="how-interview-score-works" element={<HowInterviewScoreWorksPage />} />
         <Route path="software-engineer-resume-checker" element={<SoftwareEngineerResumeCheckerPage />} />
-        <Route path="registered-nurse-resume-checker" element={<RegisteredNurseResumeCheckerPage />} />
-        <Route path="project-manager-resume-checker" element={<ProjectManagerResumeCheckerPage />} />
-        <Route path="sales-resume-checker" element={<SalesResumeCheckerPage />} />
-        <Route path="administrative-assistant-resume-checker" element={<AdministrativeAssistantResumeCheckerPage />} />
+        <Route path="data-analyst-cv-checker" element={<DataAnalystCvCheckerPage />} />
+        <Route path="data-scientist-cv-checker" element={<DataScientistCvCheckerPage />} />
+        <Route path="machine-learning-engineer-cv-checker" element={<MachineLearningEngineerCvCheckerPage />} />
+        <Route path="ai-engineer-cv-checker" element={<AiEngineerCvCheckerPage />} />
         <Route path="myrecruitercheck-vs-jobscan" element={<MyRecruiterCheckVsJobscanPage />} />
         <Route path="myrecruitercheck-vs-resume-worded" element={<MyRecruiterCheckVsResumeWordedPage />} />
         <Route path="myrecruitercheck-vs-teal" element={<MyRecruiterCheckVsTealPage />} />

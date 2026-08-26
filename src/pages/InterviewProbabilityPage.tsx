@@ -32,6 +32,7 @@ export function InterviewProbabilityPage() {
         { question: 'Is this the same as an ATS score?', answer: 'No. An ATS score usually measures keyword overlap. Interview Score evaluates whether your experience, skills and value are genuinely demonstrated, the way a recruiter would read your CV.' },
       ]}
       relatedLinks={[
+        { label: 'How Interview Score Works', to: '/how-interview-score-works' },
         { label: 'ATS Resume Checker', to: '/ats-resume-checker' },
         { label: 'Free CV Checker', to: '/free-cv-checker' },
         { label: 'CV Job Match', to: '/resume-job-description-match' },

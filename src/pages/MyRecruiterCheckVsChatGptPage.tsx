@@ -21,6 +21,7 @@ export function MyRecruiterCheckVsChatGptPage() {
       ]}
       comparison={{
         competitor: 'ChatGPT',
+        lastReviewed: '26 August 2026',
         rows: [
           { label: 'How the verdict is built', us: 'Shaped by real recruiter input, never softened by a chat history that\'s been agreeing with you', them: 'A general-purpose opinion that can drift toward telling you what you want to hear' },
           { label: 'Feedback and documents', us: 'Constructive, structured feedback plus a real downloadable CV draft, cover letter, and recruiter message, every claim traceable to your real CV', them: 'Chat text you reformat yourself, and it can invent plausible-sounding details' },

@@ -1,6 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { AnimatePresence, motion } from 'motion/react'
 import { Upload } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Container } from '@/components/ui/Container'
@@ -205,23 +204,20 @@ export function DashboardShowcase() {
 
         <div className="mx-auto mt-5 max-w-2xl sm:mt-6 lg:max-w-[560px]">
           <BrowserChrome>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeTab}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.25, ease: 'easeOut' }}
-              >
-                {activeTab === 'empty' ? (
-                  <EmptyStateMock />
-                ) : activeTab === 'new' ? (
-                  <NewCheckMock />
-                ) : (
-                  <ChecksListMock />
-                )}
-              </motion.div>
-            </AnimatePresence>
+            {/* Plain CSS fade-in on tab change (see tailwind.config.js) instead of
+                motion/react's AnimatePresence, which animates via inline `style`
+                attributes the CSP's style-src blocks. No exit animation — the
+                old tab's content is simply replaced — which is an acceptable
+                simplification for this self-playing demo widget. */}
+            <div key={activeTab} className="animate-fade-in">
+              {activeTab === 'empty' ? (
+                <EmptyStateMock />
+              ) : activeTab === 'new' ? (
+                <NewCheckMock />
+              ) : (
+                <ChecksListMock />
+              )}
+            </div>
           </BrowserChrome>
         </div>
       </Container>

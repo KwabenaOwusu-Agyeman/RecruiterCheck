@@ -23,6 +23,7 @@ export type AnalyticsEventType =
   | 'keyword_scan_completed'
   | 'trustpilot_footer_clicked'
   | 'trustpilot_results_clicked'
+  | 'pricing_viewed'
 
 export type DomainCategory = 'linkedin' | 'indeed' | 'greenhouse' | 'lever' | 'workday' | 'other'
 

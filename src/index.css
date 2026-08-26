@@ -99,3 +99,26 @@
     transform: scale(1);
   }
 }
+
+/* GlowCard's soft border glow. A real stylesheet class instead of an inline
+   `style` attribute — the CSP's style-src has no 'unsafe-inline' and no
+   hash for this (it would need a fresh hash every time the gradient's
+   position changed), so this couldn't be inline at all. That also means it
+   no longer tracks the cursor (each `.style.setProperty()` call on
+   mousemove would itself be a fresh style-src violation) — a fixed,
+   centered glow that fades in on hover, which reads just as premium
+   without needing per-frame inline style writes. */
+.glow-card-border {
+  padding: 1.5px;
+  background: radial-gradient(
+    220px circle at 50% 50%,
+    rgba(25, 74, 159, 0.85),
+    rgba(143, 178, 240, 0.35) 45%,
+    transparent 70%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}

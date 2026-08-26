@@ -4,23 +4,50 @@
       "source": "/(checks|account|extension|auth|sign-in|sign-up)/:path*",
       "destination": "/app-shell.html"
     },
-    { "source": "/checks", "destination": "/app-shell.html" },
-    { "source": "/account", "destination": "/app-shell.html" },
-    { "source": "/sign-in", "destination": "/app-shell.html" },
-    { "source": "/sign-up", "destination": "/app-shell.html" }
+    {
+      "source": "/checks",
+      "destination": "/app-shell.html"
+    },
+    {
+      "source": "/account",
+      "destination": "/app-shell.html"
+    },
+    {
+      "source": "/sign-in",
+      "destination": "/app-shell.html"
+    },
+    {
+      "source": "/sign-up",
+      "destination": "/app-shell.html"
+    }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=()" },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), payment=()"
+        },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' https://tracker.metricool.com https://*.trustpilot.com 'sha256-3lK1virTqExEWtcoz6kcns9PzfCNLmnu+YnGVFEJptM=' 'sha256-mqt9tSAd1zFPuXHMsDoXx2BLwKRhNYDoPZd1uzbpRek=' 'sha256-y6nf9MolWiWWme2zcF055MXDrK7cqNVBbMti8zjcywE='; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://*.trustpilot.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://tracker.metricool.com https://*.trustpilot.com; frame-src https://*.trustpilot.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+          "value": "default-src 'self'; script-src 'self' https://tracker.metricool.com https://*.trustpilot.com 'sha256-0qDRRd9YfqX/NyKe/euAe1klYKA/tf4flzFmsZD8ZmE=' 'sha256-48zLuqH9i+J5etYAe/nzwoMDSPlCQNFqlrgWSpy4RrE=' 'sha256-5cpAZu4aeTnmr6wy2G0R1QjsxA1ZXpKcJrYN4oQjolA=' 'sha256-5oJs3KHTyZyWQOvyGKDNx5isKdBh2RA2ZaYUECCyJdE=' 'sha256-6sJEh/JsFiIX2IFc0Fu5hd1hf9PbqzzWIBLKZPI16jQ=' 'sha256-7b6+H3e+l+CmuBlz1Xw52NdiOYzNk3/o+yt9dqx6koA=' 'sha256-7kNfavRPD9LmRZ0RRavIoo0WcMTTo6LoHszi/UIO38w=' 'sha256-7t3FR4pkZQ0AtQw6jwZZaeYIIgdFDnpnxz64hyLlff4=' 'sha256-C3hcXapd5idpBwlNXwbomuogDUhZH+L/oiMbHlRzFuM=' 'sha256-Dp2iEOTR8+pnYfLavaMLWjjhqWK0JnW4wAMhQclqTLw=' 'sha256-HIxSdMB2OY50pjC5zd4XLSMq4X56ms4pDyVrUgGt3ik=' 'sha256-JYt8baiL6oeHk76KJh4qdWHBVZMsGgSqNkCvey+Qn14=' 'sha256-Letsv00k5Gj0Q+/LV2DE7uA9iwJ5CCIaZh4opuyg1qA=' 'sha256-NLMkscxtgHYIH4UVAjQiIVmcDPr826v+As6MxKrI35Y=' 'sha256-NcyUBhlOTiaFlxby56LG74CiMqhI3vWI96ogi/KrA2I=' 'sha256-OBc0U7XUGrxoAQFrFl/xIiDdhLbC7J4yv54F+G/qoE0=' 'sha256-OrFD7V1JiaCDPrRssGpMt5hhay1Gt6eJlD0bwGRaGp4=' 'sha256-OzztpRRPY59KrUQkMvZ/Syhq8IBwMQqQXZXEV5zS2lE=' 'sha256-RFkf5NtXcNtjvgbSf71cjb+52xkRfvwD3nR9mDk9J3A=' 'sha256-RwOjrZGSY/VaS5FtRNsklJqN7IgmeRR44zAFjXDLzoE=' 'sha256-S/APdfEHrbD6hiKzzobHIkbTMd7lgqVW0kyOuBCGO4E=' 'sha256-T+pSjyWsAOVKl/Z2IqEpBLchyiDPjC5niJcCSFrX61c=' 'sha256-T9PKkSx4MM0ks9VeIzc5c/94toxcD7sd3ti6WDuKqkE=' 'sha256-UBuq05BOHg1P7y+KznQXkFRsB0wfZ+QnGNkqVkQal5Q=' 'sha256-UPQX2XBSQhhbG2b1UP+0d7jRrhKlyJXrGdLVx8uxnuk=' 'sha256-VyBAc1pBcincv2myY53IlCjjTrFseXlb3J+3uRutNu4=' 'sha256-Y1Uxjq9ipOp9HzN04TXoMZf4o3y2Zvb+iHAORQ39aFs=' 'sha256-Zl9pWIZ/gP1XWSo5j5Ra+vf4YQyqnLkW52cyR6bj350=' 'sha256-awFC+sRjhVIJqROmdGdJ9/UND5uajUxO4bCNyytx1u4=' 'sha256-enKdJPdECqCOTNs6lR7tyH4lXdymof1LSjB06C89ekE=' 'sha256-gaFVmPOVSFwPG4epS+OLa8H1Vc+kAl0a8rL6pzKGThM=' 'sha256-gbUlRwwTD7d8C3OMl1GzdoYIi0/K8B4OPh7l6E9LCrE=' 'sha256-geLGNhdDoO2HoSmDj6Z7+m5TXvXRIfohUw+fRir0fI8=' 'sha256-hgBKsFQ74tqzdLdsp5OmLmLb15JRG8XPq/ubV68g8Uk=' 'sha256-iNyd6RHVFbh996LunN8SUObd+XtcSNb+Lzu3lMV0rus=' 'sha256-lrDgBarqZwjqdFoMIQ2CE/p15cnD7u0okraD5pqLt6E=' 'sha256-oOggSfvs+ByryUXVamU3WmabMF790UU6gSBQ42sIr6s=' 'sha256-oZL0m8NUyin08T9S1L0Pi7SiiKDyAAuGa2R/l1MqAPY=' 'sha256-pcBp4o6IicMAWH+mDwR2P0dS15mbxmt4rti2ResQ/uw=' 'sha256-sLRZztfCUWtVUC3oeHXD3PGBePoW6Q2PXFl4OG5Mj9s=' 'sha256-sVxx6Qq5pwdrHZIVBZbDj8RLPhdsZ7uJqLAfXpYZ7u8=' 'sha256-sow12NTm014tGwk/+eBQZQJufgFUVDB1pZVgyRPqcCQ=' 'sha256-tCTZS0FWkwre2IuAEd7eBhtBgHtjuOa5CseRg8s6R9Y=' 'sha256-uHSXyije82HrF1DNjFxPqAjDW/YNqNiq4DEthitVukk=' 'sha256-uWp9upK725lf73ZMUmNUBlAfoONSNLtEvlclylLU2ms=' 'sha256-v2wlaVn5JRHvQuDNU1494wAsyJ4nAZYbcb8R9LW0dtc=' 'sha256-wufBv6zi2r8Nb0VUcbgg/N9KvQfg7sDfEiAC0JiTvXs=' 'sha256-x5b2XawlIXL724bdpWN2C/rfmnjzkk/YKVAeU9K6xv8=' 'sha256-xQnq9l6kG6D6UyfcNaqVyt68hGX4MblXcwZ6sZ3Rybg=' 'sha256-y6nf9MolWiWWme2zcF055MXDrK7cqNVBbMti8zjcywE=' 'sha256-zT7D2WnEV03+ED17BjpL+Xj1evC3oOWIK/vMRUD0DJs=' 'sha256-zgAFYieQ9E0n/8Ij9HoSsUIqp7wYMHXXp4ieknYyF+E='; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://*.trustpilot.com https://tracker.metricool.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://tracker.metricool.com https://*.trustpilot.com; frame-src https://*.trustpilot.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
         }
       ]
     }

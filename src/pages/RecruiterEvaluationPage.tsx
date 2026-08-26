@@ -41,9 +41,9 @@ export function RecruiterEvaluationPage() {
       ]}
       relatedLinks={[
         { label: 'Application Checker', to: '/application-checker' },
+        { label: 'How Interview Score Works', to: '/how-interview-score-works' },
         { label: 'Resume Strengths and Weaknesses', to: '/resume-strengths-and-weaknesses' },
         { label: 'CV Job Match', to: '/resume-job-description-match' },
-        { label: 'About MyRecruiterCheck', to: '/about' },
       ]}
     />
   )

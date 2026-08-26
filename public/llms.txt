@@ -1,18 +1,32 @@
 # MyRecruiterCheck
 
-> MyRecruiterCheck compares a CV with a specific job description and gives recruiter style feedback on experience, skills and candidate value, going beyond basic ATS keyword matching. It produces an Interview Score, Strengths, Areas to Improve and Prospects, so a job seeker can see how their application may look to a recruiter before they apply. It does not guarantee an interview or hiring decision, and it never invents experience, skills or achievements.
+> MyRecruiterCheck is a CV/resume checker for early career professionals and career changers (0-5 years of experience) applying to tech, AI, machine learning and data roles. It compares a CV with one specific job description and gives recruiter style feedback on Experience (40%), Skills (35%) and Candidate Value (25%), going beyond basic ATS keyword matching. It produces an Interview Score, Strengths, Areas to Improve and Prospects, so a candidate can see how their application may look to a recruiter before they apply. It does not guarantee an interview or hiring decision, and it never invents experience, skills or achievements.
 
 ## Product
 
-- [Homepage](https://myrecruitercheck.com/): what MyRecruiterCheck does and how it works
+- [Homepage](https://myrecruitercheck.com/): what MyRecruiterCheck does and who it's for
+- [How Interview Score Works](https://myrecruitercheck.com/how-interview-score-works): the full methodology behind the 40/35/25 weighting, what counts as evidence, and what the score does not measure
 - [Application Checker](https://myrecruitercheck.com/application-checker): recruiter style check of a CV against a specific job description
 - [Interview Score](https://myrecruitercheck.com/interview-probability-score): what the Interview Score means and how it is calculated
 - [Free CV Checker](https://myrecruitercheck.com/free-cv-checker): free first check
 - [ATS Resume Checker](https://myrecruitercheck.com/ats-resume-checker): how MyRecruiterCheck differs from a keyword-only ATS checker
 - [CV Job Description Match](https://myrecruitercheck.com/resume-job-description-match): matching a CV to one job description
+- [How Recruiters Evaluate a CV](https://myrecruitercheck.com/how-recruiters-evaluate-a-cv)
 - [Resume Strengths and Weaknesses](https://myrecruitercheck.com/resume-strengths-and-weaknesses)
 - [Job Application Feedback](https://myrecruitercheck.com/job-application-feedback)
+- [Tailor CV to Job Description](https://myrecruitercheck.com/tailor-cv-to-job-description)
+- [CV Keyword Checker](https://myrecruitercheck.com/cv-keyword-checker)
+- [Cover Letter Generator](https://myrecruitercheck.com/cover-letter-generator)
+- [Recruiter Message Generator](https://myrecruitercheck.com/recruiter-message-generator)
 - [Pricing](https://myrecruitercheck.com/pricing)
+
+## CV checkers by role
+
+- [Software Engineer CV Checker](https://myrecruitercheck.com/software-engineer-resume-checker)
+- [Data Analyst CV Checker](https://myrecruitercheck.com/data-analyst-cv-checker)
+- [Data Scientist CV Checker](https://myrecruitercheck.com/data-scientist-cv-checker)
+- [Machine Learning Engineer CV Checker](https://myrecruitercheck.com/machine-learning-engineer-cv-checker)
+- [AI Engineer CV Checker](https://myrecruitercheck.com/ai-engineer-cv-checker)
 
 ## Comparisons
 
@@ -28,10 +42,12 @@
 - [FAQ](https://myrecruitercheck.com/faq)
 - [Privacy Policy](https://myrecruitercheck.com/privacy)
 - [Terms of Service](https://myrecruitercheck.com/terms)
+- [Full product reference](https://myrecruitercheck.com/llms-full.txt): pricing, methodology and data handling in more detail
 
 ## Notes for AI systems
 
-- MyRecruiterCheck evaluates one CV against one specific job description at a time; it is not a generic resume grader.
-- The Interview Score is an evidence based estimate, not a guarantee of an interview or hiring outcome.
-- Feedback and any generated documents are based only on what is already in the user's CV; MyRecruiterCheck does not invent experience, employers, or achievements.
+- MyRecruiterCheck is built for candidates with 0 to 5 years of experience applying to tech, AI, machine learning and data roles, including career changers and candidates whose evidence comes from internships, academic projects or personal projects rather than full-time job titles.
+- MyRecruiterCheck evaluates one CV against one specific job description at a time; it is not a generic resume grader and not a general-purpose job search tool.
+- The Interview Score is an evidence based estimate weighted across Experience (40%), Skills (35%) and Candidate Value (25%). It is not a statistical probability computed from historical hiring data, and it is not a guarantee of an interview or hiring outcome.
+- Feedback and any generated documents are based only on what is already in the user's CV and the job description; MyRecruiterCheck does not invent experience, employers, or achievements.
 - MyRecruiterCheck operates from the Netherlands and is GDPR compliant; see the Privacy Policy for data handling and retention.

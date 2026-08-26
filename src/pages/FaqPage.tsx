@@ -27,20 +27,20 @@ const FAQ_ITEMS = [
   {
     question: 'What do I get with a Recruiter Check?',
     answer:
-      'The core of every check is your Interview Score, Strengths, Areas to Improve, and Prospects. If you upgrade and score 61 or above, you can also generate a Recommendation, an improved CV draft, cover letter, and recruiter message built from your existing information.',
+      'The core of every check is your Interview Score, Strengths, Areas to Improve, and Prospects. If a check is funded by a paid pack and scores 61 or above, you also get an Improved CV Draft; checks funded by a Power pack additionally get a Cover Letter and Recruiter Message. Documents are not generated below a score of 61, since a lower score means the role is not a strong match.',
   },
   {
     question: 'What do I get on the Free plan?',
     answer: `${FREE_TIER_LIFETIME_LIMIT} Recruiter Check, including your Interview Score and Recruiter Feedback.`,
   },
   {
-    question: 'What is the difference between Starter, Active, and Power?',
+    question: 'What is the difference between Starter, Active, and Power packs?',
     answer:
-      "All plans include your Interview Score and Recruiter Feedback. Active adds an improved CV draft for each check. Power adds the full Recommendation, an improved CV draft, cover letter, and recruiter message, plus access to your full check history (Starter and Active only show your most recent check). Documents are only generated for a check scored 61 or above, since a lower score means the role is not a strong match. Every plan's check allotment resets weekly with no rollover.",
+      'All three packs include your Interview Score, Recruiter Feedback, and an Improved CV Draft (for checks scoring 61 or above). Power additionally includes a Cover Letter and Recruiter Message with every check, plus access to your full check history — Starter and Active only show your most recent check.',
   },
   {
-    question: 'Can I cancel my subscription anytime?',
-    answer: 'Yes. Manage or cancel your subscription anytime from the billing portal, no notice period required.',
+    question: 'Is there a subscription?',
+    answer: 'No. There is no subscription and nothing renews automatically. You buy a pack of checks whenever you need them, and purchased checks are valid for 90 days from purchase.',
   },
   {
     question: 'Is my payment information secure?',
@@ -72,7 +72,17 @@ export function FaqPage() {
           }),
         }}
       />
-      {FAQ_ITEMS.slice(0, 2).map(({ question, answer }) => (
+      <Section title={FAQ_ITEMS[0].question}>
+        <p>
+          {FAQ_ITEMS[0].answer} See{' '}
+          <Link to="/how-interview-score-works" className="font-medium text-blue hover:underline">
+            how the Interview Score works
+          </Link>{' '}
+          for the full breakdown.
+        </p>
+      </Section>
+
+      {FAQ_ITEMS.slice(1, 2).map(({ question, answer }) => (
         <Section key={question} title={question}>
           <p>{answer}</p>
         </Section>

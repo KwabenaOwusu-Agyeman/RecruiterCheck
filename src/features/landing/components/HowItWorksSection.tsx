@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import type { Variants } from 'motion/react'
+import { Link } from 'react-router-dom'
 import { Container } from '@/components/ui/Container'
 import { TimelineContent } from '@/components/ui/timeline-animation'
 
@@ -20,15 +20,6 @@ const steps = [
     description: 'Get your feedback report, plus an improved CV draft when it can help.',
   },
 ] as const
-
-const stepVariants: Variants = {
-  hidden: { opacity: 0, y: 16 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.4, delay: i * 0.12, ease: 'easeOut' },
-  }),
-}
 
 export function HowItWorksSection() {
   const sectionRef = useRef<HTMLElement>(null)
@@ -57,7 +48,6 @@ export function HowItWorksSection() {
               as="li"
               animationNum={index}
               timelineRef={sectionRef}
-              customVariants={stepVariants}
               className="relative flex h-full flex-col rounded-[16px] border border-border-soft bg-surface p-3.5 shadow-card sm:p-5 lg:p-[24px]"
             >
               <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-navy text-base font-bold text-white sm:h-10 sm:w-10 sm:text-lg">
@@ -72,6 +62,12 @@ export function HowItWorksSection() {
             </TimelineContent>
           ))}
         </ol>
+
+        <p className="mt-5 text-center text-sm text-text-secondary sm:mt-8">
+          <Link to="/how-interview-score-works" className="font-medium text-blue hover:underline">
+            See how the Interview Score is calculated
+          </Link>
+        </p>
       </Container>
     </section>
   )

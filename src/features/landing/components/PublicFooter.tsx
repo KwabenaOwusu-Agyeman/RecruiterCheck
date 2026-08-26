@@ -46,14 +46,14 @@ interface FooterColumn {
 
 const columns: FooterColumn[] = [
   {
-    heading: 'Resume Checkers',
-    ariaLabel: 'Resume checks by job title',
+    heading: 'CV Checkers',
+    ariaLabel: 'CV checks by job title',
     links: [
       { to: '/software-engineer-resume-checker', label: 'Software Engineer' },
-      { to: '/registered-nurse-resume-checker', label: 'Registered Nurse' },
-      { to: '/project-manager-resume-checker', label: 'Project Manager' },
-      { to: '/sales-resume-checker', label: 'Sales' },
-      { to: '/administrative-assistant-resume-checker', label: 'Administrative Assistant' },
+      { to: '/data-analyst-cv-checker', label: 'Data Analyst' },
+      { to: '/data-scientist-cv-checker', label: 'Data Scientist' },
+      { to: '/machine-learning-engineer-cv-checker', label: 'Machine Learning Engineer' },
+      { to: '/ai-engineer-cv-checker', label: 'AI Engineer' },
     ],
   },
   {
@@ -65,6 +65,7 @@ const columns: FooterColumn[] = [
       { to: '/ats-resume-checker', label: 'ATS Checker' },
       { to: '/resume-job-description-match', label: 'CV Job Match' },
       { to: '/interview-probability-score', label: 'Interview Score' },
+      { to: '/how-interview-score-works', label: 'How Interview Score Works' },
       { to: '/how-recruiters-evaluate-a-cv', label: 'How Recruiters Evaluate a CV' },
     ],
   },
