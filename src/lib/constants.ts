@@ -10,7 +10,7 @@ export const FEATURE_FLAGS = {
   linkedInAuth: false,
 } as const
 
-import type { CheckPack } from '@/types'
+import type { CheckPack, FundingPackId, PackId } from '@/types'
 
 // Display names reuse Starter/Active/Power from the old weekly-subscription
 // model (fully removed — see migration remove_subscription_system) purely
@@ -71,6 +71,20 @@ export const CHECK_PACKS: CheckPack[] = [
     badge: 'Best Value',
   },
 ]
+
+// The one canonical id -> display name mapping in the app. Every user
+// facing surface (error messages, UI copy, tests, reports) must go through
+// this or getPackDisplayName below — never compare against or render
+// 'small'/'medium'/'large' directly. Derived from CHECK_PACKS itself so
+// there is exactly one place this mapping is defined, not a second literal
+// copy that could drift from the pricing page.
+export const PACK_DISPLAY_NAMES: Record<PackId, string> = Object.fromEntries(
+  CHECK_PACKS.map((pack) => [pack.id, pack.name]),
+) as Record<PackId, string>
+
+export function getPackDisplayName(packId: FundingPackId): string {
+  return packId ? PACK_DISPLAY_NAMES[packId] : 'Free'
+}
 
 export const ACCEPTED_CV_TYPES = [
   'application/pdf',

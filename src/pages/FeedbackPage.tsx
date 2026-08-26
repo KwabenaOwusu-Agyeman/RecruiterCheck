@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import NumberFlow from '@number-flow/react'
 import { motion } from 'motion/react'
 import { Alert } from '@/components/ui/Alert'
 import { StatusBadge } from '@/components/ui/Badge'
@@ -12,8 +11,13 @@ import { SentimentPrompt } from '@/components/feedback/SentimentPrompt'
 import { TrustpilotResultsLink } from '@/components/feedback/TrustpilotResultsLink'
 import { useAuth } from '@/hooks/useAuth'
 import { usePageMeta } from '@/hooks/usePageMeta'
-import { getResultTone, getScoreLabel } from '@/lib/scoring'
+import { getResultTone, getScoreLabel, sanitizeScore } from '@/lib/scoring'
 import { trackEvent } from '@/lib/analytics'
+import {
+  getDocumentEntitlement,
+  LIKELY_INTERVIEW_CANDIDATE_MIN_SCORE,
+  NOT_A_FIT_MAX_SCORE,
+} from '@/lib/documentEntitlement'
 import {
   analyzeCheck,
   generateDocuments,
@@ -149,13 +153,22 @@ export function FeedbackPage() {
   }
 
   const feedback = check.feedback
-  const score = check.interview_probability_score
-  // A score of 60 or below means "Not a Fit" (see getScoreLabel) — recommending
-  // a polished CV draft, cover letter, and recruiter message for a role the
-  // candidate's CV doesn't support would be bad advice, not helpful. No tier
-  // gets documents below this line; the server enforces the same rule.
-  const isLowFit = score !== null && score < 61
+  // Sanitized to a finite 0-100 integer (or null) before it ever reaches
+  // render — a malformed or legacy stored value is treated the same as "no
+  // score yet" rather than risking a broken display.
+  const score = sanitizeScore(check.interview_probability_score)
   const fundingPackId = check.funding_pack_id
+  // Single source of truth for what this check may generate — mirrors the
+  // server side check in generate-documents exactly (see
+  // getDocumentEntitlement's own header comment). This fixed a real bug:
+  // the previous inline `fundingPackId !== 'medium' && fundingPackId !==
+  // 'large'` check treated Starter (funding_pack_id 'small') the same as no
+  // pack at all, hiding the entire document section even though Starter is
+  // entitled to the Improved CV Draft (see CHECK_PACKS in constants.ts —
+  // every paid pack includes it).
+  const documentEntitlement = getDocumentEntitlement(fundingPackId, score)
+  const isLowFit = score !== null && score <= NOT_A_FIT_MAX_SCORE
+  const isLikelyInterviewCandidate = score !== null && score >= LIKELY_INTERVIEW_CANDIDATE_MIN_SCORE
   const resultTone = getResultTone(score)
   const isDark = resultTone === 'dark'
   const textTone: 'light' | 'dark' = isDark ? 'dark' : 'light'
@@ -212,7 +225,7 @@ export function FeedbackPage() {
               transition={{ duration: 0.35, ease: 'easeOut' }}
             >
               <p className={cn('text-[2.125rem] font-bold tracking-tight sm:text-[2.625rem]', t.heading)}>
-                <NumberFlow value={score} suffix="%" willChange />{' '}
+                <span>{score}%</span>{' '}
                 <span className={cn('text-base font-semibold sm:text-lg', t.subtle)}>
                   Interview Score
                 </span>
@@ -319,32 +332,33 @@ export function FeedbackPage() {
               <CardHeader className="px-5 py-3">
                 <h2 className="text-base font-semibold text-text-primary">Recommendation</h2>
                 <p className="mt-1 text-xs text-text-secondary">
-                  {fundingPackId === 'large'
+                  {documentEntitlement.cv && documentEntitlement.coverLetter
                     ? 'An improved CV draft, cover letter, and recruiter message based on your feedback. Your CV draft may include placeholder figures (e.g. "X%") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with real numbers before submitting.'
-                    : fundingPackId === 'medium'
+                    : documentEntitlement.cv
                       ? 'An improved CV draft based on your feedback. Your CV draft may include placeholder figures (e.g. "X%") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with real numbers before submitting.'
-                      : 'This check includes your Interview Score and Recruiter Feedback only.'}
+                      : documentEntitlement.coverLetter
+                        ? 'A cover letter and recruiter message based on your feedback. Your Interview Score is already strong for this role, so we do not generate a CV draft at this score.'
+                        : 'This check includes your Interview Score and Recruiter Feedback only.'}
                 </p>
               </CardHeader>
               <CardContent className="px-5 py-4">
-                {fundingPackId !== 'medium' && fundingPackId !== 'large' ? (
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                {documentEntitlement.blockedReason ? (
+                  isLowFit ? (
                     <p className="text-sm text-text-secondary">
-                      Your improved CV draft, cover letter, and recruiter message are available on
-                      checks from the Medium and Large packs.
+                      This score suggests the role is not a strong match for your current CV, so we do
+                      not generate a CV draft, cover letter, or recruiter message for it. Look for a
+                      role that better fits your experience, then run a new Recruiter Check.
                     </p>
-                    <Link to="/pricing">
-                      <Button size="sm" className="shrink-0">
-                        View packs
-                      </Button>
-                    </Link>
-                  </div>
-                ) : isLowFit ? (
-                  <p className="text-sm text-text-secondary">
-                    This score suggests the role is not a strong match for your current CV, so we do
-                    not generate a CV draft, cover letter, or recruiter message for it. Look for a
-                    role that better fits your experience, then run a new Recruiter Check.
-                  </p>
+                  ) : (
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-sm text-text-secondary">{documentEntitlement.blockedReason}</p>
+                      <Link to="/pricing">
+                        <Button size="sm" className="shrink-0">
+                          View packs
+                        </Button>
+                      </Link>
+                    </div>
+                  )
                 ) : documents ? (
                   <motion.div
                     className="flex flex-wrap gap-2"
@@ -352,16 +366,25 @@ export function FeedbackPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, ease: 'easeOut' }}
                   >
-                    <a href={documents.cv} target="_blank" rel="noreferrer">
-                      <Button variant="secondary" size="sm">
-                        CV.pdf
-                      </Button>
-                    </a>
-                    <p className="w-full basis-full text-xs text-text-secondary">
-                      This CV draft is watermarked "Draft, not for submission." Any area we found no
-                      supporting evidence for in your CV is marked with a placeholder figure (e.g.
-                      "X%"), replace it with your real numbers before sending it.
-                    </p>
+                    {documents.cv ? (
+                      <>
+                        <a href={documents.cv} target="_blank" rel="noreferrer">
+                          <Button variant="secondary" size="sm">
+                            CV.pdf
+                          </Button>
+                        </a>
+                        <p className="w-full basis-full text-xs text-text-secondary">
+                          This CV draft is watermarked "Draft, not for submission." Any area we found no
+                          supporting evidence for in your CV is marked with a placeholder figure (e.g.
+                          "X%"), replace it with your real numbers before sending it.
+                        </p>
+                      </>
+                    ) : isLikelyInterviewCandidate ? (
+                      <p className="w-full basis-full text-xs text-text-secondary">
+                        Your Interview Score is already strong for this role, so we do not generate a
+                        CV draft at this score.
+                      </p>
+                    ) : null}
                     {documents.coverLetter ? (
                       <a href={documents.coverLetter} target="_blank" rel="noreferrer">
                         <Button variant="secondary" size="sm">
@@ -381,7 +404,7 @@ export function FeedbackPage() {
                         <Button variant="secondary" size="sm">Download All</Button>
                       </a>
                     ) : null}
-                    {fundingPackId === 'medium' ? (
+                    {!documentEntitlement.coverLetter ? (
                       <Link to="/pricing" className="ml-auto">
                         <Button size="sm">View packs</Button>
                       </Link>
@@ -390,9 +413,11 @@ export function FeedbackPage() {
                 ) : (
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-sm text-text-secondary">
-                      {fundingPackId === 'large'
+                      {documentEntitlement.cv && documentEntitlement.coverLetter
                         ? 'Generate an improved CV draft, cover letter, and recruiter message for this application.'
-                        : 'Generate an improved CV draft for this application.'}
+                        : documentEntitlement.cv
+                          ? 'Generate an improved CV draft for this application.'
+                          : 'Generate a cover letter and recruiter message for this application. Your Interview Score is already strong for this role, so we do not generate a CV draft at this score.'}
                     </p>
                     <Button
                       size="sm"

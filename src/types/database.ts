@@ -169,6 +169,59 @@ export type Database = {
           },
         ]
       }
+      check_score_audits: {
+        Row: {
+          calculated_at: string
+          category_totals: Json
+          check_id: string
+          created_at: string
+          evidence_references: Json
+          final_score: number
+          id: string
+          model_identifier: string | null
+          prompt_version: string
+          rubric_version: string
+          scoring_method: string
+          subcriteria: Json
+        }
+        Insert: {
+          calculated_at: string
+          category_totals: Json
+          check_id: string
+          created_at?: string
+          evidence_references?: Json
+          final_score: number
+          id?: string
+          model_identifier?: string | null
+          prompt_version: string
+          rubric_version: string
+          scoring_method: string
+          subcriteria: Json
+        }
+        Update: {
+          calculated_at?: string
+          category_totals?: Json
+          check_id?: string
+          created_at?: string
+          evidence_references?: Json
+          final_score?: number
+          id?: string
+          model_identifier?: string | null
+          prompt_version?: string
+          rubric_version?: string
+          scoring_method?: string
+          subcriteria?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "check_score_audits_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: true
+            referencedRelation: "checks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checks: {
         Row: {
           company_name: string | null
@@ -721,6 +774,28 @@ export type Database = {
           p_job_title?: string
           p_score: number
           p_skills_score?: number
+          p_user_id: string
+          p_uvp_score?: number
+        }
+        Returns: undefined
+      }
+      complete_check_analysis_with_audit: {
+        Args: {
+          p_calculated_at?: string
+          p_category_totals?: Json
+          p_check_id: string
+          p_company_name?: string
+          p_detected_language: string
+          p_evidence_references?: Json
+          p_experience_score?: number
+          p_job_title?: string
+          p_model_identifier?: string
+          p_prompt_version?: string
+          p_rubric_version?: string
+          p_score: number
+          p_scoring_method?: string
+          p_skills_score?: number
+          p_subcriteria?: Json
           p_user_id: string
           p_uvp_score?: number
         }

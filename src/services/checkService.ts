@@ -311,7 +311,10 @@ export async function extractJobDescriptionFromFile(file: File): Promise<string>
 }
 
 export interface GeneratedDocuments {
-  cv: string
+  // Undefined for a "Likely Interview Candidate" score (85+) — the Improved
+  // CV Draft is withheld at that score group regardless of pack; see
+  // generate-documents/index.ts.
+  cv?: string
   // Undefined below Large, where only the improved CV draft is entitled.
   coverLetter?: string
   emailForRecruiter?: string

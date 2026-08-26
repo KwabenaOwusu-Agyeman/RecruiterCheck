@@ -2,7 +2,14 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 import { Buffer } from 'node:buffer'
 import mammoth from 'npm:mammoth@1.8.0'
 import { extractText as extractPdfText, getDocumentProxy } from 'npm:unpdf@0.12.1'
-import { normalizeAnalysis, type AnalysisResult, type RawAnalysis } from './logic.ts'
+import {
+  classifyValidationFailure,
+  normalizeAnalysis,
+  toAuditRecord,
+  withRetry,
+  type AnalysisResult,
+  type RawAnalysis,
+} from './logic.ts'
 import { buildBrevoPayload, isTestAccountEmail, resolveSendDecision } from './trustpilot-email.ts'
 
 const corsHeaders = {
@@ -11,7 +18,12 @@ const corsHeaders = {
 }
 
 const MAX_CV_CHARS = 15000
-const MAX_ATTEMPTS = 3
+// Exactly two attempts total: validate the first AI response, retry once if
+// it's invalid, and fail the check safely (no saved score, no consumed
+// credit — see the catch block around generateFeedback below) if the
+// second attempt is also invalid. Never silently falls back to a fabricated
+// result.
+const MAX_ATTEMPTS = 2
 const OPENAI_TIMEOUT_MS = 45000
 const PARSE_TIMEOUT_MS = 15000
 // Actual enforcement of the free-check limit lives in the
@@ -31,6 +43,59 @@ const RATE_LIMIT_WINDOW_SECONDS = 3600
 interface AnalyzeRequest {
   checkId: string
 }
+
+// Shared JSON schema fragment for the structured "where did this come from"
+// reference required alongside any "strong"/"partial" rating on the five
+// evidence dependent subcriteria (applied_evidence, applied_skill,
+// skill_application, results, tools_platforms) — see logic.ts's
+// EvidenceReference/validateEvidenceDependentClassification, which checks
+// cv_section directly to tell a demonstrated entry apart from a bare skills
+// list or summary mention.
+//
+// Nullable, not "an object with every field emptied out": a "none"
+// classification requires this to be the JSON value null. Live testing of
+// the earlier always-an-object version found the model correctly judging
+// there was no real evidence, but then still having to construct a well
+// formed placeholder object to satisfy the schema — and it frequently did
+// that inconsistently (e.g. a non-none evidence_type despite an empty
+// entry_reference, or vice versa), which the validator correctly rejected
+// but drove up retry-exhaustion for exactly the thin/keyword-only CVs this
+// was supposed to handle gracefully. null removes that whole failure mode:
+// "no evidence" is now representable in exactly one way, not through
+// several structurally-different ways to fill in an empty-ish object.
+const EVIDENCE_REFERENCE_OBJECT_SCHEMA = {
+  type: 'object',
+  properties: {
+    cv_section: {
+      type: 'string',
+      enum: ['experience', 'projects', 'education', 'certifications', 'volunteering', 'skills', 'summary', 'other'],
+      description: 'Which part of the CV this evidence actually lives in. Use "skills" or "summary" honestly when that is genuinely the only place it appears.',
+    },
+    entry_reference: {
+      type: 'string',
+      description: 'A short label for the specific entry, e.g. "Experience #1" or "Project: Sales Dashboard". Not a quotation.',
+    },
+    evidence_basis: {
+      type: 'string',
+      description: 'A short paraphrase (not a verbatim quote, under roughly 25 words) of what that entry shows for THIS specific subcriterion. The same real entry may support several subcriteria, but write an independent one sentence explanation for each rather than repeating the identical sentence.',
+    },
+    evidence_type: {
+      type: 'string',
+      enum: ['employment', 'project', 'internship', 'apprenticeship', 'academic', 'freelance', 'research', 'volunteer', 'other', 'none'],
+      description: 'What kind of activity this is. "none" only for the one exception: a tools_platforms "partial" rating earned purely from a bare skills list mention (claimed familiarity, not actual use) — cv_section/entry_reference/evidence_basis are still filled in normally in that case. Use "other" for a genuine, describable activity that does not fit the named types (e.g. an extracurricular role or a competition) — never "none" for that.',
+    },
+  },
+  required: ['cv_section', 'entry_reference', 'evidence_basis', 'evidence_type'],
+  additionalProperties: false,
+} as const
+
+// Wraps the object schema above as nullable, the officially supported
+// pattern for an optional field under OpenAI's strict structured outputs:
+// the key stays in the parent's `required` array (always present in the
+// response), but its value may be this object OR the JSON literal null.
+const EVIDENCE_REFERENCE_SCHEMA = {
+  anyOf: [EVIDENCE_REFERENCE_OBJECT_SCHEMA, { type: 'null' }],
+} as const
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -170,20 +235,56 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Could not read text from this CV file' }, 400)
     }
 
-    let analysis: AnalysisResult
+    // The detailed scoring rubric is the only active scoring path — every
+    // check, for every user. See logic.ts for the full rubric/evidence
+    // validation and check_score_audits for the private audit record.
+    const startedAt = Date.now()
+    let result: { analysis: AnalysisResult; metrics: GenerateFeedbackMetrics }
     try {
-      analysis = await generateFeedback(openaiApiKey, cvText, check.job_description, {
+      result = await generateFeedback(openaiApiKey, cvText, check.job_description, {
         jobTitle: check.job_title,
         companyName: check.company_name,
       })
     } catch (error) {
-      console.error('analyze-check: analysis failed after retry', error)
-      analysis = buildLastResortFeedback({
-        jobTitle: check.job_title,
-        companyName: check.company_name,
+      // Both attempts produced invalid/unusable output (or the model call
+      // itself failed twice) — fail the check honestly rather than saving a
+      // fabricated result. No feedback row is written,
+      // complete_check_analysis_with_audit is never called, so no score is
+      // stored and no credit or free check is consumed: reserve_check_analysis
+      // only flips status to 'processing', it never decrements
+      // checks_balance/lifetime_checks_consumed, so there is nothing to roll
+      // back — the credit was never spent in the first place. markFailed
+      // clears status to 'failed', which also lifts the "already_processing"
+      // guard so the user's own Retry immediately works instead of waiting
+      // out the 10 minute staleness window.
+      //
+      // The raw error message is classified into a fixed, non-sensitive
+      // reason code for monitoring (see classifyValidationFailure) and then
+      // discarded — never logged verbatim, since validation failure messages
+      // can echo model-generated text (e.g. new_claims_introduced content)
+      // back in the thrown error, and that must never reach our own logs.
+      const message = error instanceof Error ? error.message : String(error)
+      logMonitoringEvent({
+        outcome: 'failed',
+        firstAttemptSuccess: false,
+        retryUsed: true,
+        retryExhausted: true,
+        reasonCode: classifyValidationFailure(message),
+        totalDurationMs: Date.now() - startedAt,
+        firstAttemptDurationMs: null,
+        retryDurationMs: null,
+        model: null,
+        promptTokens: null,
+        completionTokens: null,
+        totalTokens: null,
       })
-      console.warn('analyze-check: using conservative last resort feedback', { checkId })
+      console.error('analyze-check: both attempts invalid, failing safely', { checkId })
+      await markFailed(adminClient, checkId, 'Could not complete this analysis. Please try again.')
+      return jsonResponse({ error: 'Could not complete this analysis. Please try again.' }, 502)
     }
+
+    const analysis = result.analysis
+    const metrics = result.metrics
 
     const { error: feedbackError } = await adminClient.from('feedback').upsert(
       {
@@ -200,11 +301,16 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Could not save feedback' }, 500)
     }
 
-    // Marks the check completed and records usage in one atomic, idempotent
-    // step (see migration durable_usage_counters) — usage is a durable
-    // counter on profiles, never derived from counting `checks` rows, so
-    // deleting a completed check afterward can never restore this slot.
-    const { error: completeError } = await adminClient.rpc('complete_check_analysis', {
+    // Marks the check completed, records usage, and inserts the private
+    // scoring audit row in one atomic step. complete_check_analysis_with_audit
+    // wraps the existing, unmodified complete_check_analysis (same
+    // signature, same grants, same callers as before this feature existed)
+    // and adds the audit insert inside the same implicit transaction — see
+    // migration add_check_score_audits. Usage itself is a durable counter
+    // on profiles, never derived from counting `checks` rows, so deleting a
+    // completed check afterward can never restore this slot.
+    const auditRecord = toAuditRecord(analysis.score_breakdown, analysis.evidence_references)
+    const { error: completeError } = await adminClient.rpc('complete_check_analysis_with_audit', {
       p_check_id: checkId,
       p_user_id: user.id,
       p_score: analysis.interview_probability_score,
@@ -214,15 +320,47 @@ Deno.serve(async (req) => {
       p_experience_score: analysis.experience_score,
       p_skills_score: analysis.skills_score,
       p_uvp_score: analysis.uvp_score,
+      p_rubric_version: auditRecord.rubric_version,
+      p_prompt_version: auditRecord.prompt_version,
+      p_model_identifier: auditRecord.model_identifier,
+      p_scoring_method: auditRecord.scoring_method,
+      p_subcriteria: auditRecord.subcriteria,
+      p_category_totals: auditRecord.category_totals,
+      p_evidence_references: auditRecord.evidence_references,
+      p_calculated_at: auditRecord.calculated_at,
     })
 
     if (completeError) {
-      console.error('analyze-check: complete_check_analysis failed', {
+      console.error('analyze-check: complete_check_analysis_with_audit failed', {
         checkId,
         message: completeError.message,
       })
+      // complete_check_analysis is one plpgsql call: if it raised partway
+      // through, Postgres rolls back everything it did (status, score
+      // columns, credit consumption, ledger insert) as a unit — so no credit
+      // was consumed here either. The check's row is still 'processing'
+      // (feedback was saved above, but the check itself was never marked
+      // completed), which would otherwise sit there until the 10 minute
+      // staleness window in reserve_check_analysis lets a retry through.
+      // Marking it failed now makes that immediate instead of a silent wait.
+      await markFailed(adminClient, checkId, 'Could not save analysis result')
       return jsonResponse({ error: 'Could not save analysis result' }, 500)
     }
+
+    logMonitoringEvent({
+      outcome: 'success',
+      firstAttemptSuccess: metrics.firstAttemptSuccess,
+      retryUsed: metrics.retryUsed,
+      retryExhausted: false,
+      reasonCode: null,
+      totalDurationMs: metrics.totalDurationMs,
+      firstAttemptDurationMs: metrics.firstAttemptDurationMs,
+      retryDurationMs: metrics.retryDurationMs,
+      model: metrics.model,
+      promptTokens: metrics.usage?.promptTokens ?? null,
+      completionTokens: metrics.usage?.completionTokens ?? null,
+      totalTokens: metrics.usage?.totalTokens ?? null,
+    })
 
     // Best effort and non-blocking: a failure here must never turn a
     // successfully completed check into an error response for the user.
@@ -470,60 +608,78 @@ async function extractText(file: Blob, fileName: string): Promise<string> {
   return cleaned.slice(0, MAX_CV_CHARS)
 }
 
+// Aggregate, non-sensitive token usage as returned by OpenAI's own response
+// — never derived from, or containing, any prompt/CV/job-description text.
+export interface TokenUsage {
+  promptTokens: number | null
+  completionTokens: number | null
+  totalTokens: number | null
+}
+
+export interface GenerateFeedbackMetrics {
+  attempts: number
+  firstAttemptSuccess: boolean
+  retryUsed: boolean
+  totalDurationMs: number
+  firstAttemptDurationMs: number | null
+  retryDurationMs: number | null
+  model: string | null
+  usage: TokenUsage | null
+}
+
 /**
- * Structured JSON output, schema-validated, retry once on failure per the
- * locked spec. Never returns (or lets the caller persist) malformed results —
- * both attempts must pass validateAnalysis or this throws.
+ * Structured JSON output, schema-validated. Validates the first AI response;
+ * if it's invalid (fails schema/grounding/consistency checks inside
+ * normalizeAnalysis) or the call itself fails, retries exactly once more.
+ * If the second attempt is also invalid, throws rather than returning
+ * anything — there is no fallback result. The caller (below) treats that
+ * throw as a hard failure: mark the check 'failed', save no feedback,
+ * complete no score, consume no credit. withRetry lives in logic.ts so the
+ * retry mechanism itself is unit-testable without a Deno runtime.
+ *
+ * Also returns aggregate, privacy safe timing/model/token metrics for
+ * monitoring (see logMonitoringEvent) — populated on success only; the
+ * caller's catch block builds its own metrics for the failure case, since
+ * this function throws (not returns) when every attempt fails.
  */
 async function generateFeedback(
   apiKey: string,
   cvText: string,
   jobDescription: string,
   context: { jobTitle: string | null; companyName: string | null },
-): Promise<AnalysisResult> {
-  const attemptErrors: string[] = []
+): Promise<{ analysis: AnalysisResult; metrics: GenerateFeedbackMetrics }> {
+  const startedAt = Date.now()
+  let attempts = 0
+  let firstAttemptDurationMs: number | null = null
+  let retryDurationMs: number | null = null
+  let lastModel: string | null = null
+  let lastUsage: TokenUsage | null = null
 
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
-    try {
-      const raw = await callOpenAI(apiKey, cvText, jobDescription, context)
-      return normalizeAnalysis(raw, cvText)
-    } catch (error) {
-      attemptErrors.push(error instanceof Error ? error.message : String(error))
-    }
-  }
-
-  throw new Error(`All attempts failed: ${JSON.stringify(attemptErrors)}`)
-}
-
-/**
- * Final safety net for a valid CV and job description when every structured
- * analysis attempt fails. It awards no unsupported credit and invents no
- * candidate facts, but still completes the check with useful next steps.
- * Normal requests should never reach this path.
- */
-function buildLastResortFeedback(
-  context: { jobTitle: string | null; companyName: string | null },
-): AnalysisResult {
-  const role = context.jobTitle?.trim() || 'this role'
+  const analysis = await withRetry(async (previousError) => {
+    attempts += 1
+    const attemptStartedAt = Date.now()
+    const { raw, model, usage } = await callOpenAI(apiKey, cvText, jobDescription, context, previousError)
+    lastModel = model
+    lastUsage = usage
+    const result = normalizeAnalysis(raw, cvText, { model })
+    const attemptDurationMs = Date.now() - attemptStartedAt
+    if (attempts === 1) firstAttemptDurationMs = attemptDurationMs
+    else retryDurationMs = attemptDurationMs
+    return result
+  }, MAX_ATTEMPTS)
 
   return {
-    interview_probability_score: 0,
-    experience_score: 0,
-    skills_score: 0,
-    uvp_score: 0,
-    strengths: [],
-    improvements: [
-      `Verify the essential requirements. Confirm that your CV clearly shows every mandatory qualification required for ${role}.`,
-      'Show relevant experience. Add direct evidence of responsibilities and results that match the job description.',
-      'Add required skills. Name only the tools, licences, training, and capabilities you genuinely hold.',
-    ],
-    prospects: [
-      'Your CV and the role could not be matched with enough verified evidence for a reliable positive assessment.',
-      'Update the CV with clear evidence for the essential requirements, then run a new Recruiter Check.',
-    ],
-    detected_language: 'en',
-    job_title: context.jobTitle?.trim() || null,
-    company_name: context.companyName?.trim() || null,
+    analysis,
+    metrics: {
+      attempts,
+      firstAttemptSuccess: attempts === 1,
+      retryUsed: attempts > 1,
+      totalDurationMs: Date.now() - startedAt,
+      firstAttemptDurationMs,
+      retryDurationMs,
+      model: lastModel,
+      usage: lastUsage,
+    },
   }
 }
 
@@ -532,7 +688,15 @@ async function callOpenAI(
   cvText: string,
   jobDescription: string,
   context: { jobTitle: string | null; companyName: string | null },
-): Promise<RawAnalysis> {
+  // Set only on a retry: the previous attempt's validation failure message
+  // (from normalizeAnalysis, or "Empty response"/a parse error from this
+  // function itself), appended as a correction instruction below. This is
+  // never logged by our own code — see the catch block in the main handler
+  // — it only ever travels back to the same model that already produced
+  // whatever text it might reference, so nothing new is exposed by sending
+  // it back in the request.
+  correctionNote: string | null = null,
+): Promise<{ raw: RawAnalysis; model: string | null; usage: TokenUsage | null }> {
   const systemPrompt = `You are an experienced, technically rigorous recruiter screening a candidate's application. You do not choose a final score yourself — you extract and classify job requirements and match each one against CV evidence, and the application deterministically calculates the score from your classifications. Your job is EXTRACT + CLASSIFY + MATCH EVIDENCE, nothing more.
 
 MyRecruiterCheck evaluates what the CV proves against this specific job, not everything the candidate might actually know or have done. "No evidence" always means "the CV does not show this," never "the candidate definitely lacks this." Keep that distinction in mind for every classification and every piece of feedback you write.
@@ -542,7 +706,7 @@ MyRecruiterCheck evaluates what the CV proves against this specific job, not eve
 Read the job description and extract the distinct requirements that matter for this role. For each one, populate one entry in "requirements" with:
 
 - requirement: a short, specific description of the requirement (e.g. "5+ years in B2B product marketing", "Experience with Salesforce").
-- category: "experience" (work history, seniority, scope, domain, industry background, years, responsibilities) or "skills" (hard skills, tools, software, technical or job specific competencies, explicitly required soft skills).
+- category: "experience" (seniority, scope, domain, industry background, years, responsibilities — this can be shown by paid work history OR by personal, academic, bootcamp, internship, apprenticeship, research, freelance, or volunteer projects; the CV having no formal employment does not by itself mean this requirement is unmet, only that it must be matched from whatever evidence the CV actually contains) or "skills" (hard skills, tools, software, technical or job specific competencies, explicitly required soft skills).
 - importance: one of "must_have", "important", "nice_to_have".
   - must_have: explicitly required by the employer or clearly fundamental to performing the role (look for language like "required", "must have", "minimum", "mandatory", "essential"). Do not automatically classify everything under a "Requirements" heading as must_have just because of where it appears — only what is actually required or clearly fundamental.
   - important: materially relevant to doing the job well, but not clearly disqualifying if absent.
@@ -574,6 +738,49 @@ Populate:
 - uvp_evidence_level: "strong" (clear, relevant evidence that materially distinguishes this candidate), "partial" (some relevant differentiating evidence, but limited, weakly demonstrated, or only partially relevant), or "none" (no meaningful evidence showing why this candidate stands out from another basically qualified candidate).
 - uvp_evidence: for "strong" or "partial", copy a short excerpt of the CV's own text supporting that level, word for word — the same rule as cv_evidence above: never rewrite it into your own words, and never let it state a number, outcome, or scope the CV itself does not state. For "none", an empty string.
 
+== STEP 2B: SCORECARD SUBCRITERIA ==
+
+This application is built for candidates with 0 to 5 years of experience applying to entry level and early career technology roles (data, AI/ML, software, cloud/DevOps, security, technical product, and similar). Every judgment below must follow these rules:
+- Do not award or deduct points for years of employment by themselves. Personal, academic, bootcamp, internship, apprenticeship, research, freelance, and volunteer projects are valid, full credit eligible evidence, on equal footing with paid work. A candidate with no formal employment must be able to reach full marks on every subcriterion below from project and practical work alone.
+- A strong, clearly relevant project can be stronger evidence than unrelated paid employment. Credit relevant transferable skills for a career changer even when their employment history is in an unrelated field.
+- Judge the candidate against this specific vacancy and its advertised seniority. Do not expect leadership, people management, system architecture, or enterprise scale ownership unless the job description genuinely asks for it.
+- Never require a numerical result when a number would be unrealistic, unavailable, or not something an individual contributor could credibly know (e.g. a company wide revenue figure). A specific, credible outcome, completed deliverable, or clearly demonstrated learning is sufficient — quantification is a bonus, never a gate.
+- Do not award "strong" for a tool, platform, or skill merely because it is named somewhere in the CV. Require genuine evidence that it was actually used, the same standard already applied to match_strength above.
+
+== LISTED VERSUS DEMONSTRATED (applies to applied_evidence, applied_skill, skill_application, results, and tools_platforms below) ==
+
+A skills list, technologies list, keyword list, headline, or summary statement is a CLAIM, not evidence of application. Apply this rule with no exceptions:
+- A skill or fact is "listed" when it appears only in a skills section, technologies section, keyword list, headline, or summary statement.
+- A skill or fact is "demonstrated" only when the CV connects it to a specific action, task, project, responsibility, deliverable, problem solved, or credible outcome, in an experience, project, education, certification, or volunteering entry.
+
+Examples of insufficient evidence (listed only — must never independently produce "strong", and for applied_evidence/applied_skill/skill_application/results must never produce "partial" either): "Skills: Python, SQL, Tableau, Power BI"; "Experienced in Python and machine learning"; "Data analyst with strong SQL skills"; "Familiar with AWS, Docker and Git".
+Examples of sufficient, demonstrated evidence: "Used SQL to clean and analyze 50,000 transaction records."; "Built a Power BI dashboard tracking sales performance."; "Created a Python model to predict customer churn and evaluated its accuracy."; "Deployed an API using Docker and AWS." Do not require numerical metrics — a clear action plus a credible deliverable is sufficient.
+
+The one narrow exception is tools_platforms: a relevant tool that appears only in a skills list may still earn "partial" for claimed familiarity, but never "strong" — "strong" always requires the tool to be shown in actual use.
+
+A course title or "relevant coursework" line under Education (e.g. "Relevant coursework: Databases, Statistics, Machine Learning") is itself just another listed fact, not demonstrated evidence, unless the CV separately describes an actual piece of work done in or for that course (a project, an assignment with a described outcome, etc). When you cannot point to a real, describable action for a skill, default that subcriterion to "none" rather than reaching for "strong" or "partial" and then struggling to name what kind of activity it was — if you cannot confidently classify evidence_type as one of the eight named activities or "other", that is itself a sign the classification should be "none", not a reason to force evidence_type to "none" while still keeping a "strong" or "partial" level.
+
+Populate each of the following as "strong", "partial", or "none", each with its own short excerpt of the CV's own text supporting a "strong" or "partial" level, word for word (the same rule as cv_evidence above — never rewrite it, never state a fact the CV does not state, empty string for "none"), except cv_structure_level which has no excerpt (it judges formatting, not a fact). For applied_evidence, applied_skill, skill_application, results, and tools_platforms, ALSO populate a matching "_reference": either a valid evidence object, or the JSON value null.
+- If the classification is "none", the matching "_reference" MUST be null. Never construct a placeholder object (empty strings, "none" fields, or otherwise) for a "none" classification, and never invent a project, employer, deliverable, or CV section that is not genuinely there just to have something to put in the object.
+- If the classification is "strong" or "partial", the matching "_reference" MUST be a complete object with:
+  - cv_section: which part of the CV this evidence actually lives in — one of "experience", "projects", "education", "certifications", "volunteering", "skills", "summary", "other". Use "skills" or "summary" honestly when that is genuinely the only place the fact appears — do not relabel a listed only fact as "experience" to make it look demonstrated; the deterministic scorer checks this field directly and will reject a strong/partial rating whose own cv_section admits it is listed only.
+  - entry_reference: a short label identifying which specific entry this is, e.g. "Experience #1", "Project: Sales Dashboard", not a quotation.
+  - evidence_basis: a short paraphrase (not a verbatim quote, under roughly 25 words) of what that entry shows for THIS specific subcriterion.
+  - evidence_type: what kind of activity it is — one of "employment", "project", "internship", "apprenticeship", "academic", "freelance", "research", "volunteer", or "other" for a genuine, describable activity that doesn't fit those eight (e.g. an extracurricular club role, a hackathon, a competition). "none" is only ever valid here for one exception: a tools_platforms "partial" rating earned purely from a bare skills list mention, meaning claimed familiarity only, never actual use — a listed skill may support only this one exception (tools_platforms partial), nothing else. In that one exception, cv_section/entry_reference/evidence_basis are still filled in normally (e.g. cv_section "skills", entry_reference "Skills list", evidence_basis "Python listed among skills, not shown in use"); only evidence_type is "none".
+The same real entry may legitimately support every one of these five subcriteria (e.g. one strong project can fully support applied_evidence, applied_skill, skill_application, results, and tools_platforms at once, since those are five different questions about the same real thing) — write each evidence_basis as its own independent one sentence explanation of how that entry answers that specific question, never the identical sentence copy pasted across fields.
+
+- applied_evidence_level / applied_evidence: relevant projects and practical work — this includes paid employment exactly as readily as personal, academic, bootcamp, internship, apprenticeship, research, freelance, or volunteer work; judge the work itself, never the employment status behind it. "strong" requires the CV to show, for at least one credible and clearly relevant piece of work: what it actually was and how it relates to this role, the candidate's own contribution to it (not just a team or employer's outcome), a level of complexity or ownership appropriate to this role's advertised seniority, and enough specificity to be credible, not a one line mention or a generic restatement of the job title. "partial" requires some identifiable relevant activity with a real (if incomplete) contribution, but missing depth, complexity, or outcome — e.g. vague responsibility statements with no real detail, or credit that reads as the team's rather than the candidate's own. "none" covers both weak/unclear activity and no activity at all — there is no credible applied evidence to point to. Never "strong" or "partial" from a skills list or summary alone.
+- applied_skill_evidence_level / applied_skill_evidence: application of relevant skills — evidence that the candidate has actually put relevant skills into practice somewhere in the CV (any project, role, or activity), as distinct from simply listing skills. "strong" means repeated or substantial use of relevant skills in a real context; "partial" means at least one credible, if narrower, example of relevant use; "none" means skills are only listed, never shown in use anywhere, or the only contextual evidence is too weak to credit. Never "strong" or "partial" from a skills list or summary alone.
+- results_evidence_level / results_evidence: results, completed deliverables, and demonstrated learning — a credible outcome, a shipped or completed deliverable, a measurable improvement, or clearly demonstrated learning/growth from any of the evidence above. Accept qualitative outcomes (e.g. "built and deployed a working prototype used by classmates") exactly as readily as quantified ones; do not penalize the absence of a metric. The mere presence of relevant keywords or a skills list can never earn "strong" or "partial" here — there must be an actual completed deliverable, outcome, or clearly demonstrated learning tied to a specific entry.
+- skill_application_evidence_level / skill_application_evidence: evidence of using the specific essential skills this vacancy asks for (distinct from applied_skill_evidence_level above, which looks at practical application broadly) — for the must_have and important skills you classified in the requirement matrix, "strong" requires clear use of those skills to perform meaningful work or produce a relevant deliverable; "partial" requires credible but narrower application; "none" if the essential skills are only listed, never shown in use, or a claimed skill has no supporting use at all. Never "strong" or "partial" from a skills list or summary alone.
+- tools_platforms_evidence_level / tools_platforms_evidence: relevant tools, platforms, and technical methods (e.g. cloud platforms, ML frameworks, CI/CD tools, specific software) that this role calls for. A tool that appears only in a skills list may earn "partial" for claimed familiarity, but "strong" always requires the tool to be evidenced by actual, contextual use, not a bare mention.
+- certifications_evidence_level / certifications_evidence: relevant education, training, or certifications. These support the evaluation but must never replace practical evidence — do not let a strong credential here compensate for weak evidence elsewhere; score this subcriterion only on the credential itself.
+- role_fit_evidence_level / role_fit_evidence: how clearly the overall CV fits this specific position and its advertised seniority level. Judge fit for THIS role as posted, not a generic impression of the candidate's quality. Critically: a candidate having limited or no formal employment history must never by itself be read as weak role fit — assess fit from the total evidence (including projects), never from years of employment alone.
+- technical_communication_level / technical_communication_evidence: how clearly the CV explains its own technical work — can a recruiter who is not a specialist in this field understand what the candidate actually did and why it mattered, from the CV text alone.
+- cv_structure_level: how readable, relevant, and well structured the CV itself is (clear sections, logical order, appropriate length and focus on relevant content, easy to scan) — a formatting and organization judgment about the document, not a factual claim, so it has no evidence excerpt.
+
+Do not double count the same fact across these subcriteria and the requirement matrix or UVP above without justification: the same piece of relevant work (a job, a project, or any other evidence source) can legitimately support applied_evidence_level (that it exists and is relevant), results_evidence_level (its outcome), and skill_application_evidence_level (a specific essential skill it demonstrates) because those are three different questions about it, but do not inflate multiple subcriteria by restating the identical single fact as if it were independent new evidence.
+
 == STEP 3: EXTRACTION AND CONTEXT ==
 
 Also populate job_title and company_name: ${
@@ -602,6 +809,23 @@ ${jobDescription}
 CV:
 ${cvText}`
 
+  // Retry-only correction turn: uses the exact same job description and CV
+  // above (never re-sent or altered), just tells the model specifically
+  // what its previous response got wrong so the second attempt has a real
+  // chance of fixing it rather than repeating the same mistake.
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userPrompt },
+    ...(correctionNote
+      ? [
+          {
+            role: 'user',
+            content: `Your previous response to this exact request was rejected by validation for this reason: ${correctionNote}\n\nUsing the same job description and CV above, correct this specific issue and return a fully valid response that still follows every instruction in the system message.`,
+          },
+        ]
+      : []),
+  ]
+
   const response = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -618,10 +842,7 @@ ${cvText}`
       // which the audit's own "smallest safe implementation path" guidance
       // favors over adding a second network round trip for this.
       temperature: 0,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
+      messages,
       response_format: {
         type: 'json_schema',
         json_schema: {
@@ -663,6 +884,32 @@ ${cvText}`
                 type: 'string',
                 description: 'A short excerpt of the CV\'s own text, word for word, supporting the UVP evidence level. Empty string for none.',
               },
+              applied_evidence_level: { type: 'string', enum: ['strong', 'partial', 'none'] },
+              applied_evidence: { type: 'string', description: 'Excerpt supporting applied_evidence_level, word for word. Empty string for none.' },
+              applied_evidence_reference: EVIDENCE_REFERENCE_SCHEMA,
+              applied_skill_evidence_level: { type: 'string', enum: ['strong', 'partial', 'none'] },
+              applied_skill_evidence: { type: 'string', description: 'Excerpt supporting applied_skill_evidence_level, word for word. Empty string for none.' },
+              applied_skill_reference: EVIDENCE_REFERENCE_SCHEMA,
+              results_evidence_level: { type: 'string', enum: ['strong', 'partial', 'none'] },
+              results_evidence: { type: 'string', description: 'Excerpt supporting results_evidence_level, word for word. Empty string for none.' },
+              results_reference: EVIDENCE_REFERENCE_SCHEMA,
+              skill_application_evidence_level: { type: 'string', enum: ['strong', 'partial', 'none'] },
+              skill_application_evidence: { type: 'string', description: 'Excerpt supporting skill_application_evidence_level, word for word. Empty string for none.' },
+              skill_application_reference: EVIDENCE_REFERENCE_SCHEMA,
+              tools_platforms_evidence_level: { type: 'string', enum: ['strong', 'partial', 'none'] },
+              tools_platforms_evidence: { type: 'string', description: 'Excerpt supporting tools_platforms_evidence_level, word for word. Empty string for none.' },
+              tools_platforms_reference: EVIDENCE_REFERENCE_SCHEMA,
+              certifications_evidence_level: { type: 'string', enum: ['strong', 'partial', 'none'] },
+              certifications_evidence: { type: 'string', description: 'Excerpt supporting certifications_evidence_level, word for word. Empty string for none.' },
+              role_fit_evidence_level: { type: 'string', enum: ['strong', 'partial', 'none'] },
+              role_fit_evidence: { type: 'string', description: 'Excerpt supporting role_fit_evidence_level, word for word. Empty string for none.' },
+              technical_communication_level: { type: 'string', enum: ['strong', 'partial', 'none'] },
+              technical_communication_evidence: { type: 'string', description: 'Excerpt supporting technical_communication_level, word for word. Empty string for none.' },
+              cv_structure_level: {
+                type: 'string',
+                enum: ['strong', 'partial', 'none'],
+                description: 'A formatting/organization judgment about the CV document itself — no evidence excerpt, since this is not a factual claim.',
+              },
               strength_1_finding: { type: 'string' },
               strength_1_evidence: { type: 'string' },
               strength_2_finding: { type: 'string' },
@@ -691,6 +938,28 @@ ${cvText}`
               'requirements',
               'uvp_evidence_level',
               'uvp_evidence',
+              'applied_evidence_level',
+              'applied_evidence',
+              'applied_evidence_reference',
+              'applied_skill_evidence_level',
+              'applied_skill_evidence',
+              'applied_skill_reference',
+              'results_evidence_level',
+              'results_evidence',
+              'results_reference',
+              'skill_application_evidence_level',
+              'skill_application_evidence',
+              'skill_application_reference',
+              'tools_platforms_evidence_level',
+              'tools_platforms_evidence',
+              'tools_platforms_reference',
+              'certifications_evidence_level',
+              'certifications_evidence',
+              'role_fit_evidence_level',
+              'role_fit_evidence',
+              'technical_communication_level',
+              'technical_communication_evidence',
+              'cv_structure_level',
               'strength_1_finding',
               'strength_1_evidence',
               'strength_2_finding',
@@ -721,7 +990,9 @@ ${cvText}`
   }
 
   const payload = (await response.json()) as {
+    model?: string
     choices?: Array<{ message?: { content?: string } }>
+    usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number }
   }
   const rawText = payload.choices?.[0]?.message?.content
 
@@ -729,7 +1000,55 @@ ${cvText}`
     throw new Error('Empty response from analysis service')
   }
 
-  return JSON.parse(rawText) as RawAnalysis
+  // Aggregate token counts only — never the prompt or completion text
+  // itself. Absent entirely from providers/responses that don't return it.
+  const usage: TokenUsage | null = payload.usage
+    ? {
+        promptTokens: payload.usage.prompt_tokens ?? null,
+        completionTokens: payload.usage.completion_tokens ?? null,
+        totalTokens: payload.usage.total_tokens ?? null,
+      }
+    : null
+
+  // The response's own `model` field is the resolved model snapshot (e.g.
+  // "gpt-4o-mini-2024-07-18"), not just the alias requested — this is what
+  // gets stamped into the score breakdown as the model identifier, when
+  // OpenAI's response actually includes it.
+  return { raw: JSON.parse(rawText) as RawAnalysis, model: payload.model ?? null, usage }
+}
+
+// ---------------------------------------------------------------------------
+// Privacy safe aggregate monitoring
+//
+// A single structured line per check, to this function's own private log
+// stream (Supabase's dashboard/API, never a public or user facing surface).
+// Every field here is either a boolean, a count, a duration in
+// milliseconds, a token count, a model identifier string (e.g.
+// "gpt-4o-mini-2024-07-18"), or one of the fixed ValidationFailureReasonCode
+// strings from logic.ts — never CV text, job description text,
+// evidence_basis text, a name, an email address, a phone number, a raw
+// prompt, or a raw AI response. See classifyValidationFailure in logic.ts
+// for how a thrown error message becomes one of these fixed reason codes
+// rather than being logged verbatim.
+// ---------------------------------------------------------------------------
+
+interface MonitoringEvent {
+  outcome: 'success' | 'failed'
+  firstAttemptSuccess: boolean | null
+  retryUsed: boolean | null
+  retryExhausted: boolean
+  reasonCode: string | null
+  totalDurationMs: number
+  firstAttemptDurationMs: number | null
+  retryDurationMs: number | null
+  model: string | null
+  promptTokens: number | null
+  completionTokens: number | null
+  totalTokens: number | null
+}
+
+function logMonitoringEvent(event: MonitoringEvent) {
+  console.log('analyze-check-monitoring', JSON.stringify(event))
 }
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {

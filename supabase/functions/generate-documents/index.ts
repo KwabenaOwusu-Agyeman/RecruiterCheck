@@ -5,7 +5,9 @@ import mammoth from 'npm:mammoth@1.8.0'
 import { PDFDocument, PDFFont, PDFPage, StandardFonts, degrees, rgb } from 'npm:pdf-lib@1.17.1'
 import { extractText as extractPdfText, getDocumentProxy } from 'npm:unpdf@0.12.1'
 import {
+  getDocumentEntitlement,
   validateDocuments,
+  type FundingPackId,
   type RawDocuments,
   type TailoredCv,
   type CoverLetter,
@@ -114,46 +116,21 @@ Deno.serve(async (req) => {
     }
 
     // Document entitlement is keyed on which pack's credit batch funded this
-    // specific check (set once, at completion, by complete_check_analysis) —
-    // not the user's current balance or any other check. A free-tier check
-    // (funding_pack_id null) gets no documents. Every paid pack (small,
-    // medium, large) includes the Improved CV Draft; only large additionally
-    // includes the Cover Letter and Recruiter Message, on every check funded
-    // by that pack. Kept in sync with CHECK_PACKS in src/lib/constants.ts.
-    const fundingPackId = check.funding_pack_id as 'small' | 'medium' | 'large' | null
-    const entitlement = {
-      cv: fundingPackId === 'small' || fundingPackId === 'medium' || fundingPackId === 'large',
-      coverLetter: fundingPackId === 'large',
-      recruiterMessage: fundingPackId === 'large',
+    // specific check (set once, at completion, by complete_check_analysis)
+    // AND the check's score group (Not a Fit / Needs Improvement / Likely
+    // Interview Candidate — see getScoreLabel in src/lib/scoring.ts) — a
+    // document is only ever generated when BOTH permit it. See
+    // getDocumentEntitlement in logic.ts for the exact rules; this is the
+    // actual server side enforcement point, so a direct API call cannot
+    // bypass it regardless of what the frontend shows.
+    const fundingPackId = check.funding_pack_id as FundingPackId
+    if (typeof check.interview_probability_score !== 'number') {
+      return jsonResponse({ error: 'This check has no score yet' }, 400)
     }
+    const entitlement = getDocumentEntitlement(fundingPackId, check.interview_probability_score)
 
-    if (!entitlement.cv) {
-      return jsonResponse(
-        {
-          error:
-            'This check only includes the Interview Score and Recruiter Feedback. Buy any check pack for your next check to unlock the Improved CV Draft, and a Power pack to also get the Cover Letter and Recruiter Message.',
-        },
-        403,
-      )
-    }
-
-    // A score of 60 or below is "Not a Fit" (see getScoreLabel in
-    // src/lib/scoring.ts) — generating a polished CV draft, cover letter, and
-    // recruiter message for a role the candidate's CV doesn't support would
-    // be bad advice, not helpful. This applies to every tier, independent of
-    // the plan-based entitlement check above.
-    const MIN_DOCUMENT_SCORE = 61
-    if (
-      typeof check.interview_probability_score !== 'number' ||
-      check.interview_probability_score < MIN_DOCUMENT_SCORE
-    ) {
-      return jsonResponse(
-        {
-          error:
-            'Documents are only generated for a score of 61 or above. A lower score means this role is not a strong match for your CV.',
-        },
-        403,
-      )
+    if (entitlement.blockedReason) {
+      return jsonResponse({ error: entitlement.blockedReason }, 403)
     }
 
     const feedbackRow = Array.isArray(check.feedback) ? check.feedback[0] : check.feedback
@@ -197,14 +174,19 @@ Deno.serve(async (req) => {
 
     // The OpenAI call above always produces all three documents in one shot
     // (the prompt/schema aren't split by tier — cheaper to keep one call than
-    // to maintain a second schema), but only the entitled subset is
-    // rendered, stored, and returned below.
+    // to maintain a second schema, and the Cover Letter/Recruiter Message
+    // still need docs.tailored_cv for name/context even when the CV itself
+    // isn't entitled), but only the entitled AND score group permitted
+    // subset is rendered, stored, and returned below.
     const basePath = `${user.id}/${checkId}`
     const files: Record<string, Uint8Array> = {}
 
-    const cvPdf = await renderCvPdf(docs.tailored_cv)
-    files['CV.pdf'] = cvPdf
-    await uploadFile(adminClient, `${basePath}/CV.pdf`, cvPdf, 'application/pdf')
+    let cvPdf: Uint8Array | null = null
+    if (entitlement.cv) {
+      cvPdf = await renderCvPdf(docs.tailored_cv)
+      files['CV.pdf'] = cvPdf
+      await uploadFile(adminClient, `${basePath}/CV.pdf`, cvPdf, 'application/pdf')
+    }
 
     let coverLetterPdf: Uint8Array | null = null
     let emailForRecruiterPdf: Uint8Array | null = null
@@ -226,7 +208,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    const cvUrl = await signedUrl(adminClient, `${basePath}/CV.pdf`)
+    const cvUrl = cvPdf ? await signedUrl(adminClient, `${basePath}/CV.pdf`) : undefined
     const coverLetterUrl = coverLetterPdf
       ? await signedUrl(adminClient, `${basePath}/Cover Letter.pdf`)
       : undefined

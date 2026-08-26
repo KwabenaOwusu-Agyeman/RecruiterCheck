@@ -78,6 +78,107 @@ export const REQUIRED_BODY_PARAGRAPHS = 3
 
 export const ENGLISH_TELLS = [' the ', ' and ', ' your ', ' that ', ' with ', ' this ', ' for ', ' you ', ' are ', ' have ']
 
+// ---------------------------------------------------------------------------
+// Document entitlement: which document types this check may generate.
+//
+// A document is only ever generated when BOTH conditions hold:
+//  1. The pack that funded this check entitles it (unchanged, pre-existing
+//     behavior — see FundingPackId below).
+//  2. The check's own score group permits it (new product decision, layered
+//     on top of the pack entitlement, never a substitute for it).
+//
+// Score group thresholds mirror getScoreLabel in src/lib/scoring.ts exactly
+// (score <= 60: "Not a Fit", 61-84: "Needs Improvement", 85+: "Likely
+// Interview Candidate") — duplicated here rather than imported, the same
+// established pattern this Edge Function already used for MIN_DOCUMENT_SCORE
+// before this change, since a Deno Edge Function and the Vite frontend are
+// separate deploy units.
+//
+// Rules:
+//  - Not a Fit: no CV, no cover letter, no recruiter message, regardless of
+//    pack.
+//  - Needs Improvement: CV/cover letter/recruiter message each permitted
+//    when the pack entitles them.
+//  - Likely Interview Candidate: CV never permitted, regardless of pack;
+//    cover letter/recruiter message permitted when the pack entitles them.
+//
+// This same function is called from both the server (generate-documents,
+// the actual enforcement point — a direct API call cannot bypass it) and
+// can be reused by the frontend for UI purposes; the frontend copy is for
+// display only and is never the source of truth.
+// ---------------------------------------------------------------------------
+
+export type FundingPackId = 'small' | 'medium' | 'large' | null
+
+// 'small'/'medium'/'large' are private, internal identifiers only — the
+// literal values already threaded through Stripe metadata,
+// credit_batches.pack_id, and checks.funding_pack_id. Never surfaced to a
+// user directly; every user facing message uses PACK_DISPLAY_NAMES instead.
+// The one canonical mapping, kept in sync by hand with CHECK_PACKS/
+// PACK_DISPLAY_NAMES in src/lib/constants.ts (separate deploy unit, no
+// shared module boundary between the Deno Edge Function and the Vite
+// frontend).
+export const PACK_DISPLAY_NAMES: Record<'small' | 'medium' | 'large', string> = {
+  small: 'Starter',
+  medium: 'Active',
+  large: 'Power',
+}
+
+export const NOT_A_FIT_MAX_SCORE = 60
+export const LIKELY_INTERVIEW_CANDIDATE_MIN_SCORE = 85
+
+export interface DocumentEntitlement {
+  cv: boolean
+  coverLetter: boolean
+  recruiterMessage: boolean
+  // Null when at least one document is available; otherwise a user facing
+  // reason the caller can surface directly.
+  blockedReason: string | null
+}
+
+export function getDocumentEntitlement(fundingPackId: FundingPackId, score: number): DocumentEntitlement {
+  const hasAnyPackEntitlement = fundingPackId === 'small' || fundingPackId === 'medium' || fundingPackId === 'large'
+
+  if (!hasAnyPackEntitlement) {
+    return {
+      cv: false,
+      coverLetter: false,
+      recruiterMessage: false,
+      blockedReason:
+        `This check only includes the Interview Score and Recruiter Feedback. Buy any check pack for your next check to unlock the Improved CV Draft, and the ${PACK_DISPLAY_NAMES.large} pack to also get the Cover Letter and Recruiter Message.`,
+    }
+  }
+
+  if (score <= NOT_A_FIT_MAX_SCORE) {
+    return {
+      cv: false,
+      coverLetter: false,
+      recruiterMessage: false,
+      blockedReason:
+        'Documents are only generated for a score of 61 or above. A lower score means this role is not a strong match for your CV.',
+    }
+  }
+
+  const isLikelyInterviewCandidate = score >= LIKELY_INTERVIEW_CANDIDATE_MIN_SCORE
+
+  const entitlement: DocumentEntitlement = {
+    cv: hasAnyPackEntitlement && !isLikelyInterviewCandidate,
+    coverLetter: fundingPackId === 'large',
+    recruiterMessage: fundingPackId === 'large',
+    blockedReason: null,
+  }
+
+  if (!entitlement.cv && !entitlement.coverLetter && !entitlement.recruiterMessage) {
+    return {
+      ...entitlement,
+      blockedReason:
+        `Your Interview Score is already strong for this role, so an Improved CV Draft is not offered at this score. Upgrade to the ${PACK_DISPLAY_NAMES.large} pack for a Cover Letter and Recruiter Message.`,
+    }
+  }
+
+  return entitlement
+}
+
 export function looksLikeEnglish(text: string): boolean {
   const padded = ` ${text.toLowerCase()} `
   return ENGLISH_TELLS.filter((tell) => padded.includes(tell)).length >= 5

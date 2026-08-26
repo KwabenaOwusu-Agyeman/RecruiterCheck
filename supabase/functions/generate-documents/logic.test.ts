@@ -1,6 +1,6 @@
 // Run with: npx tsx supabase/functions/generate-documents/logic.test.ts
 import assert from 'node:assert/strict'
-import { containsName, containsPlaceholder, looksLikeEnglish, splitSentences, stripDashes, validateDocuments, type RawDocuments } from './logic.ts'
+import { containsName, containsPlaceholder, getDocumentEntitlement, PACK_DISPLAY_NAMES, looksLikeEnglish, splitSentences, stripDashes, validateDocuments, type RawDocuments } from './logic.ts'
 
 let passed = 0
 function test(name: string, fn: () => void) {
@@ -225,6 +225,133 @@ test('splitSentences still protects decimal numbers like "7.2%"', () => {
   const result = splitSentences('Improved throughput by 7.2 percent. Reduced latency across the board.')
   assert.equal(result.length, 2)
   assert.match(result[0], /7\.2 percent\.$/)
+})
+
+// ---------------------------------------------------------------------------
+// getDocumentEntitlement: score group x pack tier document eligibility.
+// This IS the server side enforcement point (generate-documents/index.ts
+// calls this exact function) — these tests are what proves a direct API
+// call cannot bypass the restriction, not just that the UI hides a button.
+// ---------------------------------------------------------------------------
+
+test('DOC ENTITLEMENT: no pack at all blocks every document regardless of score', () => {
+  for (const score of [0, 50, 70, 95, 100]) {
+    const e = getDocumentEntitlement(null, score)
+    assert.equal(e.cv, false)
+    assert.equal(e.coverLetter, false)
+    assert.equal(e.recruiterMessage, false)
+    assert.ok(e.blockedReason)
+  }
+})
+
+test('DOC ENTITLEMENT: Not a Fit (score <= 60) blocks every document on every pack', () => {
+  for (const pack of ['small', 'medium', 'large'] as const) {
+    for (const score of [0, 30, 60]) {
+      const e = getDocumentEntitlement(pack, score)
+      assert.equal(e.cv, false, `${pack}/${score} cv`)
+      assert.equal(e.coverLetter, false, `${pack}/${score} coverLetter`)
+      assert.equal(e.recruiterMessage, false, `${pack}/${score} recruiterMessage`)
+      assert.ok(e.blockedReason)
+    }
+  }
+})
+
+test('DOC ENTITLEMENT: Needs Improvement (61-84) grants CV on any paid pack, cover letter/recruiter only on large', () => {
+  for (const score of [61, 75, 84]) {
+    const small = getDocumentEntitlement('small', score)
+    assert.equal(small.cv, true)
+    assert.equal(small.coverLetter, false)
+    assert.equal(small.recruiterMessage, false)
+    assert.equal(small.blockedReason, null)
+
+    const medium = getDocumentEntitlement('medium', score)
+    assert.equal(medium.cv, true)
+    assert.equal(medium.coverLetter, false)
+    assert.equal(medium.recruiterMessage, false)
+
+    const large = getDocumentEntitlement('large', score)
+    assert.equal(large.cv, true)
+    assert.equal(large.coverLetter, true)
+    assert.equal(large.recruiterMessage, true)
+    assert.equal(large.blockedReason, null)
+  }
+})
+
+test('DOC ENTITLEMENT: Likely Interview Candidate (85+) never grants a CV, on any pack', () => {
+  for (const score of [85, 92, 100]) {
+    for (const pack of ['small', 'medium', 'large'] as const) {
+      const e = getDocumentEntitlement(pack, score)
+      assert.equal(e.cv, false, `${pack}/${score} must never grant a CV`)
+    }
+  }
+})
+
+test('DOC ENTITLEMENT: Likely Interview Candidate on a large pack still gets cover letter and recruiter message', () => {
+  const e = getDocumentEntitlement('large', 90)
+  assert.equal(e.cv, false)
+  assert.equal(e.coverLetter, true)
+  assert.equal(e.recruiterMessage, true)
+  assert.equal(e.blockedReason, null)
+})
+
+test('DOC ENTITLEMENT: Likely Interview Candidate on a small or medium pack has nothing available and is blocked', () => {
+  for (const pack of ['small', 'medium'] as const) {
+    const e = getDocumentEntitlement(pack, 90)
+    assert.equal(e.cv, false)
+    assert.equal(e.coverLetter, false)
+    assert.equal(e.recruiterMessage, false)
+    assert.ok(e.blockedReason)
+  }
+})
+
+test('DOC ENTITLEMENT: exact score group boundaries have no gaps or overlaps', () => {
+  assert.equal(getDocumentEntitlement('large', 60).cv, false) // Not a Fit
+  assert.equal(getDocumentEntitlement('large', 61).cv, true) // Needs Improvement
+  assert.equal(getDocumentEntitlement('large', 84).cv, true) // Needs Improvement
+  assert.equal(getDocumentEntitlement('large', 85).cv, false) // Likely Interview Candidate
+})
+
+// ---------------------------------------------------------------------------
+// Canonical pack naming (server side): small/medium/large are private
+// internal identifiers only. Every user facing message this module
+// produces must say Starter/Active/Power, never the internal id.
+// ---------------------------------------------------------------------------
+
+test('PACK NAMING: the canonical mapping is exactly Starter/Active/Power', () => {
+  assert.deepEqual(PACK_DISPLAY_NAMES, { small: 'Starter', medium: 'Active', large: 'Power' })
+})
+
+test('PACK NAMING: no blockedReason ever contains a legacy internal identifier', () => {
+  const allReasons = [
+    getDocumentEntitlement(null, 70).blockedReason,
+    getDocumentEntitlement('small', 30).blockedReason,
+    getDocumentEntitlement('medium', 90).blockedReason,
+    getDocumentEntitlement('large', 30).blockedReason,
+  ].filter((r): r is string => r !== null)
+  assert.ok(allReasons.length > 0)
+  for (const reason of allReasons) {
+    assert.ok(!/\bsmall\b/i.test(reason), reason)
+    assert.ok(!/\bmedium\b/i.test(reason), reason)
+    assert.ok(!/\blarge\b/i.test(reason), reason)
+  }
+  assert.ok(getDocumentEntitlement(null, 70).blockedReason!.includes('Power'))
+})
+
+// ---------------------------------------------------------------------------
+// Existing rows using legacy internal identifiers: a check row stored with
+// funding_pack_id 'small'/'medium'/'large' (the only values ever written by
+// stripe-webhook/complete_check_analysis) must resolve correctly — this is
+// exactly what every MATRIX/DOC ENTITLEMENT test above already exercises,
+// since getDocumentEntitlement's whole input IS that stored legacy value.
+// This test names that property explicitly.
+// ---------------------------------------------------------------------------
+
+test('LEGACY IDS: a check stored with the legacy internal pack id resolves to the correct entitlement and display name', () => {
+  for (const [legacyId, displayName] of Object.entries(PACK_DISPLAY_NAMES) as ['small' | 'medium' | 'large', string][]) {
+    const entitlement = getDocumentEntitlement(legacyId, 75) // Needs Improvement
+    assert.equal(entitlement.cv, true, `${legacyId} (${displayName}) should be entitled to a CV at Needs Improvement`)
+    assert.equal(PACK_DISPLAY_NAMES[legacyId], displayName)
+  }
 })
 
 console.log(`\n${passed} tests passed`)

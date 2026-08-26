@@ -17,6 +17,11 @@ export interface Profile {
   keyword_scans_consumed: number
   created_at: string
   updated_at: string
+  // Idempotency marker for the welcome email (send-welcome-email edge
+  // function) — null until it has been sent once. Not read anywhere in the
+  // frontend today; kept on this type only so it isn't silently dropped by
+  // any future `select('*')`-based profile mapping.
+  welcome_email_sent_at: string | null
 }
 
 export interface Check {
@@ -53,12 +58,22 @@ export interface CheckWithFeedback extends Check {
   feedback: Feedback | null
 }
 
+// Private, internal identifiers only — never shown to a user. These are the
+// literal values already threaded through Stripe metadata, credit_batches.pack_id,
+// and checks.funding_pack_id; renaming them would require a data migration
+// with no product benefit. Every user facing surface must go through
+// PACK_DISPLAY_NAMES/getPackDisplayName in constants.ts (Starter/Active/Power),
+// never compare against or render these strings directly.
 export type PackId = 'small' | 'medium' | 'large'
 
 // Which pack's credit batch funded this check (see complete_check_analysis,
 // migration add_check_funding_pack_tier) — null means it was funded by the
-// free lifetime check, treated the same as 'small' for document
-// entitlement (score + feedback only, no generated documents).
+// free lifetime check, which is NOT entitled to any generated document (score
+// + feedback only). Every paid pack (small/medium/large — Starter/Active/Power)
+// includes the Improved CV Draft; only large (Power) additionally includes the
+// Cover Letter and Recruiter Message. See getDocumentEntitlement in
+// supabase/functions/generate-documents/logic.ts for the authoritative rule,
+// also layered with the check's score group.
 export type FundingPackId = PackId | null
 
 export interface CheckPack {

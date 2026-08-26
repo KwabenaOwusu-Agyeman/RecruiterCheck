@@ -10,7 +10,6 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@number-flow/react": "^0.6.2",
     "@supabase/supabase-js": "^2.112.2",
     "lucide-react": "^1.33.0",
     "motion": "^13.1.0",
