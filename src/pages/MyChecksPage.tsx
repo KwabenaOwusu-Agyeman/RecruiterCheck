@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'motion/react'
 import { Alert } from '@/components/ui/Alert'
 import { ScoreBadge, StatusBadge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -13,6 +12,27 @@ import { useAuth } from '@/hooks/useAuth'
 import { usePageMeta } from '@/hooks/usePageMeta'
 import { deleteCheck, getCheckCount, getChecks } from '@/services/checkService'
 import type { Check } from '@/types'
+import { cn } from '@/utils/cn'
+
+// Fixed, literal (not interpolated) arbitrary-value classes so Tailwind's
+// build-time class scanner can find them — a template-string class name
+// built from a runtime variable wouldn't be. Row stagger is capped at index
+// 8 below, matching this array's length. Replaces motion/react's per-row
+// initial/animate/transition (which triggered a real style-src CSP
+// violation here — motion.tr's transform values on a table row appear to
+// go through setAttribute('style', ...) rather than direct CSSOM property
+// assignment, unlike its other, verified-safe uses elsewhere in the app).
+const ROW_STAGGER_DELAY_CLASS = [
+  '[animation-delay:0ms]',
+  '[animation-delay:40ms]',
+  '[animation-delay:80ms]',
+  '[animation-delay:120ms]',
+  '[animation-delay:160ms]',
+  '[animation-delay:200ms]',
+  '[animation-delay:240ms]',
+  '[animation-delay:280ms]',
+  '[animation-delay:320ms]',
+]
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat('en-GB', {
@@ -151,12 +171,12 @@ export function MyChecksPage() {
               </thead>
               <tbody className="divide-y divide-border bg-surface">
                 {checks.map((check, index) => (
-                  <motion.tr
+                  <tr
                     key={check.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: Math.min(index, 8) * 0.04, ease: 'easeOut' }}
-                    className="transition-colors duration-150 hover:bg-navy-tint/60"
+                    className={cn(
+                      'animate-row-fade-in-up transition-colors duration-150 hover:bg-navy-tint/60',
+                      ROW_STAGGER_DELAY_CLASS[Math.min(index, 8)],
+                    )}
                   >
                     <td className="px-4 py-4 lg:px-6 lg:py-5">
                       <div className="text-sm font-medium text-text-primary">
@@ -193,7 +213,7 @@ export function MyChecksPage() {
                         </button>
                       </div>
                     </td>
-                  </motion.tr>
+                  </tr>
                 ))}
               </tbody>
             </table>
@@ -202,12 +222,12 @@ export function MyChecksPage() {
           {/* Mobile compact list */}
           <Card className="divide-y divide-border md:hidden">
             {checks.map((check, index) => (
-              <motion.div
+              <div
                 key={check.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: Math.min(index, 8) * 0.04, ease: 'easeOut' }}
-                className="flex items-center justify-between gap-3 px-4 py-3"
+                className={cn(
+                  'animate-row-fade-in-up flex items-center justify-between gap-3 px-4 py-3',
+                  ROW_STAGGER_DELAY_CLASS[Math.min(index, 8)],
+                )}
               >
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium text-text-primary">
@@ -243,7 +263,7 @@ export function MyChecksPage() {
                     Delete
                   </button>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </Card>
         </>

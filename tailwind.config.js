@@ -51,6 +51,10 @@ export default {
           from: { opacity: '0' },
           to: { opacity: '1' },
         },
+        'row-fade-in-up': {
+          from: { opacity: '0', transform: 'translateY(8px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
       },
       animation: {
         marquee: 'marquee 36s linear infinite',
@@ -62,6 +66,10 @@ export default {
         // 'unsafe-inline' or a style-src hash.
         'fade-in-up': 'fade-in-up 0.5s ease-out both',
         'fade-in': 'fade-in 0.25s ease-out both',
+        // MyChecksPage row reveal (see the STAGGER_DELAY_CLASS comment
+        // there) — same idea as fade-in-up but matching the shorter
+        // 8px/0.3s motion/react values it replaced.
+        'row-fade-in-up': 'row-fade-in-up 0.3s ease-out both',
       },
       spacing: {
         1: '0.5rem',

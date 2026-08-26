@@ -1,4 +1,3 @@
-import { motion } from 'motion/react'
 import { cn } from '@/utils/cn'
 
 interface StepIndicatorProps {
@@ -50,11 +49,16 @@ export function StepIndicator({ steps, currentIndex, className }: StepIndicatorP
                 aria-hidden="true"
                 className="relative mx-2 h-px flex-1 overflow-hidden bg-border-strong sm:mx-3"
               >
-                <motion.span
-                  className="absolute inset-y-0 left-0 bg-navy"
-                  initial={false}
-                  animate={{ width: state === 'done' ? '100%' : '0%' }}
-                  transition={{ duration: 0.4, ease: 'easeOut' }}
+                {/* transform: scaleX (not width) so this stays on the CSSOM
+                    property-assignment path — a motion/react width animation
+                    here produced a real style-src CSP violation, since width
+                    is a layout property motion applies via a different,
+                    attribute-writing code path than transform/opacity. */}
+                <span
+                  className={cn(
+                    'absolute inset-y-0 left-0 w-full origin-left bg-navy transition-transform duration-[400ms] ease-out',
+                    state === 'done' ? 'scale-x-100' : 'scale-x-0',
+                  )}
                 />
               </span>
             ) : null}
