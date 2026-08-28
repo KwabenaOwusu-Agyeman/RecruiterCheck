@@ -56,6 +56,17 @@ async function run() {
     assert.equal('bcc' in payload, false)
   })
 
+  await test('buildBrevoPayload omits replyTo unless an address is configured', () => {
+    const without = buildBrevoPayload(baseParams, 'notifications@myrecruitercheck.com', 'MyRecruiterCheck', undefined)
+    assert.equal('replyTo' in without, false)
+
+    const blank = buildBrevoPayload(baseParams, 'notifications@myrecruitercheck.com', 'MyRecruiterCheck', undefined, '   ')
+    assert.equal('replyTo' in blank, false)
+
+    const withReply = buildBrevoPayload(baseParams, 'notifications@myrecruitercheck.com', 'MyRecruiterCheck', undefined, 'support@myrecruitercheck.com')
+    assert.deepEqual(withReply.replyTo, { email: 'support@myrecruitercheck.com', name: 'MyRecruiterCheck' })
+  })
+
   await test('buildBrevoPayload omits bcc when the Trustpilot address is blank', () => {
     const payload = buildBrevoPayload(baseParams, 'notifications@myrecruitercheck.com', 'MyRecruiterCheck', '   ')
     assert.equal('bcc' in payload, false)

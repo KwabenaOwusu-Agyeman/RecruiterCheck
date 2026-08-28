@@ -44,6 +44,13 @@ export async function sendTransactionalEmail(params: BrevoSendParams): Promise<B
   const senderEmail = Deno.env.get('BREVO_SENDER_EMAIL') ?? 'notifications@myrecruitercheck.com'
   const senderName = Deno.env.get('BREVO_SENDER_NAME') ?? 'MyRecruiterCheck'
 
+  // Without this every reply goes back to the no-reply-ish notifications@
+  // address. Driven by a secret rather than hardcoded so the address can be
+  // set (or changed) without a redeploy, and omitted entirely when unset so
+  // behaviour is unchanged until someone opts in with a real, monitored
+  // mailbox. A Reply-To pointing at an unread inbox is worse than none.
+  const replyToEmail = Deno.env.get('BREVO_REPLY_TO_EMAIL')
+
   try {
     const response = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
@@ -55,6 +62,9 @@ export async function sendTransactionalEmail(params: BrevoSendParams): Promise<B
       body: JSON.stringify({
         sender: { email: senderEmail, name: senderName },
         to: [{ email: params.toEmail, name: params.toName ?? undefined }],
+        ...(replyToEmail && isValidEmail(replyToEmail)
+          ? { replyTo: { email: replyToEmail, name: senderName } }
+          : {}),
         subject: params.subject,
         htmlContent: params.htmlContent,
         textContent: params.textContent,

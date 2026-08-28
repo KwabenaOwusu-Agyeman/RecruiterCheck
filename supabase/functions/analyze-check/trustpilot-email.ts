@@ -22,6 +22,8 @@ export interface ResultsEmailParams {
 export interface BrevoSendPayload {
   sender: { email: string; name: string }
   to: Array<{ email: string }>
+  /** Omitted entirely when no reply address is configured — see buildBrevoPayload. */
+  replyTo?: { email: string; name: string }
   bcc?: Array<{ email: string }>
   subject: string
   htmlContent: string
@@ -120,6 +122,7 @@ export function buildBrevoPayload(
   senderEmail: string,
   senderName: string,
   bccEmail: string | null | undefined,
+  replyToEmail?: string | null,
 ): BrevoSendPayload {
   const payload: BrevoSendPayload = {
     sender: { email: senderEmail, name: senderName },
@@ -131,6 +134,13 @@ export function buildBrevoPayload(
       score: params.score,
       resultsUrl: params.resultsUrl,
     }),
+  }
+
+  // Same rule as the shared client: only set when a real address is
+  // configured, since a Reply-To pointing at an unmonitored inbox is worse
+  // than leaving replies to fall back to the sender.
+  if (replyToEmail && replyToEmail.trim()) {
+    payload.replyTo = { email: replyToEmail.trim(), name: senderName }
   }
 
   if (bccEmail && bccEmail.trim()) {

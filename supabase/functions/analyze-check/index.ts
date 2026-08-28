@@ -476,6 +476,7 @@ async function sendResultsReadyEmail(
       senderEmail,
       senderName,
       trustpilotAfsEmail,
+      Deno.env.get('BREVO_REPLY_TO_EMAIL'),
     )
 
     const response = await fetch('https://api.brevo.com/v3/smtp/email', {
