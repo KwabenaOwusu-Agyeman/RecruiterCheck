@@ -10,12 +10,10 @@ import { cn } from '@/utils/cn'
 type CardTone =
   | 'light'
   | 'seamless'
-  | 'light-elevated'
   | 'dark'
   | 'muted'
   | 'nested'
   | 'nested-light'
-  | 'nested-highlighted'
 
 interface CardProps {
   children: ReactNode
@@ -24,18 +22,19 @@ interface CardProps {
 }
 
 const cardToneStyles: Record<CardTone, string> = {
+  // There is no separate "elevated" light card any more. Every card on a
+  // light ground carries the same single ambient shadow, which is what makes
+  // a set of cards read as one system rather than as several.
   light: 'border-border-soft bg-surface shadow-card',
   // Same cream as the page behind it, so the card never reads as a
   // high-contrast panel — but the edge is deliberately strong: a dark border
   // with a ring stacked on it for a 2px rule, plus a deep shadow. Seamless
   // ground, bold outline. Used by the testimonial cards.
   seamless: 'border-border-strong bg-background shadow-elevated ring-1 ring-border-strong',
-  'light-elevated': 'border-border-soft bg-surface shadow-elevated',
   dark: 'border-white/20 bg-navy shadow-elevated',
   muted: 'border-border-strong bg-border-soft shadow-card',
   nested: 'border-white/10 bg-white/[0.04] shadow-card',
   'nested-light': 'border-border bg-background shadow-card',
-  'nested-highlighted': 'border-blue-light/30 bg-white/[0.04] shadow-elevated',
 }
 
 export function Card({ children, className, tone = 'light' }: CardProps) {
@@ -51,7 +50,7 @@ export function CardHeader({ children, className, tone = 'light' }: CardProps) {
     <div
       className={cn(
         'border-b px-[20px] py-[16px] sm:px-7 sm:py-5 lg:px-[32px] lg:py-[24px]',
-        tone === 'light' || tone === 'light-elevated' || tone === 'muted' || tone === 'nested-light'
+        tone === 'light' || tone === 'muted' || tone === 'nested-light'
           ? 'border-border'
           : 'border-white/10',
         className,

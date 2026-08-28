@@ -64,7 +64,7 @@ function CvDraftCard() {
   const { cvDraft } = EXAMPLE_DOCUMENTS
   return (
     <GlowCard className={DOC_CARD_WIDTH}>
-      <Card tone="light-elevated" className="relative flex h-full flex-col overflow-hidden">
+      <Card tone="light" className="relative flex h-full flex-col overflow-hidden">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center overflow-hidden"
@@ -154,7 +154,7 @@ function CoverLetterCard() {
   const { coverLetter, candidateName, cvDraft } = EXAMPLE_DOCUMENTS
   return (
     <GlowCard className={DOC_CARD_WIDTH}>
-      <Card tone="light-elevated" className="flex h-full flex-col overflow-hidden">
+      <Card tone="light" className="flex h-full flex-col overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-blue" aria-hidden="true" />
@@ -213,7 +213,7 @@ function RecruiterMessageCard() {
 
   return (
     <GlowCard className={DOC_CARD_WIDTH}>
-      <Card tone="light-elevated" className="flex h-full flex-col overflow-hidden">
+      <Card tone="light" className="flex h-full flex-col overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-blue" aria-hidden="true" />
@@ -282,7 +282,7 @@ export function DocumentShowcase() {
       <Container>
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue">Example documents</p>
-          <h2 className="mt-2 font-display text-[20px] font-semibold tracking-tight text-text-primary sm:text-3xl">
+          <h2 className="mt-2 font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
             From feedback to finished documents
           </h2>
           <p className="mt-3 text-[14px] text-text-secondary sm:text-base">

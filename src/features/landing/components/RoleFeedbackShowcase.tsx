@@ -34,7 +34,7 @@ export function RoleFeedbackShowcase() {
     <section id="example" className="scroll-mt-[88px] border-b border-border bg-background">
       <Container className="py-[32px] sm:py-12 lg:py-[64px]">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-display text-[20px] font-semibold tracking-tight text-text-primary sm:text-3xl">
+          <h2 className="font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
             Recruiter style feedback, for every stage of a tech career
           </h2>
           <p className="mt-3 text-[14px] text-text-secondary sm:text-base">
@@ -62,7 +62,7 @@ export function RoleFeedbackShowcase() {
                 className={cn(
                   'rounded-full border px-3 py-1.5 text-xs font-semibold transition-all duration-200 sm:px-4 sm:py-2 sm:text-sm',
                   isActive
-                    ? 'border-blue bg-blue text-white shadow-glow-sm'
+                    ? 'border-blue bg-blue text-white'
                     : 'border-border-soft bg-surface text-text-secondary hover:border-blue/40 hover:text-text-primary',
                   isLastOdd && 'col-span-2 mx-auto sm:col-span-1 sm:mx-0',
                 )}

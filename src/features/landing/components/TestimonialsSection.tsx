@@ -77,7 +77,7 @@ export function TestimonialsSection({ compact = false }: { compact?: boolean } =
       <Container className={compact ? 'py-6 sm:py-8' : 'py-8 sm:py-12 lg:py-[64px]'}>
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue">Job seeker stories</p>
-          <h2 className="mt-2 font-display text-[20px] font-semibold tracking-tight text-text-primary sm:text-3xl">
+          <h2 className="mt-2 font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
             What changed after they started getting recruiter feedback
           </h2>
         </div>

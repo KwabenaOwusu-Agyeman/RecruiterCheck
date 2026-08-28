@@ -12,8 +12,9 @@ export default {
         'border-strong': '#DED6C7',
         'border-soft': '#E9E4D9',
         'navy-tint': '#F1F3FA',
-        'text-primary': '#05050D',
-        'text-secondary': '#3A4A6B',
+        'text-primary': '#12172A',
+        'text-secondary': '#4A5573',
+        'text-caption': '#7C859C',
         success: '#0EA063',
         warning: '#F59E0B',
         error: '#91151A',
@@ -24,12 +25,14 @@ export default {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         display: ['Fraunces', 'Georgia', 'serif'],
       },
+      // Two shadows, not five. Both are ambient in the sense that matters:
+      // a wide blur at low alpha with almost no vertical offset, so a card
+      // reads as sitting slightly off the page rather than as a box with a
+      // drop shadow under it. The coloured `glow` pair this replaces was the
+      // most dated effect in the system.
       boxShadow: {
-        card: '0 1px 3px rgba(2,12,56,0.05), 0 14px 32px rgba(2,12,56,0.08)',
-        elevated: '0 20px 60px rgba(2,12,56,0.14)',
-        hover: '0 12px 32px rgba(2,12,56,0.09)',
-        glow: '0 1px 2px rgba(2,12,56,0.04), 0 30px 70px -18px rgba(25,74,159,0.28)',
-        'glow-sm': '0 1px 2px rgba(2,12,56,0.06), 0 8px 20px -6px rgba(25,74,159,0.35)',
+        card: '0 2px 48px rgba(2,12,56,0.11)',
+        elevated: '0 4px 64px rgba(2,12,56,0.17)',
       },
       backgroundImage: {
         'gradient-surface': 'linear-gradient(180deg, #FFFFFF 0%, #F8F6F2 100%)',
@@ -81,8 +84,8 @@ export default {
       fontSize: {
         xs: ['12px', { lineHeight: '16px' }],
         sm: ['14px', { lineHeight: '20px' }],
-        base: ['16px', { lineHeight: '24px' }],
-        lg: ['18px', { lineHeight: '28px' }],
+        base: ['16px', { lineHeight: '26px' }],
+        lg: ['18px', { lineHeight: '29px' }],
         xl: ['20px', { lineHeight: '28px' }],
         '2xl': ['24px', { lineHeight: '32px' }],
         '3xl': ['30px', { lineHeight: '36px' }],

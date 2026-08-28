@@ -116,7 +116,7 @@ export function PricingPage() {
             {/* Same heading for everyone: it is what the prerendered page ships
                 and what search results show. The balance is added below it
                 rather than replacing it. */}
-            <h1 className="font-display mt-2 text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl lg:text-4xl">
+            <h1 className="font-display mt-2 text-2xl text-text-primary sm:text-3xl lg:text-4xl">
               Choose how much support you want for your applications
             </h1>
             <p className="mx-auto mt-3 max-w-2xl text-[15px] leading-7 text-text-secondary sm:text-base">

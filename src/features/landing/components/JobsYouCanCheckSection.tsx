@@ -36,7 +36,7 @@ export function JobsYouCanCheckSection() {
       <Container className="py-[32px] sm:py-12 lg:py-[64px]">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue">Jobs we check</p>
-          <h2 className="mt-2 font-display text-[20px] font-semibold tracking-tight text-text-primary sm:text-3xl">
+          <h2 className="mt-2 font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
             Jobs you can check
           </h2>
           <p className="mt-3 text-[14px] text-text-secondary sm:text-base">

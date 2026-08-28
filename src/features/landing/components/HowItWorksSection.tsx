@@ -32,7 +32,7 @@ export function HowItWorksSection() {
     >
       <Container className="py-[32px] sm:py-12 lg:py-[64px]">
         <div className="mx-auto max-w-xl text-center">
-          <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl lg:text-[32px]">
+          <h2 className="font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
             How it works
           </h2>
         </div>

@@ -20,7 +20,7 @@ export function HeroSection() {
       <Container className="relative py-[28px] sm:py-8 lg:py-10">
         <div className="mx-auto max-w-2xl text-center lg:max-w-[800px]">
           <p className="mb-3 text-[14px] font-medium text-text-secondary sm:text-base">{TAGLINE}</p>
-          <h1 className="text-4xl font-semibold tracking-tight text-text-primary sm:text-5xl lg:text-[54px] lg:leading-[1.1]">
+          <h1 className="text-4xl text-text-primary sm:text-5xl lg:text-[54px] lg:leading-[1.1]">
             If you were the <span className="text-blue">recruiter</span>, would you invite yourself
             to an <span className="text-blue">interview</span>?
           </h1>

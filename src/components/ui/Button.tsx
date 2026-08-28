@@ -11,7 +11,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-navy text-white border border-navy hover:bg-navy/90 focus-visible:ring-navy hover:shadow-hover sm:hover:-translate-y-px',
+    'bg-navy text-white border border-navy hover:bg-navy/90 focus-visible:ring-navy hover:shadow-elevated sm:hover:-translate-y-px',
   secondary:
     'bg-surface text-text-primary border border-border-strong hover:border-navy/40 hover:bg-background focus-visible:ring-blue hover:shadow-card',
   ghost:
@@ -23,17 +23,21 @@ const variantStyles: Record<ButtonVariant, string> = {
   // className string sits in this component's cn() call, so overriding a
   // variant's own color utility from the outside is not reliable.
   light:
-    'bg-white text-navy border border-transparent hover:bg-white/90 focus-visible:ring-white hover:shadow-hover',
+    'bg-white text-navy border border-transparent hover:bg-white/90 focus-visible:ring-white hover:shadow-elevated',
   // Bright accent pill for the single primary CTA on a dark card, distinct
   // from the neutral white `light` buttons used for secondary actions there.
   accent:
-    'bg-blue-light text-navy border border-transparent hover:bg-blue-light/90 focus-visible:ring-blue-light hover:shadow-hover sm:hover:-translate-y-px',
+    'bg-blue-light text-navy border border-transparent hover:bg-blue-light/90 focus-visible:ring-blue-light hover:shadow-elevated sm:hover:-translate-y-px',
 }
 
+// Horizontal padding is deliberately generous relative to height: a pill
+// with tight sides reads as a chip, not as the main action on the page.
+// `sm` stays at the interface text size, since it is used inside headers and
+// dense app screens; `md` and `lg` are page actions and move up to 16px.
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: 'h-12 px-3 text-sm sm:h-[36px] sm:px-3',
-  md: 'h-12 px-4 text-sm sm:h-[44px] sm:px-4',
-  lg: 'h-[52px] px-5 text-sm sm:h-[48px] sm:px-5',
+  sm: 'h-11 px-5 text-sm sm:h-[40px] sm:px-5',
+  md: 'h-12 px-6 text-base sm:h-[48px] sm:px-7',
+  lg: 'h-[52px] px-7 text-base sm:h-[52px] sm:px-8',
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -43,7 +47,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         type={type}
         className={cn(
-          'inline-flex items-center justify-center rounded-[12px] font-medium',
+          'inline-flex items-center justify-center rounded-full font-medium',
           'transition-[background-color,color,border-color,transform,box-shadow] duration-150',
           'touch-manipulation active:scale-[0.97] sm:active:scale-100 sm:active:translate-y-px',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',

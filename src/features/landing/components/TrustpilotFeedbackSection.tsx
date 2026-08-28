@@ -71,7 +71,7 @@ export function TrustpilotFeedbackSection() {
       <div className="mx-auto w-full max-w-7xl px-[16px] py-[28px] sm:px-6 sm:py-[36px] lg:max-w-[1200px] lg:px-[32px] lg:py-[40px]">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between lg:gap-12">
           <div className="max-w-md">
-            <h2 className="font-display text-xl font-semibold tracking-tight text-navy sm:text-2xl">
+            <h2 className="font-display text-xl text-navy sm:text-2xl">
               Share your experience on Trustpilot
             </h2>
           </div>

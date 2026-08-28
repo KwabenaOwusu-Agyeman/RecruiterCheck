@@ -20,7 +20,7 @@ export function NotFoundPage() {
         <Container>
           <div className="mx-auto max-w-xl text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue">404</p>
-            <h1 className="font-display mt-4 text-3xl font-semibold tracking-tight text-text-primary sm:text-4xl">
+            <h1 className="font-display mt-4 text-3xl text-text-primary sm:text-4xl">
               We couldn't find that page
             </h1>
             <p className="mx-auto mt-5 max-w-md text-lg leading-8 text-text-secondary">

@@ -152,7 +152,7 @@ export function DashboardShowcase() {
     <section className="border-b border-border bg-background">
       <Container className="py-[32px] sm:py-12 lg:py-[64px]">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-display text-[20px] font-semibold tracking-tight text-text-primary sm:text-3xl">
+          <h2 className="font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
             Every application, tracked in one place
           </h2>
           <p className="mt-3 text-[14px] text-text-secondary sm:text-base">

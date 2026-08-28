@@ -79,7 +79,7 @@ export function HowInterviewScoreWorksPage() {
         <Container>
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue">Methodology</p>
-            <h1 className="font-display mt-4 text-3xl font-semibold tracking-tight text-text-primary sm:text-4xl lg:text-[44px]">
+            <h1 className="font-display mt-4 text-3xl text-text-primary sm:text-4xl lg:text-[44px]">
               How the Interview Score works
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-text-secondary">
@@ -93,7 +93,7 @@ export function HowInterviewScoreWorksPage() {
         <Container>
           <Card className="mx-auto max-w-3xl">
             <CardContent className="p-6 sm:p-8">
-              <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary">
+              <h2 className="font-display text-2xl text-text-primary">
                 The short answer
               </h2>
               <p className="mt-4 leading-7 text-text-secondary">
@@ -112,7 +112,7 @@ export function HowInterviewScoreWorksPage() {
       <section className="py-10 sm:py-14">
         <Container>
           <div className="mx-auto max-w-3xl">
-            <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl">
+            <h2 className="font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[40px] lg:leading-[1.15]">
               Why compare against one specific job, not a generic CV score
             </h2>
             <p className="mt-4 leading-7 text-text-secondary">
@@ -130,7 +130,7 @@ export function HowInterviewScoreWorksPage() {
       <section className="border-y border-border-soft bg-background py-10 sm:py-14">
         <Container>
           <div className="mx-auto max-w-4xl">
-            <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl">
+            <h2 className="font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[40px] lg:leading-[1.15]">
               The three factors
             </h2>
             <div className="mt-8 grid gap-5 md:grid-cols-3">
@@ -152,7 +152,7 @@ export function HowInterviewScoreWorksPage() {
       <section className="py-10 sm:py-14">
         <Container>
           <div className="mx-auto max-w-3xl">
-            <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl">
+            <h2 className="font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[40px] lg:leading-[1.15]">
               Why listed keywords alone aren't enough
             </h2>
             <p className="mt-4 leading-7 text-text-secondary">
@@ -170,7 +170,7 @@ export function HowInterviewScoreWorksPage() {
       <section className="py-10 sm:py-14">
         <Container>
           <div className="mx-auto max-w-3xl">
-            <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl">
+            <h2 className="font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[40px] lg:leading-[1.15]">
               What raises or lowers your score
             </h2>
             <p className="mt-4 leading-7 text-text-secondary">
@@ -192,7 +192,7 @@ export function HowInterviewScoreWorksPage() {
       <section className="border-y border-border-soft bg-background py-10 sm:py-14">
         <Container>
           <div className="mx-auto max-w-3xl">
-            <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl">
+            <h2 className="font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[40px] lg:leading-[1.15]">
               How early career evidence counts
             </h2>
             <p className="mt-4 leading-7 text-text-secondary">
@@ -211,7 +211,7 @@ export function HowInterviewScoreWorksPage() {
       <section className="py-10 sm:py-14">
         <Container>
           <div className="mx-auto max-w-3xl">
-            <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl">
+            <h2 className="font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[40px] lg:leading-[1.15]">
               Why your score changes when you edit your CV
             </h2>
             <p className="mt-4 leading-7 text-text-secondary">
@@ -227,7 +227,7 @@ export function HowInterviewScoreWorksPage() {
       <section className="border-y border-border-soft bg-background py-10 sm:py-14">
         <Container>
           <div className="mx-auto max-w-3xl">
-            <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl">
+            <h2 className="font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[40px] lg:leading-[1.15]">
               What Interview Score does not measure
             </h2>
             <ul className="mt-6 space-y-4">
@@ -246,7 +246,7 @@ export function HowInterviewScoreWorksPage() {
         <Container>
           <Card className="mx-auto max-w-3xl">
             <CardContent className="p-6 sm:p-8">
-              <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary">
+              <h2 className="font-display text-2xl text-text-primary">
                 How your CV and job description are handled
               </h2>
               <p className="mt-4 leading-7 text-text-secondary">
@@ -270,7 +270,7 @@ export function HowInterviewScoreWorksPage() {
       <section className="border-t border-border-soft py-10 sm:py-14">
         <Container>
           <div className="mx-auto max-w-3xl">
-            <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl">
+            <h2 className="font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[40px] lg:leading-[1.15]">
               Frequently asked questions
             </h2>
             <div className="mt-8 divide-y divide-border rounded-[16px] border border-border-soft bg-surface shadow-card">

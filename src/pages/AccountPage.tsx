@@ -188,7 +188,7 @@ export function AccountPage() {
           </CardContent>
         </Card>
 
-        <Card tone="light-elevated" className="flex h-full flex-col">
+        <Card tone="light" className="flex h-full flex-col">
           <CardHeader className="py-3.5 sm:py-5">
             <h2 className="font-display text-lg font-semibold text-text-primary sm:text-xl">Checks</h2>
           </CardHeader>

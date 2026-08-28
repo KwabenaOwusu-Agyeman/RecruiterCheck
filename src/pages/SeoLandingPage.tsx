@@ -61,7 +61,7 @@ export function SeoLandingPage({
         <Container>
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue">{eyebrow}</p>
-            <h1 className="font-display mt-4 text-3xl font-semibold tracking-tight text-text-primary sm:text-4xl lg:text-[44px]">
+            <h1 className="font-display mt-4 text-3xl text-text-primary sm:text-4xl lg:text-[44px]">
               {heading}
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-text-secondary">
@@ -83,7 +83,7 @@ export function SeoLandingPage({
           <Container>
             <Card className="mx-auto max-w-3xl">
               <CardContent className="p-6 sm:p-8">
-                <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary">
+                <h2 className="font-display text-2xl text-text-primary">
                   What does this tool check?
                 </h2>
                 <p className="mt-4 leading-7 text-text-secondary">{directAnswer}</p>
@@ -189,7 +189,7 @@ export function SeoLandingPage({
       <section className="border-y border-border-soft bg-background py-10 sm:py-14">
         <Container>
           <div className="mx-auto max-w-3xl">
-            <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl">How it works</h2>
+            <h2 className="font-display text-2xl text-text-primary sm:text-3xl">How it works</h2>
             <ol className="mt-8 space-y-5">
               {steps.map((step, index) => (
                 <li key={step} className="flex gap-4 text-text-secondary">
@@ -212,7 +212,7 @@ export function SeoLandingPage({
           <Container>
             <Card className="mx-auto max-w-3xl">
               <CardContent className="p-6 sm:p-8">
-                <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary">{example.title}</h2>
+                <h2 className="font-display text-2xl text-text-primary">{example.title}</h2>
                 <p className="mt-4 leading-7 text-text-secondary">{example.scenario}</p>
                 <p className="mt-4 leading-7 text-text-secondary">{example.insight}</p>
               </CardContent>
@@ -225,7 +225,7 @@ export function SeoLandingPage({
         <section className="border-t border-border-soft py-10 sm:py-14">
           <Container>
             <div className="mx-auto max-w-3xl">
-              <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl">
+              <h2 className="font-display text-2xl text-text-primary sm:text-3xl">
                 Frequently asked questions
               </h2>
               <div className="mt-8 divide-y divide-border rounded-[16px] border border-border-soft bg-surface shadow-card">
