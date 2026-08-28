@@ -385,16 +385,22 @@ export async function getNearestBatchExpiry(userId: string): Promise<string | nu
 }
 
 /**
- * The free keyword-scan feature — entirely separate from analyzeCheck, no
- * shared code path, no persistence. The CV file is sent directly as base64
- * rather than uploaded to Storage first, since nothing about this feature is
- * ever saved.
+ * The keyword-scan feature — entirely separate from analyzeCheck, no shared
+ * code path. The CV file is sent directly as base64 rather than uploaded to
+ * Storage first, since the CV itself is never persisted.
+ *
+ * idempotencyKey is generated per attempt and sent on every call. The
+ * credit-reservation backend requires it (a repeated call with the same key
+ * replays the existing reservation instead of consuming a second credit);
+ * the older non-reservation backend simply ignores the extra field, so this
+ * is safe to ship ahead of that backend's rollout.
  */
 export async function runKeywordScan(cvFile: File, jobDescription: string): Promise<KeywordScanResult> {
   const cvBase64 = await fileToBase64(cvFile)
 
   const { data, error } = await supabase.functions.invoke('keyword-scan', {
     body: {
+      idempotencyKey: crypto.randomUUID(),
       cvBase64,
       cvFileName: cvFile.name,
       cvMimeType: cvFile.type,
@@ -404,7 +410,37 @@ export async function runKeywordScan(cvFile: File, jobDescription: string): Prom
 
   if (error) throw await resolveFunctionError(error)
   if (data?.error) throw new Error(String(data.error))
-  return data as KeywordScanResult
+  return normaliseKeywordScanResult(data)
+}
+
+/**
+ * Accepts either backend response shape and returns the single camelCase
+ * shape the UI renders:
+ *   - reservation backend: match_percent / matched_terms / missing_terms / *_total
+ *   - original backend:    matchPercent / matched / missing / *Total
+ * Keeping both readable means the frontend and backend can be deployed in
+ * either order without a broken window.
+ */
+function normaliseKeywordScanResult(data: unknown): KeywordScanResult {
+  const raw = (data ?? {}) as Record<string, unknown>
+
+  if ('match_percent' in raw || 'matched_terms' in raw) {
+    return {
+      matchPercent: Number(raw.match_percent ?? 0),
+      matched: Array.isArray(raw.matched_terms) ? (raw.matched_terms as string[]) : [],
+      missing: Array.isArray(raw.missing_terms) ? (raw.missing_terms as string[]) : [],
+      matchedTotal: Number(raw.matched_total ?? 0),
+      missingTotal: Number(raw.missing_total ?? 0),
+    }
+  }
+
+  return {
+    matchPercent: Number(raw.matchPercent ?? 0),
+    matched: Array.isArray(raw.matched) ? (raw.matched as string[]) : [],
+    missing: Array.isArray(raw.missing) ? (raw.missing as string[]) : [],
+    matchedTotal: Number(raw.matchedTotal ?? 0),
+    missingTotal: Number(raw.missingTotal ?? 0),
+  }
 }
 
 function fileToBase64(file: File): Promise<string> {

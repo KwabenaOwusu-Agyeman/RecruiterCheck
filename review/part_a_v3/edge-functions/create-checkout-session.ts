@@ -1,7 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
+import Stripe from 'npm:stripe@17.5.0'
 import {
-  ENVIRONMENT_LABEL,
-  PACK_PRICE_MAP,
+  assertSecretKeyMatchesEnvironment,
+  getStripeEnvironment,
+  getVerifiedPriceConfig,
   priceIdForPack,
 } from './price-config.ts'
 
@@ -23,15 +25,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Item 28: fail closed if this environment's price config is missing/invalid.
-    if (!PACK_PRICE_MAP) {
-      console.error(
-        'create-checkout-session: price configuration invalid for environment',
-        ENVIRONMENT_LABEL,
-      )
-      return jsonResponse({ error: 'Billing is not configured' }, 503)
-    }
-
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       return jsonResponse({ error: 'Missing authorization header' }, 401)
@@ -41,6 +34,28 @@ Deno.serve(async (req) => {
     const siteUrl = Deno.env.get('SITE_URL') ?? 'http://localhost:5173'
 
     if (!stripeSecretKey) {
+      return jsonResponse({ error: 'Billing is not configured' }, 503)
+    }
+
+    // V4.1 Item 4: explicit environment required, secret key must match it,
+    // and every configured Price is verified live against Stripe (never
+    // inferred from the Price ID prefix) before this function does
+    // anything else. Any failure here fails closed -- 503, never a guess.
+    let stripe: Stripe
+    let priceConfig: Awaited<ReturnType<typeof getVerifiedPriceConfig>>
+    try {
+      const environment = getStripeEnvironment()
+      assertSecretKeyMatchesEnvironment(stripeSecretKey, environment)
+      stripe = new Stripe(stripeSecretKey, {
+        apiVersion: '2024-12-18.acacia',
+        httpClient: Stripe.createFetchHttpClient(),
+      })
+      priceConfig = await getVerifiedPriceConfig(stripe)
+    } catch (error) {
+      console.error(
+        'create-checkout-session: Stripe environment/price verification failed',
+        error instanceof Error ? error.message : String(error),
+      )
       return jsonResponse({ error: 'Billing is not configured' }, 503)
     }
 
@@ -65,12 +80,11 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Invalid pack' }, 400)
     }
 
-    const priceId = priceIdForPack(packId)
+    const priceId = priceIdForPack(priceConfig, packId)
     if (!priceId) {
       console.error(
         'create-checkout-session: no Price ID configured for pack',
         packId,
-        ENVIRONMENT_LABEL,
       )
       return jsonResponse({ error: 'Billing is not configured' }, 503)
     }

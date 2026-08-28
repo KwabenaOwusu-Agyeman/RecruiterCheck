@@ -54,8 +54,55 @@ Deno.serve(async (req) => {
       }, 429)
     }
 
-    const { batchId } = (await req.json()) as { batchId: string }
-    if (!batchId) return jsonResponse({ error: 'batchId is required' }, 400)
+    let batchId: string | undefined
+    try {
+      batchId = ((await req.json()) as { batchId?: string }).batchId
+    } catch {
+      batchId = undefined
+    }
+
+    // The Billing page currently posts an empty body (see
+    // src/services/checkService.ts requestRefund). Rather than 400 on that
+    // and break the live refund flow, resolve the caller's own single
+    // refund-eligible batch here. This read goes through the USER client,
+    // so RLS restricts it to their own rows -- a caller can never name or
+    // reach another user's batch, and reserve_refund re-validates
+    // ownership and eligibility under lock regardless.
+    if (!batchId) {
+      const { data: candidates, error: candidateError } = await userClient
+        .from('credit_batches')
+        .select('id, granted_at')
+        .eq('source', 'purchase')
+        .eq('refund_status', 'active')
+        .gte(
+          'granted_at',
+          new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+        )
+        .order('granted_at', { ascending: false })
+        .limit(2)
+
+      if (candidateError) {
+        console.error(
+          'request-refund: could not resolve a batch',
+          candidateError,
+        )
+        return jsonResponse({
+          error: 'Could not process this request. Please try again.',
+        }, 500)
+      }
+      if (!candidates || candidates.length === 0) {
+        return jsonResponse({
+          error: 'No eligible purchase found for this account',
+        }, 404)
+      }
+      if (candidates.length > 1) {
+        return jsonResponse({
+          error:
+            'You have more than one refundable pack. Please choose which one to refund from your Billing page.',
+        }, 409)
+      }
+      batchId = candidates[0].id as string
+    }
 
     const { data: reserveRows, error: reserveError } = await userClient.rpc(
       'reserve_refund',

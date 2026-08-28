@@ -58,9 +58,8 @@ Founder-authorized replacement of lines 88–107 (Section "8. Subscriptions, Fee
     released; a valid release following a failed task can restore eligibility.
     Refund requests are made through your account's Billing page. Eligibility is
     determined by our systems based on your account's actual usage record, not
-    by any information supplied through your browser. This refund guarantee does
-    not affect your other rights under mandatory law, including any statutory
-    right of withdrawal that may apply in your jurisdiction.
+    by any information supplied through your browser. Nothing in these Terms or
+    our refund policy affects any statutory rights you may have.
   </p>
 </Section>
 ```
@@ -77,12 +76,12 @@ Founder-authorized replacement of lines 88–107 (Section "8. Subscriptions, Fee
   `reserve_refund`'s `active_reservation_exists` outcome and the
   release-restores-eligibility behavior into plain-language terms, without
   over-specifying implementation detail.
-- "Does not affect... mandatory law... statutory right of withdrawal" preserves
-  the original's carve-out for required legal rights, phrased slightly more
-  specifically (EU consumers have a statutory 14-day withdrawal right for
-  digital services in some circumstances, which this pack-refund guarantee
-  supplements rather than replaces) — **this specific legal characterization
-  should be confirmed by you or counsel before shipping**, since I am not
-  qualified to assert precisely which statutory rights apply in which
-  jurisdictions; I've kept it as a general non-waiver clause rather than
-  inventing jurisdiction-specific detail.
+- V4.1 correction: the closing sentence is now exactly "Nothing in these Terms
+  or our refund policy affects any statutory rights you may have." — per your
+  explicit instruction, replacing an earlier draft that characterized specific
+  statutory withdrawal rights (a 14-day EU digital-services right) and implied
+  this 7-day commercial refund policy supplements or interacts with it in a
+  particular way. This version makes no claim about which statutory rights
+  exist, in which jurisdiction, or how they relate to the pack-refund guarantee
+  — it is a pure non-waiver, not a characterization, so it carries no
+  legal-accuracy risk for me to have introduced.

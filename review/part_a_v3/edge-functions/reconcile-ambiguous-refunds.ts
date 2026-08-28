@@ -8,8 +8,19 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 import Stripe from 'npm:stripe@17.5.0'
 
 Deno.serve(async (req) => {
+  // V4.1 Item 5 fix: the previous `cronSecret && ...` check was fail-OPEN
+  // -- if CRON_INVOKE_SECRET was ever unset (misconfiguration), the check
+  // short-circuited to false and skipped auth entirely, making this
+  // refund-mutating endpoint publicly callable. A missing secret must
+  // reject the request, not silently trust it.
   const cronSecret = Deno.env.get('CRON_INVOKE_SECRET')
-  if (cronSecret && req.headers.get('x-cron-secret') !== cronSecret) {
+  if (!cronSecret) {
+    console.error(
+      'reconcile-ambiguous-refunds: CRON_INVOKE_SECRET is not configured',
+    )
+    return new Response('Not configured', { status: 503 })
+  }
+  if (req.headers.get('x-cron-secret') !== cronSecret) {
     return new Response('Unauthorized', { status: 401 })
   }
 

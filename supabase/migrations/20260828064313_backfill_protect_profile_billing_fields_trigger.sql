@@ -74,7 +74,12 @@ begin
     -- 5. Present: verify it is EXACTLY the expected trigger before leaving
     -- it alone. tgtype 19 = BEFORE (2) + ROW (1) + UPDATE (16) = 19,
     -- matching the production trigger's tgtype confirmed earlier.
-    if v_trigger_row.tgtable is distinct from 'public.profiles'
+    -- Compared via regclass equality, not the rendered text of tgtable --
+    -- ::regclass::text renders unqualified ('profiles') whenever public is
+    -- on the search_path (the normal case), which made a literal
+    -- 'public.profiles' string comparison a false-negative trap. Found via
+    -- a real failed apply attempt against production, not by inspection.
+    if v_trigger_row.tgtable::regclass is distinct from 'public.profiles'::regclass
        or v_trigger_row.tgtype is distinct from 19
        or v_trigger_row.tgenabled is distinct from 'O'
        or v_trigger_row.tgfunc is distinct from 'protect_profile_billing_fields'

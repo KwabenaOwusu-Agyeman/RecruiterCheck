@@ -2,8 +2,13 @@
 // "keyword-scan" slug, during cutover steps 5-9 (RUNBOOK.md). Shares the
 // production scan implementation (handleKeywordScanRequest, imported from
 // keyword-scan.ts) rather than duplicating business logic -- this file
-// only adds the canary allowlist gate in front of it.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
+// only adds the canary allowlist gate in front of it. See
+// keyword-scan-canary.test.ts for a static-source proof this import is
+// real (not a copy) and runtime proof that a denied user never reaches it.
+import {
+  createClient,
+  type SupabaseClient,
+} from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 import { handleKeywordScanRequest } from './keyword-scan.ts'
 
 const corsHeaders = {
@@ -12,36 +17,23 @@ const corsHeaders = {
     'authorization, x-client-info, apikey, content-type',
 }
 
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+export interface CanaryClients {
+  userClient: SupabaseClient
+  adminClient: SupabaseClient
+}
 
+export async function handleCanaryRequest(
+  req: Request,
+  clients: CanaryClients,
+): Promise<Response> {
+  const { userClient, adminClient } = clients
   try {
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      return jsonResponse({ error: 'Missing authorization header' }, 401)
-    }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-
-    // Fail closed if configuration is absent -- never fall through to
-    // "no allowlist configured, allow everyone."
-    if (!supabaseUrl || !supabaseAnonKey || !serviceRoleKey) {
-      console.error('keyword-scan-canary: missing Supabase configuration')
-      return jsonResponse({ error: 'unavailable' }, 503)
-    }
-
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    })
-    const adminClient = createClient(supabaseUrl, serviceRoleKey)
-
     // Verify the JWT and derive the user FROM it -- never from any
-    // client-supplied field.
-    const { data: { user }, error: userError } = await userClient.auth.getUser()
+    // client-supplied field (e.g. a body/header claiming a user id).
+    const {
+      data: { user },
+      error: userError,
+    } = await userClient.auth.getUser()
     if (userError || !user) {
       return jsonResponse({ error: 'Unauthorized' }, 401)
     }
@@ -88,11 +80,42 @@ Deno.serve(async (req) => {
     console.error('keyword-scan-canary error:', error)
     return jsonResponse({ error: 'Internal server error' }, 500)
   }
-})
+}
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
+}
+
+if (import.meta.main) {
+  Deno.serve(async (req) => {
+    if (req.method === 'OPTIONS') {
+      return new Response('ok', { headers: corsHeaders })
+    }
+
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return jsonResponse({ error: 'Missing authorization header' }, 401)
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+
+    // Fail closed if configuration is absent -- never fall through to
+    // "no allowlist configured, allow everyone."
+    if (!supabaseUrl || !supabaseAnonKey || !serviceRoleKey) {
+      console.error('keyword-scan-canary: missing Supabase configuration')
+      return jsonResponse({ error: 'unavailable' }, 503)
+    }
+
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    })
+    const adminClient = createClient(supabaseUrl, serviceRoleKey)
+
+    return await handleCanaryRequest(req, { userClient, adminClient })
   })
 }

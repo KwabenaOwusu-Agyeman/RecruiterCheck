@@ -3,21 +3,18 @@ import {
   type SupabaseClient,
 } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 import Stripe from 'npm:stripe@17.5.0'
-import { ENVIRONMENT_LABEL, PACK_PRICE_MAP } from './price-config.ts'
+import {
+  assertSecretKeyMatchesEnvironment,
+  getStripeEnvironment,
+  getVerifiedPriceConfig,
+  type VerifiedPriceConfig,
+} from './price-config.ts'
 
 Deno.serve(async (req) => {
   const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
   const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
   if (!stripeSecretKey || !webhookSecret) {
     return new Response('Billing is not configured', { status: 503 })
-  }
-
-  if (!PACK_PRICE_MAP) {
-    console.error(
-      'stripe-webhook: price configuration missing or incomplete for environment',
-      ENVIRONMENT_LABEL,
-    )
-    return new Response('Billing configuration invalid', { status: 503 })
   }
 
   const signature = req.headers.get('stripe-signature')
@@ -31,6 +28,25 @@ Deno.serve(async (req) => {
     apiVersion: '2024-12-18.acacia',
     httpClient: Stripe.createFetchHttpClient(),
   })
+
+  // V4.1 Item 4: explicit environment required, secret key must match it,
+  // and every configured Price is verified live against Stripe -- see
+  // price-config.ts. Runs before signature verification since there is no
+  // point verifying a webhook this instance cannot correctly process
+  // anyway.
+  let priceConfig: VerifiedPriceConfig
+  try {
+    const environment = getStripeEnvironment()
+    assertSecretKeyMatchesEnvironment(stripeSecretKey, environment)
+    priceConfig = await getVerifiedPriceConfig(stripe)
+  } catch (error) {
+    console.error(
+      'stripe-webhook: Stripe environment/price verification failed',
+      error instanceof Error ? error.message : String(error),
+    )
+    return new Response('Billing configuration invalid', { status: 503 })
+  }
+
   const rawBody = await req.text()
 
   let event: Stripe.Event
@@ -100,6 +116,7 @@ Deno.serve(async (req) => {
         outcomeCategory = await handlePackCheckoutCompleted(
           stripe,
           adminClient,
+          priceConfig,
           event.data.object as Stripe.Checkout.Session,
         )
         break
@@ -191,6 +208,7 @@ Deno.serve(async (req) => {
 async function handlePackCheckoutCompleted(
   stripe: Stripe,
   adminClient: SupabaseClient,
+  priceConfig: VerifiedPriceConfig,
   session: Stripe.Checkout.Session,
 ): Promise<'fulfilled' | 'permanently_invalid'> {
   if (session.mode !== 'payment') return 'permanently_invalid'
@@ -214,8 +232,8 @@ async function handlePackCheckoutCompleted(
   if (lineItems.data.length !== 1) return 'permanently_invalid'
   const priceId = lineItems.data[0].price?.id
   const quantity = lineItems.data[0].quantity ?? 0
-  if (!priceId || !PACK_PRICE_MAP![priceId]) return 'permanently_invalid'
-  const expected = PACK_PRICE_MAP![priceId]
+  if (!priceId || !priceConfig[priceId]) return 'permanently_invalid'
+  const expected = priceConfig[priceId]
   if (
     quantity !== 1 || session.amount_total !== expected.expectedAmount ||
     session.currency !== expected.expectedCurrency

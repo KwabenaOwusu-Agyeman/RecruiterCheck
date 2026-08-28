@@ -395,39 +395,46 @@ export async function handleKeywordScanRequest(
 // from the caller's own JWT (no allowlist gate -- this IS the fully public
 // implementation once cutover flips maintenance off) and delegates to the
 // shared implementation above.
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
-  try {
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      return jsonResponse({ error: 'Missing authorization header' }, 401)
+// Guarded so importing this module for handleKeywordScanRequest (see
+// keyword-scan-canary.ts and both files' test suites) never starts a
+// listener -- in the real deployed Edge Function this module IS the entry
+// point, so import.meta.main is still true there.
+if (import.meta.main) {
+  Deno.serve(async (req) => {
+    if (req.method === 'OPTIONS') {
+      return new Response('ok', { headers: corsHeaders })
     }
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    try {
+      const authHeader = req.headers.get('Authorization')
+      if (!authHeader) {
+        return jsonResponse({ error: 'Missing authorization header' }, 401)
+      }
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+      const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+      const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    })
-    const adminClient = createClient(supabaseUrl, serviceRoleKey)
+      const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+      })
+      const adminClient = createClient(supabaseUrl, serviceRoleKey)
 
-    const { data: { user }, error: userError } = await userClient.auth.getUser()
-    if (userError || !user) {
-      return jsonResponse({ error: 'Unauthorized' }, 401)
+      const { data: { user }, error: userError } = await userClient.auth
+        .getUser()
+      if (userError || !user) {
+        return jsonResponse({ error: 'Unauthorized' }, 401)
+      }
+
+      return await handleKeywordScanRequest(req, {
+        userClient,
+        adminClient,
+        user,
+      })
+    } catch (error) {
+      console.error('keyword-scan (public slug) error:', error)
+      return jsonResponse({ error: 'Internal server error' }, 500)
     }
-
-    return await handleKeywordScanRequest(req, {
-      userClient,
-      adminClient,
-      user,
-    })
-  } catch (error) {
-    console.error('keyword-scan (public slug) error:', error)
-    return jsonResponse({ error: 'Internal server error' }, 500)
-  }
-})
+  })
+}
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
