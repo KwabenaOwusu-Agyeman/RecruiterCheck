@@ -15,7 +15,7 @@ interface AuthCardHeaderProps {
 export function AuthCardHeader({ title, subtitle, titleId, className }: AuthCardHeaderProps) {
   return (
     <div className={cn('mb-[16px] sm:mb-[24px]', className)}>
-      <h1 id={titleId} className="text-[20px] font-bold tracking-tight text-text-primary sm:text-2xl">
+      <h1 id={titleId} className="text-[20px] font-semibold text-text-primary sm:text-2xl">
         {title}
       </h1>
       {subtitle ? <p className="mt-[6px] text-[13px] text-text-secondary sm:text-sm">{subtitle}</p> : null}

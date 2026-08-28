@@ -152,9 +152,9 @@ export function FeedbackPage() {
       <div className="lg:mx-auto lg:max-w-[1000px]">
         <div className="rounded-[20px] border border-white/10 bg-navy p-4 shadow-elevated sm:p-6 lg:p-8">
           <div className="space-y-3">
-            <Skeleton className="h-4 w-24 bg-white/10" />
-            <Skeleton className="h-7 w-2/3 bg-white/10" />
-            <Skeleton className="h-10 w-40 bg-white/10" />
+            <Skeleton className="h-[14px] w-24 bg-white/10" />
+            <Skeleton className="h-[26px] w-2/3 bg-white/10" />
+            <Skeleton className="h-[40px] w-40 bg-white/10" />
           </div>
           <div className="mt-6 grid gap-5 md:grid-cols-2">
             <Skeleton className="h-40 rounded-[16px] bg-white/[0.06]" />
@@ -231,7 +231,7 @@ export function FeedbackPage() {
           <p className={cn('text-sm font-semibold', t.sub)}>
             {firstName ? `Hi ${firstName},` : 'Hi,'}
           </p>
-          <h1 className={cn('font-display mt-1 text-2xl font-semibold tracking-tight sm:text-[28px]', t.heading)}>
+          <h1 className={cn('font-display mt-1 text-[24px] sm:text-[30px]', t.heading)}>
             {check.job_title || 'Recruiter Feedback'}
           </h1>
           {check.company_name ? (
@@ -248,7 +248,7 @@ export function FeedbackPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, ease: 'easeOut' }}
             >
-              <p className={cn('text-[2.125rem] font-bold tracking-tight sm:text-[2.625rem]', t.heading)}>
+              <p className={cn('text-[2.125rem] font-semibold tracking-[-0.02em] sm:text-[2.625rem]', t.heading)}>
                 <span>{score}%</span>{' '}
                 <span className={cn('text-base font-semibold sm:text-lg', t.subtle)}>
                   Interview Score

@@ -41,7 +41,7 @@ export function PricingCards({ packs, loadingPack, onBuy }: PricingCardsProps) {
               {pack.badge ? (
                 <span
                   className={cn(
-                    'absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide',
+                    'absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide',
                     isHighlighted ? 'bg-blue-light text-navy' : 'bg-white text-navy',
                   )}
                 >
@@ -54,12 +54,12 @@ export function PricingCards({ packs, loadingPack, onBuy }: PricingCardsProps) {
                   isHighlighted ? 'border-blue-light shadow-elevated' : 'border-white/15',
                 )}
               >
-                <h2 className="font-display text-2xl font-bold text-white sm:text-3xl">{pack.name}</h2>
+                <h2 className="font-display text-2xl text-white sm:text-3xl">{pack.name}</h2>
                 <p className="text-xs font-medium text-white/80">{pack.description}</p>
 
                 <p className="mt-2 flex items-baseline gap-1 tracking-tight text-white">
-                  <span className="text-xl font-bold">€</span>
-                  <span className="text-4xl font-bold sm:text-5xl">{pack.price.replace('€', '')}</span>
+                  <span className="text-xl font-semibold">€</span>
+                  <span className="text-4xl font-semibold tracking-[-0.02em] sm:text-5xl">{pack.price.replace('€', '')}</span>
                 </p>
                 <p className="mt-0.5 text-xs font-medium text-white/80">
                   €{(Number(pack.price.replace('€', '')) / pack.checks).toFixed(2)} per check

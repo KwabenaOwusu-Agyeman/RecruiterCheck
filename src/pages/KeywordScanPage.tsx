@@ -49,7 +49,7 @@ function MatchRing({ percent }: { percent: number }) {
         />
       </svg>
       <div className="absolute flex flex-col items-center">
-        <span className="text-3xl font-bold text-white sm:text-4xl">{percent}%</span>
+        <span className="text-3xl font-semibold tracking-[-0.02em] text-white sm:text-4xl">{percent}%</span>
         <span className="mt-0.5 text-xs text-white/50">match</span>
       </div>
     </div>

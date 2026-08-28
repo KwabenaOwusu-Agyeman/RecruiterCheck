@@ -154,7 +154,7 @@ export function AccountPage() {
       <div className="grid items-stretch gap-4 sm:gap-6 lg:grid-cols-2 lg:gap-[32px]">
         <Card className="flex h-full flex-col">
           <CardHeader className="py-3.5 sm:py-5">
-            <h2 className="font-display text-lg font-semibold text-text-primary sm:text-xl">Profile</h2>
+            <h2 className="text-lg font-semibold text-text-primary sm:text-xl">Profile</h2>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col py-4 sm:py-6">
             <form
@@ -190,7 +190,7 @@ export function AccountPage() {
 
         <Card tone="light" className="flex h-full flex-col">
           <CardHeader className="py-3.5 sm:py-5">
-            <h2 className="font-display text-lg font-semibold text-text-primary sm:text-xl">Checks</h2>
+            <h2 className="text-lg font-semibold text-text-primary sm:text-xl">Checks</h2>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col space-y-2 py-4 text-sm sm:space-y-3 sm:py-6">
             <div className="flex items-center justify-between">
@@ -229,8 +229,8 @@ export function AccountPage() {
 
       <Card className="mt-4 sm:mt-8">
         <CardHeader className="flex-row items-center justify-between gap-3 py-3.5 sm:py-5">
-          <h2 className="font-display text-lg font-semibold text-text-primary sm:text-xl">Browser extension</h2>
-          <span className="shrink-0 rounded-full bg-navy-tint px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blue">
+          <h2 className="text-lg font-semibold text-text-primary sm:text-xl">Browser extension</h2>
+          <span className="shrink-0 rounded-full bg-navy-tint px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue">
             Early access
           </span>
         </CardHeader>
@@ -268,7 +268,7 @@ export function AccountPage() {
       {user?.app_metadata.provider === 'email' ? (
         <Card className="mt-4 sm:mt-8">
           <CardHeader className="py-3.5 sm:py-5">
-            <h2 className="font-display text-lg font-semibold text-text-primary sm:text-xl">Password</h2>
+            <h2 className="text-lg font-semibold text-text-primary sm:text-xl">Password</h2>
           </CardHeader>
           <CardContent className="py-4 sm:py-6">
             <form
@@ -320,7 +320,7 @@ export function AccountPage() {
 
       <Card className="mt-4 border-error/25 sm:mt-8 sm:border-error/20 sm:bg-[#FCEFEF]/30 sm:shadow-none">
         <CardHeader className="border-b-error/10 py-3.5 sm:py-5">
-          <h2 className="font-display text-lg font-semibold text-text-primary sm:text-xl">Danger Zone</h2>
+          <h2 className="text-lg font-semibold text-text-primary sm:text-xl">Danger Zone</h2>
         </CardHeader>
         <CardContent className="py-4 sm:py-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

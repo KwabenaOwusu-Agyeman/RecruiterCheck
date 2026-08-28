@@ -126,10 +126,10 @@ export function MyChecksPage() {
           {[0, 1, 2, 3].map((row) => (
             <div key={row} className="flex items-center justify-between gap-3 px-4 py-4">
               <div className="min-w-0 flex-1 space-y-2">
-                <Skeleton className="h-4 w-1/3" />
-                <Skeleton className="h-3 w-1/4" />
+                <Skeleton className="h-[14px] w-1/3" />
+                <Skeleton className="h-[10px] w-1/4" />
               </div>
-              <Skeleton className="h-4 w-10 shrink-0" />
+              <Skeleton className="h-[14px] w-10 shrink-0" />
             </div>
           ))}
         </Card>
@@ -139,6 +139,21 @@ export function MyChecksPage() {
         <EmptyState
           title="No checks yet"
           description="Add a job and your CV to see your application from a recruiter's perspective."
+          visual={
+            <div className="space-y-2">
+              {[{ w: 'w-2/5', score: 'bg-success/30' }, { w: 'w-1/2', score: 'bg-warning/30' }, { w: 'w-1/3', score: 'bg-border-strong' }].map(
+                (row, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between gap-3 rounded-[8px] border border-border-soft bg-background px-4 py-3"
+                  >
+                    <span className={cn('h-[10px] rounded-full bg-border-strong', row.w)} />
+                    <span className={cn('h-[10px] w-10 rounded-full', row.score)} />
+                  </div>
+                ),
+              )}
+            </div>
+          }
           action={
             <Link to="/checks/new">
               <Button size="sm">New Check</Button>
@@ -152,19 +167,19 @@ export function MyChecksPage() {
             <table className="min-w-full divide-y divide-border">
               <thead className="bg-background">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-text-secondary lg:px-6">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-text-caption lg:px-6">
                     Role
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-text-secondary">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-text-caption">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-text-secondary">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-text-caption">
                     Score
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-text-secondary">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-text-caption">
                     Date
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-text-secondary lg:px-6">
+                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-text-caption lg:px-6">
                     Actions
                   </th>
                 </tr>
