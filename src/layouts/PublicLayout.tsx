@@ -27,12 +27,15 @@ function PublicLayoutContent() {
   }, [location.pathname, location.state, open, navigate])
 
   return (
-    <div className="flex min-h-screen flex-col bg-surface pb-16 sm:pb-0">
+    <div className="flex min-h-screen flex-col bg-background pb-16 sm:pb-0">
       <PublicHeader />
       <main className="flex-1">
         <Outlet />
       </main>
-      <PublicFooter />
+      {/* The footer is a landing-page element only: every other public page
+          (SEO pages, pricing, legal) ends on its own call to action, and a
+          second full sitemap under it competed with that. */}
+      {location.pathname === '/' ? <PublicFooter /> : null}
       <StickyMobileCta />
       <AuthModal />
     </div>

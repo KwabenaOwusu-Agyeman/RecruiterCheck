@@ -11,7 +11,7 @@ interface LegalLayoutProps {
 
 export function LegalLayout({ title, updated, children }: LegalLayoutProps) {
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen bg-background">
       <header className="border-b border-border">
         <Container>
           <div className="flex h-16 items-center">

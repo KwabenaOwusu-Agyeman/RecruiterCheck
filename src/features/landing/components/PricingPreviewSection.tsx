@@ -41,7 +41,7 @@ export function PricingPreviewSection() {
   }
 
   return (
-    <section className="border-b border-border bg-surface">
+    <section className="border-b border-border bg-background">
       <Container className="py-[32px] sm:py-12 lg:py-[64px]">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue">Pricing</p>

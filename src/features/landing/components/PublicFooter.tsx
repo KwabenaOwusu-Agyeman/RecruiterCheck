@@ -98,7 +98,7 @@ const columns: FooterColumn[] = [
 
 export function PublicFooter() {
   return (
-    <footer className="border-t border-border bg-surface">
+    <footer className="border-t border-border bg-background">
       <Container>
         <div className="py-8 lg:py-[48px]">
           <div className="grid grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-4">

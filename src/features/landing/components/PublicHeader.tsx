@@ -78,8 +78,13 @@ export function PublicHeader() {
     setMobileNavOpen(false)
   }
 
+  // Solid, not a translucent blur. The page is a single flat colour now, so
+  // a backdrop-filter here had nothing left to reveal — and a sticky or
+  // fixed element carrying backdrop-filter is one of the standard causes of
+  // the header wobbling against the content during momentum scrolling on
+  // iOS.
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-surface/80 pt-[env(safe-area-inset-top)] backdrop-blur-md sm:static sm:bg-surface sm:backdrop-blur-none lg:sticky lg:border-b-border-soft lg:bg-surface/85 lg:backdrop-blur-md">
+    <header className="sticky top-0 z-20 border-b border-border bg-background pt-[env(safe-area-inset-top)] sm:static lg:sticky lg:border-b-border-soft">
       <Container>
         <div className="flex h-14 items-center justify-between sm:h-16 lg:h-[72px]">
           <Logo />
@@ -143,7 +148,7 @@ export function PublicHeader() {
             role="dialog"
             aria-modal="true"
             aria-label="Site navigation"
-            className="absolute inset-x-0 top-0 flex flex-col gap-1 rounded-b-[20px] border-b border-border-soft bg-surface p-4 pt-[calc(env(safe-area-inset-top)+16px)] shadow-elevated"
+            className="absolute inset-x-0 top-0 flex flex-col gap-1 rounded-b-[20px] border-b border-border-soft bg-background p-4 pt-[calc(env(safe-area-inset-top)+16px)] shadow-elevated"
           >
             <div className="mb-2 flex items-center justify-between">
               <Logo />

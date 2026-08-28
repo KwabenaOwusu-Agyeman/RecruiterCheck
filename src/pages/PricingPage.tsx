@@ -98,7 +98,7 @@ export function PricingPage() {
 
   return (
     <main>
-      <section className="border-b border-border-soft bg-surface py-6 sm:py-8">
+      <section className="border-b border-border-soft bg-background py-6 sm:py-8">
         <Container>
           <div className="mx-auto max-w-3xl text-center">
             {/* Framed as support rather than payment. The word "Pricing" still

@@ -21,18 +21,20 @@ const ITEMS = [
 export function ReassuranceSection() {
   return (
     <section className="border-b border-border bg-navy">
-      <Container className="py-3 sm:py-3.5">
-        {/* Below sm: flex-wrap + centered gaps, no dividers, no scroll —
-            all three items must be visible at once on narrow phones, so
-            wrapping to a second line beats a horizontal-scroll row where
-            the third item hides off-screen with no visual cue. At sm and
-            up the row always fits on one line, so it reverts to the
-            original single-row, divider-separated treatment. */}
-        <div className="mx-auto flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:w-fit sm:flex-nowrap sm:justify-start sm:gap-x-0 sm:divide-x sm:divide-white/15 sm:whitespace-nowrap">
+      <Container className="py-3.5">
+        {/* Below sm: an even three-column grid with the icon stacked above
+            its label, divided by the same hairlines as the desktop row. The
+            previous centre-wrapped flex row broke into an uneven two-then-one
+            arrangement on narrow phones, which read as a layout accident
+            rather than a designed trust bar. At sm and up the row fits on one
+            line, so it reverts to the original inline, divider-separated
+            treatment. */}
+        <div className="mx-auto grid grid-cols-3 divide-x divide-white/15 sm:flex sm:w-fit sm:items-center sm:justify-start sm:whitespace-nowrap">
           {ITEMS.map((item) => {
             const Icon = item.icon
             const itemClass = cn(
-              'flex items-center gap-2 text-sm font-semibold text-white sm:px-5 sm:text-base sm:first:pl-0 sm:last:pr-0',
+              'flex flex-col items-center justify-start gap-1.5 px-2 text-center text-[12px] font-semibold leading-[1.3] text-white',
+              'sm:flex-row sm:gap-2 sm:px-5 sm:text-base sm:first:pl-0 sm:last:pr-0',
               item.to && 'transition-colors hover:text-blue-light',
             )
             const inner = (

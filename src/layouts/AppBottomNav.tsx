@@ -51,7 +51,7 @@ export function AppBottomNav() {
   return (
     <nav
       aria-label="App"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/80 pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_12px_rgba(2,12,56,0.06)] backdrop-blur-md sm:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_12px_rgba(2,12,56,0.06)] sm:hidden"
     >
       <div className="flex h-16 items-stretch justify-around">
         <Link

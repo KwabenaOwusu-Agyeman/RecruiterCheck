@@ -25,7 +25,7 @@ export function AppHeader() {
   const location = useLocation()
 
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-surface/80 pt-[env(safe-area-inset-top)] backdrop-blur-md sm:static sm:bg-surface sm:backdrop-blur-none lg:h-[72px] lg:border-b-border-soft">
+    <header className="sticky top-0 z-20 border-b border-border bg-background pt-[env(safe-area-inset-top)] sm:static lg:h-[72px] lg:border-b-border-soft">
       <Container className="lg:max-w-[1120px]">
         <div className="flex h-14 items-center gap-8 sm:h-16 lg:h-[72px]">
           {/* Intentionally not a link: navigation inside the app happens

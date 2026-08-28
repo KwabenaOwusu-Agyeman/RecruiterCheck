@@ -57,7 +57,7 @@ export function SeoLandingPage({
 
   return (
     <main>
-      <section className="border-b border-border-soft bg-surface py-12 sm:py-16 lg:py-20">
+      <section className="border-b border-border-soft bg-background py-12 sm:py-16 lg:py-20">
         <Container>
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue">{eyebrow}</p>
@@ -186,7 +186,7 @@ export function SeoLandingPage({
         </section>
       )}
 
-      <section className="border-y border-border-soft bg-surface py-10 sm:py-14">
+      <section className="border-y border-border-soft bg-background py-10 sm:py-14">
         <Container>
           <div className="mx-auto max-w-3xl">
             <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl">How it works</h2>
@@ -273,7 +273,7 @@ export function SeoLandingPage({
       />
 
       {relatedLinks.length > 0 && (
-        <section className="border-t border-border-soft bg-surface py-8">
+        <section className="border-t border-border-soft bg-background py-8">
           <Container>
             <nav className="mx-auto flex max-w-3xl flex-wrap items-center gap-3" aria-label="Related tools">
               <span className="text-sm font-semibold text-text-primary">Related tools:</span>

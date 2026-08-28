@@ -17,10 +17,6 @@ export function HeroSection() {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,rgba(2,12,56,0.12)_1px,transparent_1px)] bg-[length:28px_28px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,black_0%,transparent_75%)]"
       />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-[-120px] h-[420px] w-[720px] -translate-x-1/2 rounded-full bg-blue/10 blur-[100px]"
-      />
       <Container className="relative py-[28px] sm:py-8 lg:py-10">
         <div className="mx-auto max-w-2xl text-center lg:max-w-[800px]">
           <p className="mb-3 text-[14px] font-medium text-text-secondary sm:text-base">{TAGLINE}</p>

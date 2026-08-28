@@ -75,7 +75,7 @@ export function HowInterviewScoreWorksPage() {
 
   return (
     <main>
-      <section className="border-b border-border-soft bg-surface py-12 sm:py-16 lg:py-20">
+      <section className="border-b border-border-soft bg-background py-12 sm:py-16 lg:py-20">
         <Container>
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue">Methodology</p>
@@ -127,7 +127,7 @@ export function HowInterviewScoreWorksPage() {
         </Container>
       </section>
 
-      <section className="border-y border-border-soft bg-surface py-10 sm:py-14">
+      <section className="border-y border-border-soft bg-background py-10 sm:py-14">
         <Container>
           <div className="mx-auto max-w-4xl">
             <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl">
@@ -189,7 +189,7 @@ export function HowInterviewScoreWorksPage() {
         </Container>
       </section>
 
-      <section className="border-y border-border-soft bg-surface py-10 sm:py-14">
+      <section className="border-y border-border-soft bg-background py-10 sm:py-14">
         <Container>
           <div className="mx-auto max-w-3xl">
             <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl">
@@ -224,7 +224,7 @@ export function HowInterviewScoreWorksPage() {
         </Container>
       </section>
 
-      <section className="border-y border-border-soft bg-surface py-10 sm:py-14">
+      <section className="border-y border-border-soft bg-background py-10 sm:py-14">
         <Container>
           <div className="mx-auto max-w-3xl">
             <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl">
@@ -314,7 +314,7 @@ export function HowInterviewScoreWorksPage() {
         }}
       />
 
-      <section className="border-t border-border-soft bg-surface py-10 sm:py-14">
+      <section className="border-t border-border-soft bg-background py-10 sm:py-14">
         <Container>
           <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 text-center">
             <p className="text-lg font-medium text-text-primary">See your Interview Score for a real job</p>
