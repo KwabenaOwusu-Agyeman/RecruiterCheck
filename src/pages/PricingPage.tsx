@@ -101,17 +101,26 @@ export function PricingPage() {
       <section className="border-b border-border-soft bg-surface py-6 sm:py-8">
         <Container>
           <div className="mx-auto max-w-3xl text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue">Pricing</p>
-            {/* Heading is deliberately the same for everyone: it is what the
-                prerendered page ships and what search results show. The
-                balance is added below it rather than replacing it. */}
+            {/* Framed as support rather than payment. The word "Pricing" still
+                lives in the <title> and the URL, which is what carries the
+                pricing search intent, so the visible copy is free to be human.
+
+                No "free check" language: every signed-in visitor here has
+                already spent theirs (all accounts show lifetime_checks_consumed
+                >= 1), so leading with it would be stale news. The commercial
+                terms it used to carry are not lost, since each pack card
+                already reads "One time purchase, credits valid for 90 days". */}
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue">
+              Support for your applications
+            </p>
+            {/* Same heading for everyone: it is what the prerendered page ships
+                and what search results show. The balance is added below it
+                rather than replacing it. */}
             <h1 className="font-display mt-2 text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl lg:text-4xl">
-              Choose how you use your checks
+              Choose how much support you want for your applications
             </h1>
             <p className="mx-auto mt-3 max-w-2xl text-[15px] leading-7 text-text-secondary sm:text-base">
-              Your first Recruiter Check is free, no credit card required, plus 3 free keyword
-              scans to check your fit before you spend one. After that, buy a pack of checks
-              whenever you need them. No subscription and no automatic renewal.
+              Pick the pack that fits your search, and use your checks whenever you need them.
             </p>
             {profile ? (
               <p className="mt-3 text-sm font-semibold text-text-primary">
