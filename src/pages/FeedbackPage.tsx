@@ -257,6 +257,29 @@ export function FeedbackPage() {
               <p className={cn('mt-2 text-base font-semibold sm:text-lg', getVerdictColor(score, textTone))}>
                 {getScoreLabel(score)}
               </p>
+              {/* The same tier-coloured gauge the landing page's example
+                  verdict shows — the real report should look like what the
+                  marketing promised. Drawn with SVG attributes rather than
+                  an inline style because the width is a real, per-check
+                  value and the CSP's style-src has no inline allowance;
+                  presentation attributes are outside CSP's reach. */}
+              <svg
+                viewBox="0 0 100 6"
+                preserveAspectRatio="none"
+                className="mt-3 block h-[6px] w-full max-w-xl"
+                aria-hidden="true"
+              >
+                <rect x="0" y="0" width="100" height="6" rx="3" fill={isDark ? 'rgba(255,255,255,0.16)' : '#E9E4D9'} />
+                <rect
+                  x="0"
+                  y="0"
+                  width={Math.max(score, 4)}
+                  height="6"
+                  rx="3"
+                  fill={score >= 85 ? '#0EA063' : score >= 61 ? '#F59E0B' : isDark ? '#FF8A8A' : '#91151A'}
+                  className="origin-left animate-grow-bar"
+                />
+              </svg>
               {feedback && buildSummarySentence(score, visibleImprovements) ? (
                 <p className={cn('mt-2 max-w-xl text-sm', t.body)}>
                   {buildSummarySentence(score, visibleImprovements)}

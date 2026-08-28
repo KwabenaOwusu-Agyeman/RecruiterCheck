@@ -41,7 +41,7 @@ function MatchRing({ percent }: { percent: number }) {
           cy="60"
           r={radius}
           fill="none"
-          stroke="#fb923c"
+          stroke="#8FB2F0"
           strokeWidth="5"
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -65,9 +65,9 @@ function TermRow({
   label: string
   terms: string[]
   moreCount: number
-  dotColor: 'purple' | 'pink'
+  dotColor: 'matched' | 'missing'
 }) {
-  const dotClass = dotColor === 'purple' ? 'bg-purple-400' : 'bg-pink-400'
+  const dotClass = dotColor === 'matched' ? 'bg-success' : 'bg-error-light'
 
   return (
     <div className="flex items-start gap-2.5 border-t border-white/10 py-2.5 first:border-t-0">
@@ -173,8 +173,8 @@ export function KeywordScanPage() {
           <Card tone="dark" className="flex flex-col items-center gap-4 p-5 sm:flex-row sm:items-center sm:gap-6 sm:p-6">
             <MatchRing percent={result.matchPercent} />
             <div className="w-full">
-              <TermRow label="Matched" terms={result.matched} moreCount={Math.max(result.matchedTotal - result.matched.length, 0)} dotColor="purple" />
-              <TermRow label="Missing" terms={result.missing} moreCount={Math.max(result.missingTotal - result.missing.length, 0)} dotColor="pink" />
+              <TermRow label="Matched" terms={result.matched} moreCount={Math.max(result.matchedTotal - result.matched.length, 0)} dotColor="matched" />
+              <TermRow label="Missing" terms={result.missing} moreCount={Math.max(result.missingTotal - result.missing.length, 0)} dotColor="missing" />
             </div>
           </Card>
           <div className="mt-4 flex flex-col items-center gap-2 text-center">

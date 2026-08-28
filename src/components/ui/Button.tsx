@@ -1,7 +1,7 @@
 import { type ButtonHTMLAttributes, forwardRef } from 'react'
 import { cn } from '@/utils/cn'
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'light' | 'accent'
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'light' | 'accent' | 'danger'
 type ButtonSize = 'sm' | 'md' | 'lg'
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -28,6 +28,12 @@ const variantStyles: Record<ButtonVariant, string> = {
   // from the neutral white `light` buttons used for secondary actions there.
   accent:
     'bg-blue-light text-navy border border-transparent hover:bg-blue-light/90 focus-visible:ring-blue-light hover:shadow-elevated sm:hover:-translate-y-px',
+  // Destructive actions (delete account, etc.) — a first-class variant for
+  // the same reason `light` is one: overriding primary's own bg-*/border-*
+  // utilities from a className is not reliable in this repo (no
+  // tailwind-merge), and !important overrides read as what they are.
+  danger:
+    'bg-error text-white border border-error hover:bg-error/90 focus-visible:ring-error',
 }
 
 // Horizontal padding is deliberately generous relative to height: a pill

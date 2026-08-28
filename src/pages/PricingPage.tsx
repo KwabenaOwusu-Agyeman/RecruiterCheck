@@ -98,7 +98,7 @@ export function PricingPage() {
 
   return (
     <main>
-      <section className="border-b border-border-soft bg-background py-6 sm:py-8">
+      <section className="border-b border-border-soft bg-background py-[40px] sm:py-12">
         <Container>
           <div className="mx-auto max-w-3xl text-center">
             {/* Framed as support rather than payment. The word "Pricing" still
@@ -110,13 +110,13 @@ export function PricingPage() {
                 >= 1), so leading with it would be stale news. The commercial
                 terms it used to carry are not lost, since each pack card
                 already reads "One time purchase, credits valid for 90 days". */}
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue sm:text-sm">
               Support for your applications
             </p>
             {/* Same heading for everyone: it is what the prerendered page ships
                 and what search results show. The balance is added below it
                 rather than replacing it. */}
-            <h1 className="font-display mt-2 text-2xl text-text-primary sm:text-3xl lg:text-4xl">
+            <h1 className="font-display mt-2 text-[26px] text-text-primary sm:text-[34px] lg:text-[40px] lg:leading-[1.15]">
               Choose how much support you want for your applications
             </h1>
             <p className="mx-auto mt-3 max-w-2xl text-[15px] leading-7 text-text-secondary sm:text-base">

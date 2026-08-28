@@ -318,7 +318,7 @@ export function AccountPage() {
         </Card>
       ) : null}
 
-      <Card className="mt-4 border-error/25 sm:mt-8 sm:border-error/20 sm:bg-[#FCEFEF]/30 sm:shadow-none">
+      <Card className="mt-4 border-error/25 sm:mt-8 sm:border-error/20 sm:bg-error/5 sm:shadow-none">
         <CardHeader className="border-b-error/10 py-3.5 sm:py-5">
           <h2 className="text-lg font-semibold text-text-primary sm:text-xl">Danger Zone</h2>
         </CardHeader>
@@ -329,7 +329,8 @@ export function AccountPage() {
             </p>
             <Button
               size="sm"
-              className="shrink-0 !border-error !bg-error text-white hover:!bg-error/90"
+              variant="danger"
+              className="shrink-0"
               disabled={deleting}
               onClick={() => setConfirmingDelete(true)}
             >
