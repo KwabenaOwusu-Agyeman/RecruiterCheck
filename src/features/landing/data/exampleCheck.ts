@@ -17,6 +17,12 @@ export interface RoleExample {
   experience: string
   companyName: string
   score: number
+  /**
+   * Literal Tailwind class for the score gauge's fill width. Written out
+   * per entry (not built from `score` at runtime) because Tailwind's
+   * build-time scanner only generates classes it can see as literals.
+   */
+  scoreWidthClass: string
   tier: RoleExampleTier
   strengths: readonly string[]
   improvements: readonly string[]
@@ -35,6 +41,7 @@ export const ROLE_EXAMPLES: readonly RoleExample[] = [
     experience: '4 years experience',
     companyName: 'Lumen Cloud',
     score: 85,
+    scoreWidthClass: 'w-[85%]',
     tier: 'likely',
     strengths: [
       'Strong backend ownership. Your experience owning the payments microservice demonstrates your capability to manage critical backend services effectively.',
@@ -54,6 +61,7 @@ export const ROLE_EXAMPLES: readonly RoleExample[] = [
     experience: '2 years experience',
     companyName: 'Vantage AI',
     score: 76,
+    scoreWidthClass: 'w-[76%]',
     tier: 'improve',
     strengths: [
       'Hands on model delivery. Shipped two production ML models at your current role, which is exactly the kind of end-to-end delivery Vantage AI is screening for.',
@@ -74,6 +82,7 @@ export const ROLE_EXAMPLES: readonly RoleExample[] = [
     experience: '3 years experience',
     companyName: 'Harbor Analytics',
     score: 71,
+    scoreWidthClass: 'w-[71%]',
     tier: 'improve',
     strengths: [
       'Solid analytical foundation. Three years running A/B tests and building forecasting models lines up with what Harbor Analytics wants for this role.',
@@ -95,6 +104,7 @@ export const ROLE_EXAMPLES: readonly RoleExample[] = [
     experience: 'Less than 1 year of experience',
     companyName: 'Marketflow Insights',
     score: 55,
+    scoreWidthClass: 'w-[55%]',
     tier: 'not-a-fit',
     strengths: [
       'Strong academic foundation. Your degree project and two internship placements show real exposure to SQL and dashboarding tools before this application.',
@@ -115,6 +125,7 @@ export const ROLE_EXAMPLES: readonly RoleExample[] = [
     experience: 'New graduate',
     companyName: 'Pipeline Works',
     score: 48,
+    scoreWidthClass: 'w-[48%]',
     tier: 'not-a-fit',
     strengths: [
       'Relevant coursework and a self built pipeline project show genuine interest and some hands on exposure to the tools this role uses.',

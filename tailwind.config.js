@@ -54,6 +54,10 @@ export default {
           from: { opacity: '0', transform: 'translateY(8px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
         },
+        'grow-bar': {
+          from: { transform: 'scaleX(0)' },
+          to: { transform: 'scaleX(1)' },
+        },
       },
       animation: {
         'fill-bar': 'fill-bar 4.5s linear forwards',
@@ -68,6 +72,12 @@ export default {
         // there) — same idea as fade-in-up but matching the shorter
         // 8px/0.3s motion/react values it replaced.
         'row-fade-in-up': 'row-fade-in-up 0.3s ease-out both',
+        // VerdictCard's score gauge. 'both' + a scaleX(0) start means the
+        // fill sweeps in on mount and on every role-pill switch (the fill is
+        // keyed by example id); the reduced-motion override in index.css
+        // turns the animation off, leaving the bar at its resting full
+        // width.
+        'grow-bar': 'grow-bar 0.7s ease-out both',
       },
       spacing: {
         1: '0.5rem',

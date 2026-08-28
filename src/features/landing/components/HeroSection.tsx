@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import { Container } from '@/components/ui/Container'
+import { AppWindow } from '@/features/landing/components/AppWindow'
 import { VerdictCard } from '@/features/landing/components/VerdictCard'
 import { ROLE_EXAMPLES } from '@/features/landing/data/exampleCheck'
 import { useCheckCta } from '@/hooks/useCheckCta'
@@ -95,11 +96,14 @@ export function HeroSection() {
           })}
         </div>
 
-        <VerdictCard
-          example={active}
-          compact
-          className="mx-auto mt-5 max-w-2xl sm:mt-6 lg:max-w-[900px]"
-        />
+        {/* The product as a screenshot, not a card: the same verdict markup
+            inside browser chrome, which is what reads as "the actual app"
+            on the first screen. */}
+        <div className="mx-auto mt-5 max-w-2xl sm:mt-6 lg:max-w-[900px]">
+          <AppWindow urlLabel="myrecruitercheck.com/checks/feedback">
+            <VerdictCard example={active} compact frameless />
+          </AppWindow>
+        </div>
       </Container>
     </section>
   )

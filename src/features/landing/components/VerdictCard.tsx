@@ -15,6 +15,12 @@ const TEXT_TONE: Record<'light' | 'dark' | 'muted', 'light' | 'dark'> = {
   muted: 'light',
 }
 
+const TIER_BAR: Record<RoleExampleTier, string> = {
+  likely: 'bg-success',
+  improve: 'bg-warning',
+  'not-a-fit': 'bg-error-light',
+}
+
 interface VerdictCardProps {
   example: RoleExample
   /** Card ground. The tier sections use dark/muted to show the range of outcomes. */
@@ -23,6 +29,14 @@ interface VerdictCardProps {
   compact?: boolean
   /** Force a single column (for side-by-side tier cards); default is 2 columns from lg up. */
   stacked?: boolean
+  /**
+   * Drop the card shell entirely (no border, radius or shadow) for use
+   * inside a frame that already provides one, like the hero's AppWindow.
+   * A prop rather than className overrides, because this repo's cn() has
+   * no tailwind-merge and a passed-in rounded-none cannot reliably beat
+   * Card's own rounded-[20px].
+   */
+  frameless?: boolean
   className?: string
 }
 
@@ -37,14 +51,26 @@ interface VerdictCardProps {
  * badge but not as some of the most prominent words on the site. Role and
  * experience level are what answer "is this for me?" anyway.
  */
-export function VerdictCard({ example, tone = 'light', compact = false, stacked = false, className }: VerdictCardProps) {
+export function VerdictCard({ example, tone = 'light', compact = false, stacked = false, frameless = false, className }: VerdictCardProps) {
   const textTone = TEXT_TONE[tone]
   const isDarkText = textTone === 'dark'
   const strengths = compact ? example.strengths.slice(0, 1) : example.strengths
   const improvements = compact ? example.improvements.slice(0, 1) : example.improvements
 
-  return (
+  const Shell = frameless ? 'div' : undefined
+
+  return Shell ? (
+    <Shell className={cn('relative overflow-hidden bg-surface text-left', className)}>
+      <VerdictCardBody />
+    </Shell>
+  ) : (
     <Card tone={tone} className={cn('relative overflow-hidden text-left', className)}>
+      <VerdictCardBody />
+    </Card>
+  )
+
+  function VerdictCardBody() {
+    return (
       <CardContent
         className={cn(
           'px-6 py-5',
@@ -94,6 +120,28 @@ export function VerdictCard({ example, tone = 'light', compact = false, stacked 
           <p className={cn('mt-1 text-base font-semibold', getVerdictColor(example.score, textTone))}>
             {TIER_LABEL[example.tier]}
           </p>
+
+          {/* The score as a picture, not just a number. Width comes from the
+              per-example literal class (see scoreWidthClass); the sweep is a
+              compiled keyframe, keyed by example id so switching roles
+              replays it — no inline styles, which the CSP's style-src has no
+              allowance for. */}
+          <div
+            className={cn(
+              'mt-3 h-[6px] w-full overflow-hidden rounded-full',
+              isDarkText ? 'bg-white/15' : 'bg-border-soft',
+            )}
+            aria-hidden="true"
+          >
+            <div
+              key={example.id}
+              className={cn(
+                'h-full origin-left animate-grow-bar rounded-full',
+                example.scoreWidthClass,
+                TIER_BAR[example.tier],
+              )}
+            />
+          </div>
         </div>
 
         <div className={cn('mt-[16px] grid gap-[16px] sm:mt-5 sm:gap-5', !stacked && 'lg:mt-0 lg:pl-10')}>
@@ -119,6 +167,6 @@ export function VerdictCard({ example, tone = 'light', compact = false, stacked 
           </div>
         </div>
       </CardContent>
-    </Card>
-  )
+    )
+  }
 }
