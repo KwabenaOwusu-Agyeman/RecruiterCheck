@@ -97,3 +97,9 @@ verify_jwt = false
 
 [functions.instagram-mcp]
 verify_jwt = false
+
+# Brevo cannot present a Supabase JWT, so the gateway check is disabled and the
+# function authenticates the caller itself with the shared x-webhook-secret,
+# exactly as send-password-changed-email does.
+[functions.brevo-unsubscribe-webhook]
+verify_jwt = false

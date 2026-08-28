@@ -124,6 +124,47 @@ export function buildResetPasswordPreview(resetUrl: string): RenderedEmail {
 }
 
 // ---------------------------------------------------------------------------
+// 4b. Newsletter welcome (app-triggered via Brevo, sent on subscribe)
+// ---------------------------------------------------------------------------
+
+/**
+ * Marketing, not transactional — the only email here that genuinely SHOULD
+ * carry an unsubscribe link, which is why one is rendered in the body rather
+ * than left to Brevo's automatic header alone.
+ *
+ * Replaces a hand-rolled HTML document that went out through Resend from
+ * `onboarding@resend.dev`, a shared sandbox domain with no authentication
+ * against myrecruitercheck.com.
+ */
+export function buildNewsletterWelcomeEmail(startCheckUrl: string, unsubscribeUrl: string): RenderedEmail {
+  const heading = 'You are on the list'
+  const bodyHtml =
+    'See what a recruiter would flag in your CV, before you apply. We will send career advice and product updates, and nothing else.'
+  const supportingHtml = `Changed your mind? <a href="${escapeHtml(unsubscribeUrl)}" style="color: #194A9F;">Unsubscribe</a> at any time.`
+
+  return {
+    subject: 'You are on the list',
+    html: buildEmailShell({
+      documentTitle: 'You are on the list',
+      previewText: 'Career advice from the recruiter side of the desk.',
+      heading,
+      bodyHtml,
+      cta: { label: 'Run my Recruiter Check', url: startCheckUrl },
+      supportingHtml,
+    }),
+    text: buildPlainText({
+      heading,
+      bodyLines: [
+        'See what a recruiter would flag in your CV, before you apply.',
+        'We will send career advice and product updates, and nothing else.',
+      ],
+      cta: { label: 'Run my Recruiter Check', url: startCheckUrl },
+      supportingLines: [`Changed your mind? Unsubscribe at any time: ${unsubscribeUrl}`],
+    }),
+  }
+}
+
+// ---------------------------------------------------------------------------
 // 5. Email address change (Supabase-sent — preview only, see supabase/templates/email_change.html)
 // ---------------------------------------------------------------------------
 
