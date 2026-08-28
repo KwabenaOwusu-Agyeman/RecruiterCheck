@@ -92,7 +92,7 @@ export function StatsSection() {
               key={figure.label}
               className="flex flex-col gap-1.5 bg-surface px-4 py-6 text-center sm:px-5 sm:py-7"
             >
-              <span className="font-display text-3xl text-text-primary sm:text-4xl [font-variant-numeric:tabular-nums]">
+              <span className="font-display text-3xl tracking-[-0.02em] text-text-primary sm:text-4xl [font-variant-numeric:tabular-nums]">
                 {figure.value}
               </span>
               <span className="mx-auto max-w-[220px] text-sm leading-snug text-text-secondary">

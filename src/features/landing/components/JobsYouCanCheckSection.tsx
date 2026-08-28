@@ -97,7 +97,7 @@ export function JobsYouCanCheckSection() {
  */
 function RoleChip({ role }: { role: string }) {
   return (
-    <span className="mx-7 shrink-0 whitespace-nowrap text-lg font-medium text-text-secondary sm:mx-12 sm:text-[22px]">
+    <span className="mx-7 shrink-0 whitespace-nowrap text-lg font-medium tracking-[-0.015em] text-text-secondary sm:mx-12 sm:text-[22px]">
       {role}
     </span>
   )

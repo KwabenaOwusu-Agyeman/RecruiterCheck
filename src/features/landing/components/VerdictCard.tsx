@@ -77,7 +77,7 @@ export function VerdictCard({ example, tone = 'light', compact = false, stacked 
 
           <p
             className={cn(
-              'mt-4 text-3xl font-bold sm:text-4xl',
+              'mt-4 text-3xl font-semibold tracking-[-0.02em] sm:text-4xl',
               isDarkText ? 'text-white' : 'text-text-primary',
             )}
           >
