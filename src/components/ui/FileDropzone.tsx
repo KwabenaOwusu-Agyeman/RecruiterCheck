@@ -26,7 +26,7 @@ interface FileDropzoneProps {
 
 function UploadIcon() {
   return (
-    <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
+    <svg viewBox="0 0 20 20" fill="none" className="h-[16px] w-[16px]" aria-hidden="true">
       <path
         d="M10 13V4M10 4L6.5 7.5M10 4l3.5 3.5"
         stroke="currentColor"
@@ -41,7 +41,7 @@ function UploadIcon() {
 
 function FileIcon() {
   return (
-    <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
+    <svg viewBox="0 0 20 20" fill="none" className="h-[16px] w-[16px]" aria-hidden="true">
       <path
         d="M5 3.5h6.5L15 7v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-11.5a1 1 0 0 1 1-1Z"
         stroke="currentColor"
@@ -55,7 +55,7 @@ function FileIcon() {
 
 function TrashIcon() {
   return (
-    <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
+    <svg viewBox="0 0 20 20" fill="none" className="h-[16px] w-[16px]" aria-hidden="true">
       <path
         d="M4.5 6h11M8.5 6V4.5h3V6M6 6l.6 9a1 1 0 0 0 1 .9h4.8a1 1 0 0 0 1-.9l.6-9"
         stroke="currentColor"
@@ -69,7 +69,7 @@ function TrashIcon() {
 
 function Spinner() {
   return (
-    <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 animate-spin" aria-hidden="true">
+    <svg viewBox="0 0 20 20" fill="none" className="h-[16px] w-[16px] animate-spin" aria-hidden="true">
       <circle cx="10" cy="10" r="7.5" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.25" />
       <path d="M17.5 10a7.5 7.5 0 0 0-7.5-7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>

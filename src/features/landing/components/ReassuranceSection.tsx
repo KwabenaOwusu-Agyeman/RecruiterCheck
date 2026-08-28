@@ -39,7 +39,7 @@ export function ReassuranceSection() {
             )
             const inner = (
               <>
-                <Icon className="h-4 w-4 shrink-0 text-blue-light sm:h-[18px] sm:w-[18px]" strokeWidth={2.25} aria-hidden="true" />
+                <Icon className="h-[20px] w-[20px] shrink-0 text-blue-light" strokeWidth={2} aria-hidden="true" />
                 {item.label}
               </>
             )

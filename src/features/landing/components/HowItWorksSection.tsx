@@ -1,6 +1,6 @@
 import { useRef } from 'react'
-import { Link } from 'react-router-dom'
 import { Container } from '@/components/ui/Container'
+import { SectionCta } from '@/features/landing/components/SectionCta'
 import { TimelineContent } from '@/components/ui/timeline-animation'
 
 const steps = [
@@ -30,9 +30,12 @@ export function HowItWorksSection() {
       ref={sectionRef}
       className="scroll-mt-[88px] border-b border-border bg-background"
     >
-      <Container className="py-[32px] sm:py-12 lg:py-[64px]">
+      <Container className="py-[56px] sm:py-16 lg:py-[112px]">
         <div className="mx-auto max-w-xl text-center">
-          <h2 className="font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue sm:text-sm">
+            The process
+          </p>
+          <h2 className="mt-2 font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
             How it works
           </h2>
         </div>
@@ -63,11 +66,7 @@ export function HowItWorksSection() {
           ))}
         </ol>
 
-        <p className="mt-5 text-center text-sm text-text-secondary sm:mt-8">
-          <Link to="/how-interview-score-works" className="font-medium text-blue hover:underline">
-            See how the Interview Score is calculated
-          </Link>
-        </p>
+        <SectionCta secondaryTo="/how-interview-score-works" secondaryLabel="See how the Interview Score is calculated" />
       </Container>
     </section>
   )

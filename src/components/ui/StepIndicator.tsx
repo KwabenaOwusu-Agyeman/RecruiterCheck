@@ -8,7 +8,7 @@ interface StepIndicatorProps {
 
 function CheckIcon() {
   return (
-    <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3" aria-hidden="true">
+    <svg viewBox="0 0 16 16" fill="none" className="h-[12px] w-[12px]" aria-hidden="true">
       <path d="M3.5 8.2 6.3 11 12.5 4.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Upload } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Container } from '@/components/ui/Container'
+import { SectionCta } from '@/features/landing/components/SectionCta'
 import { GlowCard } from '@/components/ui/GlowCard'
 import { ScoreBadge, StatusBadge } from '@/components/ui/Badge'
 import { ROLE_EXAMPLES } from '@/features/landing/data/exampleCheck'
@@ -91,7 +92,7 @@ function NewCheckMock() {
       <div className="space-y-2 border-t border-border pt-5">
         <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">CV</p>
         <div className="flex flex-col items-center justify-center gap-2 rounded-[14px] border border-dashed border-border-strong bg-background px-4 py-5 text-center">
-          <Upload className="h-5 w-5 text-text-secondary" aria-hidden="true" />
+          <Upload className="h-[20px] w-[20px] text-text-secondary" aria-hidden="true" />
           <p className="text-sm font-medium text-text-primary">cv.pdf</p>
           <p className="text-xs text-text-secondary">PDF or DOCX &middot; Uploaded</p>
         </div>
@@ -150,12 +151,15 @@ export function DashboardShowcase() {
 
   return (
     <section className="border-b border-border bg-background">
-      <Container className="py-[32px] sm:py-12 lg:py-[64px]">
+      <Container className="py-[56px] sm:py-16 lg:py-[112px]">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue sm:text-sm">
+            Your dashboard
+          </p>
+          <h2 className="mt-2 font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
             Every application, tracked in one place
           </h2>
-          <p className="mt-3 text-[14px] text-text-secondary sm:text-base">
+          <p className="mt-3 text-base text-text-secondary sm:text-lg">
             Add a job in seconds, and keep every score and check you've run within easy reach.
           </p>
         </div>
@@ -243,6 +247,8 @@ export function DashboardShowcase() {
             </div>
           </BrowserChrome>
         </div>
+
+        <SectionCta secondaryTo="/application-checker" secondaryLabel="What a full check covers" />
       </Container>
     </section>
   )

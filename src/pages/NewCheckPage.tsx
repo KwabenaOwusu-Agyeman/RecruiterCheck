@@ -416,7 +416,7 @@ export function NewCheckPage() {
         </div>
         <Card className="mx-auto max-w-md p-[20px] text-center sm:p-8">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-navy-tint">
-            <Sparkles className="h-5 w-5 text-navy" strokeWidth={2} />
+            <Sparkles className="h-[20px] w-[20px] text-navy" strokeWidth={2} />
           </div>
           <h2 className="mt-4 text-base font-semibold text-text-primary">
             {hasKeywordScansLeft ? "You've used your free Check" : "You're out of free tasks"}
@@ -463,7 +463,7 @@ export function NewCheckPage() {
         </div>
         <Card className="mx-auto max-w-md p-[20px] text-center sm:p-8">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-navy-tint">
-            <Sparkles className="h-5 w-5 text-navy" strokeWidth={2} />
+            <Sparkles className="h-[20px] w-[20px] text-navy" strokeWidth={2} />
           </div>
           <h2 className="mt-4 text-base font-semibold text-text-primary">
             You're out of checks

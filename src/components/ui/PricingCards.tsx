@@ -69,7 +69,7 @@ export function PricingCards({ packs, loadingPack, onBuy }: PricingCardsProps) {
                 <ul className="mt-3 space-y-1.5 border-t border-white/15 pt-3 text-xs font-semibold text-white sm:text-sm">
                   {pack.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-1.5">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-light" strokeWidth={3} />
+                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-light" strokeWidth={2} />
                       <span>{feature}</span>
                     </li>
                   ))}
@@ -85,7 +85,7 @@ export function PricingCards({ packs, loadingPack, onBuy }: PricingCardsProps) {
                   onClick={() => onBuy(pack.id)}
                 >
                   {loadingPack === pack.id ? 'Redirecting...' : 'Buy pack'}
-                  {loadingPack === pack.id ? null : <ArrowRight className="h-4 w-4" />}
+                  {loadingPack === pack.id ? null : <ArrowRight className="h-[16px] w-[16px]" />}
                 </Button>
               </div>
             </div>

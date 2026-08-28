@@ -1,8 +1,7 @@
 import AutoScroll from 'embla-carousel-auto-scroll'
-import { Button } from '@/components/ui/Button'
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/Carousel'
 import { Container } from '@/components/ui/Container'
-import { useCheckCta } from '@/hooks/useCheckCta'
+import { SectionCta } from '@/features/landing/components/SectionCta'
 import { prefersReducedMotion } from '@/utils/prefersReducedMotion'
 
 /**
@@ -29,17 +28,16 @@ const EXAMPLE_ROLES = [
 ]
 
 export function JobsYouCanCheckSection() {
-  const handleCheckCta = useCheckCta()
 
   return (
     <section className="border-b border-border bg-background">
-      <Container className="py-[32px] sm:py-12 lg:py-[64px]">
+      <Container className="py-[56px] sm:py-16 lg:py-[112px]">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue">Jobs we check</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue sm:text-sm">Jobs we check</p>
           <h2 className="mt-2 font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
             Jobs you can check
           </h2>
-          <p className="mt-3 text-[14px] text-text-secondary sm:text-base">
+          <p className="mt-3 text-base text-text-secondary sm:text-lg">
             AI, data and tech roles, from your first internship to five years in.
           </p>
         </div>
@@ -86,11 +84,7 @@ export function JobsYouCanCheckSection() {
           <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-background to-transparent" />
         </div>
 
-        <div className="mt-6 flex justify-center">
-          <Button size="md" onClick={handleCheckCta}>
-            Check
-          </Button>
-        </div>
+        <SectionCta secondaryTo="/free-cv-checker" secondaryLabel="Try the free CV checker" />
       </Container>
     </section>
   )

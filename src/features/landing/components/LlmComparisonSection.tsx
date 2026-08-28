@@ -1,9 +1,8 @@
 import { Check, X } from 'lucide-react'
-import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Container } from '@/components/ui/Container'
+import { SectionCta } from '@/features/landing/components/SectionCta'
 import { GlowCard } from '@/components/ui/GlowCard'
-import { cn } from '@/utils/cn'
 
 // Short, scannable phrases only — this section exists to be read in about
 // 10 seconds, not to make the full case (that's what
@@ -25,12 +24,15 @@ const THEM_ROWS = [
 export function LlmComparisonSection() {
   return (
     <section className="border-b border-border bg-background">
-      <Container className="py-[32px] sm:py-12 lg:py-[64px]">
+      <Container className="py-[56px] sm:py-16 lg:py-[112px]">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue sm:text-sm">
+            The difference
+          </p>
+          <h2 className="mt-2 font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
             Why not just use AI chat?
           </h2>
-          <p className="mt-3 text-[14px] text-text-secondary sm:text-base">
+          <p className="mt-3 text-base text-text-secondary sm:text-lg">
             You can paste your CV into any chatbot for free. Here's the difference.
           </p>
         </div>
@@ -45,7 +47,7 @@ export function LlmComparisonSection() {
                 <ul className="space-y-3.5">
                   {ROWS.map((row) => (
                     <li key={row} className="flex items-start gap-3">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden="true" />
+                      <Check className="mt-0.5 h-[16px] w-[16px] shrink-0 text-success" aria-hidden="true" />
                       <span className="text-sm leading-snug text-white/90">{row}</span>
                     </li>
                   ))}
@@ -62,7 +64,7 @@ export function LlmComparisonSection() {
               <ul className="space-y-3.5">
                 {THEM_ROWS.map((row) => (
                   <li key={row} className="flex items-start gap-3">
-                    <X className="mt-0.5 h-4 w-4 shrink-0 text-error" aria-hidden="true" />
+                    <X className="mt-0.5 h-[16px] w-[16px] shrink-0 text-error" aria-hidden="true" />
                     <span className="text-sm leading-snug text-text-secondary">{row}</span>
                   </li>
                 ))}
@@ -71,21 +73,7 @@ export function LlmComparisonSection() {
           </Card>
         </div>
 
-        <div className="mx-auto mt-6 flex max-w-3xl flex-col items-center gap-2 text-center sm:flex-row sm:justify-center sm:gap-4">
-          <Link
-            to="/myrecruitercheck-vs-chatgpt"
-            className={cn('text-sm font-semibold text-blue hover:underline')}
-          >
-            See the full comparison
-          </Link>
-          <span className="hidden text-border-strong sm:inline" aria-hidden="true">&middot;</span>
-          <Link
-            to="/myrecruitercheck-vs-jobscan"
-            className={cn('text-sm font-medium text-text-secondary hover:underline')}
-          >
-            How we compare to Jobscan, Teal &amp; other CV tools
-          </Link>
-        </div>
+        <SectionCta secondaryTo="/myrecruitercheck-vs-chatgpt" secondaryLabel="See the full comparison" />
       </Container>
     </section>
   )

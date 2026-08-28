@@ -1,4 +1,5 @@
 import { Container } from '@/components/ui/Container'
+import { SectionCta } from '@/features/landing/components/SectionCta'
 import { VerdictCard } from '@/features/landing/components/VerdictCard'
 import { ROLE_EXAMPLES } from '@/features/landing/data/exampleCheck'
 
@@ -28,15 +29,15 @@ export function RoleFeedbackShowcase() {
 
   return (
     <section id="example" className="scroll-mt-[88px] border-b border-border bg-background">
-      <Container className="py-[32px] sm:py-12 lg:py-[64px]">
+      <Container className="py-[56px] sm:py-16 lg:py-[112px]">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue sm:text-sm">
             The full range of verdicts
           </p>
           <h2 className="mt-2 font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
             An honest verdict, not a pat on the back
           </h2>
-          <p className="mt-3 text-[14px] text-text-secondary sm:text-base">
+          <p className="mt-3 text-base text-text-secondary sm:text-lg">
             The same check reads every application differently. Strong ones hear it, weak ones hear
             why, and poor fits are told before the rejection email says it.
           </p>
@@ -49,6 +50,8 @@ export function RoleFeedbackShowcase() {
             ) : null,
           )}
         </div>
+
+        <SectionCta secondaryTo="/how-recruiters-evaluate-a-cv" secondaryLabel="How recruiters evaluate a CV" />
       </Container>
     </section>
   )

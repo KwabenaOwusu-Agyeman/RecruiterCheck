@@ -62,7 +62,7 @@ export function AppHeader() {
                 isNewCheckActive(location.pathname) && 'ring-2 ring-navy/30 ring-offset-2',
               )}
             >
-              <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+              <Plus className="h-3.5 w-3.5" strokeWidth={2} />
               New Check
             </Link>
           </nav>

@@ -11,7 +11,7 @@ const linkClassName =
   'inline-flex min-h-[44px] items-center gap-1.5 rounded-lg py-1 text-sm font-medium text-text-secondary transition-colors hover:text-text-primary touch-manipulation sm:min-h-0'
 
 const icon = (
-  <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
+  <svg viewBox="0 0 20 20" fill="none" className="h-[16px] w-[16px]" aria-hidden="true">
     <path
       d="M12.5 15.5L7 10l5.5-5.5"
       stroke="currentColor"

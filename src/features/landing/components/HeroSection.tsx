@@ -39,7 +39,7 @@ export function HeroSection() {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue sm:text-sm">
             Think like a recruiter
           </p>
-          <h1 className="font-display mt-3 text-balance text-4xl text-text-primary sm:text-5xl lg:text-[60px] lg:leading-[1.08]">
+          <h1 className="font-display mt-3 text-balance text-[40px] leading-[1.12] text-text-primary sm:text-5xl lg:text-[60px] lg:leading-[1.08]">
             If you were the <span className="text-blue">recruiter</span>, would you invite yourself
             to an <span className="text-blue">interview</span>?
           </h1>
@@ -47,7 +47,7 @@ export function HeroSection() {
             Get a recruiter's verdict on your CV before you apply. Built for AI/ML, data and tech
             roles, zero to five years in.
           </p>
-          <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:mt-6 sm:flex-row sm:gap-5">
+          <div data-hero-cta className="mt-5 flex flex-col items-center justify-center gap-3 sm:mt-6 sm:flex-row sm:gap-5">
             <Button size="lg" onClick={() => handleCheckCta({ role: active.role })}>
               Check My Application
             </Button>

@@ -74,9 +74,9 @@ export function TestimonialsSection({ compact = false }: { compact?: boolean } =
 
   return (
     <section className="border-b border-border bg-background">
-      <Container className={compact ? 'py-6 sm:py-8' : 'py-8 sm:py-12 lg:py-[64px]'}>
+      <Container className={compact ? 'py-6 sm:py-8' : 'py-[56px] sm:py-16 lg:py-[112px]'}>
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue">Job seeker stories</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue sm:text-sm">Job seeker stories</p>
           <h2 className="mt-2 font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
             What changed after they started getting recruiter feedback
           </h2>
@@ -193,7 +193,7 @@ function MobileReviews({ testimonials }: { testimonials: Testimonial[] }) {
             aria-label="Previous review"
             className="flex h-[44px] w-[44px] items-center justify-center rounded-full border border-border-strong bg-surface text-text-primary transition-colors active:bg-border-soft"
           >
-            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+            <ChevronLeft className="h-[16px] w-[16px]" aria-hidden="true" />
           </button>
 
           <div className="flex items-center gap-2">
@@ -218,7 +218,7 @@ function MobileReviews({ testimonials }: { testimonials: Testimonial[] }) {
             aria-label="Next review"
             className="flex h-[44px] w-[44px] items-center justify-center rounded-full border border-border-strong bg-surface text-text-primary transition-colors active:bg-border-soft"
           >
-            <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            <ChevronRight className="h-[16px] w-[16px]" aria-hidden="true" />
           </button>
         </div>
       ) : null}

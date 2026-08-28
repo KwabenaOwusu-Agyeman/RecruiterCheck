@@ -16,7 +16,7 @@ const variantStyles = {
 function AlertIcon({ variant }: { variant: 'error' | 'success' | 'info' }) {
   if (variant === 'success') {
     return (
-      <svg viewBox="0 0 20 20" fill="none" className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true">
+      <svg viewBox="0 0 20 20" fill="none" className="mt-0.5 h-[16px] w-[16px] shrink-0" aria-hidden="true">
         <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5" />
         <path
           d="M6.5 10.2l2.2 2.2 4.8-4.8"
@@ -31,7 +31,7 @@ function AlertIcon({ variant }: { variant: 'error' | 'success' | 'info' }) {
 
   if (variant === 'error') {
     return (
-      <svg viewBox="0 0 20 20" fill="none" className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true">
+      <svg viewBox="0 0 20 20" fill="none" className="mt-0.5 h-[16px] w-[16px] shrink-0" aria-hidden="true">
         <path
           d="M10 2.2 18 16.2H2L10 2.2Z"
           stroke="currentColor"
@@ -45,7 +45,7 @@ function AlertIcon({ variant }: { variant: 'error' | 'success' | 'info' }) {
   }
 
   return (
-    <svg viewBox="0 0 20 20" fill="none" className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true">
+    <svg viewBox="0 0 20 20" fill="none" className="mt-0.5 h-[16px] w-[16px] shrink-0" aria-hidden="true">
       <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5" />
       <path d="M10 9v4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       <circle cx="10" cy="6.5" r="0.9" fill="currentColor" />

@@ -76,7 +76,7 @@ function CvDraftCard() {
 
         <CardHeader className="flex flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-blue" aria-hidden="true" />
+            <FileText className="h-[16px] w-[16px] text-blue" aria-hidden="true" />
             <h3 className="text-sm font-semibold text-text-primary">Improved CV Draft</h3>
           </div>
           <DraftBadge />
@@ -157,7 +157,7 @@ function CoverLetterCard() {
       <Card tone="light" className="flex h-full flex-col overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-blue" aria-hidden="true" />
+            <FileText className="h-[16px] w-[16px] text-blue" aria-hidden="true" />
             <h3 className="text-sm font-semibold text-text-primary">Cover Letter</h3>
           </div>
           <DraftBadge />
@@ -216,7 +216,7 @@ function RecruiterMessageCard() {
       <Card tone="light" className="flex h-full flex-col overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-blue" aria-hidden="true" />
+            <FileText className="h-[16px] w-[16px] text-blue" aria-hidden="true" />
             <h3 className="text-sm font-semibold text-text-primary">Recruiter Message</h3>
           </div>
           <DraftBadge />
@@ -278,14 +278,14 @@ export function DocumentShowcase() {
   }
 
   return (
-    <section className="overflow-hidden border-b border-border bg-background py-[32px] sm:py-12 lg:py-[64px]">
+    <section className="overflow-hidden border-b border-border bg-background py-[56px] sm:py-16 lg:py-[112px]">
       <Container>
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue">Example documents</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue sm:text-sm">Example documents</p>
           <h2 className="mt-2 font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
             From feedback to finished documents
           </h2>
-          <p className="mt-3 text-[14px] text-text-secondary sm:text-base">
+          <p className="mt-3 text-base text-text-secondary sm:text-lg">
             See the documents your check can write: an improved CV, a cover letter, and a ready to send
             message.
           </p>
@@ -339,7 +339,7 @@ export function DocumentShowcase() {
           disabled={atStart}
           className="absolute bottom-[13px] left-2 flex h-8 w-8 items-center justify-center rounded-full border border-border-strong bg-surface text-text-primary shadow-card disabled:pointer-events-none disabled:opacity-40 sm:hidden"
         >
-          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+          <ChevronLeft className="h-[16px] w-[16px]" aria-hidden="true" />
         </button>
         <button
           type="button"
@@ -348,7 +348,7 @@ export function DocumentShowcase() {
           disabled={atEnd}
           className="absolute bottom-[13px] right-2 flex h-8 w-8 items-center justify-center rounded-full border border-border-strong bg-surface text-text-primary shadow-card disabled:pointer-events-none disabled:opacity-40 sm:hidden"
         >
-          <ChevronRight className="h-4 w-4" aria-hidden="true" />
+          <ChevronRight className="h-[16px] w-[16px]" aria-hidden="true" />
         </button>
       </div>
     </section>

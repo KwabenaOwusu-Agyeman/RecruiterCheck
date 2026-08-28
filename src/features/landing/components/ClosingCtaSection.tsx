@@ -10,7 +10,7 @@ export function ClosingCtaSection() {
 
   return (
     <section ref={sectionRef} className="border-b border-border bg-background">
-      <Container className="py-[32px] sm:py-12 lg:py-[64px]">
+      <Container className="py-[56px] sm:py-16 lg:py-[112px]">
         <div
           className={cn(
             !isVisible && 'opacity-0',

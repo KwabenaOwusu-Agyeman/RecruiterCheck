@@ -11,7 +11,7 @@ import { cn } from '@/utils/cn'
 
 function EyeIcon() {
   return (
-    <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
+    <svg viewBox="0 0 20 20" fill="none" className="h-[16px] w-[16px]" aria-hidden="true">
       <path
         d="M1.7 10S4.5 4.5 10 4.5 18.3 10 18.3 10 15.5 15.5 10 15.5 1.7 10 1.7 10Z"
         stroke="currentColor"
@@ -25,7 +25,7 @@ function EyeIcon() {
 
 function EyeOffIcon() {
   return (
-    <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
+    <svg viewBox="0 0 20 20" fill="none" className="h-[16px] w-[16px]" aria-hidden="true">
       <path
         d="M2.5 2.5l15 15M8.3 8.5a2.3 2.3 0 0 0 3.2 3.2M6.1 6.2C3.7 7.4 1.7 10 1.7 10s2.8 5.5 8.3 5.5c1.4 0 2.6-.35 3.6-.9M13.9 13.9c1.9-1.3 3-3.4 4.4-3.9 0 0-1.4-3.2-4.9-4.8"
         stroke="currentColor"

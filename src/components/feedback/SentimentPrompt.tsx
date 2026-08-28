@@ -23,7 +23,7 @@ function StarRatingInput({ rating, onChange }: { rating: number; onChange: (valu
             className="p-0.5"
           >
             <Star
-              className={cn('h-5 w-5', value <= rating ? 'fill-warning text-warning' : 'fill-border-strong text-border-strong')}
+              className={cn('h-[20px] w-[20px]', value <= rating ? 'fill-warning text-warning' : 'fill-border-strong text-border-strong')}
             />
           </button>
         )
@@ -246,7 +246,7 @@ export function SentimentPrompt({ checkId, jobTitle }: { checkId: string; jobTit
             onClick={() => void handlePositive()}
             className="flex h-9 w-9 items-center justify-center rounded-full border border-border-soft text-text-secondary transition-colors hover:border-blue hover:text-blue"
           >
-            <ThumbsUp className="h-4 w-4" />
+            <ThumbsUp className="h-[16px] w-[16px]" />
           </button>
           <button
             type="button"
@@ -254,7 +254,7 @@ export function SentimentPrompt({ checkId, jobTitle }: { checkId: string; jobTit
             onClick={handleNegative}
             className="flex h-9 w-9 items-center justify-center rounded-full border border-border-soft text-text-secondary transition-colors hover:border-blue hover:text-blue"
           >
-            <ThumbsDown className="h-4 w-4" />
+            <ThumbsDown className="h-[16px] w-[16px]" />
           </button>
         </div>
       </CardContent>
