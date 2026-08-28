@@ -10,6 +10,10 @@ import { useCheckCta } from '@/hooks/useCheckCta'
 const navLinks = [
   { href: '/#how-it-works', label: 'How it works' },
   { href: '/#example', label: 'See an example' },
+  // A plain <a> like the hash links above: on this prerendered site a full
+  // navigation to /pricing lands on static HTML, and one nav rendering
+  // keeps the desktop row and the mobile sheet identical.
+  { href: '/pricing', label: 'Pricing' },
 ] as const
 
 const FOCUSABLE_SELECTOR =

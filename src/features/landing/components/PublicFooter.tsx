@@ -5,7 +5,7 @@ import { BRAND } from '@/lib/constants'
 const linkClassName =
   'text-text-secondary transition-colors duration-150 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue rounded'
 
-const headingClassName = 'text-xs font-semibold uppercase tracking-wide text-text-primary'
+const headingClassName = 'text-xs font-semibold uppercase tracking-[0.14em] text-text-caption'
 
 const socialLinkClassName =
   'flex h-[36px] w-[36px] items-center justify-center rounded-full text-text-secondary transition-colors duration-150 hover:bg-background hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue'
@@ -100,14 +100,14 @@ export function PublicFooter() {
   return (
     <footer className="border-t border-border bg-background">
       <Container>
-        <div className="py-8 lg:py-[48px]">
-          <div className="grid grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-4">
+        <div className="py-10 lg:py-[72px]">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-4">
             {columns.map((column) => (
               <nav key={column.heading} aria-label={column.ariaLabel}>
                 <h3 className={headingClassName}>{column.heading}</h3>
-                <ul className="mt-3 flex flex-col gap-2">
+                <ul className="mt-4 flex flex-col gap-2.5">
                   {column.links.map((link) => (
-                    <li key={link.to} className="text-xs">
+                    <li key={link.to} className="text-sm">
                       <Link to={link.to} className={linkClassName}>
                         {link.label}
                       </Link>
@@ -117,12 +117,12 @@ export function PublicFooter() {
               </nav>
             ))}
           </div>
-          <div className="mt-8 flex flex-col gap-4 border-t border-border pt-6 sm:flex-row sm:items-end sm:justify-between">
-            <div className="text-xs text-text-secondary">
+          <div className="mt-10 flex flex-col gap-4 border-t border-border pt-7 sm:flex-row sm:items-end sm:justify-between">
+            <div className="text-sm text-text-caption">
               <p>
                 © {new Date().getFullYear()} {BRAND.name}. All rights reserved.
               </p>
-              <p className="mt-0.5 text-text-secondary">{BRAND.tagline}</p>
+              <p className="mt-1 text-text-caption">{BRAND.tagline}</p>
             </div>
             <nav aria-label="Social profiles" className="flex w-fit shrink-0 items-center gap-1 self-start sm:self-auto">
               {socialLinks.map((social) => (
