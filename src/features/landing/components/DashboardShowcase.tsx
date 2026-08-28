@@ -132,6 +132,17 @@ function ChecksListMock() {
 
 const TAB_DURATION_MS = 4500
 
+// Cursor resting point over each tab: centre of column 1, 2, 3. Literal
+// classes (not built from the index) so the build-time scanner finds them;
+// the glide between them is a plain CSS left/transform transition driven by
+// the same activeTab state as the tabs themselves, so pausing on hover
+// pauses the cursor too and the two can never drift apart.
+const CURSOR_LEFT_CLASS: Record<number, string> = {
+  0: 'left-[16.6%]',
+  1: 'left-[50%]',
+  2: 'left-[83.3%]',
+}
+
 export function DashboardShowcase() {
   const [activeTab, setActiveTab] = useState<TabId>('empty')
   const [paused, setPaused] = useState(false)
@@ -169,8 +180,22 @@ export function DashboardShowcase() {
           aria-label="Dashboard view"
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
-          className="mx-auto mt-5 grid max-w-full grid-cols-3 gap-2 sm:mt-6 sm:gap-6 lg:max-w-[560px]"
+          className="relative mx-auto mt-5 grid max-w-full grid-cols-3 gap-2 sm:mt-6 sm:gap-6 lg:max-w-[560px]"
         >
+          {/* The implied hand: a cursor that glides to whichever tab the
+              self-playing cycle activates. Desktop only, decorative, and
+              positioned by state rather than its own clock so it stays in
+              step when the cycle pauses on hover. */}
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className={cn(
+              'pointer-events-none absolute -bottom-6 z-10 hidden h-[20px] w-[20px] -translate-x-1/2 fill-navy stroke-white transition-[left] duration-700 ease-out lg:block',
+              CURSOR_LEFT_CLASS[TABS.findIndex((tab) => tab.id === activeTab)] ?? CURSOR_LEFT_CLASS[0],
+            )}
+          >
+            <path d="M5.5 3.5 19 12l-6.2 1.4L9.5 19z" strokeWidth="1.5" strokeLinejoin="round" />
+          </svg>
           {TABS.map((tab) => {
             const isActive = tab.id === activeTab
             return (
@@ -206,7 +231,19 @@ export function DashboardShowcase() {
           })}
         </div>
 
-        <div className="mx-auto mt-5 max-w-2xl sm:mt-6 lg:max-w-[560px]">
+        <div className="relative mx-auto mt-5 max-w-2xl sm:mt-6 lg:max-w-[560px]">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -inset-x-12 -bottom-8 -top-10 rounded-[40px] bg-[radial-gradient(ellipse_70%_60%_at_50%_45%,rgba(25,74,159,0.09),transparent_70%)]"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute -right-9 top-16 z-10 hidden animate-float-slow items-center gap-2 rounded-full border border-border-soft bg-surface py-2 pl-3 pr-4 shadow-elevated [animation-delay:0.8s] lg:flex"
+          >
+            <span className="h-[8px] w-[8px] rounded-full bg-success" />
+            <span className="text-sm font-semibold text-text-primary">85%</span>
+            <span className="text-sm text-text-secondary">Software Engineer</span>
+          </div>
           <BrowserChrome>
             {/* All three panels are mounted in the SAME grid cell, so the box
                 is always as tall as the tallest of them and the section's
