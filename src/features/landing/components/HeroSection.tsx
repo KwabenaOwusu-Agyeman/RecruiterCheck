@@ -42,8 +42,10 @@ export function HeroSection() {
             Think like a recruiter
           </p>
           <h1 className="font-display mt-3 text-balance text-[40px] leading-[1.12] text-text-primary sm:text-5xl lg:text-[60px] lg:leading-[1.08]">
-            If you were the <span className="text-blue">recruiter</span>, would you invite yourself
-            to an <span className="text-blue">interview</span>?
+            If you were the{' '}
+            <span className="bg-gradient-to-r from-navy to-blue bg-clip-text text-transparent">recruiter</span>,
+            would you invite yourself to an{' '}
+            <span className="bg-gradient-to-r from-blue to-navy bg-clip-text text-transparent">interview</span>?
           </h1>
           <p className="mx-auto mt-4 max-w-[600px] text-base leading-relaxed text-text-secondary sm:text-lg">
             Get a recruiter's verdict on your CV before you apply. Built for AI/ML, data and tech
