@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Container } from '@/components/ui/Container'
 import { Logo } from '@/components/ui/Logo'
 import { Button } from '@/components/ui/Button'
 import { useAuthModal } from '@/features/auth/context/AuthModalContext'
+import { useAuth } from '@/hooks/useAuth'
 import { useCheckCta } from '@/hooks/useCheckCta'
 
 const navLinks = [
@@ -18,6 +20,12 @@ const desktopLinkClassName =
 
 export function PublicHeader() {
   const { open } = useAuthModal()
+  // Public pages are no longer only for signed-out visitors: /pricing is
+  // where a signed-in user buys checks now that billing merged into it, and
+  // offering them "Sign In" there reads as broken. `session` is null until
+  // auth resolves, which is also what the prerendered HTML ships, so the
+  // signed-out markup stays the server-rendered default.
+  const { session } = useAuth()
   const handleCheckCta = useCheckCta()
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
@@ -85,9 +93,17 @@ export function PublicHeader() {
           </nav>
 
           <div className="hidden items-center gap-3 lg:flex">
-            <Button variant="ghost" size="sm" onClick={() => open('sign-in')}>
-              Sign In
-            </Button>
+            {session ? (
+              <Link to="/checks">
+                <Button variant="ghost" size="sm">
+                  My Checks
+                </Button>
+              </Link>
+            ) : (
+              <Button variant="ghost" size="sm" onClick={() => open('sign-in')}>
+                Sign In
+              </Button>
+            )}
             <Button size="sm" onClick={handleCheckCta}>
               Check My Application
             </Button>
@@ -161,16 +177,24 @@ export function PublicHeader() {
             ))}
 
             <div className="mt-2 flex flex-col gap-2 border-t border-border pt-3">
-              <Button
-                variant="secondary"
-                className="w-full justify-center"
-                onClick={() => {
-                  closeMobileNav()
-                  open('sign-in')
-                }}
-              >
-                Sign In
-              </Button>
+              {session ? (
+                <Link to="/checks" onClick={closeMobileNav}>
+                  <Button variant="secondary" className="w-full justify-center">
+                    My Checks
+                  </Button>
+                </Link>
+              ) : (
+                <Button
+                  variant="secondary"
+                  className="w-full justify-center"
+                  onClick={() => {
+                    closeMobileNav()
+                    open('sign-in')
+                  }}
+                >
+                  Sign In
+                </Button>
+              )}
               <Button
                 className="w-full justify-center"
                 onClick={() => {
