@@ -46,6 +46,13 @@ Deno.serve(async (req) => {
     subject: email.subject,
     htmlContent: email.html,
     textContent: email.text,
+    // This is a security notice, so it belongs on the security sender rather
+    // than the product one. Every other security email already sits there by
+    // virtue of going through Supabase Auth's SMTP; this is the only one that
+    // does not, because the app sends it directly. Falls back to the default
+    // sender when the secret is unset, so nothing breaks before the split is
+    // configured.
+    senderEmail: Deno.env.get('BREVO_SECURITY_SENDER_EMAIL'),
   })
 
   if (!result.sent) {

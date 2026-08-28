@@ -12,6 +12,17 @@ export interface BrevoSendParams {
   subject: string
   htmlContent: string
   textContent: string
+  /**
+   * Overrides BREVO_SENDER_EMAIL for this one send.
+   *
+   * Brevo attaches a List-Unsubscribe header to everything sent through its
+   * SMTP and API, and will not remove it — that behaviour is by design and
+   * only the Enterprise plan can swap it for a non-clickable List-Help
+   * header. An unsubscribe blocks the SENDER, so keeping security mail on a
+   * separate sender from product mail means unsubscribing from one cannot
+   * silence the other.
+   */
+  senderEmail?: string | null
 }
 
 export interface BrevoSendResult {
@@ -41,7 +52,9 @@ export async function sendTransactionalEmail(params: BrevoSendParams): Promise<B
     return { sent: false, reason: 'invalid recipient address' }
   }
 
-  const senderEmail = Deno.env.get('BREVO_SENDER_EMAIL') ?? 'notifications@myrecruitercheck.com'
+  const defaultSender = Deno.env.get('BREVO_SENDER_EMAIL') ?? 'notifications@myrecruitercheck.com'
+  const overrideSender = params.senderEmail?.trim()
+  const senderEmail = overrideSender && isValidEmail(overrideSender) ? overrideSender : defaultSender
   const senderName = Deno.env.get('BREVO_SENDER_NAME') ?? 'MyRecruiterCheck'
 
   // Without this every reply goes back to the no-reply-ish notifications@
