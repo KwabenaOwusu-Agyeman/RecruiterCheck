@@ -4,44 +4,24 @@ import { Alert } from '@/components/ui/Alert'
 import { BackLink } from '@/components/ui/BackLink'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { PricingCards } from '@/components/ui/PricingCards'
+import { TestimonialsSection } from '@/features/landing/components/TestimonialsSection'
 import { CHECK_PACKS } from '@/lib/constants'
 import { trackEvent } from '@/lib/analytics'
 import { useAuth } from '@/hooks/useAuth'
 import { usePageMeta } from '@/hooks/usePageMeta'
-import { createCheckoutSession, getLedgerHistory, requestRefund } from '@/services/checkService'
-import type { CheckLedgerEntry } from '@/types'
-
-const LEDGER_LABELS: Record<CheckLedgerEntry['entry_type'], string> = {
-  purchased: 'Purchased',
-  used: 'Used',
-  refunded: 'Refunded',
-  expired: 'Expired',
-  manual_adjustment: 'Adjustment',
-}
+import { createCheckoutSession, requestRefund } from '@/services/checkService'
 
 export function BillingPage() {
   usePageMeta({ title: 'Billing | MyRecruiterCheck', description: 'Manage your MyRecruiterCheck check packs and billing.', path: '/account/billing', noindex: true })
-  const { user, profile, refreshProfile } = useAuth()
+  const { profile, refreshProfile } = useAuth()
   const [searchParams] = useSearchParams()
   const [loadingPack, setLoadingPack] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [refundDialogOpen, setRefundDialogOpen] = useState(false)
   const [refundLoading, setRefundLoading] = useState(false)
   const [refundSuccess, setRefundSuccess] = useState(false)
-  const [ledger, setLedger] = useState<CheckLedgerEntry[]>([])
 
   const checkoutStatus = searchParams.get('status')
-
-  useEffect(() => {
-    if (!user) return
-    let cancelled = false
-    void getLedgerHistory(user.id).then((data) => {
-      if (!cancelled) setLedger(data)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [user])
 
   useEffect(() => {
     // A brand new purchase lands here after a Stripe Checkout redirect — the
@@ -132,27 +112,13 @@ export function BillingPage() {
         </div>
       </div>
 
-      {ledger.length > 0 ? (
-        <div className="mx-auto mt-8 max-w-2xl">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-text-secondary">
-            Transaction history
-          </h2>
-          <div className="mt-3 divide-y divide-border rounded-[16px] border border-border-soft bg-surface shadow-card">
-            {ledger.map((entry) => (
-              <div key={entry.id} className="flex items-center justify-between px-4 py-3 text-sm">
-                <span className="text-text-primary">{LEDGER_LABELS[entry.entry_type]}</span>
-                <span className={entry.amount >= 0 ? 'text-green-600' : 'text-text-secondary'}>
-                  {entry.amount >= 0 ? '+' : ''}
-                  {entry.amount}
-                </span>
-                <span className="text-text-secondary">
-                  {new Date(entry.created_at).toLocaleDateString()}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
+      {/* Same reviews the landing and pricing pages show, directly under the
+          packs so the proof is there at the moment of deciding. Full-bleed by
+          the same trick as the cards above: TestimonialsSection brings its own
+          Container, so nesting it inside AppLayout's would double the padding. */}
+      <div className="relative w-screen" style={{ left: 'calc(-50vw + 50%)' }}>
+        <TestimonialsSection compact />
+      </div>
 
       <ConfirmDialog
         open={refundDialogOpen}
