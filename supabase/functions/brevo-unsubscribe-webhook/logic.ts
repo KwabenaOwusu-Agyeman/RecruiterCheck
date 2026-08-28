@@ -7,8 +7,24 @@ export interface BrevoWebhookPayload {
   [key: string]: unknown
 }
 
-/** Brevo events that mean "stop sending to this address". */
-const UNSUBSCRIBE_EVENTS = new Set(['unsubscribed', 'unsubscribe', 'spam', 'blocked', 'hard_bounce'])
+/**
+ * Brevo events that mean "stop sending to this address", compared after
+ * lowercasing.
+ *
+ * Both spellings are listed on purpose: Brevo's MARKETING webhooks use
+ * camelCase (`hardBounce`) while its transactional ones use snake_case
+ * (`hard_bounce`). Lowercasing collapses the first to `hardbounce`, which
+ * would not have matched a snake_case-only set — hard bounces would have been
+ * silently ignored.
+ */
+const UNSUBSCRIBE_EVENTS = new Set([
+  'unsubscribed',
+  'unsubscribe',
+  'spam',
+  'blocked',
+  'hard_bounce',
+  'hardbounce',
+])
 
 export interface ParsedEvent {
   shouldUnsubscribe: boolean

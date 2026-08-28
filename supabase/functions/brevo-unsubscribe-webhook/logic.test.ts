@@ -21,9 +21,18 @@ async function run() {
     assert.equal(r.email, 'a@b.com')
   })
 
-  await test('spam, blocked and hard_bounce all stop sending', () => {
+  await test('spam, blocked and hard bounce all stop sending', () => {
     for (const event of ['spam', 'blocked', 'hard_bounce', 'unsubscribe']) {
       assert.equal(parseUnsubscribeEvent({ event, email: 'a@b.com' }).shouldUnsubscribe, true, event)
+    }
+  })
+
+  await test('marketing camelCase event names are matched too', () => {
+    // Brevo's marketing webhooks send hardBounce, its transactional ones
+    // hard_bounce. Missing the camelCase form would drop hard bounces silently.
+    for (const event of ['hardBounce', 'softBounce']) {
+      const r = parseUnsubscribeEvent({ event, email: 'a@b.com' })
+      assert.equal(r.shouldUnsubscribe, event === 'hardBounce', event)
     }
   })
 
