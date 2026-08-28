@@ -11,6 +11,7 @@ import { ReassuranceSection } from '@/features/landing/components/ReassuranceSec
 import { RoleFeedbackShowcase } from '@/features/landing/components/RoleFeedbackShowcase'
 import { StatsSection } from '@/features/landing/components/StatsSection'
 import { TestimonialsSection } from '@/features/landing/components/TestimonialsSection'
+import { TrustpilotFeedbackSection } from '@/features/landing/components/TrustpilotFeedbackSection'
 import { Reveal } from '@/components/ui/Reveal'
 import { trackEvent } from '@/lib/analytics'
 import { usePageMeta } from '@/hooks/usePageMeta'
@@ -68,11 +69,18 @@ export function LandingPage() {
       <Reveal>
         <TestimonialsSection />
       </Reveal>
-      {/* Dormant until real volume exists; see STATS_SECTION_READY. Sits in
-          the slot the Trustpilot collector used to occupy — that ask now
-          lives only where it makes sense, after a completed check (the
-          FeedbackPage already carries it). */}
-      <StatsSection />
+      {/* Live from day one: product commitments until real volume clears
+          the floor, then the same grid swaps to usage figures. */}
+      <Reveal>
+        <StatsSection />
+      </Reveal>
+      {/* Third-party credibility right before the ask: the official
+          Trustpilot collector, on a verified business profile. The same ask
+          also lives on FeedbackPage after a completed check, where the
+          reviews it collects actually come from. */}
+      <Reveal>
+        <TrustpilotFeedbackSection />
+      </Reveal>
       {/* The objection strip works hardest next to the ask, not before the
           visitor knows what the product is — deletion, refunds and the
           ChatGPT comparison are answers to late-stage hesitation. */}
