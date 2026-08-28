@@ -1,6 +1,5 @@
 import { type ReactNode, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
-import { cn } from '@/utils/cn'
 
 interface ConfirmDialogProps {
   open: boolean
@@ -71,7 +70,7 @@ export function ConfirmDialog({
             size="sm"
             disabled={busy}
             onClick={onConfirm}
-            className={cn(destructive && '!border-error bg-error hover:!bg-error/90')}
+            variant={destructive ? 'danger' : 'primary'}
           >
             {busy ? (confirmingLabel ?? confirmLabel) : confirmLabel}
           </Button>

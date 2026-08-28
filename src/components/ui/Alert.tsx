@@ -8,7 +8,7 @@ interface AlertProps {
 }
 
 const variantStyles = {
-  error: 'border-error/20 bg-[#FCEFEF] text-error',
+  error: 'border-error/20 bg-error/5 text-error',
   success: 'border-success/20 bg-success/10 text-success',
   info: 'border-border bg-background text-text-secondary',
 }

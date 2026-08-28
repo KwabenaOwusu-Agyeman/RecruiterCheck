@@ -16,10 +16,13 @@ import type { KeywordScanResult } from '@/types'
 const FREE_SCAN_LIMIT = 3
 
 /**
- * Deliberately off-brand colors (orange/purple/pink) — this screen should
- * read as a different, disposable experience from the real product, not a
- * preview of it. Nothing here is saved: no check row, no result row, the
- * scan lives only in this component's state and is gone on navigation.
+ * On-palette since the 2026-08 brand pass. This screen originally used
+ * deliberately off-brand colors (orange/purple/pink) to read as disposable;
+ * the owner's standing direction now is that every surface matches the
+ * brand standard, so the ring runs blue-light (the dark-surface accent) and
+ * the term dots carry meaning: matched = success, missing = error. The
+ * disposable *behavior* is unchanged — nothing here is saved: no check row,
+ * no result row, the scan lives only in this component's state.
  *
  * Dashed-track radial gauge with a solid accent arc on top, modeled on a
  * modern stat-card pattern (segmented dotted ring + bold centered number +
