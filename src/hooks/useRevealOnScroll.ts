@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
 
 interface UseRevealOnScrollOptions {
-  /** Fraction of the target that must be visible before it's considered "in view". */
+  /**
+   * Fraction of the target that must be visible before it's considered "in
+   * view". Keep this at 0 for anything that wraps a whole section: a
+   * section taller than the phone viewport can never reach a fraction like
+   * 0.2, so it would sit at `opacity: 0` forever on mobile.
+   */
   amount?: number
   /** Shrinks (negative) or grows (positive) the viewport used for the intersection check, e.g. '-80px'. */
   rootMargin?: string
@@ -17,7 +22,7 @@ interface UseRevealOnScrollOptions {
  * from the compiled stylesheet, so nothing here touches inline styles.
  */
 export function useRevealOnScroll<T extends HTMLElement>(
-  { amount = 0.2, rootMargin = '-80px' }: UseRevealOnScrollOptions = {},
+  { amount = 0, rootMargin = '-80px' }: UseRevealOnScrollOptions = {},
 ): [RefObject<T>, boolean] {
   const ref = useRef<T>(null)
   const [isVisible, setIsVisible] = useState(false)

@@ -67,7 +67,7 @@ export function TrustpilotFeedbackSection() {
   }, [])
 
   return (
-    <section className="border-b border-border bg-surface">
+    <section className="border-b border-border bg-background">
       <div className="mx-auto w-full max-w-7xl px-[16px] py-[28px] sm:px-6 sm:py-[36px] lg:max-w-[1200px] lg:px-[32px] lg:py-[40px]">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between lg:gap-12">
           <div className="max-w-md">
@@ -76,7 +76,12 @@ export function TrustpilotFeedbackSection() {
             </h2>
           </div>
 
-          <div className="w-full lg:w-[360px] lg:shrink-0">
+          {/* The height is reserved up front, matching the collector's own
+              declared 52px (measured: it renders at 52px at every width down
+              to 390px). The widget's iframe is only injected after
+              hydration, and without this floor the section grew under the
+              reader at the moment it arrived. */}
+          <div className="min-h-[52px] w-full lg:w-[360px] lg:shrink-0">
             {/* TrustBox widget - Review Collector. Content injected post-hydration; see comment above. */}
             <div
               ref={widgetRef}

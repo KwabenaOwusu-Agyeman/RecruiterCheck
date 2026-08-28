@@ -307,10 +307,18 @@ export function DocumentShowcase() {
           being boxed in by the page's max-width, so the peek reads as a
           real scrollable row rather than content cut off inside a border. */}
       <div className="relative mt-5 sm:mt-6">
+        {/* Proximity snapping, not mandatory. A mandatory horizontal snap
+            row inside a vertically scrolling page is the classic source of
+            the "page shakes or scrolls by itself" effect on phones: the
+            browser re-runs snapping whenever the scrollport changes — which
+            on iOS is every address-bar collapse, i.e. continuously while
+            the reader scrolls past this row — and each re-snap nudges the
+            page. Proximity still snaps a real swipe to a card, but never
+            forces a correction the reader did not ask for. */}
         <div
           ref={scrollerRef}
           onScroll={updateScrollBounds}
-          className="flex snap-x snap-mandatory gap-5 overflow-x-auto overscroll-x-contain pl-[16px] pb-2 [scrollbar-width:none] sm:pl-6 lg:pl-8 [&::-webkit-scrollbar]:hidden"
+          className="flex snap-x snap-proximity gap-5 overflow-x-auto overscroll-x-contain pl-[16px] pb-2 [scrollbar-width:none] sm:pl-6 lg:pl-8 [&::-webkit-scrollbar]:hidden"
         >
           <CvDraftCard />
           <CoverLetterCard />

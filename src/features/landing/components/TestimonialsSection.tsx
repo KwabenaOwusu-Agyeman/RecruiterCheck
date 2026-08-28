@@ -6,6 +6,7 @@ import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/Carouse
 import { Container } from '@/components/ui/Container'
 import { getPublicTestimonials, type Testimonial } from '@/services/testimonialsService'
 import { cn } from '@/utils/cn'
+import { isDesktopViewport } from '@/utils/isDesktopViewport'
 import { prefersReducedMotion } from '@/utils/prefersReducedMotion'
 
 function StarRating({ rating }: { rating: number }) {
@@ -54,12 +55,22 @@ export function TestimonialsSection({ compact = false }: { compact?: boolean } =
     }
   }, [])
 
-  if (!testimonials || testimonials.length === 0) return null
+  // Only a confirmed-empty result removes the section. While the fetch is
+  // still in flight the section renders at its full height with a
+  // placeholder, because returning null here and mounting the real block
+  // later inserted ~650px into the middle of the page after first paint.
+  // Chrome absorbs that with scroll anchoring; iOS Safari has no scroll
+  // anchoring at all, so on a phone everything below the reviews jumped the
+  // moment the data landed — the page "scrolling by itself" while the
+  // reader was somewhere near this section.
+  if (testimonials && testimonials.length === 0) return null
+
+  const loading = testimonials === null
 
   // A continuous marquee needs enough distinct cards that the loop doesn't
   // read as "the same card twice" — below that, the static grid from before
   // looks more intentional than a marquee with nothing to scroll through.
-  const canMarquee = testimonials.length >= 4
+  const canMarquee = !loading && testimonials.length >= 4
 
   return (
     <section className="border-b border-border bg-background">
@@ -75,20 +86,45 @@ export function TestimonialsSection({ compact = false }: { compact?: boolean } =
             narrow screen either crawls past unreadably or fights the user's
             own scroll, so below sm it is replaced outright rather than
             restyled. */}
-        <MobileReviews testimonials={testimonials} />
+        {loading ? (
+          <div className="mt-4 sm:hidden">
+            {/* 392px is the measured height of the loaded block at 390px
+                wide: a 316px card, plus the 32px gap and 44px control row
+                under it. */}
+            <TestimonialPlaceholder className="min-h-[392px] w-full" />
+          </div>
+        ) : (
+          <MobileReviews testimonials={testimonials} />
+        )}
 
         {/* Desktop: the same embla auto-scroll engine as the jobs ticker, so
             both are tuned in the same units. This used to be a CSS keyframe
             with only a duration, which meant its pace could not be compared
             with, or set alongside, the other carousel. */}
-        <div className="hidden sm:block">
-          {canMarquee ? (
+        {/* min-h is the measured height of a loaded card row (343px at every
+            width from 640px up, since the cards are fixed-width and
+            equal-height). Reserved up front for the same reason as the
+            mobile block above. */}
+        <div className="hidden min-h-[343px] sm:block">
+          {loading ? (
+            <div className="mx-auto mt-6 grid max-w-5xl grid-cols-1 gap-5 sm:grid-cols-3">
+              {[0, 1, 2].map((index) => (
+                <TestimonialPlaceholder key={index} className="h-[343px] w-full" />
+              ))}
+            </div>
+          ) : canMarquee ? (
             <div className="relative mt-6 [mask-image:linear-gradient(to_right,transparent,black_64px,black_calc(100%-64px),transparent)]">
               <Carousel
                 opts={{ loop: true, align: 'start', dragFree: true, containScroll: false }}
                 plugins={[
                   AutoScroll({
-                    playOnInit: !prefersReducedMotion(),
+                    // Below sm this whole block is `display: none`, but the
+                    // carousel is still mounted, so the auto-scroll engine
+                    // would keep driving an invisible, zero-width Embla
+                    // instance on every frame — and re-measure it on every
+                    // iOS address-bar resize, mid-scroll. Never start it on
+                    // a phone.
+                    playOnInit: isDesktopViewport() && !prefersReducedMotion(),
                     // Rightward, matching the jobs ticker. Embla's 'forward'
                     // is the opposite, conventional right-to-left drift.
                     direction: 'backward',
@@ -142,7 +178,12 @@ function MobileReviews({ testimonials }: { testimonials: Testimonial[] }) {
 
   return (
     <div className="mt-4 sm:hidden">
-      <TestimonialCard testimonial={testimonials[index]} className="w-full" />
+      {/* One box, one height, whichever review is showing: the six real
+          cards range from 290px to 315px, so without a floor every tap of
+          the arrows nudged the rest of the page up or down. */}
+      <div className="flex min-h-[316px]">
+        <TestimonialCard testimonial={testimonials[index]} className="w-full" />
+      </div>
 
       {total > 1 ? (
         <div className="mt-4 flex items-center justify-center gap-4">
@@ -150,7 +191,7 @@ function MobileReviews({ testimonials }: { testimonials: Testimonial[] }) {
             type="button"
             onClick={() => step(-1)}
             aria-label="Previous review"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-border-strong bg-surface text-text-primary transition-colors active:bg-border-soft"
+            className="flex h-[44px] w-[44px] items-center justify-center rounded-full border border-border-strong bg-surface text-text-primary transition-colors active:bg-border-soft"
           >
             <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -164,8 +205,8 @@ function MobileReviews({ testimonials }: { testimonials: Testimonial[] }) {
                 aria-label={`Review ${dotIndex + 1} of ${total}`}
                 aria-current={dotIndex === index}
                 className={cn(
-                  'h-2 rounded-full transition-all',
-                  dotIndex === index ? 'w-5 bg-blue' : 'w-2 bg-border-strong',
+                  'h-[8px] rounded-full transition-all',
+                  dotIndex === index ? 'w-[20px] bg-blue' : 'w-[8px] bg-border-strong',
                 )}
               />
             ))}
@@ -175,13 +216,35 @@ function MobileReviews({ testimonials }: { testimonials: Testimonial[] }) {
             type="button"
             onClick={() => step(1)}
             aria-label="Next review"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-border-strong bg-surface text-text-primary transition-colors active:bg-border-soft"
+            className="flex h-[44px] w-[44px] items-center justify-center rounded-full border border-border-strong bg-surface text-text-primary transition-colors active:bg-border-soft"
           >
             <ChevronRight className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
       ) : null}
     </div>
+  )
+}
+
+/**
+ * Holds the exact space a real card will take while the reviews are still
+ * loading. Deliberately not the shared `Skeleton`: that one pulses in
+ * `bg-background`, which is now the page colour itself and so would be
+ * invisible here.
+ */
+function TestimonialPlaceholder({ className }: { className?: string }) {
+  return (
+    <Card tone="seamless" className={className}>
+      <CardContent className="flex h-full flex-col p-5">
+        <div className="h-[18px] w-[110px] animate-pulse rounded-md bg-border-soft" />
+        <div className="mt-4 flex-1 space-y-2.5">
+          <div className="h-3 w-full animate-pulse rounded-md bg-border-soft" />
+          <div className="h-3 w-11/12 animate-pulse rounded-md bg-border-soft" />
+          <div className="h-3 w-10/12 animate-pulse rounded-md bg-border-soft" />
+        </div>
+        <div className="mt-5 h-3 w-[120px] animate-pulse rounded-md bg-border-soft" />
+      </CardContent>
+    </Card>
   )
 }
 

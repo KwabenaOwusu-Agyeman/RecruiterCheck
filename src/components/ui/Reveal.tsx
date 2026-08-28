@@ -15,7 +15,7 @@ interface RevealProps {
  * reads as a one-time reveal, not a distracting repeat effect.
  */
 export function Reveal({ children, className }: RevealProps) {
-  const [ref, isVisible] = useRevealOnScroll<HTMLDivElement>({ amount: 0.2, rootMargin: '-80px' })
+  const [ref, isVisible] = useRevealOnScroll<HTMLDivElement>({ rootMargin: '-80px' })
 
   return (
     <div ref={ref} className={cn(!isVisible && 'opacity-0', isVisible && 'animate-fade-in-up', className)}>
