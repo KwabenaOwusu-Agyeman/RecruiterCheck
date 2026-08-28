@@ -369,9 +369,10 @@ Deno.serve(async (req) => {
       userEmail: user.email ?? null,
       recipientName: (user.user_metadata?.full_name as string | undefined) ?? null,
       // Mirror complete_check_analysis's own coalesce(job_title, p_job_title)
-      // precedence so the email shows the same title/company as the stored row.
+      // precedence so the email shows the same title as the stored row. The
+      // company is deliberately not passed: employer names are never shown,
+      // in-product or in email.
       jobTitle: check.job_title || analysis.job_title || null,
-      companyName: check.company_name || analysis.company_name || null,
       score: analysis.interview_probability_score,
     })
 
@@ -408,7 +409,6 @@ async function sendResultsReadyEmail(
     userEmail: string | null
     recipientName: string | null
     jobTitle: string | null
-    companyName: string | null
     score: number
   },
 ) {
@@ -470,7 +470,6 @@ async function sendResultsReadyEmail(
         toEmail: params.userEmail,
         recipientName: params.recipientName,
         jobTitle: params.jobTitle,
-        companyName: params.companyName,
         score: params.score,
         resultsUrl: `${siteUrl}/checks/${params.checkId}`,
       },

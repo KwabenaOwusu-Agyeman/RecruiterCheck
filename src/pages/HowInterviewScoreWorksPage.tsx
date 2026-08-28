@@ -183,7 +183,7 @@ export function HowInterviewScoreWorksPage() {
               critical requirement and your CV shows no matching evidence for it, your score is
               capped below the "Needs Improvement" threshold, regardless of how strong the rest of
               your application is. This reflects how a recruiter actually screens, a single missing
-              must-have can rule an application out even when everything else looks good.
+              must have can rule an application out even when everything else looks good.
             </p>
           </div>
         </Container>
@@ -199,9 +199,9 @@ export function HowInterviewScoreWorksPage() {
               MyRecruiterCheck is built for candidates with 0 to 5 years of experience, including
               people applying with academic projects, internships, bootcamp work, or a career change
               into tech, AI, machine learning or data. None of that is scored differently just because
-              it isn't a full-time job title. What matters is whether the CV describes what was
+              it isn't a full time job title. What matters is whether the CV describes what was
               actually built, analyzed or delivered, and connects it to the skills and experience level
-              the job description asks for. A well-described personal project can carry more weight
+              the job description asks for. A well described personal project can carry more weight
               than a job title with no detail behind it.
             </p>
           </div>

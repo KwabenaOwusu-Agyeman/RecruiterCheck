@@ -35,7 +35,7 @@ export function RoleFeedbackShowcase() {
       <Container className="py-[32px] sm:py-12 lg:py-[64px]">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="font-display text-[20px] font-semibold tracking-tight text-text-primary sm:text-3xl">
-            Recruiter-style feedback, for every stage of a tech career
+            Recruiter style feedback, for every stage of a tech career
           </h2>
           <p className="mt-3 text-[14px] text-text-secondary sm:text-base">
             The same check, run against five real roles at five experience levels, zero to five years in.

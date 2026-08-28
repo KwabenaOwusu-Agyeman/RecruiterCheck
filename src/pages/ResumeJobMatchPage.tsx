@@ -27,7 +27,7 @@ export function ResumeJobMatchPage() {
       }}
       faqs={[
         { question: 'What is a resume job description match?', answer: 'It\'s a comparison between your CV and a specific job posting that checks whether your experience level, skills and overall value are clearly demonstrated for that exact role.' },
-        { question: 'Why does the exact job description matter?', answer: 'Job titles alone are unreliable. Two "Marketing Manager" roles can require completely different skills. Matching against the full description catches requirements a title-only comparison would miss.' },
+        { question: 'Why does the exact job description matter?', answer: 'Job titles alone are unreliable. Two "Marketing Manager" roles can require completely different skills. Matching against the full description catches requirements a title only comparison would miss.' },
         { question: 'What if I\'m missing a required skill entirely?', answer: 'The check will tell you honestly rather than suggesting you word around it. If a requirement genuinely isn\'t met, the better move is usually a closely related strength, not invented experience.' },
         { question: 'Can I use this for more than one job at a time?', answer: 'Run a separate check for each job description. Requirements differ enough between postings that a single generic match won\'t reflect what a specific recruiter is looking for.' },
       ]}

@@ -9,11 +9,11 @@ export function DataScientistCvCheckerPage() {
       eyebrow="Data Scientist"
       heading="What recruiters actually check on a data scientist CV"
       introduction="Most data scientist CVs list the same models and libraries. Recruiters are scanning for something narrower: proof the work went somewhere beyond a notebook. See what they check before you apply."
-      directAnswer="A recruiter screening a data scientist CV checks whether your modeling and statistics experience matches the level and type of problem in the job description (classification, forecasting, experimentation, NLP, and so on), whether the tools and libraries you list are backed by a specific project rather than a bare list, and whether there's evidence your work reached a real outcome, a deployed model, an A/B test that shipped, a report that changed a decision, rather than stopping at a notebook with a good accuracy score. Early career and self-taught candidates without a job title in data science are judged the same way: on the evidence in the CV, including academic research, competitions like Kaggle, and personal projects, provided the methodology and outcome are specific. MyRecruiterCheck compares your CV against the exact job description you're applying to and reports on whether your experience, skills and candidate value are demonstrated with real evidence."
+      directAnswer="A recruiter screening a data scientist CV checks whether your modeling and statistics experience matches the level and type of problem in the job description (classification, forecasting, experimentation, NLP, and so on), whether the tools and libraries you list are backed by a specific project rather than a bare list, and whether there's evidence your work reached a real outcome, a deployed model, an A/B test that shipped, a report that changed a decision, rather than stopping at a notebook with a good accuracy score. Early career and self taught candidates without a job title in data science are judged the same way: on the evidence in the CV, including academic research, competitions like Kaggle, and personal projects, provided the methodology and outcome are specific. MyRecruiterCheck compares your CV against the exact job description you're applying to and reports on whether your experience, skills and candidate value are demonstrated with real evidence."
       benefits={[
         { title: 'Modeling depth match', description: 'See whether the type of modeling the job needs (forecasting, classification, NLP, experimentation) is shown with a real problem, not just a library name.' },
         { title: 'Beyond the notebook', description: 'Find projects that stop at a model accuracy score with no mention of deployment, a decision it informed, or a test it ran in production.' },
-        { title: 'Statistics and rigor', description: 'Spot where evidence of validation, experiment design, or handling messy real-world data is missing, since most postings assume it.' },
+        { title: 'Statistics and rigor', description: 'Spot where evidence of validation, experiment design, or handling messy real world data is missing, since most postings assume it.' },
       ]}
       steps={[
         'Upload your CV in PDF or DOCX format.',
@@ -30,7 +30,7 @@ export function DataScientistCvCheckerPage() {
         reject: [
           'A library list with no problem attached',
           'A model that stops at an accuracy score',
-          'No evidence of validation or real-world data',
+          'No evidence of validation or real world data',
         ],
         accept: [
           'A specific problem matched to the role\'s domain',

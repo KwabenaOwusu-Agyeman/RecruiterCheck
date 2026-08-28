@@ -35,13 +35,6 @@ export default {
         'gradient-surface': 'linear-gradient(180deg, #FFFFFF 0%, #F8F6F2 100%)',
       },
       keyframes: {
-        // Content slides rightward (left-to-right motion) rather than the
-        // more common right-to-left ticker — per direct request. Only
-        // consumer is TestimonialsSection's marquee, so safe to flip here.
-        marquee: {
-          from: { transform: 'translateX(-50%)' },
-          to: { transform: 'translateX(0)' },
-        },
         'fill-bar': {
           from: { transform: 'scaleX(0)' },
           to: { transform: 'scaleX(1)' },
@@ -60,7 +53,6 @@ export default {
         },
       },
       animation: {
-        marquee: 'marquee 36s linear infinite',
         'fill-bar': 'fill-bar 4.5s linear forwards',
         // Scroll-reveal and tab-crossfade animations (see Reveal.tsx,
         // timeline-animation.tsx, ClosingCtaSection.tsx, DashboardShowcase.tsx).

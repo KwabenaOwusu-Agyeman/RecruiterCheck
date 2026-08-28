@@ -13,7 +13,7 @@ export function DataAnalystCvCheckerPage() {
       benefits={[
         { title: 'Tooling match', description: 'See whether the SQL, BI tools and languages the job asks for are shown with a real project, not just listed in a skills section.' },
         { title: 'Business impact, not busywork', description: 'Find bullets that describe running a query or building a dashboard without saying what decision it supported or what changed as a result.' },
-        { title: 'Stakeholder signal', description: 'Spot where evidence of presenting findings to non-technical stakeholders is missing, since most data analyst postings ask for it directly.' },
+        { title: 'Stakeholder signal', description: 'Spot where evidence of presenting findings to non technical stakeholders is missing, since most data analyst postings ask for it directly.' },
       ]}
       steps={[
         'Upload your CV in PDF or DOCX format.',
@@ -35,7 +35,7 @@ export function DataAnalystCvCheckerPage() {
         accept: [
           'SQL, BI tool or Python shown in a real project',
           'A specific business question and what was found',
-          'A result stated in terms a non-analyst would understand',
+          'A result stated in terms a non analyst would understand',
         ],
       }}
       faqs={[

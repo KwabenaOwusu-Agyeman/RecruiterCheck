@@ -9,6 +9,7 @@ import { cn } from '@/utils/cn'
 // reliable way to recolor this component. Add a new tone here instead.
 type CardTone =
   | 'light'
+  | 'seamless'
   | 'light-elevated'
   | 'dark'
   | 'muted'
@@ -24,6 +25,11 @@ interface CardProps {
 
 const cardToneStyles: Record<CardTone, string> = {
   light: 'border-border-soft bg-surface shadow-card',
+  // Same cream as the page behind it, so the card never reads as a
+  // high-contrast panel — but the edge is deliberately strong: a dark border
+  // with a ring stacked on it for a 2px rule, plus a deep shadow. Seamless
+  // ground, bold outline. Used by the testimonial cards.
+  seamless: 'border-border-strong bg-background shadow-elevated ring-1 ring-border-strong',
   'light-elevated': 'border-border-soft bg-surface shadow-elevated',
   dark: 'border-white/20 bg-navy shadow-elevated',
   muted: 'border-border-strong bg-border-soft shadow-card',

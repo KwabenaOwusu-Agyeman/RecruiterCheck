@@ -25,12 +25,12 @@ export function MyRecruiterCheckVsKickresumePage() {
         rows: [
           { label: 'Approach', us: 'Recruiter judgment on your specific application', them: 'Resume and cover letter template builder' },
           { label: 'Free plan limits', us: 'First Recruiter Check free with full feedback', them: 'ATS checker and AI tools locked behind Premium' },
-          { label: 'Paid packs start at', us: '€10 one-time for 5 checks, no subscription', them: '$24 per month (or $8 per month billed yearly)' },
+          { label: 'Paid packs start at', us: '€10 one time for 5 checks, no subscription', them: '$24 per month (or $8 per month billed yearly)' },
         ],
       }}
       faqs={[
         { question: 'Does Kickresume\'s free plan include an ATS check?', answer: 'No, Kickresume\'s ATS Resume Checker and AI tools require a Premium plan. MyRecruiterCheck includes full feedback on your first check for free.' },
-        { question: 'Is MyRecruiterCheck cheaper than Kickresume?', answer: 'MyRecruiterCheck packs start at €10 one-time for 5 checks with no subscription, compared to Kickresume Premium\'s monthly rate of $24, or $8 per month if billed yearly.' },
+        { question: 'Is MyRecruiterCheck cheaper than Kickresume?', answer: 'MyRecruiterCheck packs start at €10 one time for 5 checks with no subscription, compared to Kickresume Premium\'s monthly rate of $24, or $8 per month if billed yearly.' },
         { question: 'Which one should I use?', answer: 'If you need resume templates and a builder, Kickresume does that. If you want free recruiter style feedback on a specific job before you apply, that\'s what MyRecruiterCheck is built for.' },
       ]}
       relatedLinks={[

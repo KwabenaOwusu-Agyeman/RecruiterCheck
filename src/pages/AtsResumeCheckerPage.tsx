@@ -22,15 +22,15 @@ export function AtsResumeCheckerPage() {
       ]}
       example={{
         title: 'A worked example',
-        scenario: 'A candidate applying for a "Senior Data Analyst" role listed "SQL, Python, stakeholder reporting" in their skills section, matching three keywords from the posting. The job description also specified "3+ years leading analytics for a cross functional team" and "experience presenting findings to non-technical stakeholders."',
-        insight: 'The keyword match alone looked strong. But the resume had no mention of team leadership, and "stakeholder reporting" was never tied to a concrete example. MyRecruiterCheck flagged both as unsupported requirements, not missing keywords. The fix was adding one line about leading a three-person analytics pod and one sentence describing a specific stakeholder presentation, not stuffing in more synonyms.',
+        scenario: 'A candidate applying for a "Senior Data Analyst" role listed "SQL, Python, stakeholder reporting" in their skills section, matching three keywords from the posting. The job description also specified "3+ years leading analytics for a cross functional team" and "experience presenting findings to non technical stakeholders."',
+        insight: 'The keyword match alone looked strong. But the resume had no mention of team leadership, and "stakeholder reporting" was never tied to a concrete example. MyRecruiterCheck flagged both as unsupported requirements, not missing keywords. The fix was adding one line about leading a three person analytics pod and one sentence describing a specific stakeholder presentation, not stuffing in more synonyms.',
       }}
       faqs={[
         { question: 'What does an ATS resume checker look for?', answer: 'It checks whether your resume reflects important information in the vacancy, such as the job title, skills, qualifications, experience and responsibilities.' },
-        { question: 'Is an ATS score the same as an interview chance?', answer: 'No. ATS alignment helps your application remain relevant, but recruiters also assess the quality, credibility and value of your experience. MyRecruiterCheck considers both alignment and recruiter-facing evidence.' },
+        { question: 'Is an ATS score the same as an interview chance?', answer: 'No. ATS alignment helps your application remain relevant, but recruiters also assess the quality, credibility and value of your experience. MyRecruiterCheck considers both alignment and recruiter facing evidence.' },
         { question: 'Should I copy every keyword from the job description?', answer: 'No. Include only skills and experience you genuinely have. Support important requirements with clear evidence and results wherever possible. An ATS pass that leads to a rejected interview wastes everyone\'s time.' },
         { question: 'Can this guarantee that my resume passes an ATS?', answer: 'No tool can guarantee that outcome because employers configure their systems differently. The check helps you improve relevant alignment before submitting.' },
-        { question: 'How is this different from a plain keyword-matching tool?', answer: 'Keyword tools count occurrences. MyRecruiterCheck evaluates whether each requirement is actually supported by evidence in your resume, and explains what a recruiter would still want to see.' },
+        { question: 'How is this different from a plain keyword matching tool?', answer: 'Keyword tools count occurrences. MyRecruiterCheck evaluates whether each requirement is actually supported by evidence in your resume, and explains what a recruiter would still want to see.' },
       ]}
       relatedLinks={[
         { label: 'Free CV Checker', to: '/free-cv-checker' },

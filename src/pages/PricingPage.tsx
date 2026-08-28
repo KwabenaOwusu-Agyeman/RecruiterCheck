@@ -5,6 +5,7 @@ import { PricingCards } from '@/components/ui/PricingCards'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthModal } from '@/features/auth/context/AuthModalContext'
 import { usePageMeta } from '@/hooks/usePageMeta'
+import { TestimonialsSection } from '@/features/landing/components/TestimonialsSection'
 import { CHECK_PACKS } from '@/lib/constants'
 import { trackEvent } from '@/lib/analytics'
 import { createCheckoutSession } from '@/services/checkService'
@@ -74,14 +75,14 @@ export function PricingPage() {
 
   return (
     <main>
-      <section className="border-b border-border-soft bg-surface py-12 sm:py-16 lg:py-20">
+      <section className="border-b border-border-soft bg-surface py-6 sm:py-8">
         <Container>
-          <div className="mx-auto max-w-2xl text-center">
+          <div className="mx-auto max-w-3xl text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue">Pricing</p>
-            <h1 className="font-display mt-4 text-3xl font-semibold tracking-tight text-text-primary sm:text-4xl lg:text-[44px]">
+            <h1 className="font-display mt-2 text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl lg:text-4xl">
               Choose how you use your checks
             </h1>
-            <p className="mx-auto mt-5 max-w-xl text-lg leading-8 text-text-secondary">
+            <p className="mx-auto mt-3 max-w-2xl text-[15px] leading-7 text-text-secondary sm:text-base">
               Your first Recruiter Check is free, no credit card required, plus 3 free keyword
               scans to check your fit before you spend one. After that, buy a pack of checks
               whenever you need them. No subscription and no automatic renewal.
@@ -90,18 +91,19 @@ export function PricingPage() {
         </Container>
       </section>
 
-      <section className="py-10 sm:py-14">
+      <section className="py-5 sm:py-6">
         <Container className="lg:max-w-[1400px]">
           <div className="mx-auto">
             {error ? <Alert variant="error" className="mx-auto mb-6 max-w-2xl">{error}</Alert> : null}
             <PricingCards packs={CHECK_PACKS} loadingPack={loadingPack} onBuy={(packId) => void handleBuy(packId)} />
-            <p className="mx-auto mt-6 max-w-2xl text-center text-sm text-text-secondary">
-              A Recruiter Check uses 1 check from your balance. Purchased checks expire 90 days after
-              purchase.
-            </p>
           </div>
         </Container>
       </section>
+
+      {/* Same reviews component the landing page uses. Placed directly below
+          the packs so anyone arriving from a "Get checks" CTA sees the proof
+          at the moment they are choosing, not after the FAQ. */}
+      <TestimonialsSection compact />
 
       <section className="border-t border-border-soft py-10 sm:py-14">
         <Container>

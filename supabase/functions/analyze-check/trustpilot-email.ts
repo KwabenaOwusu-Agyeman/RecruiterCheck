@@ -1,12 +1,20 @@
 // Pure, network-free logic for the "Your Recruiter Check is ready" email
 // (split out so it can be unit tested via `npx tsx` without the Deno
 // runtime, matching the pattern used by logic.ts in this same function).
+//
+// The HTML body is built from the shared email shell in
+// _shared/email/layout.ts, the same one every other transactional email
+// uses. This file used to hand-roll its own complete HTML document with
+// its own hardcoded hex values and its own font stack, which is why this
+// email drifted off-brand: no wordmark, left-aligned, small button. Any
+// future visual change belongs in the shell or in tokens.ts, not here.
+
+import { buildEmailShell } from '../_shared/email/layout.ts'
 
 export interface ResultsEmailParams {
   toEmail: string
   recipientName: string | null
   jobTitle: string | null
-  companyName: string | null
   score: number
   resultsUrl: string
 }
@@ -69,88 +77,27 @@ export function resolveSendDecision(testMode: boolean, isTestAccount: boolean): 
 export function buildResultsEmailHtml(params: {
   recipientName: string | null
   jobTitle: string | null
-  companyName: string | null
   score: number
   resultsUrl: string
 }): string {
   const navy = '#020C38'
-  const blue = '#194A9F'
-  const textSecondary = '#3A4A6B'
-  const border = '#EEF0F5'
 
   const greeting = params.recipientName ? `Hi ${escapeHtml(params.recipientName)},` : 'Hi,'
-  const roleLine =
-    params.jobTitle && params.companyName
-      ? `for ${escapeHtml(params.jobTitle)} at ${escapeHtml(params.companyName)} `
-      : params.jobTitle
-        ? `for ${escapeHtml(params.jobTitle)} `
-        : ''
+  // Role only, never the employer. Company names are not shown anywhere,
+  // in-product or in email, so nothing downstream can leak which company
+  // someone applied to.
+  const roleLine = params.jobTitle ? `for ${escapeHtml(params.jobTitle)} ` : ''
 
-  return `
-    <!DOCTYPE html>
-    <html lang="en">
-      <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="color-scheme" content="light" />
-        <meta name="supported-color-schemes" content="light" />
-        <title>Your Recruiter Check is ready</title>
-      </head>
-      <body style="margin: 0; padding: 0; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffffff;">
-          <tr>
-            <td align="center" style="padding: 40px 16px;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 520px;">
-
-                <tr>
-                  <td style="padding-bottom: 32px;">
-                    <span style="font-size: 16px; font-weight: 700; color: ${navy};">MyRecruiterCheck</span>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td>
-                    <h1 style="margin: 0 0 12px; font-size: 24px; line-height: 30px; font-weight: 700; color: ${navy};">
-                      Your Recruiter Check is ready
-                    </h1>
-                    <p style="margin: 0 0 8px; font-size: 16px; line-height: 24px; color: ${textSecondary};">
-                      ${greeting}
-                    </p>
-                    <p style="margin: 0 0 28px; font-size: 16px; line-height: 24px; color: ${textSecondary};">
-                      Your Recruiter Check ${roleLine}is complete. Your Interview Probability score is <strong style="color: ${navy};">${params.score}%</strong>.
-                    </p>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td style="padding-bottom: 40px;">
-                    <table role="presentation" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td style="border-radius: 8px; background-color: ${blue};">
-                          <a href="${params.resultsUrl}" style="display: inline-block; padding: 14px 32px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none;">
-                            View my results
-                          </a>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td style="padding-top: 24px; border-top: 1px solid ${border};">
-                    <p style="margin: 24px 0 0; font-size: 12px; line-height: 18px; color: ${textSecondary};">
-                      MyRecruiterCheck, think like a recruiter before you apply.
-                    </p>
-                  </td>
-                </tr>
-
-              </table>
-            </td>
-          </tr>
-        </table>
-      </body>
-    </html>
-  `
+  return buildEmailShell({
+    documentTitle: 'Your Recruiter Check is ready',
+    previewText: `Your Interview Probability score is ${params.score}%.`,
+    heading: 'Your Recruiter Check is ready',
+    bodyHtml:
+      `${greeting}<br /><br />` +
+      `Your Recruiter Check ${roleLine}is complete. ` +
+      `Your Interview Probability score is <strong style="color: ${navy};">${params.score}%</strong>.`,
+    cta: { label: 'View my results', url: params.resultsUrl },
+  })
 }
 
 function escapeHtml(value: string): string {
@@ -181,7 +128,6 @@ export function buildBrevoPayload(
     htmlContent: buildResultsEmailHtml({
       recipientName: params.recipientName,
       jobTitle: params.jobTitle,
-      companyName: params.companyName,
       score: params.score,
       resultsUrl: params.resultsUrl,
     }),

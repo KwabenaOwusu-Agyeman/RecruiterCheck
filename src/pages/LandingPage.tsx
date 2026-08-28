@@ -1,12 +1,12 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
+import { JobsYouCanCheckSection } from '@/features/landing/components/JobsYouCanCheckSection'
 import { ClosingCtaSection } from '@/features/landing/components/ClosingCtaSection'
 import { DashboardShowcase } from '@/features/landing/components/DashboardShowcase'
 import { DocumentShowcase } from '@/features/landing/components/DocumentShowcase'
 import { HeroSection } from '@/features/landing/components/HeroSection'
 import { HowItWorksSection } from '@/features/landing/components/HowItWorksSection'
 import { LlmComparisonSection } from '@/features/landing/components/LlmComparisonSection'
-import { PricingPreviewSection } from '@/features/landing/components/PricingPreviewSection'
 import { ReassuranceSection } from '@/features/landing/components/ReassuranceSection'
 import { RoleFeedbackShowcase } from '@/features/landing/components/RoleFeedbackShowcase'
 import { TestimonialsSection } from '@/features/landing/components/TestimonialsSection'
@@ -47,6 +47,11 @@ export function LandingPage() {
       <Reveal>
         <HowItWorksSection />
       </Reveal>
+      {/* Straight after the mechanism: "does this apply to my job?". Answering
+          that here qualifies the visitor before the three demo sections. */}
+      <Reveal>
+        <JobsYouCanCheckSection />
+      </Reveal>
       <Reveal>
         <RoleFeedbackShowcase />
       </Reveal>
@@ -59,14 +64,13 @@ export function LandingPage() {
       <Reveal>
         <DashboardShowcase />
       </Reveal>
-      <Reveal>
-        <TrustpilotFeedbackSection />
-      </Reveal>
-      <Reveal>
-        <PricingPreviewSection />
-      </Reveal>
+      {/* Proof before the close. Pricing is no longer previewed here at all,
+          it lives on /pricing, where these same reviews sit under the packs. */}
       <Reveal>
         <TestimonialsSection />
+      </Reveal>
+      <Reveal>
+        <TrustpilotFeedbackSection />
       </Reveal>
       <Reveal>
         <ClosingCtaSection />

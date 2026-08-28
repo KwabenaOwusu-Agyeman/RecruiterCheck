@@ -10,8 +10,8 @@ export function MyRecruiterCheckVsResumeWordedPage() {
       heading="MyRecruiterCheck vs Resume Worded"
       introduction="Resume Worded gives your resume a general score. MyRecruiterCheck tells you whether a recruiter would shortlist you for the specific job you're applying to."
       benefits={[
-        { title: 'Matched to the job, not a general score', description: 'Feedback is based on your resume and the job description together, not a one-size-fits-all grade.' },
-        { title: 'Interview Score included from the start', description: 'See an evidence-based estimate of your chances, not just a score out of 100.' },
+        { title: 'Matched to the job, not a general score', description: 'Feedback is based on your resume and the job description together, not a one size fits all grade.' },
+        { title: 'Interview Score included from the start', description: 'See an evidence based estimate of your chances, not just a score out of 100.' },
         { title: 'Full feedback on your first check', description: 'Your first Recruiter Check is free and includes the same feedback structure as a paid check, not a limited preview.' },
       ]}
       steps={[
@@ -25,7 +25,7 @@ export function MyRecruiterCheckVsResumeWordedPage() {
         rows: [
           { label: 'Approach', us: 'Feedback matched to one specific job description', them: 'General resume and LinkedIn score' },
           { label: 'Free plan depth', us: 'Full feedback on your first check', them: 'Basic score with limited feedback' },
-          { label: 'Paid packs start at', us: '€10 one-time for 5 checks, no subscription', them: '$19 per month (annual plan)' },
+          { label: 'Paid packs start at', us: '€10 one time for 5 checks, no subscription', them: '$19 per month (annual plan)' },
         ],
       }}
       faqs={[

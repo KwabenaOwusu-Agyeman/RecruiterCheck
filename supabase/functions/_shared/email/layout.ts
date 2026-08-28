@@ -1,6 +1,9 @@
 // Shared HTML shell for every MyRecruiterCheck transactional email:
-// hidden preview text, navy header, white content card, one primary
-// button, and a minimal footer. Every template in templates.ts (and the
+// hidden preview text, centered navy wordmark, white content card, one
+// large primary button, and a minimal footer. Layout follows the
+// monday.com transactional pattern (single centered column, oversized
+// heading, one unmissable action) in MyRecruiterCheck colors.
+// Every template in templates.ts (and the
 // static Supabase Auth templates in supabase/templates/*.html, which
 // mirror this same structure by hand since they run outside this Deno
 // module) builds on this one shell so new emails never duplicate the
@@ -42,14 +45,18 @@ export interface EmailShellParams {
 export function buildEmailShell(params: EmailShellParams): string {
   const { documentTitle, previewText, heading, bodyHtml, cta, supportingHtml, supportEmail } = params
 
+  // Centered, single-column, one large primary action — the monday.com
+  // transactional layout, rendered in MyRecruiterCheck colors. The button is
+  // deliberately oversized and the heading deliberately large: these emails
+  // carry exactly one action, and it should be unmissable on a phone.
   const ctaBlock = cta
     ? `
                 <tr>
-                  <td style="padding: 0 0 ${spacing.lg};">
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                  <td align="center" style="padding: ${spacing.xs} 0 ${spacing.md};">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
                       <tr>
-                        <td style="border-radius: ${radius.button}; background-color: ${color.buttonBackground};">
-                          <a href="${escapeAttribute(cta.url)}" style="display: inline-block; padding: 16px 32px; font-size: 16px; font-weight: 600; color: ${color.buttonText}; text-decoration: none; border-radius: ${radius.button}; font-family: ${font.stack};">
+                        <td align="center" style="border-radius: ${radius.button}; background-color: ${color.buttonBackground};">
+                          <a href="${escapeAttribute(cta.url)}" style="display: inline-block; padding: 18px 44px; font-size: 17px; font-weight: 600; line-height: 22px; color: ${color.buttonText}; text-decoration: none; border-radius: ${radius.button}; font-family: ${font.stack};">
                             ${escapeHtml(cta.label)}
                           </a>
                         </td>
@@ -58,8 +65,8 @@ export function buildEmailShell(params: EmailShellParams): string {
                   </td>
                 </tr>
                 <tr>
-                  <td style="padding: 0 0 ${spacing.md};">
-                    <p style="margin: 0; font-size: 13px; line-height: 20px; color: ${color.textSecondary}; word-break: break-all;">
+                  <td align="center" style="padding: 0 0 ${spacing.sm};">
+                    <p style="margin: 0; font-size: 12px; line-height: 19px; color: ${color.textSecondary}; text-align: center; word-break: break-all; font-family: ${font.stack};">
                       Or paste this link into your browser:<br />
                       <a href="${escapeAttribute(cta.url)}" style="color: ${color.blue};">${escapeHtml(cta.url)}</a>
                     </p>
@@ -70,8 +77,8 @@ export function buildEmailShell(params: EmailShellParams): string {
   const supportingBlock = supportingHtml
     ? `
                 <tr>
-                  <td style="padding: 0 0 ${spacing.md};">
-                    <p style="margin: 0; font-size: 14px; line-height: 21px; color: ${color.textSecondary};">
+                  <td align="center" style="padding: 0 0 ${spacing.sm};">
+                    <p style="margin: 0; font-size: 14px; line-height: 22px; color: ${color.textSecondary}; text-align: center; font-family: ${font.stack};">
                       ${supportingHtml}
                     </p>
                   </td>
@@ -79,7 +86,7 @@ export function buildEmailShell(params: EmailShellParams): string {
     : ''
 
   const supportBlock = supportEmail
-    ? `<p style="margin: 8px 0 0; font-size: 12px; line-height: 18px; color: ${color.textSecondary};">
+    ? `<p style="margin: 8px 0 0; font-size: 12px; line-height: 18px; color: ${color.textSecondary}; text-align: center; font-family: ${font.stack};">
          Need help? Contact <a href="mailto:${escapeAttribute(supportEmail)}" style="color: ${color.blue};">${escapeHtml(supportEmail)}</a>
        </p>`
     : ''
@@ -105,10 +112,10 @@ export function buildEmailShell(params: EmailShellParams): string {
         <td align="center" style="padding: ${spacing.lg} ${spacing.sm};">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: ${maxWidth}; width: 100%;">
 
-            <!-- Navy header -->
+            <!-- Wordmark, centered above the card -->
             <tr>
-              <td style="background-color: ${color.navy}; border-radius: ${radius.card} ${radius.card} 0 0; padding: ${spacing.md} ${spacing.md};">
-                <span style="font-size: 18px; font-weight: 700; color: ${color.white}; font-family: ${font.stack};">
+              <td align="center" style="padding: 0 0 ${spacing.md};">
+                <span style="font-size: 20px; font-weight: 700; letter-spacing: -0.01em; color: ${color.navy}; font-family: ${font.stack};">
                   MyRecruiterCheck
                 </span>
               </td>
@@ -116,18 +123,18 @@ export function buildEmailShell(params: EmailShellParams): string {
 
             <!-- White content card -->
             <tr>
-              <td style="background-color: ${color.surface}; border: 1px solid ${color.border}; border-top: none; border-radius: 0 0 ${radius.card} ${radius.card}; padding: ${spacing.lg} ${spacing.md};">
+              <td align="center" style="background-color: ${color.surface}; border: 1px solid ${color.border}; border-radius: ${radius.card}; padding: ${spacing.xl} ${spacing.md};">
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                   <tr>
-                    <td style="padding: 0 0 ${spacing.sm};">
-                      <h1 style="margin: 0; font-size: 22px; line-height: 28px; font-weight: 700; color: ${color.navy}; font-family: ${font.stack};">
+                    <td align="center" style="padding: 0 0 ${spacing.sm};">
+                      <h1 style="margin: 0; font-size: 30px; line-height: 38px; font-weight: 700; letter-spacing: -0.02em; color: ${color.navy}; text-align: center; font-family: ${font.stack};">
                         ${escapeHtml(heading)}
                       </h1>
                     </td>
                   </tr>
                   <tr>
-                    <td style="padding: 0 0 ${spacing.md};">
-                      <p style="margin: 0; font-size: 16px; line-height: 24px; color: ${color.textSecondary}; font-family: ${font.stack};">
+                    <td align="center" style="padding: 0 0 ${spacing.md};">
+                      <p style="margin: 0; font-size: 17px; line-height: 26px; color: ${color.textSecondary}; text-align: center; font-family: ${font.stack};">
                         ${bodyHtml}
                       </p>
                     </td>
@@ -140,12 +147,12 @@ export function buildEmailShell(params: EmailShellParams): string {
 
             <!-- Footer -->
             <tr>
-              <td style="padding: ${spacing.md} ${spacing.sm} 0;">
+              <td align="center" style="padding: ${spacing.md} ${spacing.sm} 0;">
                 <p style="margin: 0; font-size: 12px; line-height: 18px; color: ${color.textSecondary}; text-align: center; font-family: ${font.stack};">
                   MyRecruiterCheck. Think like a recruiter before you apply.<br />
                   <a href="https://myrecruitercheck.com" style="color: ${color.textSecondary};">myrecruitercheck.com</a>
                 </p>
-                ${supportBlock ? `<p style="margin: 4px 0 0; text-align: center;">${supportBlock}</p>` : ''}
+                ${supportBlock}
               </td>
             </tr>
 

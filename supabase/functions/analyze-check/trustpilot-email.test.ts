@@ -18,7 +18,6 @@ const baseParams = {
   toEmail: 'candidate@example.com',
   recipientName: 'Jordan',
   jobTitle: 'Senior Backend Engineer',
-  companyName: 'Acme Corp',
   score: 82,
   resultsUrl: 'https://myrecruitercheck.com/checks/abc-123',
 }
@@ -68,7 +67,15 @@ async function run() {
     assert.match(html, /82%/)
     assert.match(html, /Hi Jordan,/)
     assert.match(html, /Senior Backend Engineer/)
-    assert.match(html, /Acme Corp/)
+  })
+
+  await test('buildResultsEmailHtml never renders an employer name', () => {
+    // Employer names are not shown anywhere, in-product or in email, so the
+    // builder does not accept one at all. Guards against it being reintroduced.
+    const html = buildResultsEmailHtml({ ...baseParams, jobTitle: 'Data Scientist' })
+    assert.equal(html.includes('Acme Corp'), false)
+    assert.equal(html.includes(' at '), false)
+    assert.match(html, /for Data Scientist is complete/)
   })
 
   await test('buildResultsEmailHtml falls back to a generic greeting with no name', () => {
@@ -76,11 +83,10 @@ async function run() {
     assert.match(html, /Hi,/)
   })
 
-  await test('buildResultsEmailHtml escapes HTML in job title and company name', () => {
+  await test('buildResultsEmailHtml escapes HTML in the job title', () => {
     const html = buildResultsEmailHtml({
       ...baseParams,
-      jobTitle: '<script>alert(1)</script>',
-      companyName: 'A & B "Co"',
+      jobTitle: '<script>alert(1)</script> A & B "Co"',
     })
     assert.equal(html.includes('<script>alert(1)</script>'), false)
     assert.match(html, /&lt;script&gt;/)

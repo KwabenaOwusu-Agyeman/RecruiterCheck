@@ -34,6 +34,27 @@ function lowerFirstClause(text: string): string {
 }
 
 /**
+ * The Recommendation box's forward action. Every completed check ends with
+ * one, including a free check and including a low-fit score, which
+ * previously rendered an explanation and no action at all.
+ *
+ * Destination follows the credit balance rather than always pointing at
+ * pricing: someone who already holds checks is asked to spend one, and only
+ * someone with none is sent to buy.
+ */
+function NextCheckCta({ hasBalance }: { hasBalance: boolean }) {
+  const to = hasBalance ? '/checks/new' : '/pricing'
+  const label = hasBalance ? 'Run a new check' : 'Get checks'
+  return (
+    <Link to={to} className="shrink-0">
+      <Button size="md" className="w-full whitespace-nowrap sm:w-auto">
+        {label}
+      </Button>
+    </Link>
+  )
+}
+
+/**
  * Builds the one-line "why" sentence under the score, entirely from data
  * already on the page (score tier + the two areas-to-improve findings) so
  * it needs no new backend field or database column. Returns null below 61
@@ -168,6 +189,9 @@ export function FeedbackPage() {
   // every paid pack includes it).
   const documentEntitlement = getDocumentEntitlement(fundingPackId, score)
   const isLowFit = score !== null && score <= NOT_A_FIT_MAX_SCORE
+  // Drives where the Recommendation box's CTA points: someone holding
+  // credits should go straight to a new check, not back to pricing.
+  const hasCheckBalance = (profile?.checks_balance ?? 0) > 0
   const isLikelyInterviewCandidate = score !== null && score >= LIKELY_INTERVIEW_CANDIDATE_MIN_SCORE
   const resultTone = getResultTone(score)
   const isDark = resultTone === 'dark'
@@ -344,19 +368,23 @@ export function FeedbackPage() {
               <CardContent className="px-5 py-4">
                 {documentEntitlement.blockedReason ? (
                   isLowFit ? (
-                    <p className="text-sm text-text-secondary">
-                      This score suggests the role is not a strong match for your current CV, so we do
-                      not generate a CV draft, cover letter, or recruiter message for it. Look for a
-                      role that better fits your experience, then run a new Recruiter Check.
-                    </p>
+                    // Low-fit used to render this explanation with no action at
+                    // all, which dead-ended the most motivated moment of the
+                    // whole flow: the copy literally says "run a new Recruiter
+                    // Check" and then offered no way to. Every completed check
+                    // now ends with a route forward.
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-sm text-text-secondary">
+                        This score suggests the role is not a strong match for your current CV, so we do
+                        not generate a CV draft, cover letter, or recruiter message for it. Look for a
+                        role that better fits your experience, then run a new Recruiter Check.
+                      </p>
+                      <NextCheckCta hasBalance={hasCheckBalance} />
+                    </div>
                   ) : (
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                       <p className="text-sm text-text-secondary">{documentEntitlement.blockedReason}</p>
-                      <Link to="/pricing">
-                        <Button size="md" className="shrink-0 whitespace-nowrap">
-                          Get checks
-                        </Button>
-                      </Link>
+                      <NextCheckCta hasBalance={hasCheckBalance} />
                     </div>
                   )
                 ) : documents ? (

@@ -10,7 +10,7 @@ import { cn } from '@/utils/cn'
 // /myrecruitercheck-vs-chatgpt is for, linked below).
 const ROWS = [
   'Same structured verdict every time',
-  'Recruiter-style evidence framework, not a one-off opinion',
+  'Recruiter style evidence framework, not a one off opinion',
   'Real CV, cover letter & message you can download',
   'Every check saved and tracked',
 ]

@@ -40,17 +40,39 @@ import { isEmailConfirmed, isRolloutEligible, type AuthenticatedUser } from './l
 import { buildWelcomeEmail } from '../_shared/email/templates.ts'
 import { sendTransactionalEmail } from '../_shared/email/brevoClient.ts'
 
-const GENERIC_OK = new Response(JSON.stringify({ ok: true }), { status: 200 })
+// Same allow-list as analyze-check. Without these, the browser's CORS
+// preflight was answered by the `req.method !== 'POST'` guard below with a
+// bare 405 and no CORS headers, so the browser blocked the real POST and
+// this function was never actually asked to send anything: it booted on the
+// OPTIONS, logged nothing, and welcome_email_sent_at stayed null for every
+// account. The preflight must be answered before the method guard.
+const corsHeaders = {
+  'Access-Control-Allow-Origin': 'https://myrecruitercheck.com',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// Built per call rather than shared at module scope: a Response body can
+// only be consumed once, so handing the same instance to two requests fails
+// on the second.
+const genericOk = () =>
+  new Response(JSON.stringify({ ok: true }), {
+    status: 200,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
   if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 })
+    return new Response('Method not allowed', { status: 405, headers: corsHeaders })
   }
 
   const authHeader = req.headers.get('Authorization')
   const token = authHeader?.toLowerCase().startsWith('bearer ') ? authHeader.slice(7) : null
   if (!token) {
-    return new Response('Unauthorized', { status: 401 })
+    return new Response('Unauthorized', { status: 401, headers: corsHeaders })
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -62,7 +84,7 @@ Deno.serve(async (req) => {
   // was minted.
   const { data: userData, error: userError } = await anonClient.auth.getUser(token)
   if (userError || !userData?.user) {
-    return new Response('Unauthorized', { status: 401 })
+    return new Response('Unauthorized', { status: 401, headers: corsHeaders })
   }
 
   const user: AuthenticatedUser = {
@@ -72,7 +94,7 @@ Deno.serve(async (req) => {
   }
 
   if (!isEmailConfirmed(user)) {
-    return GENERIC_OK
+    return genericOk()
   }
 
   const adminClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
@@ -85,15 +107,15 @@ Deno.serve(async (req) => {
 
   if (profileError || !profile) {
     console.error('send-welcome-email: profile lookup failed', { userId: user.id })
-    return GENERIC_OK
+    return genericOk()
   }
 
   if (profile.welcome_email_sent_at) {
-    return GENERIC_OK
+    return genericOk()
   }
 
   if (!isRolloutEligible(profile.created_at, Deno.env.get('WELCOME_EMAIL_ROLLOUT_AT'))) {
-    return GENERIC_OK
+    return genericOk()
   }
 
   const claimTimestamp = new Date().toISOString()
@@ -107,12 +129,12 @@ Deno.serve(async (req) => {
 
   if (claimError) {
     console.error('send-welcome-email: claim failed', { userId: user.id, message: claimError.message })
-    return GENERIC_OK
+    return genericOk()
   }
 
   if (!claimed || claimed.length === 0) {
     // Already claimed by an earlier concurrent invocation — not an error.
-    return GENERIC_OK
+    return genericOk()
   }
 
   const siteUrl = Deno.env.get('SITE_URL') ?? 'https://myrecruitercheck.com'
@@ -148,8 +170,8 @@ Deno.serve(async (req) => {
       })
     }
 
-    return GENERIC_OK
+    return genericOk()
   }
 
-  return GENERIC_OK
+  return genericOk()
 })

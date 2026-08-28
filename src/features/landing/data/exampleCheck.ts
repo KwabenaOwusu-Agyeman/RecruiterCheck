@@ -64,8 +64,8 @@ export const ROLE_EXAMPLES: readonly RoleExample[] = [
       "Quantify model impact. You describe what the models do but not what changed because of them. Example: Reduced fraud false-positive rate from 4.1% to 1.6% after retraining on the new feature set.",
     ],
     prospects: [
-      'Solid candidate for mid-level ML engineering roles once impact is quantified.',
-      'Currently reads closer to a strong junior profile than the mid-level scope this role expects.',
+      'Solid candidate for mid level ML engineering roles once impact is quantified.',
+      'Currently reads closer to a strong junior profile than the mid level scope this role expects.',
     ],
   },
   {
@@ -80,12 +80,12 @@ export const ROLE_EXAMPLES: readonly RoleExample[] = [
       'Clear tooling match. SQL, Python and dbt all appear on your CV and all appear in the job description.',
     ],
     improvements: [
-      "Lead with business outcomes, not methods. Your bullet points describe techniques used (regression, clustering) rather than what changed for the business. Example: Built a churn model that flagged at-risk accounts 3 weeks earlier, reducing churn by 9%.",
-      "Show stakeholder communication. The job description asks for someone who can present findings to non-technical teams, but nothing on your CV shows that. Example: Presented quarterly retention analysis to the executive team, shaping the Q3 roadmap.",
+      "Lead with business outcomes, not methods. Your bullet points describe techniques used (regression, clustering) rather than what changed for the business. Example: Built a churn model that flagged at risk accounts 3 weeks earlier, reducing churn by 9%.",
+      "Show stakeholder communication. The job description asks for someone who can present findings to non technical teams, but nothing on your CV shows that. Example: Presented quarterly retention analysis to the executive team, shaping the Q3 roadmap.",
       'Tighten your summary. It reads as a general data analyst summary rather than one focused on the modeling work this role needs.',
     ],
     prospects: [
-      'Reasonable candidate for mid-level data science roles once outcomes are foregrounded.',
+      'Reasonable candidate for mid level data science roles once outcomes are foregrounded.',
       'Needs stronger evidence of stakeholder-facing work to clear this specific bar.',
     ],
   },
@@ -105,8 +105,8 @@ export const ROLE_EXAMPLES: readonly RoleExample[] = [
       'Add tool depth. The job description names Looker and dbt specifically; neither appears anywhere on your CV.',
     ],
     prospects: [
-      'Better matched to entry-level or associate analyst roles than this specific posting.',
-      'The gap here is experience level, not CV quality. Worth applying once you clear 1 to 2 more years, or targeting junior-labeled roles now.',
+      'Better matched to entry level or associate analyst roles than this specific posting.',
+      'The gap here is experience level, not CV quality. Worth applying once you clear 1 to 2 more years, or targeting junior labeled roles now.',
     ],
   },
   {
@@ -121,7 +121,7 @@ export const ROLE_EXAMPLES: readonly RoleExample[] = [
     ],
     improvements: [
       "The job description asks for production experience with Airflow and Spark at scale. Your CV shows one class project using both, which is a real seniority gap for this specific posting.",
-      'No professional experience listed. Internships, freelance work, or open-source contributions would all help establish credibility here, even outside a full-time role.',
+      'No professional experience listed. Internships, freelance work, or open-source contributions would all help establish credibility here, even outside a full time role.',
       "Quantify the project you do have. Example: Built an Airflow pipeline processing 2M records daily for a course project, with 99% uptime over the semester.",
     ],
     prospects: [
@@ -162,8 +162,8 @@ export const EXAMPLE_DOCUMENTS = {
         dates: 'Aug 2023 – Present',
         bullets: [
           'Owned the payments microservice end to end, cutting checkout API latency from 800ms to 210ms by introducing request batching and connection pooling.',
-          'Led the migration from a monolith to a service-oriented architecture, coordinating across three teams with zero downtime.',
-          'Mentored two junior engineers through their first year, both promoted to mid-level within twelve months.',
+          'Led the migration from a monolith to a service oriented architecture, coordinating across three teams with zero downtime.',
+          'Mentored two junior engineers through their first year, both promoted to mid level within twelve months.',
         ],
       },
       {
@@ -200,8 +200,8 @@ export const EXAMPLE_DOCUMENTS = {
       "I'm applying for the Software Engineer role at Lumen Cloud because the scope you're describing, owning services end to end rather than shipping tickets, is exactly the kind of work I've spent the last four years doing.",
     bodyParagraphs: [
       "At Beacon Systems, I owned our payments microservice from design through production, cutting checkout latency from 800ms to 210ms by rethinking how we batched requests and managed connections. That kind of ownership, from architecture decisions through to the numbers that prove they worked, is what I want to bring to Lumen Cloud's platform team.",
-      "Beyond that one project, I led the migration off our monolith to a service-oriented architecture, coordinating across three teams and shipping it with zero downtime. It's the kind of cross-team technical leadership that only comes from being trusted with systems bigger than any one engineer's usual scope, and it's exactly the level I'm looking to keep operating at.",
-      "Alongside the technical work, I've mentored two junior engineers through their first year on the team, both promoted to mid-level within twelve months. I work well independently on ambiguous problems, but I care just as much about the engineers around me getting better, and that balance is something I'd bring to any team I join.",
+      "Beyond that one project, I led the migration off our monolith to a service oriented architecture, coordinating across three teams and shipping it with zero downtime. It's the kind of cross team technical leadership that only comes from being trusted with systems bigger than any one engineer's usual scope, and it's exactly the level I'm looking to keep operating at.",
+      "Alongside the technical work, I've mentored two junior engineers through their first year on the team, both promoted to mid level within twelve months. I work well independently on ambiguous problems, but I care just as much about the engineers around me getting better, and that balance is something I'd bring to any team I join.",
     ],
     conclusionParagraph:
       "I'd welcome the chance to talk through where I could contribute first, and I'm confident the impact I've had at Beacon Systems is a strong signal for what I'd bring to Lumen Cloud.",
@@ -211,7 +211,7 @@ export const EXAMPLE_DOCUMENTS = {
   recruiterMessage: {
     body: [
       "Hi, I saw the Software Engineer opening at Lumen Cloud and wanted to reach out directly.",
-      "For the last four years I've owned backend services end to end, most recently a payments microservice where I cut checkout latency from 800ms to 210ms, and I led our migration to a service-oriented architecture with zero downtime.",
+      "For the last four years I've owned backend services end to end, most recently a payments microservice where I cut checkout latency from 800ms to 210ms, and I led our migration to a service oriented architecture with zero downtime.",
       "I think there's a strong fit with what you're building on the platform team, and I'd welcome a short call to discuss.",
     ],
     signOff: 'Best,\nAlex Morgan',
