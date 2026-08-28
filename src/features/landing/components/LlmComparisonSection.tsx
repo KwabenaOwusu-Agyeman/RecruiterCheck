@@ -37,18 +37,18 @@ export function LlmComparisonSection() {
           </p>
         </div>
 
-        <div className="mx-auto mt-5 grid max-w-3xl gap-5 sm:mt-6 sm:grid-cols-2">
+        <div className="mx-auto mt-7 grid max-w-[1000px] gap-5 sm:mt-8 sm:grid-cols-2 sm:gap-6">
           <GlowCard className="h-full">
             <Card tone="dark" className="h-full overflow-hidden">
-              <CardHeader tone="dark" className="px-6 py-4">
-                <h3 className="text-base font-semibold text-white">MyRecruiterCheck</h3>
+              <CardHeader tone="dark" className="px-7 py-5">
+                <h3 className="text-lg font-semibold text-white">MyRecruiterCheck</h3>
               </CardHeader>
-              <CardContent className="px-6 py-5">
-                <ul className="space-y-3.5">
+              <CardContent className="px-7 py-6">
+                <ul className="space-y-4">
                   {ROWS.map((row) => (
                     <li key={row} className="flex items-start gap-3">
-                      <Check className="mt-0.5 h-[16px] w-[16px] shrink-0 text-success" aria-hidden="true" />
-                      <span className="text-sm leading-snug text-white/90">{row}</span>
+                      <Check className="mt-[3px] h-[16px] w-[16px] shrink-0 text-success" aria-hidden="true" />
+                      <span className="text-[15px] leading-relaxed text-white/90">{row}</span>
                     </li>
                   ))}
                 </ul>
@@ -57,15 +57,15 @@ export function LlmComparisonSection() {
           </GlowCard>
 
           <Card tone="muted" className="overflow-hidden">
-            <CardHeader className="px-6 py-4">
-              <h3 className="text-base font-semibold text-text-primary">ChatGPT, Gemini &amp; other AI chat</h3>
+            <CardHeader className="px-7 py-5">
+              <h3 className="text-lg font-semibold text-text-primary">ChatGPT, Gemini &amp; other AI chat</h3>
             </CardHeader>
-            <CardContent className="px-6 py-5">
-              <ul className="space-y-3.5">
+            <CardContent className="px-7 py-6">
+              <ul className="space-y-4">
                 {THEM_ROWS.map((row) => (
                   <li key={row} className="flex items-start gap-3">
-                    <X className="mt-0.5 h-[16px] w-[16px] shrink-0 text-error" aria-hidden="true" />
-                    <span className="text-sm leading-snug text-text-secondary">{row}</span>
+                    <X className="mt-[3px] h-[16px] w-[16px] shrink-0 text-error" aria-hidden="true" />
+                    <span className="text-[15px] leading-relaxed text-text-secondary">{row}</span>
                   </li>
                 ))}
               </ul>

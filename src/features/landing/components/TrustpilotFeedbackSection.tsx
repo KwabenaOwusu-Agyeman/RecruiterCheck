@@ -68,13 +68,15 @@ export function TrustpilotFeedbackSection() {
 
   return (
     <section className="border-b border-border bg-background">
-      <div className="mx-auto w-full max-w-7xl px-[16px] py-[36px] sm:px-6 sm:py-[44px] lg:max-w-[1200px] lg:px-[32px] lg:py-[56px]">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between lg:gap-12">
-          <div className="max-w-md">
+      <div className="mx-auto w-full max-w-7xl px-[16px] py-[48px] sm:px-6 sm:py-14 lg:max-w-[1200px] lg:px-[32px] lg:py-[80px]">
+        {/* Centered like every other section — this was the one left-aligned
+            block on the page, which read as a leftover rather than a stage. */}
+        <div className="mx-auto flex max-w-xl flex-col items-center gap-6 text-center">
+          <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue sm:text-sm">
               Independently reviewed
             </p>
-            <h2 className="mt-2 font-display text-xl text-navy sm:text-2xl">
+            <h2 className="mt-2 font-display text-[24px] text-navy sm:text-[28px]">
               Find us on Trustpilot
             </h2>
           </div>
@@ -84,7 +86,7 @@ export function TrustpilotFeedbackSection() {
               to 390px). The widget's iframe is only injected after
               hydration, and without this floor the section grew under the
               reader at the moment it arrived. */}
-          <div className="min-h-[52px] w-full lg:w-[360px] lg:shrink-0">
+          <div className="min-h-[52px] w-full max-w-[360px]">
             {/* TrustBox widget - Review Collector. Content injected post-hydration; see comment above. */}
             <div
               ref={widgetRef}

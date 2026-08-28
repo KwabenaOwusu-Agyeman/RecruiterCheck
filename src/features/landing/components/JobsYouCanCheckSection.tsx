@@ -31,7 +31,7 @@ export function JobsYouCanCheckSection() {
 
   return (
     <section className="border-b border-border bg-background">
-      <Container className="py-[56px] sm:py-16 lg:py-[112px]">
+      <Container className="py-[48px] sm:py-14 lg:py-[80px]">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue sm:text-sm">Jobs we check</p>
           <h2 className="mt-2 font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
@@ -42,7 +42,7 @@ export function JobsYouCanCheckSection() {
           </p>
         </div>
 
-        <div className="relative mx-auto mt-5 flex items-center justify-center sm:mt-6">
+        <div className="relative mx-auto mt-6 flex items-center justify-center sm:mt-8">
           <Carousel
             className="w-full"
             opts={{ loop: true, align: 'start', dragFree: true, containScroll: false }}
@@ -97,7 +97,7 @@ export function JobsYouCanCheckSection() {
  */
 function RoleChip({ role }: { role: string }) {
   return (
-    <span className="mx-6 shrink-0 whitespace-nowrap text-[15px] font-semibold tracking-tight text-text-primary sm:mx-10 sm:text-[17px]">
+    <span className="mx-7 shrink-0 whitespace-nowrap text-lg font-medium text-text-secondary sm:mx-12 sm:text-[22px]">
       {role}
     </span>
   )

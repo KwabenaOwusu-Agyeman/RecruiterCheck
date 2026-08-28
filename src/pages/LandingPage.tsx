@@ -74,6 +74,12 @@ export function LandingPage() {
       <Reveal>
         <StatsSection />
       </Reveal>
+      {/* The objection strip works hardest next to the ask, not before the
+          visitor knows what the product is — deletion, refunds and the
+          ChatGPT comparison are answers to late-stage hesitation. It sits
+          above the Trustpilot band rather than below it so the navy strip
+          never stacks directly against the navy closing card. */}
+      <ReassuranceSection />
       {/* Third-party credibility right before the ask: the official
           Trustpilot collector, on a verified business profile. The same ask
           also lives on FeedbackPage after a completed check, where the
@@ -81,10 +87,6 @@ export function LandingPage() {
       <Reveal>
         <TrustpilotFeedbackSection />
       </Reveal>
-      {/* The objection strip works hardest next to the ask, not before the
-          visitor knows what the product is — deletion, refunds and the
-          ChatGPT comparison are answers to late-stage hesitation. */}
-      <ReassuranceSection />
       <Reveal>
         <ClosingCtaSection />
       </Reveal>

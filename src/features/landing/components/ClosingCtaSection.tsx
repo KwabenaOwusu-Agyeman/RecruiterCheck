@@ -15,7 +15,7 @@ export function ClosingCtaSection() {
           className={cn(
             !isVisible && 'opacity-0',
             isVisible && 'animate-fade-in-up',
-            'mx-auto max-w-xl text-center sm:max-w-none sm:rounded-[20px] sm:bg-navy sm:px-8 sm:py-12 sm:shadow-elevated lg:mx-auto lg:max-w-[1120px] lg:rounded-[24px] lg:px-[64px] lg:py-[64px]',
+            'mx-auto max-w-xl text-center sm:max-w-none sm:rounded-[20px] sm:bg-navy sm:px-8 sm:py-12 sm:shadow-elevated lg:mx-auto lg:max-w-[1120px] lg:rounded-[20px] lg:px-[64px] lg:py-[64px]',
           )}>
           <h2 className="font-display text-[24px] text-text-primary sm:text-[32px] sm:text-white lg:text-[44px] lg:leading-[1.14]">
             Ready to improve your application?
