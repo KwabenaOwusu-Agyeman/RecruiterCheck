@@ -414,14 +414,14 @@ export function NewCheckPage() {
                   </Button>
                 </Link>
                 <Link
-                  to="/account/billing"
+                  to="/pricing"
                   className="text-sm font-medium text-text-secondary transition-colors hover:text-text-primary hover:underline"
                 >
                   Or upgrade for full checks
                 </Link>
               </>
             ) : (
-              <Link to="/account/billing">
+              <Link to="/pricing">
                 <Button size="sm" className="w-full sm:w-auto">
                   Upgrade
                 </Button>
@@ -451,7 +451,7 @@ export function NewCheckPage() {
             You're on a roll. Buy a check pack to keep going.
           </p>
           <div className="mt-6 flex justify-center">
-            <Link to="/account/billing">
+            <Link to="/pricing">
               <Button size="sm" className="w-full sm:w-auto">
                 Get checks
               </Button>

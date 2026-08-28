@@ -218,7 +218,7 @@ export function AccountPage() {
 
             <div className="flex-1" />
 
-            <Link to="/account/billing">
+            <Link to="/pricing">
               <Button size="sm" className="w-full">
                 {hasBalance ? 'Buy more checks' : 'Get checks'}
               </Button>

@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { ScrollToTop } from '@/components/ScrollToTop'
 import { AuthProvider } from '@/hooks/useAuth'
@@ -10,7 +10,6 @@ import { AiEngineerCvCheckerPage } from '@/pages/AiEngineerCvCheckerPage'
 import { AtsResumeCheckerPage } from '@/pages/AtsResumeCheckerPage'
 import { ApplicationCheckerPage } from '@/pages/ApplicationCheckerPage'
 import { AuthCallbackPage } from '@/pages/AuthCallbackPage'
-import { BillingPage } from '@/pages/BillingPage'
 import { CookiePage } from '@/pages/CookiePage'
 import { CoverLetterGeneratorPage } from '@/pages/CoverLetterGeneratorPage'
 import { CvKeywordCheckerPage } from '@/pages/CvKeywordCheckerPage'
@@ -47,6 +46,17 @@ import { ResumeJobMatchPage } from '@/pages/ResumeJobMatchPage'
 import { SoftwareEngineerResumeCheckerPage } from '@/pages/SoftwareEngineerResumeCheckerPage'
 import { TailorCvToJobPage } from '@/pages/TailorCvToJobPage'
 import { TermsPage } from '@/pages/TermsPage'
+
+/**
+ * Carries the query string across the redirect. A Stripe session created
+ * before the return URLs moved to /pricing still comes back to
+ * /account/billing?status=success, and a bare <Navigate> would drop that
+ * param — so the page would not know to re-fetch the new balance.
+ */
+function BillingRedirect() {
+  const { search } = useLocation()
+  return <Navigate to={{ pathname: '/pricing', search }} replace />
+}
 
 export function AppRoutes() {
   return (
@@ -91,6 +101,12 @@ export function AppRoutes() {
       <Route path="cookies" element={<CookiePage />} />
       <Route path="disclaimer" element={<DisclaimerPage />} />
       <Route path="faq" element={<FaqPage />} />
+      {/* Billing merged into /pricing, which is public and prerendered. Kept
+          as a redirect so old bookmarks and any Stripe session still carrying
+          the previous return URL land somewhere sensible. Deliberately OUTSIDE
+          ProtectedRoute: the destination is public, so a signed-out visitor
+          should reach the prices rather than be bounced to sign-in. */}
+      <Route path="account/billing" element={<BillingRedirect />} />
       <Route path="newsletter/unsubscribe" element={<NewsletterUnsubscribePage />} />
 
       <Route element={<ProtectedRoute />}>
@@ -101,7 +117,6 @@ export function AppRoutes() {
           <Route path="checks/:id/edit" element={<NewCheckPage />} />
           <Route path="checks/:id" element={<FeedbackPage />} />
           <Route path="account" element={<AccountPage />} />
-          <Route path="account/billing" element={<BillingPage />} />
           <Route path="extension/connect" element={<ExtensionConnectPage />} />
         </Route>
       </Route>

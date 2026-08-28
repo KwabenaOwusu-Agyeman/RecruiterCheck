@@ -31,7 +31,7 @@ const FAQ_ITEMS = [
   },
   {
     question: 'What do I get on the Free plan?',
-    answer: `${FREE_TIER_LIFETIME_LIMIT} Recruiter Check, including your Interview Score and Recruiter Feedback.`,
+    answer: `${FREE_TIER_LIFETIME_LIMIT} Recruiter Check, including your Interview Score and Recruiter Feedback, so you can see the feedback before deciding whether you need more. Your free check never expires.`,
   },
   {
     question: 'What is the difference between Starter, Active, and Power packs?',
@@ -45,6 +45,33 @@ const FAQ_ITEMS = [
   {
     question: 'Is my payment information secure?',
     answer: 'Payments are processed securely by Stripe. We never see or store your card details.',
+  },
+  // Moved here from the pricing page when /pricing and /account/billing were
+  // merged into one page, so the answers live in a single place.
+  {
+    question: 'Is there a free keyword scan too?',
+    answer:
+      'Yes. Before you spend a check, run a free keyword scan to see how well your CV matches a job description. You get 3 free scans, and unlimited scans once you have bought any check pack.',
+  },
+  {
+    question: 'Do checks expire?',
+    answer:
+      'Purchased checks are valid for 90 days from the date you buy them. Your free check never expires.',
+  },
+  {
+    question: 'What happens when I run out?',
+    answer:
+      'Buy another pack whenever you need to. There is no subscription and nothing renews automatically.',
+  },
+  {
+    question: 'What happens to my uploaded CV?',
+    answer:
+      'Uploads are deleted within 24 hours of being processed. See our Privacy Policy for full details on data retention.',
+  },
+  {
+    question: 'What if I am not happy after paying?',
+    answer:
+      'If your most recent pack is still fully unused and within 7 days of purchase, you can request a full refund from the pricing page.',
   },
 ] as const
 

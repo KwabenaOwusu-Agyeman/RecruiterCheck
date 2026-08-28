@@ -69,8 +69,8 @@ Deno.serve(async (req) => {
 
     const params = new URLSearchParams()
     params.set('mode', 'payment')
-    params.set('success_url', `${siteUrl}/account/billing?status=success`)
-    params.set('cancel_url', `${siteUrl}/account/billing?status=cancelled`)
+    params.set('success_url', `${siteUrl}/pricing?status=success`)
+    params.set('cancel_url', `${siteUrl}/pricing?status=cancelled`)
     params.set('client_reference_id', user.id)
     params.set('customer_email', user.email ?? '')
     // This Stripe account has Managed Payments on by default, which requires

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Container } from '@/components/ui/Container'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Alert } from '@/components/ui/Alert'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { Container } from '@/components/ui/Container'
 import { PricingCards } from '@/components/ui/PricingCards'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthModal } from '@/features/auth/context/AuthModalContext'
@@ -8,36 +10,22 @@ import { usePageMeta } from '@/hooks/usePageMeta'
 import { TestimonialsSection } from '@/features/landing/components/TestimonialsSection'
 import { CHECK_PACKS } from '@/lib/constants'
 import { trackEvent } from '@/lib/analytics'
-import { createCheckoutSession } from '@/services/checkService'
+import { createCheckoutSession, requestRefund } from '@/services/checkService'
 import type { CheckPack } from '@/types'
 
-const faqs = [
-  {
-    question: 'Is there a free Recruiter Check?',
-    answer: 'Yes. Every new account gets one free Recruiter Check, so you can see your Interview Score and recruiter style feedback before deciding whether you need more.',
-  },
-  {
-    question: 'Is there a free keyword scan too?',
-    answer: 'Yes. Before you spend a check, run a free keyword scan to see how well your CV matches a job description. You get 3 free scans, and unlimited scans once you’ve bought any check pack.',
-  },
-  {
-    question: 'Do checks expire?',
-    answer: 'Purchased checks are valid for 90 days from the date you buy them. Your free check never expires.',
-  },
-  {
-    question: 'What happens when I run out?',
-    answer: 'Buy another pack whenever you need to. There is no subscription and nothing renews automatically.',
-  },
-  {
-    question: 'What happens to my uploaded CV?',
-    answer: 'Uploads are deleted within 24 hours of being processed. See our Privacy Policy for full details on data retention.',
-  },
-  {
-    question: 'What if I am not happy after paying?',
-    answer: 'If your most recent pack is still fully unused and within 7 days of purchase, you can request a full refund from your billing page.',
-  },
-]
-
+/**
+ * The single pricing page, for signed-out and signed-in visitors alike.
+ *
+ * This absorbed the old /account/billing page, which rendered the same
+ * PricingCards from the same CHECK_PACKS behind ProtectedRoute. Billing now
+ * redirects here (see App.tsx). This page kept the merge rather than the
+ * other way around because it is public and prerendered: putting the only
+ * copy of the prices behind auth would have hidden them from every
+ * signed-out visitor and dropped an indexed page.
+ *
+ * Signed-in extras (balance, checkout result, refund) render only when there
+ * is a user, so the prerendered signed-out HTML is unchanged.
+ */
 export function PricingPage() {
   usePageMeta({
     title: 'Pricing | MyRecruiterCheck',
@@ -45,14 +33,32 @@ export function PricingPage() {
     path: '/pricing',
   })
 
-  const { user } = useAuth()
+  const { user, profile, refreshProfile } = useAuth()
   const { open } = useAuthModal()
+  const [searchParams] = useSearchParams()
   const [loadingPack, setLoadingPack] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [refundDialogOpen, setRefundDialogOpen] = useState(false)
+  const [refundLoading, setRefundLoading] = useState(false)
+  const [refundSuccess, setRefundSuccess] = useState(false)
+
+  const checkoutStatus = searchParams.get('status')
 
   useEffect(() => {
     trackEvent('pricing_viewed')
   }, [])
+
+  useEffect(() => {
+    // A brand new purchase lands back here after the Stripe Checkout redirect
+    // (see create-checkout-session's success_url) — the webhook grants the
+    // credits, but this tab's `profile` was loaded before that happened, so
+    // it must be re-fetched or the balance keeps showing stale numbers.
+    if (checkoutStatus === 'success') {
+      trackEvent('purchase_completed')
+      void refreshProfile()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkoutStatus])
 
   async function handleBuy(packId: CheckPack['id']) {
     if (!user) {
@@ -73,12 +79,32 @@ export function PricingPage() {
     }
   }
 
+  async function confirmRequestRefund() {
+    setRefundLoading(true)
+    setError(null)
+
+    try {
+      await requestRefund()
+      setRefundDialogOpen(false)
+      setRefundSuccess(true)
+      trackEvent('refund_requested')
+      await refreshProfile()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not process your refund')
+    } finally {
+      setRefundLoading(false)
+    }
+  }
+
   return (
     <main>
       <section className="border-b border-border-soft bg-surface py-6 sm:py-8">
         <Container>
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue">Pricing</p>
+            {/* Heading is deliberately the same for everyone: it is what the
+                prerendered page ships and what search results show. The
+                balance is added below it rather than replacing it. */}
             <h1 className="font-display mt-2 text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl lg:text-4xl">
               Choose how you use your checks
             </h1>
@@ -87,6 +113,11 @@ export function PricingPage() {
               scans to check your fit before you spend one. After that, buy a pack of checks
               whenever you need them. No subscription and no automatic renewal.
             </p>
+            {profile ? (
+              <p className="mt-3 text-sm font-semibold text-text-primary">
+                You have {profile.checks_balance} {profile.checks_balance === 1 ? 'check' : 'checks'} remaining.
+              </p>
+            ) : null}
           </div>
         </Container>
       </section>
@@ -94,7 +125,27 @@ export function PricingPage() {
       <section className="py-5 sm:py-6">
         <Container className="lg:max-w-[1400px]">
           <div className="mx-auto">
+            {checkoutStatus === 'success' ? (
+              <Alert variant="success" className="mx-auto mb-6 max-w-2xl">
+                Payment received. Your checks will appear shortly.
+              </Alert>
+            ) : null}
+
+            {checkoutStatus === 'cancelled' ? (
+              <Alert variant="info" className="mx-auto mb-6 max-w-2xl">
+                Checkout was cancelled. No changes were made.
+              </Alert>
+            ) : null}
+
+            {refundSuccess ? (
+              <Alert variant="success" className="mx-auto mb-6 max-w-2xl">
+                Your refund has been processed. It may take a few business days to appear on your
+                statement.
+              </Alert>
+            ) : null}
+
             {error ? <Alert variant="error" className="mx-auto mb-6 max-w-2xl">{error}</Alert> : null}
+
             <PricingCards packs={CHECK_PACKS} loadingPack={loadingPack} onBuy={(packId) => void handleBuy(packId)} />
           </div>
         </Container>
@@ -102,26 +153,57 @@ export function PricingPage() {
 
       {/* Same reviews component the landing page uses. Placed directly below
           the packs so anyone arriving from a "Get checks" CTA sees the proof
-          at the moment they are choosing, not after the FAQ. */}
+          at the moment they are choosing. */}
       <TestimonialsSection compact />
 
-      <section className="border-t border-border-soft py-10 sm:py-14">
-        <Container>
-          <div className="mx-auto max-w-3xl">
-            <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl">
-              Frequently asked questions
-            </h2>
-            <div className="mt-8 divide-y divide-border rounded-[16px] border border-border-soft bg-surface shadow-card">
-              {faqs.map((faq) => (
-                <article key={faq.question} className="px-6 py-6">
-                  <h3 className="text-lg font-semibold text-text-primary">{faq.question}</h3>
-                  <p className="mt-3 leading-7 text-text-secondary">{faq.answer}</p>
-                </article>
-              ))}
-            </div>
+      <ConfirmDialog
+        open={refundDialogOpen}
+        title="Request a refund?"
+        description="If your most recent pack is still fully unused and within 7 days of purchase, we'll refund that payment in full. This can't be undone."
+        confirmLabel="Request refund"
+        confirmingLabel="Processing..."
+        cancelLabel="Never mind"
+        busy={refundLoading}
+        destructive
+        onConfirm={() => void confirmRequestRefund()}
+        onCancel={() => setRefundDialogOpen(false)}
+      />
+
+      <Container className="py-8">
+        <div className="flex flex-col items-center gap-1.5 text-center text-xs text-text-secondary">
+          <div className="flex items-center gap-1.5">
+            <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5 shrink-0" aria-hidden="true">
+              <path
+                d="M5 9V6.5a5 5 0 0 1 10 0V9m-11 0h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1Z"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span>Payments securely processed by Stripe. We never see or store your card details.</span>
           </div>
-        </Container>
-      </section>
+          {/* Only offered to someone who could actually have a purchase to refund. */}
+          {user ? (
+            <span>
+              Not happy with your last purchase?{' '}
+              <button
+                type="button"
+                className="font-medium text-blue hover:underline"
+                onClick={() => setRefundDialogOpen(true)}
+              >
+                Request a refund
+              </button>
+            </span>
+          ) : null}
+          <span>
+            Have questions?{' '}
+            <Link to="/faq" className="font-medium text-blue hover:underline">
+              Read the FAQ
+            </Link>
+          </span>
+        </div>
+      </Container>
     </main>
   )
 }
