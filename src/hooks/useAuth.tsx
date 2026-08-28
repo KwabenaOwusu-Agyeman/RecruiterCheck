@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -29,9 +30,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // Two callers race on every single page load: init() below, and the
+  // INITIAL_SESSION event that onAuthStateChange fires immediately after.
+  // Both used to issue their own identical request — confirmed in
+  // production, where two /rest/v1/profiles calls started 1ms apart on
+  // every load. Concurrent loads for the same user now share one request.
+  // A later call (e.g. refreshProfile after a purchase) finds nothing in
+  // flight and fetches normally, so this never serves a stale profile.
+  const inFlightProfile = useRef<{ userId: string; promise: Promise<void> } | null>(null)
+
   const loadProfile = useCallback(async (userId: string) => {
-    const nextProfile = await getProfile(userId)
-    setProfile(nextProfile)
+    const existing = inFlightProfile.current
+    if (existing?.userId === userId) return existing.promise
+
+    const promise = (async () => {
+      try {
+        const nextProfile = await getProfile(userId)
+        setProfile(nextProfile)
+      } finally {
+        if (inFlightProfile.current?.userId === userId) inFlightProfile.current = null
+      }
+    })()
+
+    inFlightProfile.current = { userId, promise }
+    return promise
   }, [])
 
   const refreshProfile = useCallback(async () => {
@@ -64,7 +86,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(data.session)
 
       if (data.session?.user.id) {
-        await loadProfile(data.session.user.id)
+        // Deliberately not awaited. ProtectedRoute gates on `session`, not
+        // `profile`, so blocking here put a whole extra round trip in front
+        // of the app's first paint for every protected page. Pages that
+        // genuinely need the profile (e.g. NewCheckPage's plan gate) already
+        // wait for it themselves, and every profile consumer handles null.
+        void loadProfile(data.session.user.id)
         // Opportunistic retry on every session restore (e.g. reopening the
         // app), not just fresh sign-in/verification — the edge function's
         // own idempotent claim makes this a cheap no-op once already sent.
@@ -88,7 +115,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(nextSession)
 
       if (nextSession?.user.id) {
-        await loadProfile(nextSession.user.id)
+        // Not awaited, for the same reason as init() above.
+        void loadProfile(nextSession.user.id)
         triggerWelcomeEmailOnce(nextSession.user.id)
       } else {
         setProfile(null)
