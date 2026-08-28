@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { FileText } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Container } from '@/components/ui/Container'
 import { AppWindow } from '@/features/landing/components/AppWindow'
@@ -96,13 +97,43 @@ export function HeroSection() {
           })}
         </div>
 
-        {/* The product as a screenshot, not a card: the same verdict markup
-            inside browser chrome, which is what reads as "the actual app"
-            on the first screen. */}
-        <div className="mx-auto mt-5 max-w-2xl sm:mt-6 lg:max-w-[900px]">
+        {/* The product as a composed scene, not a card: the verdict markup
+            inside browser chrome, over a soft colour wash, with two floating
+            UI fragments at the window's corners — the layered-screenshot
+            grammar the monday.com hero uses, built from this product's own
+            moments. Fragments are decorative duplicates of real UI, so they
+            are aria-hidden, desktop-only (the phone keeps its fold budget),
+            and they hold still under prefers-reduced-motion. */}
+        <div className="relative mx-auto mt-6 max-w-2xl sm:mt-8 lg:max-w-[900px]">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -inset-x-10 -bottom-8 -top-10 rounded-[40px] bg-[radial-gradient(ellipse_70%_60%_at_50%_45%,rgba(25,74,159,0.09),transparent_70%)]"
+          />
           <AppWindow urlLabel="myrecruitercheck.com/checks/feedback">
             <VerdictCard example={active} compact frameless />
           </AppWindow>
+
+          <div
+            aria-hidden="true"
+            className="absolute -right-8 -top-4 hidden animate-float-slow items-center gap-2 rounded-full border border-border-soft bg-surface py-2 pl-3 pr-4 shadow-elevated lg:flex"
+          >
+            <span className="h-[8px] w-[8px] rounded-full bg-success" />
+            <span className="text-sm font-semibold text-text-primary">Check complete</span>
+            <span className="text-sm text-text-secondary">{active.role}</span>
+          </div>
+
+          <div
+            aria-hidden="true"
+            className="absolute -bottom-5 -left-10 hidden animate-float-slow items-center gap-3 rounded-[8px] border border-border-soft bg-surface px-4 py-3 shadow-elevated [animation-delay:1.6s] lg:flex"
+          >
+            <span className="flex h-[36px] w-[36px] items-center justify-center rounded-[8px] bg-navy-tint">
+              <FileText className="h-[16px] w-[16px] text-blue" strokeWidth={2} />
+            </span>
+            <span className="flex flex-col">
+              <span className="text-sm font-semibold text-text-primary">Improved CV draft</span>
+              <span className="text-xs text-text-secondary">Ready to download</span>
+            </span>
+          </div>
         </div>
       </Container>
     </section>

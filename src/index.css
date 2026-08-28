@@ -71,8 +71,10 @@
   }
 
   /* The score gauge's base transform is none (full width); killing the
-     animation leaves it resting there instead of sweeping in. */
-  .animate-grow-bar {
+     animation leaves it resting there instead of sweeping in. The hero's
+     floating fragments simply hold still. */
+  .animate-grow-bar,
+  .animate-float-slow {
     animation: none;
   }
 }

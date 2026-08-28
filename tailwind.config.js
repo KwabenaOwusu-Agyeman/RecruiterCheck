@@ -58,6 +58,10 @@ export default {
           from: { transform: 'scaleX(0)' },
           to: { transform: 'scaleX(1)' },
         },
+        float: {
+          from: { transform: 'translateY(0)' },
+          to: { transform: 'translateY(-8px)' },
+        },
       },
       animation: {
         'fill-bar': 'fill-bar 4.5s linear forwards',
@@ -78,6 +82,11 @@ export default {
         // turns the animation off, leaving the bar at its resting full
         // width.
         'grow-bar': 'grow-bar 0.7s ease-out both',
+        // Hero floating fragments: a slow drift, alternating so the chips
+        // bob rather than fly. Second chip offsets its phase with a literal
+        // [animation-delay:*] class. Off under prefers-reduced-motion via
+        // index.css.
+        'float-slow': 'float 6s ease-in-out infinite alternate',
       },
       spacing: {
         1: '0.5rem',

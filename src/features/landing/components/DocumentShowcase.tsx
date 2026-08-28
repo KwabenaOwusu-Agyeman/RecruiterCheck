@@ -320,9 +320,13 @@ export function DocumentShowcase() {
           onScroll={updateScrollBounds}
           className="flex snap-x snap-proximity gap-5 overflow-x-auto overscroll-x-contain pl-[16px] pb-2 [scrollbar-width:none] sm:pl-6 lg:pl-8 [&::-webkit-scrollbar]:hidden"
         >
-          <CvDraftCard />
+          {/* A hair of rotation on the outer two from lg up, so the trio
+              reads as a stack of paper on a desk rather than three
+              rectangles. The scroll row below lg stays straight — rotated
+              cards inside a snap scroller read as misalignment, not depth. */}
+          <div className="contents lg:block lg:shrink-0 lg:rotate-[-1.2deg]"><CvDraftCard /></div>
           <CoverLetterCard />
-          <RecruiterMessageCard />
+          <div className="contents lg:block lg:shrink-0 lg:rotate-[1.2deg]"><RecruiterMessageCard /></div>
           <div className="w-[16px] shrink-0 sm:w-6 lg:w-8" aria-hidden="true" />
         </div>
 
