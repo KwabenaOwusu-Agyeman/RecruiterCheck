@@ -204,19 +204,42 @@ export function DashboardShowcase() {
 
         <div className="mx-auto mt-5 max-w-2xl sm:mt-6 lg:max-w-[560px]">
           <BrowserChrome>
-            {/* Plain CSS fade-in on tab change (see tailwind.config.js) instead of
-                motion/react's AnimatePresence, which animates via inline `style`
-                attributes the CSP's style-src blocks. No exit animation — the
-                old tab's content is simply replaced — which is an acceptable
-                simplification for this self-playing demo widget. */}
-            <div key={activeTab} className="animate-fade-in">
-              {activeTab === 'empty' ? (
-                <EmptyStateMock />
-              ) : activeTab === 'new' ? (
-                <NewCheckMock />
-              ) : (
-                <ChecksListMock />
-              )}
+            {/* All three panels are mounted in the SAME grid cell, so the box
+                is always as tall as the tallest of them and the section's
+                height never changes as the tabs cycle.
+
+                Previously only the active panel was mounted. "Track" is much
+                taller than "Before" and "Add", so every cycle grew and shrank
+                this section by ~290px, which shoved everything below it —
+                including the reviews — up and down on a loop. That read as
+                the page shaking whenever you stopped near the reviews.
+
+                Crossfade is an opacity transition rather than the fade-in
+                keyframe, because a keyframe only replays on remount and these
+                panels now stay mounted. Both are plain CSS classes, so
+                neither needs the inline styles the CSP's style-src blocks. */}
+            <div className="grid">
+              {TABS.map((tab) => {
+                const isActive = tab.id === activeTab
+                return (
+                  <div
+                    key={tab.id}
+                    aria-hidden={!isActive}
+                    className={cn(
+                      'col-start-1 row-start-1 transition-opacity duration-300',
+                      isActive ? 'opacity-100' : 'pointer-events-none opacity-0',
+                    )}
+                  >
+                    {tab.id === 'empty' ? (
+                      <EmptyStateMock />
+                    ) : tab.id === 'new' ? (
+                      <NewCheckMock />
+                    ) : (
+                      <ChecksListMock />
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </BrowserChrome>
         </div>
