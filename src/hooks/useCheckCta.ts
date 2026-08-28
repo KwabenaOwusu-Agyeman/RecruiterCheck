@@ -14,14 +14,25 @@ export function useCheckCta() {
   const { open } = useAuthModal()
   const navigate = useNavigate()
 
-  return function handleCheckCta() {
+  // Typed `unknown` rather than `{ role?: string }`, because most call sites
+  // pass this function straight to onClick — where React hands it a
+  // MouseEvent as the first argument (and a narrower parameter type would
+  // reject the assignment). The runtime narrowing below means an event
+  // object simply degrades to the plain, role-less navigation, while the
+  // hero calls it as handleCheckCta({ role }) to carry the picked role.
+  return function handleCheckCta(options?: unknown) {
+    const role =
+      options && typeof options === 'object' && 'role' in options && typeof (options as { role?: unknown }).role === 'string'
+        ? (options as { role: string }).role
+        : undefined
+    const target = role ? `/checks/new?role=${encodeURIComponent(role)}` : '/checks/new'
     if (user) {
-      navigate('/checks/new')
+      navigate(target)
     } else {
       // Without this, a signed-out visitor who signs up from this button
       // lands on the generic /checks default after auth instead of actually
       // starting the check they clicked through for.
-      storePostAuthRedirect('/checks/new')
+      storePostAuthRedirect(target)
       open('sign-up')
     }
   }

@@ -148,6 +148,27 @@ export function NewCheckPage() {
     }
   }, [id, user])
 
+  // Landing-page role pills: /checks/new?role=<job title>. Prefills the job
+  // title with the role the visitor picked in the hero, so the choice
+  // survives the sign-up flow instead of being forgotten on click. Cleared
+  // from the URL immediately, the same way ?capture= is, and only ever
+  // fills an empty field — it can never overwrite a title the user typed.
+  useEffect(() => {
+    if (id || !user) return
+    const role = searchParams.get('role')
+    if (!role) return
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete('role')
+        return next
+      },
+      { replace: true },
+    )
+    setJobTitle((current) => current || role)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, user])
+
   // Extension hand-off: /checks/new?capture=<opaque-id>. Only applies to a
   // fresh draft — an existing draft being resumed (:id/edit) never carries
   // this param. The capture is single-use server-side, so this effect must
