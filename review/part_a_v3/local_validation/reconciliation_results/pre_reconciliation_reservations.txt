@@ -1,0 +1,7 @@
+9bb8a894-0dc5-47bf-b401-c5b4402bd18c|a0000000-0000-0000-0000-00000000000a|draft-drift-null-source-01|reserved||||
+bc5994b9-6dd4-462e-88b8-3862c9fe8eb6|a0000000-0000-0000-0000-00000000000a|draft-drift-paid-no-batch-01|reserved|paid|||
+8b17f4d2-1ec7-4658-9cd4-398a445729aa|a0000000-0000-0000-0000-00000000000a|draft-free-completed-01|completed|free||{"match_percent": 80, "matched_terms": ["a", "b", "c", "d"], "matched_total": 4, "missing_terms": ["e"], "missing_total": 1}|2026-09-01 18:44:16.081738+02
+ba8e41ae-4618-4174-90b0-b474bc3cb12d|b0000000-0000-0000-0000-00000000000b|draft-free-completed-b-01|completed|free||{"match_percent": 100, "matched_terms": ["x", "y"], "matched_total": 2, "missing_terms": [], "missing_total": 0}|2026-08-30 18:44:16.085787+02
+44a40235-e7ad-43be-bcfa-fe0d9f6bc52b|a0000000-0000-0000-0000-00000000000a|draft-free-released-01|released|free|||
+c9888279-d0ae-425d-939d-27363e0e5e44|a0000000-0000-0000-0000-00000000000a|draft-paid-completed-01|completed|paid|c0000000-0000-0000-0000-0000000000c1|{"match_percent": 60, "matched_terms": ["a", "b", "c"], "matched_total": 3, "missing_terms": ["d", "e"], "missing_total": 2}|2026-09-02 18:44:16.084019+02
+e1d6b41d-73de-41d8-84b0-08d9a86777b6|a0000000-0000-0000-0000-00000000000a|draft-paid-reserved-01|reserved|paid|c0000000-0000-0000-0000-0000000000c1||

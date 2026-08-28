@@ -1,6 +1,6 @@
 # MyRecruiterCheck
 
-> MyRecruiterCheck is a CV/resume checker for early career professionals and career changers (0-5 years of experience) applying to tech, AI, machine learning and data roles. It compares a CV with one specific job description and gives recruiter style feedback on Experience (40%), Skills (35%) and Candidate Value (25%), going beyond basic ATS keyword matching. It produces an Interview Score, Strengths, Areas to Improve and Prospects, so a candidate can see how their application may look to a recruiter before they apply. It does not guarantee an interview or hiring decision, and it never invents experience, skills or achievements.
+> MyRecruiterCheck is a CV/resume checker for early career professionals and career changers (0 to 5 years of experience) applying to tech, AI, machine learning and data roles. It compares a CV with one specific job description and gives recruiter style feedback on Experience (40%), Skills (35%) and Candidate Value (25%), going beyond basic ATS keyword matching. It produces an Interview Score, Strengths, Areas to Improve and Prospects, so a candidate can see how their application may look to a recruiter before they apply. It does not guarantee an interview or hiring decision, and it never invents experience, skills or achievements.
 
 ## Product
 

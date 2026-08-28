@@ -35,7 +35,7 @@ WHAT IT DOESN'T DO
 - Does not track jobs, autofill applications, or apply on your behalf.
 - Does not run on any page until you explicitly click Capture.
 
-A MyRecruiterCheck account is required (free tier available) — sign up at
+A MyRecruiterCheck account is required (first check free, no card required) — sign up at
 https://myrecruitercheck.com.
 
 Privacy policy: https://myrecruitercheck.com/privacy

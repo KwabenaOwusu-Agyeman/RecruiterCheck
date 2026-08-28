@@ -137,7 +137,7 @@ export function AccountPage() {
       <div className="mt-3">
         <PageHeader
           title="Account"
-          description="Manage your profile and subscription settings."
+          description="Manage your profile and billing settings."
           action={
             <Button
               variant="secondary"
@@ -226,6 +226,40 @@ export function AccountPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="mt-4 sm:mt-8">
+        <CardHeader className="flex-row items-center justify-between gap-3 py-3.5 sm:py-5">
+          <h2 className="font-display text-lg font-semibold text-text-primary sm:text-xl">Browser extension</h2>
+          <span className="shrink-0 rounded-full bg-navy-tint px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blue">
+            Early access
+          </span>
+        </CardHeader>
+        <CardContent className="py-4 sm:py-6">
+          <p className="text-sm text-text-secondary">
+            Capture a job posting from LinkedIn, Indeed, or almost any careers page in one click,
+            and send it straight into a new Recruiter Check, no copy-pasting. Not yet on the Chrome
+            Web Store, so it's a manual install for now:
+          </p>
+          <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-sm text-text-secondary">
+            <li>Download and unzip the extension below.</li>
+            <li>
+              In Chrome, open <code className="rounded bg-background px-1 py-0.5 text-xs">chrome://extensions</code>,
+              turn on Developer mode, and click Load unpacked.
+            </li>
+            <li>Select the unzipped folder, then open the job posting you want to check and click the extension icon.</li>
+            <li>Press Connect MyRecruiterCheck once, using this same account, and you're set.</li>
+          </ol>
+          <a
+            href="/downloads/recruitercheck-extension-v0.1.0.zip"
+            download
+            className="mt-4 inline-flex"
+          >
+            <Button size="sm" variant="secondary">
+              Download extension (.zip)
+            </Button>
+          </a>
+        </CardContent>
+      </Card>
 
       {/* Only shown for users who actually have a password to change —
           signInWithOAuth (Google/LinkedIn) accounts never set one, and

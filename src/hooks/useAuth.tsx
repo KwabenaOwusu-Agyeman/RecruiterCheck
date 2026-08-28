@@ -10,6 +10,7 @@ import {
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { getProfile } from '@/services/checkService'
+import { triggerWelcomeEmailOnce } from '@/services/welcomeEmailService'
 import type { Profile } from '@/types'
 
 interface AuthContextValue {
@@ -48,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(nextSession)
       setLoading(false)
       void loadProfile(nextSession.user.id)
+      triggerWelcomeEmailOnce(nextSession.user.id)
     },
     [loadProfile],
   )
@@ -63,6 +65,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (data.session?.user.id) {
         await loadProfile(data.session.user.id)
+        // Opportunistic retry on every session restore (e.g. reopening the
+        // app), not just fresh sign-in/verification — the edge function's
+        // own idempotent claim makes this a cheap no-op once already sent.
+        triggerWelcomeEmailOnce(data.session.user.id)
       }
 
       setLoading(false)
@@ -83,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (nextSession?.user.id) {
         await loadProfile(nextSession.user.id)
+        triggerWelcomeEmailOnce(nextSession.user.id)
       } else {
         setProfile(null)
       }

@@ -50,7 +50,7 @@ export function HowItWorksSection() {
               timelineRef={sectionRef}
               className="relative flex h-full flex-col rounded-[16px] border border-border-soft bg-surface p-3.5 shadow-card sm:p-5 lg:p-[24px]"
             >
-              <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-navy text-base font-bold text-white sm:h-10 sm:w-10 sm:text-lg">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-navy text-base font-bold text-white sm:h-10 sm:w-10 sm:text-lg">
                 {Number(step.number)}
               </span>
               <h3 className="mt-2.5 font-display text-base font-semibold leading-[1.4] text-text-primary sm:mt-3 sm:min-h-[64px] sm:text-xl">

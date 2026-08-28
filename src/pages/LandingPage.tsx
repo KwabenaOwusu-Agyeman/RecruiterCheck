@@ -6,6 +6,8 @@ import { DocumentShowcase } from '@/features/landing/components/DocumentShowcase
 import { HeroSection } from '@/features/landing/components/HeroSection'
 import { HowItWorksSection } from '@/features/landing/components/HowItWorksSection'
 import { LlmComparisonSection } from '@/features/landing/components/LlmComparisonSection'
+import { PricingPreviewSection } from '@/features/landing/components/PricingPreviewSection'
+import { ReassuranceSection } from '@/features/landing/components/ReassuranceSection'
 import { RoleFeedbackShowcase } from '@/features/landing/components/RoleFeedbackShowcase'
 import { TestimonialsSection } from '@/features/landing/components/TestimonialsSection'
 import { TrustpilotFeedbackSection } from '@/features/landing/components/TrustpilotFeedbackSection'
@@ -41,11 +43,15 @@ export function LandingPage() {
   return (
     <>
       <HeroSection />
+      <ReassuranceSection />
       <Reveal>
         <HowItWorksSection />
       </Reveal>
       <Reveal>
         <RoleFeedbackShowcase />
+      </Reveal>
+      <Reveal>
+        <LlmComparisonSection />
       </Reveal>
       <Reveal>
         <DocumentShowcase />
@@ -54,16 +60,16 @@ export function LandingPage() {
         <DashboardShowcase />
       </Reveal>
       <Reveal>
-        <LlmComparisonSection />
+        <TrustpilotFeedbackSection />
+      </Reveal>
+      <Reveal>
+        <PricingPreviewSection />
       </Reveal>
       <Reveal>
         <TestimonialsSection />
       </Reveal>
       <Reveal>
         <ClosingCtaSection />
-      </Reveal>
-      <Reveal>
-        <TrustpilotFeedbackSection />
       </Reveal>
     </>
   )

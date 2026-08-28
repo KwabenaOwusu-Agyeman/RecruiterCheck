@@ -1,8 +1,12 @@
 /**
- * Fully fictional demo content for the landing page's role-based feedback
- * showcase and document previews. No production data, no database query,
- * no OpenAI call — a static illustration of what the real Feedback page and
- * generate-documents function produce.
+ * Demo content for the landing page's role-based feedback showcase and
+ * document previews. EXAMPLE_DOCUMENTS and four of the five ROLE_EXAMPLES
+ * entries are fully fictional illustrations of what the real Feedback page
+ * and generate-documents function produce — no production data, no database
+ * query, no OpenAI call. The 'software-engineer' entry is the exception: its
+ * score, strengths, improvements, and prospects are the genuine output of a
+ * real check run against this same CV and job description (Alex Morgan,
+ * Software Engineer, Lumen Cloud) through the actual scoring pipeline.
  */
 
 export type RoleExampleTier = 'likely' | 'improve' | 'not-a-fit'
@@ -30,18 +34,18 @@ export const ROLE_EXAMPLES: readonly RoleExample[] = [
     role: 'Software Engineer',
     experience: '4 years experience',
     companyName: 'Lumen Cloud',
-    score: 88,
+    score: 85,
     tier: 'likely',
     strengths: [
-      "Directly relevant scope. Four years building backend services, including owning a payments microservice end to end at Beacon Systems, closely matches what Lumen Cloud is asking for.",
-      'Shows technical leadership. Mentored two junior engineers and led a migration to a service-oriented architecture, signalling readiness for more senior scope.',
+      'Strong backend ownership. Your experience owning the payments microservice demonstrates your capability to manage critical backend services effectively.',
+      'Effective cross team collaboration. Your ability to coordinate across teams during architecture migrations highlights your strong communication skills.',
     ],
     improvements: [
-      "Add one more scale metric. You mention reducing checkout latency but don't state the before and after numbers recruiters look for. Example: Cut checkout API latency from 800ms to 210ms by introducing request batching.",
+      'Quantify your impact. While you mention improving checkout API performance, providing specific metrics would strengthen your application. Example: Consider adding details like the percentage increase in performance or reduction in response time.',
     ],
     prospects: [
-      'Strong candidate for mid-to-senior backend roles at growth-stage tech companies.',
-      'Ready to interview for roles that expect architecture ownership, not just execution.',
+      'Your CV shows strong documented evidence for 3+ years of professional software engineering experience.',
+      'Addressing the remaining refinement could further strengthen your interview chances.',
     ],
   },
   {
@@ -88,7 +92,7 @@ export const ROLE_EXAMPLES: readonly RoleExample[] = [
   {
     id: 'junior-data-analyst',
     role: 'Junior Data Analyst',
-    experience: '0-1 years experience',
+    experience: 'Less than 1 year of experience',
     companyName: 'Marketflow Insights',
     score: 55,
     tier: 'not-a-fit',
@@ -102,7 +106,7 @@ export const ROLE_EXAMPLES: readonly RoleExample[] = [
     ],
     prospects: [
       'Better matched to entry-level or associate analyst roles than this specific posting.',
-      'The gap here is experience level, not CV quality — worth applying once you clear 1-2 more years, or targeting junior-labeled roles now.',
+      'The gap here is experience level, not CV quality. Worth applying once you clear 1 to 2 more years, or targeting junior-labeled roles now.',
     ],
   },
   {

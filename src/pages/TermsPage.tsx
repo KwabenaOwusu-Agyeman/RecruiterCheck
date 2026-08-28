@@ -4,7 +4,7 @@ import { usePageMeta } from '@/hooks/usePageMeta'
 
 export function TermsPage() {
   usePageMeta({
-    title: 'Terms of Service — MyRecruiterCheck',
+    title: 'Terms of Service | MyRecruiterCheck',
     description: 'The terms that govern your use of MyRecruiterCheck.',
     path: '/terms',
   })
@@ -40,7 +40,7 @@ export function TermsPage() {
           You are responsible for keeping your login credentials secure and for all activity that
           occurs under your account. You are responsible for the accuracy of any CV content,
           personal information, or claims you submit or that appear in documents you download and
-          send to a third party — the Service does not verify facts about you.
+          send to a third party. The Service does not verify facts about you.
         </p>
       </Section>
 
@@ -86,23 +86,22 @@ export function TermsPage() {
         </p>
       </Section>
 
-      <Section title="8. Subscriptions, Fees & Payment">
+      <Section title="8. Check Packs, Fees & Payment">
         <p>
-          Paid plans are billed in advance on a recurring basis (weekly or monthly, as selected at
-          checkout) via our payment processor, Stripe. Subscriptions renew automatically at the
-          end of each billing period until cancelled. Prices are shown in EUR and may include
-          applicable taxes.
+          Check packs are one time purchases, not a subscription. Payment is processed via our
+          payment processor, Stripe, and there is no recurring or automatically renewing charge.
+          Prices are shown in EUR and may include applicable taxes. Purchased checks expire 90 days
+          after purchase.
         </p>
         <p>
-          If you are not satisfied with your first paid check, you may request a full refund
-          within 7 days of that payment by contacting{' '}
+          If your most recently purchased pack is still fully unused, you may request a full refund
+          within 7 days of that payment from your billing page, or by contacting{' '}
           <a href="mailto:support@recruitercheck.app" className="font-medium text-blue hover:underline">
             support@recruitercheck.app
           </a>
-          . Beyond this guarantee, MyRecruiterCheck does not offer refunds or credits for partial
-          billing periods, unused checks, or dissatisfaction with generated results, except where
-          required by mandatory law. You can cancel at any time from the billing portal to stop
-          future renewals; your plan remains active until the end of the current billing period.
+          . Beyond this guarantee, MyRecruiterCheck does not offer refunds or credits for partially
+          used packs, expired checks, or dissatisfaction with generated results, except where
+          required by mandatory law.
         </p>
       </Section>
 
@@ -134,9 +133,8 @@ export function TermsPage() {
       <Section title="12. Account Suspension & Termination">
         <p>
           We may suspend or terminate your access if you breach these Terms, misuse the Service, or
-          where we are required to do so by law. You may cancel your subscription at any time from
-          the billing portal, and you may delete your account at any time from your Account
-          settings — see our{' '}
+          where we are required to do so by law. You may delete your account at any time from your
+          Account settings, see our{' '}
           <Link to="/privacy" className="font-medium text-blue hover:underline">Privacy Policy</Link> for
           what happens to your data when you do.
         </p>

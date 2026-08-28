@@ -353,8 +353,8 @@ export function FeedbackPage() {
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                       <p className="text-sm text-text-secondary">{documentEntitlement.blockedReason}</p>
                       <Link to="/pricing">
-                        <Button size="sm" className="shrink-0">
-                          View packs
+                        <Button size="md" className="shrink-0 whitespace-nowrap">
+                          Get checks
                         </Button>
                       </Link>
                     </div>
@@ -406,7 +406,7 @@ export function FeedbackPage() {
                     ) : null}
                     {!documentEntitlement.coverLetter ? (
                       <Link to="/pricing" className="ml-auto">
-                        <Button size="sm">View packs</Button>
+                        <Button size="sm" className="whitespace-nowrap">Get checks</Button>
                       </Link>
                     ) : null}
                   </motion.div>
@@ -437,7 +437,7 @@ export function FeedbackPage() {
               </CardContent>
             </Card>
 
-            <SentimentPrompt checkId={check.id} />
+            <SentimentPrompt checkId={check.id} jobTitle={check.job_title} />
 
             <TrustpilotResultsLink userEmail={profile?.email} />
 

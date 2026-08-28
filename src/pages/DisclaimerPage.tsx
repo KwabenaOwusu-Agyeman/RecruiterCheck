@@ -3,7 +3,7 @@ import { usePageMeta } from '@/hooks/usePageMeta'
 
 export function DisclaimerPage() {
   usePageMeta({
-    title: 'Disclaimer — MyRecruiterCheck',
+    title: 'Disclaimer | MyRecruiterCheck',
     description: 'What MyRecruiterCheck does and does not claim to do.',
     path: '/disclaimer',
   })

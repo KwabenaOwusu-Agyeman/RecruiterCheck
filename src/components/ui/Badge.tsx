@@ -61,7 +61,7 @@ export function ScoreBadge({ score, className, tone = 'light' }: ScoreBadgeProps
   if (score === null) {
     return (
       <span className={cn('text-sm', tone === 'dark' ? 'text-white/60' : 'text-text-secondary', className)}>
-        —
+        N/A
       </span>
     )
   }

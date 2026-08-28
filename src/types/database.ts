@@ -637,6 +637,7 @@ export type Database = {
           keyword_scans_consumed: number
           lifetime_checks_consumed: number
           updated_at: string
+          welcome_email_sent_at: string | null
         }
         Insert: {
           checks_balance?: number
@@ -647,6 +648,7 @@ export type Database = {
           keyword_scans_consumed?: number
           lifetime_checks_consumed?: number
           updated_at?: string
+          welcome_email_sent_at?: string | null
         }
         Update: {
           checks_balance?: number
@@ -657,6 +659,7 @@ export type Database = {
           keyword_scans_consumed?: number
           lifetime_checks_consumed?: number
           updated_at?: string
+          welcome_email_sent_at?: string | null
         }
         Relationships: []
       }

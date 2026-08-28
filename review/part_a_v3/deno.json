@@ -1,0 +1,19 @@
+{
+  "nodeModulesDir": "none",
+  "imports": {
+    "https://deno.land/std@0.224.0/assert/mod.ts": "https://deno.land/std@0.224.0/assert/mod.ts",
+    "https://esm.sh/@supabase/supabase-js@2.49.1": "https://esm.sh/@supabase/supabase-js@2.49.1",
+    "npm:stripe@17.5.0": "npm:stripe@17.5.0",
+    "npm:mammoth@1.8.0": "npm:mammoth@1.8.0",
+    "npm:unpdf@0.12.1": "npm:unpdf@0.12.1",
+    "npm:linkedom@0.16.11": "npm:linkedom@0.16.11"
+  },
+  "fmt": {
+    "include": ["edge-functions/", "frontend/"],
+    "semiColons": false,
+    "singleQuote": true
+  },
+  "compilerOptions": {
+    "strict": true
+  }
+}

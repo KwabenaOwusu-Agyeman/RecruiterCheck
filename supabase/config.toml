@@ -9,7 +9,7 @@ max_rows = 1000
 
 [db]
 port = 54322
-major_version = 15
+major_version = 17
 
 [studio]
 enabled = true
@@ -21,6 +21,24 @@ site_url = "http://localhost:5173"
 additional_redirect_urls = ["http://localhost:5173/auth/callback"]
 jwt_expiry = 3600
 enable_signup = true
+
+# Branded MyRecruiterCheck versions of the Supabase-sent auth emails (local
+# dev only — Inbucket at http://localhost:54324 renders these; the hosted
+# project's dashboard templates under Authentication > Email Templates are
+# the production source of truth and must be pasted in manually, see
+# BREVO_SETUP.md). Magic-link/OTP has no template here since the app does
+# not use magic-link sign-in (see src/services/authService.ts).
+[auth.email.template.confirmation]
+subject = "Verify your MyRecruiterCheck email"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Reset your MyRecruiterCheck password"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.email_change]
+subject = "Confirm your new email address"
+content_path = "./supabase/templates/email_change.html"
 
 [auth.external.google]
 enabled = false
@@ -39,6 +57,26 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.newsletter-subscribe]
+verify_jwt = false
+
+# Invoked directly by the authenticated client app after verification or
+# on a later login (see src/services/welcomeEmailService.ts) — not by a
+# Database Webhook. This project's free-plan instance is missing the
+# supabase_functions schema the dashboard's Webhooks feature depends on,
+# and recreating Supabase's own platform-managed schema was ruled out, so
+# verify_jwt = true here means Supabase's gateway itself rejects any
+# request without a validly signed access token before the function code
+# runs — see send-welcome-email/index.ts for the rest of the auth chain.
+[functions.send-welcome-email]
+verify_jwt = true
+
+# Deployed but currently unused: the "password changed" notification is
+# sent by Supabase's own built-in Auth security notification (Authentication
+# > Emails > Security > Password changed) via the existing Brevo SMTP
+# config instead — see BREVO_SETUP.md. Left deployed, not deleted, in case
+# that native notification doesn't work out; verify_jwt is moot while
+# nothing calls it.
+[functions.send-password-changed-email]
 verify_jwt = false
 
 [functions.newsletter-unsubscribe]

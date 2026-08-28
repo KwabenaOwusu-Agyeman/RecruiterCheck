@@ -46,7 +46,7 @@ export function getDocumentEntitlement(fundingPackId: FundingPackId, score: numb
       coverLetter: false,
       recruiterMessage: false,
       blockedReason:
-        'This check only includes the Interview Score and Recruiter Feedback. Buy any check pack for your next check to unlock the Improved CV Draft, and the Power pack to also get the Cover Letter and Recruiter Message.',
+        'This check includes your Interview Score and Recruiter Feedback. Buy a check pack to also get an Improved CV Draft, Cover Letter, and Recruiter Message.',
     }
   }
 

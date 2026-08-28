@@ -20,7 +20,7 @@ export function ClosingCtaSection() {
           <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl sm:text-white">
             Ready to improve your application?
           </h2>
-          <div className="mt-[20px] flex justify-center sm:mt-[32px]">
+          <div className="mt-[20px] flex flex-col items-center gap-2 sm:mt-[32px]">
             <Button
               size="md"
               className="sm:!h-12 sm:bg-white sm:px-6 sm:text-base sm:!text-navy sm:hover:!bg-white/90"
@@ -28,6 +28,7 @@ export function ClosingCtaSection() {
             >
               Check My Application
             </Button>
+            <p className="text-xs font-medium text-text-secondary sm:text-white/70">First check free. No card required.</p>
           </div>
         </div>
       </Container>

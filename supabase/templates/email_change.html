@@ -1,0 +1,90 @@
+<!--
+  MyRecruiterCheck — "Confirm your email change" (Supabase Auth "Email Change" template).
+  See confirmation.html for why this is hand-authored HTML rather than
+  generated from the shared TypeScript builders, and how it stays in sync.
+
+  Wired locally via supabase/config.toml [auth.email.template.email_change].
+  For the hosted project, paste this file's content into: Supabase
+  Dashboard > Authentication > Email Templates > Change email address.
+-->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta name="supported-color-schemes" content="light" />
+    <title>Confirm your new email address</title>
+  </head>
+  <body style="margin: 0; padding: 0; background-color: #F8F6F2; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+    <div style="display: none; max-height: 0; overflow: hidden; opacity: 0; mso-hide: all;">
+      Confirm this change for your MyRecruiterCheck account.
+      &#8203;&nbsp;&#8203;&nbsp;&#8203;&nbsp;&#8203;&nbsp;&#8203;&nbsp;&#8203;&nbsp;&#8203;&nbsp;&#8203;
+    </div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #F8F6F2;">
+      <tr>
+        <td align="center" style="padding: 32px 16px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;">
+            <tr>
+              <td style="background-color: #020C38; border-radius: 16px 16px 0 0; padding: 24px 24px;">
+                <span style="font-size: 18px; font-weight: 700; color: #FFFFFF;">MyRecruiterCheck</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="background-color: #FFFFFF; border: 1px solid #EFEBE3; border-top: none; border-radius: 0 0 16px 16px; padding: 32px 24px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="padding: 0 0 16px;">
+                      <h1 style="margin: 0; font-size: 22px; line-height: 28px; font-weight: 700; color: #020C38;">Confirm your email change</h1>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 0 0 24px;">
+                      <p style="margin: 0; font-size: 16px; line-height: 24px; color: #3A4A6B;">
+                        Confirm that you want to use <strong style="color: #020C38;">{{ .NewEmail }}</strong> for your MyRecruiterCheck account.
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 0 0 32px;">
+                      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td style="border-radius: 12px; background-color: #020C38;">
+                            <a href="{{ .ConfirmationURL }}" style="display: inline-block; padding: 16px 32px; font-size: 16px; font-weight: 600; color: #FFFFFF; text-decoration: none; border-radius: 12px;">Confirm new email</a>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 0 0 24px;">
+                      <p style="margin: 0; font-size: 13px; line-height: 20px; color: #3A4A6B; word-break: break-all;">
+                        Or paste this link into your browser:<br />
+                        <a href="{{ .ConfirmationURL }}" style="color: #194A9F;">{{ .ConfirmationURL }}</a>
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 0 0 24px;">
+                      <p style="margin: 0; font-size: 14px; line-height: 21px; color: #3A4A6B;">
+                        If you did not request this change, secure your account immediately.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 24px 16px 0;">
+                <p style="margin: 0; font-size: 12px; line-height: 18px; color: #3A4A6B; text-align: center;">
+                  MyRecruiterCheck. Think like a recruiter before you apply.<br />
+                  <a href="https://myrecruitercheck.com" style="color: #3A4A6B;">myrecruitercheck.com</a>
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

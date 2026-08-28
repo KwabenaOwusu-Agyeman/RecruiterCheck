@@ -1,0 +1,148 @@
+--- COLUMNS ---
+check_ledger|amount|integer|NO|
+check_ledger|batch_id|uuid|YES|
+check_ledger|created_at|timestamp with time zone|NO|now()
+check_ledger|credit_type|text|NO|'check'::text
+check_ledger|entry_type|text|NO|
+check_ledger|id|bigint|NO|
+check_ledger|keyword_scan_reservation_id|uuid|YES|
+check_ledger|note|text|YES|
+check_ledger|related_check_id|uuid|YES|
+check_ledger|related_stripe_payment_intent_id|text|YES|
+check_ledger|user_id|uuid|NO|
+credit_batches|amount_paid|integer|YES|
+credit_batches|checks_granted|integer|NO|
+credit_batches|checks_remaining|integer|NO|
+credit_batches|currency|text|YES|
+credit_batches|expires_at|timestamp with time zone|YES|
+credit_batches|granted_at|timestamp with time zone|NO|now()
+credit_batches|id|uuid|NO|gen_random_uuid()
+credit_batches|keyword_scans_granted|integer|NO|0
+credit_batches|keyword_scans_remaining|integer|NO|0
+credit_batches|pack_id|text|YES|
+credit_batches|paid_at|timestamp with time zone|YES|
+credit_batches|quantity|integer|YES|
+credit_batches|refund_status|text|NO|'active'::text
+credit_batches|source|text|NO|
+credit_batches|stripe_checkout_session_id|text|YES|
+credit_batches|stripe_payment_intent_id|text|YES|
+credit_batches|stripe_price_id|text|YES|
+credit_batches|user_id|uuid|NO|
+feature_flags|enabled|boolean|NO|false
+feature_flags|key|text|NO|
+feature_flags|updated_at|timestamp with time zone|NO|now()
+keyword_scan_canary_users|user_id|uuid|NO|
+keyword_scan_reservations|batch_id|uuid|YES|
+keyword_scan_reservations|completed_at|timestamp with time zone|YES|
+keyword_scan_reservations|created_at|timestamp with time zone|NO|now()
+keyword_scan_reservations|credit_source|text|NO|
+keyword_scan_reservations|id|uuid|NO|gen_random_uuid()
+keyword_scan_reservations|idempotency_key|text|NO|
+keyword_scan_reservations|lease_expires_at|timestamp with time zone|YES|
+keyword_scan_reservations|released_at|timestamp with time zone|YES|
+keyword_scan_reservations|result|jsonb|YES|
+keyword_scan_reservations|result_expires_at|timestamp with time zone|YES|
+keyword_scan_reservations|status|text|NO|'reserved'::text
+keyword_scan_reservations|user_id|uuid|NO|
+refund_events|attempt_number|integer|NO|1
+refund_events|batch_id|uuid|NO|
+refund_events|created_at|timestamp with time zone|NO|now()
+refund_events|finalized_at|timestamp with time zone|YES|
+refund_events|id|uuid|NO|gen_random_uuid()
+refund_events|status|text|NO|'pending'::text
+refund_events|stripe_refund_id|text|YES|
+refund_events|user_id|uuid|NO|
+stripe_webhook_events|attempt_count|integer|NO|1
+stripe_webhook_events|claim_token|uuid|YES|
+stripe_webhook_events|completed_at|timestamp with time zone|YES|
+stripe_webhook_events|created_at|timestamp with time zone|NO|now()
+stripe_webhook_events|error_category|text|YES|
+stripe_webhook_events|event_type|text|NO|
+stripe_webhook_events|first_received_at|timestamp with time zone|NO|now()
+stripe_webhook_events|id|text|NO|
+stripe_webhook_events|last_attempted_at|timestamp with time zone|NO|now()
+stripe_webhook_events|lease_expires_at|timestamp with time zone|YES|
+stripe_webhook_events|status|text|NO|'processing'::text
+--- CONSTRAINTS ---
+check_ledger|check_ledger_batch_id_fkey|FOREIGN KEY (batch_id) REFERENCES credit_batches(id)
+check_ledger|check_ledger_credit_type_check|CHECK ((credit_type = ANY (ARRAY['check'::text, 'keyword_scan'::text])))
+check_ledger|check_ledger_entry_type_check|CHECK ((entry_type = ANY (ARRAY['purchased'::text, 'used'::text, 'refunded'::text, 'expired'::text, 'manual_adjustment'::text, 'released'::text])))
+check_ledger|check_ledger_keyword_scan_reservation_id_fkey|FOREIGN KEY (keyword_scan_reservation_id) REFERENCES keyword_scan_reservations(id)
+check_ledger|check_ledger_pkey|PRIMARY KEY (id)
+check_ledger|check_ledger_related_check_id_fkey|FOREIGN KEY (related_check_id) REFERENCES checks(id)
+check_ledger|check_ledger_user_id_fkey|FOREIGN KEY (user_id) REFERENCES profiles(id)
+credit_batches|credit_batches_checks_granted_check|CHECK ((checks_granted > 0))
+credit_batches|credit_batches_checks_remaining_check|CHECK ((checks_remaining >= 0))
+credit_batches|credit_batches_keyword_scans_granted_check|CHECK ((keyword_scans_granted >= 0))
+credit_batches|credit_batches_keyword_scans_remaining_check|CHECK ((keyword_scans_remaining >= 0))
+credit_batches|credit_batches_pkey|PRIMARY KEY (id)
+credit_batches|credit_batches_purchase_expiry_check|CHECK (((source <> 'purchase'::text) OR (expires_at IS NOT NULL)))
+credit_batches|credit_batches_purchase_verified_facts_check|CHECK (((source <> 'purchase'::text) OR ((stripe_price_id IS NOT NULL) AND (amount_paid IS NOT NULL) AND (currency IS NOT NULL) AND (quantity IS NOT NULL) AND (paid_at IS NOT NULL))))
+credit_batches|credit_batches_refund_status_check|CHECK ((refund_status = ANY (ARRAY['active'::text, 'refund_pending'::text, 'refunded'::text])))
+credit_batches|credit_batches_source_check|CHECK ((source = ANY (ARRAY['purchase'::text, 'manual_grant'::text])))
+credit_batches|credit_batches_stripe_payment_intent_id_key|UNIQUE (stripe_payment_intent_id)
+credit_batches|credit_batches_user_id_fkey|FOREIGN KEY (user_id) REFERENCES profiles(id)
+feature_flags|feature_flags_pkey|PRIMARY KEY (key)
+keyword_scan_canary_users|keyword_scan_canary_users_pkey|PRIMARY KEY (user_id)
+keyword_scan_canary_users|keyword_scan_canary_users_user_id_fkey|FOREIGN KEY (user_id) REFERENCES profiles(id)
+keyword_scan_reservations|keyword_scan_reservations_batch_id_fkey|FOREIGN KEY (batch_id) REFERENCES credit_batches(id)
+keyword_scan_reservations|keyword_scan_reservations_completed_fields_check|CHECK (((status <> 'completed'::text) OR ((completed_at IS NOT NULL) AND (result_expires_at IS NOT NULL))))
+keyword_scan_reservations|keyword_scan_reservations_credit_source_check|CHECK ((credit_source = ANY (ARRAY['free'::text, 'paid'::text])))
+keyword_scan_reservations|keyword_scan_reservations_idempotency_key_check|CHECK (((length(idempotency_key) >= 8) AND (length(idempotency_key) <= 100)))
+keyword_scan_reservations|keyword_scan_reservations_pkey|PRIMARY KEY (id)
+keyword_scan_reservations|keyword_scan_reservations_released_no_result_check|CHECK (((status <> 'released'::text) OR (result IS NULL)))
+keyword_scan_reservations|keyword_scan_reservations_reserved_has_lease_check|CHECK (((status <> 'reserved'::text) OR (lease_expires_at IS NOT NULL)))
+keyword_scan_reservations|keyword_scan_reservations_result_only_when_completed_check|CHECK (((status = 'completed'::text) OR (result IS NULL)))
+keyword_scan_reservations|keyword_scan_reservations_source_batch_check|CHECK ((((credit_source = 'paid'::text) AND (batch_id IS NOT NULL)) OR ((credit_source = 'free'::text) AND (batch_id IS NULL))))
+keyword_scan_reservations|keyword_scan_reservations_status_check|CHECK ((status = ANY (ARRAY['reserved'::text, 'completed'::text, 'released'::text])))
+keyword_scan_reservations|keyword_scan_reservations_user_id_fkey|FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE
+keyword_scan_reservations|keyword_scan_reservations_user_id_idempotency_key_key|UNIQUE (user_id, idempotency_key)
+refund_events|refund_events_batch_id_fkey|FOREIGN KEY (batch_id) REFERENCES credit_batches(id)
+refund_events|refund_events_pkey|PRIMARY KEY (id)
+refund_events|refund_events_status_check|CHECK ((status = ANY (ARRAY['pending'::text, 'succeeded'::text, 'failed'::text])))
+refund_events|refund_events_user_id_fkey|FOREIGN KEY (user_id) REFERENCES profiles(id)
+stripe_webhook_events|stripe_webhook_events_attempt_count_check|CHECK ((attempt_count > 0))
+stripe_webhook_events|stripe_webhook_events_pkey|PRIMARY KEY (id)
+stripe_webhook_events|stripe_webhook_events_status_check|CHECK ((status = ANY (ARRAY['processing'::text, 'completed'::text, 'failed'::text])))
+--- INDEXES ---
+check_ledger|check_ledger_batch_expired_unique_idx|CREATE UNIQUE INDEX check_ledger_batch_expired_unique_idx ON public.check_ledger USING btree (batch_id, credit_type) WHERE (entry_type = 'expired'::text)
+check_ledger|check_ledger_batch_purchased_unique_idx|CREATE UNIQUE INDEX check_ledger_batch_purchased_unique_idx ON public.check_ledger USING btree (batch_id, credit_type) WHERE (entry_type = 'purchased'::text)
+check_ledger|check_ledger_batch_refunded_unique_idx|CREATE UNIQUE INDEX check_ledger_batch_refunded_unique_idx ON public.check_ledger USING btree (batch_id, credit_type) WHERE (entry_type = 'refunded'::text)
+check_ledger|check_ledger_pkey|CREATE UNIQUE INDEX check_ledger_pkey ON public.check_ledger USING btree (id)
+check_ledger|check_ledger_reservation_released_unique_idx|CREATE UNIQUE INDEX check_ledger_reservation_released_unique_idx ON public.check_ledger USING btree (keyword_scan_reservation_id) WHERE ((entry_type = 'released'::text) AND (keyword_scan_reservation_id IS NOT NULL))
+check_ledger|check_ledger_reservation_used_unique_idx|CREATE UNIQUE INDEX check_ledger_reservation_used_unique_idx ON public.check_ledger USING btree (keyword_scan_reservation_id) WHERE ((entry_type = 'used'::text) AND (keyword_scan_reservation_id IS NOT NULL))
+credit_batches|credit_batches_pkey|CREATE UNIQUE INDEX credit_batches_pkey ON public.credit_batches USING btree (id)
+credit_batches|credit_batches_stripe_payment_intent_id_key|CREATE UNIQUE INDEX credit_batches_stripe_payment_intent_id_key ON public.credit_batches USING btree (stripe_payment_intent_id)
+credit_batches|credit_batches_stripe_session_unique_idx|CREATE UNIQUE INDEX credit_batches_stripe_session_unique_idx ON public.credit_batches USING btree (stripe_checkout_session_id) WHERE (stripe_checkout_session_id IS NOT NULL)
+credit_batches|credit_batches_user_expiry_ks_idx|CREATE INDEX credit_batches_user_expiry_ks_idx ON public.credit_batches USING btree (user_id, expires_at) WHERE ((keyword_scans_remaining > 0) AND (refund_status = 'active'::text))
+feature_flags|feature_flags_pkey|CREATE UNIQUE INDEX feature_flags_pkey ON public.feature_flags USING btree (key)
+keyword_scan_canary_users|keyword_scan_canary_users_pkey|CREATE UNIQUE INDEX keyword_scan_canary_users_pkey ON public.keyword_scan_canary_users USING btree (user_id)
+keyword_scan_reservations|keyword_scan_reservations_cleanup_idx|CREATE INDEX keyword_scan_reservations_cleanup_idx ON public.keyword_scan_reservations USING btree (result_expires_at) WHERE (result IS NOT NULL)
+keyword_scan_reservations|keyword_scan_reservations_pkey|CREATE UNIQUE INDEX keyword_scan_reservations_pkey ON public.keyword_scan_reservations USING btree (id)
+keyword_scan_reservations|keyword_scan_reservations_reconcile_idx|CREATE INDEX keyword_scan_reservations_reconcile_idx ON public.keyword_scan_reservations USING btree (lease_expires_at) WHERE (status = 'reserved'::text)
+keyword_scan_reservations|keyword_scan_reservations_user_id_idempotency_key_key|CREATE UNIQUE INDEX keyword_scan_reservations_user_id_idempotency_key_key ON public.keyword_scan_reservations USING btree (user_id, idempotency_key)
+refund_events|refund_events_batch_idx|CREATE INDEX refund_events_batch_idx ON public.refund_events USING btree (batch_id, created_at DESC)
+refund_events|refund_events_one_active_pending_idx|CREATE UNIQUE INDEX refund_events_one_active_pending_idx ON public.refund_events USING btree (batch_id) WHERE (status = 'pending'::text)
+refund_events|refund_events_pkey|CREATE UNIQUE INDEX refund_events_pkey ON public.refund_events USING btree (id)
+stripe_webhook_events|stripe_webhook_events_pkey|CREATE UNIQUE INDEX stripe_webhook_events_pkey ON public.stripe_webhook_events USING btree (id)
+--- POLICIES ---
+--- TABLE GRANTS ---
+feature_flags|service_role|SELECT
+keyword_scan_canary_users|service_role|SELECT
+--- FUNCTION GRANTS ---
+claim_stripe_webhook_event|service_role|EXECUTE
+complete_keyword_scan|authenticated|EXECUTE
+complete_stripe_webhook_event|service_role|EXECUTE
+fail_refund|service_role|EXECUTE
+fail_stripe_webhook_event|service_role|EXECUTE
+finalize_refund|service_role|EXECUTE
+get_credit_summary|authenticated|EXECUTE
+grant_pack_credits|service_role|EXECUTE
+list_ambiguous_refund_candidates|service_role|EXECUTE
+poll_keyword_scan_status|authenticated|EXECUTE
+reconcile_abandoned_keyword_scan_reservations|service_role|EXECUTE
+reconcile_ambiguous_refunds|service_role|EXECUTE
+recover_external_refund|service_role|EXECUTE
+release_keyword_scan_reservation|authenticated|EXECUTE
+reserve_keyword_scan|authenticated|EXECUTE
+reserve_refund|authenticated|EXECUTE

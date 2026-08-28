@@ -1,0 +1,7 @@
+draft-drift-null-source-01|released|free||f|f
+draft-drift-paid-no-batch-01|released|free||f|f
+draft-free-completed-01|completed|free||f|t
+draft-free-completed-b-01|completed|free||f|t
+draft-free-released-01|released|free||f|f
+draft-paid-completed-01|completed|paid|c0000000-0000-0000-0000-0000000000c1|f|t
+draft-paid-reserved-01|reserved|paid|c0000000-0000-0000-0000-0000000000c1|t|f

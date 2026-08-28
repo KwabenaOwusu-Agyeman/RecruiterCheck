@@ -10,7 +10,7 @@ import { cn } from '@/utils/cn'
 // /myrecruitercheck-vs-chatgpt is for, linked below).
 const ROWS = [
   'Same structured verdict every time',
-  'Shaped by real recruiters',
+  'Recruiter-style evidence framework, not a one-off opinion',
   'Real CV, cover letter & message you can download',
   'Every check saved and tracked',
 ]
@@ -71,12 +71,19 @@ export function LlmComparisonSection() {
           </Card>
         </div>
 
-        <div className="mx-auto mt-6 max-w-3xl text-center">
+        <div className="mx-auto mt-6 flex max-w-3xl flex-col items-center gap-2 text-center sm:flex-row sm:justify-center sm:gap-4">
           <Link
             to="/myrecruitercheck-vs-chatgpt"
             className={cn('text-sm font-semibold text-blue hover:underline')}
           >
             See the full comparison
+          </Link>
+          <span className="hidden text-border-strong sm:inline" aria-hidden="true">&middot;</span>
+          <Link
+            to="/myrecruitercheck-vs-jobscan"
+            className={cn('text-sm font-medium text-text-secondary hover:underline')}
+          >
+            How we compare to Jobscan, Teal &amp; other CV tools
           </Link>
         </div>
       </Container>

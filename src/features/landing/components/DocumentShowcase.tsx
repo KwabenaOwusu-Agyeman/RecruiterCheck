@@ -70,7 +70,7 @@ function CvDraftCard() {
           className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center overflow-hidden"
         >
           <span className="-rotate-[32deg] whitespace-nowrap text-2xl font-bold tracking-[0.2em] text-text-secondary/20 sm:text-3xl">
-            DRAFT — NOT FOR SUBMISSION
+            DRAFT, NOT FOR SUBMISSION
           </span>
         </div>
 
@@ -281,7 +281,8 @@ export function DocumentShowcase() {
     <section className="overflow-hidden border-b border-border bg-background py-[32px] sm:py-12 lg:py-[64px]">
       <Container>
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-display text-[20px] font-semibold tracking-tight text-text-primary sm:text-3xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue">Example documents</p>
+          <h2 className="mt-2 font-display text-[20px] font-semibold tracking-tight text-text-primary sm:text-3xl">
             From feedback to finished documents
           </h2>
           <p className="mt-3 text-[14px] text-text-secondary sm:text-base">

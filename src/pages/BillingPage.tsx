@@ -121,7 +121,16 @@ export function BillingPage() {
 
       {error ? <Alert variant="error" className="mx-auto mt-6 max-w-2xl">{error}</Alert> : null}
 
-      <PricingCards packs={CHECK_PACKS} loadingPack={loadingPack} onBuy={(packId) => void handleBuy(packId)} />
+      {/* Breaks out of AppLayout's own 1120px cap so the three cards get the
+          same 1400px breathing room PricingPage.tsx already gives this exact
+          component — the classic full-bleed-then-recenter trick, since
+          AppLayout wraps every account/* page in one shared Container we
+          shouldn't widen globally just for this one section. */}
+      <div className="relative w-screen" style={{ left: 'calc(-50vw + 50%)' }}>
+        <div className="mx-auto max-w-[1400px] px-[16px] sm:px-6 lg:px-[32px]">
+          <PricingCards packs={CHECK_PACKS} loadingPack={loadingPack} onBuy={(packId) => void handleBuy(packId)} />
+        </div>
+      </div>
 
       {ledger.length > 0 ? (
         <div className="mx-auto mt-8 max-w-2xl">

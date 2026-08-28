@@ -637,7 +637,7 @@ export function NewCheckPage() {
                 placeholder="Paste the text of your CV here..."
               />
               <p className="text-xs text-text-secondary">
-                Paste your CV as plain text — saves automatically as you type.
+                Paste your CV as plain text. Saves automatically as you type.
               </p>
               <AutoDeleteNotice />
               {cvFileName === PASTED_CV_FILE_NAME ? (
@@ -673,6 +673,12 @@ export function NewCheckPage() {
                 Add your CV and job description to continue.
               </p>
             ) : null}
+            <p className="text-xs text-text-secondary">
+              Your Interview Score reflects how strongly your CV matches this job.{' '}
+              <Link to="/disclaimer" className="underline hover:text-text-primary">
+                It doesn't guarantee an interview or hiring decision.
+              </Link>
+            </p>
           </div>
         </div>
       </Card>

@@ -1,23 +1,81 @@
-import { useState } from 'react'
-import { ThumbsDown, ThumbsUp } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Star, ThumbsDown, ThumbsUp } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent } from '@/components/ui/Card'
-import { BRAND } from '@/lib/constants'
-import { submitCheckSentiment } from '@/services/checkService'
+import { useAuth } from '@/hooks/useAuth'
+import { hasSubmittedTestimonial, submitCheckSentiment, submitFeatureTestimonial } from '@/services/checkService'
 import { trackEvent } from '@/lib/analytics'
+import { cn } from '@/utils/cn'
+
+function StarRatingInput({ rating, onChange }: { rating: number; onChange: (value: number) => void }) {
+  return (
+    <div className="flex gap-1" role="radiogroup" aria-label="Rating">
+      {Array.from({ length: 5 }, (_, index) => {
+        const value = index + 1
+        return (
+          <button
+            key={value}
+            type="button"
+            role="radio"
+            aria-checked={rating === value}
+            aria-label={`${value} star${value === 1 ? '' : 's'}`}
+            onClick={() => onChange(value)}
+            className="p-0.5"
+          >
+            <Star
+              className={cn('h-5 w-5', value <= rating ? 'fill-warning text-warning' : 'fill-border-strong text-border-strong')}
+            />
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
 type Stage = 'ask' | 'positive' | 'negative' | 'done'
+type TestimonialStage = 'idle' | 'submitting' | 'submitted' | 'error'
 
 /**
- * Sentiment-gated review ask (the monday.com/Notion pattern): only a
- * thumbs-up routes to the public Google review link, so an unhappy user is
- * never sent to leave a public review. Thumbs-down instead offers an
+ * Sentiment-gated review ask: thumbs-up leads straight into an explicit-
+ * consent testimonial capture (the only path that writes to
+ * public.product_feedback with feature_consent true, see
+ * submitFeatureTestimonial), since thumbs-up is the one moment we know the
+ * user is actually happy, and nothing else in the product collects this for
+ * the landing page's TestimonialsSection. Thumbs-down instead offers an
  * optional private note, saved but never surfaced anywhere public.
  */
-export function SentimentPrompt({ checkId }: { checkId: string }) {
+export function SentimentPrompt({ checkId, jobTitle }: { checkId: string; jobTitle?: string | null }) {
+  const { profile } = useAuth()
   const [stage, setStage] = useState<Stage>('ask')
   const [note, setNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  const [testimonialStage, setTestimonialStage] = useState<TestimonialStage>('idle')
+  const [testimonialComment, setTestimonialComment] = useState('')
+  const [testimonialName, setTestimonialName] = useState('')
+  const [testimonialRating, setTestimonialRating] = useState(5)
+  const [testimonialConsent, setTestimonialConsent] = useState(false)
+
+  // The table allows exactly one product_feedback row per user, so
+  // resubmitting on a later check would silently overwrite their first
+  // public testimonial rather than adding a new one — once they already
+  // have one on file, skip asking again instead of re-prompting on every
+  // subsequent check. Starts true (not false) so the form doesn't flash
+  // into view for an instant before this resolves.
+  const [alreadyHasTestimonial, setAlreadyHasTestimonial] = useState(true)
+  useEffect(() => {
+    hasSubmittedTestimonial()
+      .then(setAlreadyHasTestimonial)
+      .catch(() => setAlreadyHasTestimonial(false))
+  }, [])
+
+  // Pre-fills from the account's own name (real, self-reported at signup —
+  // same source FeedbackPage's "Hi {firstName}" greeting uses) so the user
+  // isn't asked to retype it, while staying editable in case they'd rather
+  // publish a shortened form (e.g. "Amara O.") for privacy.
+  useEffect(() => {
+    if (profile?.full_name) setTestimonialName((current) => current || profile.full_name!)
+  }, [profile?.full_name])
 
   async function handlePositive() {
     setStage('positive')
@@ -26,6 +84,23 @@ export function SentimentPrompt({ checkId }: { checkId: string }) {
       await submitCheckSentiment(checkId, 'positive')
     } catch {
       // Non-critical — the review ask below doesn't depend on this having saved.
+    }
+  }
+
+  async function handleTestimonialSubmit() {
+    setTestimonialStage('submitting')
+    try {
+      await submitFeatureTestimonial({
+        checkId,
+        rating: testimonialRating,
+        comment: testimonialComment,
+        displayName: testimonialName,
+        targetRole: jobTitle,
+      })
+      trackEvent('testimonial_submitted')
+      setTestimonialStage('submitted')
+    } catch {
+      setTestimonialStage('error')
     }
   }
 
@@ -61,12 +136,71 @@ export function SentimentPrompt({ checkId }: { checkId: string }) {
       <Card>
         <CardContent className="px-5 py-4">
           <p className="text-sm font-semibold text-text-primary">Glad it was helpful!</p>
-          <p className="mt-1 text-sm text-text-secondary">
-            Would you leave us a quick review on Google? It helps other job seekers find us.
-          </p>
-          <a href={BRAND.googleReviewUrl} target="_blank" rel="noreferrer">
-            <Button size="sm" className="mt-3">Leave a review</Button>
-          </a>
+          {testimonialStage === 'submitted' ? (
+            <p className="mt-1 text-sm text-text-secondary">Thanks, we may feature this on our site.</p>
+          ) : alreadyHasTestimonial ? (
+            <p className="mt-1 text-sm text-text-secondary">Thanks for already sharing your experience with us.</p>
+          ) : (
+            <>
+              <p className="mt-1 text-sm text-text-secondary">Share your experience</p>
+              <div className="mt-3">
+                <StarRatingInput rating={testimonialRating} onChange={setTestimonialRating} />
+              </div>
+              <textarea
+                value={testimonialComment}
+                onChange={(event) => setTestimonialComment(event.target.value)}
+                rows={2}
+                maxLength={400}
+                disabled={testimonialStage === 'submitting'}
+                className="mt-2 w-full rounded-[10px] border border-border-soft bg-background px-3 py-2 text-sm text-text-primary outline-none focus:border-blue"
+                placeholder="What was useful about your check?"
+              />
+              <input
+                type="text"
+                value={testimonialName}
+                onChange={(event) => setTestimonialName(event.target.value)}
+                maxLength={80}
+                disabled={testimonialStage === 'submitting'}
+                className="mt-2 w-full rounded-[10px] border border-border-soft bg-background px-3 py-2 text-sm text-text-primary outline-none focus:border-blue"
+                placeholder="Name to show alongside your quote"
+                aria-label="Name to show alongside your quote"
+              />
+              {profile?.full_name ? (
+                <p className="mt-1 text-xs text-text-secondary">
+                  Taken from your account — edit it if you'd rather show a shortened version.
+                </p>
+              ) : null}
+              {testimonialStage === 'error' ? (
+                <p className="mt-2 text-xs text-error">Could not save that, please try again.</p>
+              ) : null}
+              <label className="mt-3 flex items-start gap-2 text-xs text-text-secondary">
+                <input
+                  type="checkbox"
+                  checked={testimonialConsent}
+                  onChange={(event) => setTestimonialConsent(event.target.checked)}
+                  disabled={testimonialStage === 'submitting'}
+                  className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-border-strong text-blue focus:ring-blue"
+                />
+                <span>
+                  I agree that MyRecruiterCheck can publish my name, the role I checked, and this
+                  quote on myrecruitercheck.com.
+                </span>
+              </label>
+              <Button
+                size="sm"
+                className="mt-3"
+                disabled={
+                  testimonialStage === 'submitting' ||
+                  !testimonialComment.trim() ||
+                  !testimonialName.trim() ||
+                  !testimonialConsent
+                }
+                onClick={() => void handleTestimonialSubmit()}
+              >
+                {testimonialStage === 'submitting' ? 'Sharing...' : 'Share'}
+              </Button>
+            </>
+          )}
         </CardContent>
       </Card>
     )

@@ -53,8 +53,9 @@ export function TestimonialsSection() {
     <section className="border-b border-border bg-background">
       <Container className="py-[32px] sm:py-12 lg:py-[64px]">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-display text-[20px] font-semibold tracking-tight text-text-primary sm:text-3xl">
-            What job seekers are saying
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue">Reviews</p>
+          <h2 className="mt-2 font-display text-[20px] font-semibold tracking-tight text-text-primary sm:text-3xl">
+            Trusted by job seekers
           </h2>
         </div>
 

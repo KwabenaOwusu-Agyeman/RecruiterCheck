@@ -117,7 +117,7 @@ function ChecksListMock() {
             <p className="truncate text-sm text-text-secondary">{check.companyName}</p>
           </div>
           <div className="flex shrink-0 items-center gap-4">
-            <StatusBadge status={check.status} className="hidden sm:inline-flex" />
+            <StatusBadge status={check.status} className="hidden w-[104px] justify-center sm:inline-flex" />
             <ScoreBadge score={check.score} />
             <span className="hidden w-20 shrink-0 text-right text-xs text-text-secondary sm:block">
               {relativeDate(check.daysAgo)}

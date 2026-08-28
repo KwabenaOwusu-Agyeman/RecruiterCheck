@@ -4,7 +4,7 @@ import { usePageMeta } from '@/hooks/usePageMeta'
 
 export function CookiePage() {
   usePageMeta({
-    title: 'Cookie Policy — MyRecruiterCheck',
+    title: 'Cookie Policy | MyRecruiterCheck',
     description: 'What cookies and similar technologies MyRecruiterCheck uses.',
     path: '/cookies',
   })
@@ -14,15 +14,15 @@ export function CookiePage() {
       <Section title="1. Our Approach">
         <p>
           MyRecruiterCheck uses only cookies and browser storage that are strictly necessary to
-          operate the Service — primarily to keep you signed in. We do not use advertising,
+          operate the Service, primarily to keep you signed in. We do not use advertising,
           marketing, or third-party tracking cookies of any kind, and we do not run a
           cross-site advertising pixel or a third-party analytics script.
         </p>
         <p>
           Because we only use strictly-necessary cookies, and no non-essential cookies require your
           consent under applicable law (the ePrivacy Directive and GDPR), <strong>we do not show a
-          cookie consent banner</strong>. If that ever changes — for example, if we introduce
-          optional analytics or marketing cookies — we will add a consent banner with Accept,
+          cookie consent banner</strong>. If that ever changes, for example if we introduce
+          optional analytics or marketing cookies, we will add a consent banner with Accept,
           Reject, and Manage Preferences options before any such cookie is set, and update this
           page accordingly.
         </p>
@@ -41,7 +41,7 @@ export function CookiePage() {
         <p>
           We record a small number of first-party product events (for example, that a check was
           started or completed) directly to our own database when you use the Service. This is not
-          done through a browser cookie, a tracking pixel, or a third-party analytics script — it's
+          done through a browser cookie, a tracking pixel, or a third-party analytics script. It's
           a server-side record tied to the action you took, and we deliberately avoid storing raw
           page URLs in it. See our{' '}
           <Link to="/privacy" className="font-medium text-blue hover:underline">Privacy Policy</Link>{' '}

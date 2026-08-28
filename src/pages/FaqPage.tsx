@@ -36,7 +36,7 @@ const FAQ_ITEMS = [
   {
     question: 'What is the difference between Starter, Active, and Power packs?',
     answer:
-      'All three packs include your Interview Score, Recruiter Feedback, and an Improved CV Draft (for checks scoring 61 or above). Power additionally includes a Cover Letter and Recruiter Message with every check, plus access to your full check history — Starter and Active only show your most recent check.',
+      'All three packs include your Interview Score, Recruiter Feedback, and an Improved CV Draft (for checks scoring 61 or above). Power additionally includes a Cover Letter and Recruiter Message with every check, plus access to your full check history. Starter and Active only show your most recent check.',
   },
   {
     question: 'Is there a subscription?',
@@ -50,7 +50,7 @@ const FAQ_ITEMS = [
 
 export function FaqPage() {
   usePageMeta({
-    title: 'FAQ — MyRecruiterCheck',
+    title: 'FAQ | MyRecruiterCheck',
     description:
       'Answers to common questions about how MyRecruiterCheck evaluates your application, data security, and what you get with a Recruiter Check.',
     path: '/faq',

@@ -4,7 +4,7 @@ import { usePageMeta } from '@/hooks/usePageMeta'
 
 export function PrivacyPage() {
   usePageMeta({
-    title: 'Privacy Policy — MyRecruiterCheck',
+    title: 'Privacy Policy | MyRecruiterCheck',
     description: 'How MyRecruiterCheck collects, uses, and protects your data.',
     path: '/privacy',
   })
@@ -34,7 +34,7 @@ export function PrivacyPage() {
         <p>We process your data to:</p>
         <ul className="list-disc space-y-1 pl-5">
           <li>Provide the Service, including generating your interview score, feedback, and tailored documents;</li>
-          <li>Process payments and manage your subscription;</li>
+          <li>Process payments for check pack purchases;</li>
           <li>Maintain the security and integrity of the Service;</li>
           <li>Use voluntary product feedback to improve the Service. We will not publish your comment without your permission;</li>
           <li>Communicate with you about your account or the Service.</li>
@@ -58,7 +58,7 @@ export function PrivacyPage() {
         <ul className="list-disc space-y-1 pl-5">
           <li><strong>Supabase:</strong> database, authentication, and file storage hosting;</li>
           <li><strong>Our AI provider:</strong> generating feedback, scores, and tailored documents;</li>
-          <li><strong>Stripe:</strong> payment processing and subscription billing.</li>
+          <li><strong>Stripe:</strong> payment processing for check pack purchases.</li>
         </ul>
         <p>We do not sell your personal data to third parties.</p>
       </Section>
@@ -75,8 +75,8 @@ export function PrivacyPage() {
         <p>
           Your original uploaded CV and any documents we generate for you (tailored CV, cover
           letter, recruiter message) are automatically and permanently deleted from our storage
-          within 24 hours of being processed. The results of a check — your Interview Score,
-          feedback, job title, and company name — are retained for as long as your account is
+          within 24 hours of being processed. The results of a check, meaning your Interview Score,
+          feedback, job title, and company name, are retained for as long as your account is
           active, so you can review your check history.
         </p>
         <p>
@@ -164,7 +164,7 @@ export function PrivacyPage() {
         </ul>
         <p>
           The extension maintains its own sign-in, separate from your browser session on this
-          website — connecting it does not give it access to your password. A captured job is
+          website, connecting it does not give it access to your password. A captured job is
           stored temporarily (for up to 48 hours, or until you use it to start a Recruiter Check,
           whichever is sooner) and is then permanently deleted.
         </p>

@@ -1,4 +1,4 @@
-# MyRecruiterCheck — full product reference
+# MyRecruiterCheck: full product reference
 
 Official site: https://myrecruitercheck.com/
 Last reviewed: 26 August 2026
@@ -16,7 +16,7 @@ It compares one CV against one specific job description and returns:
 
 ## What makes it different from a keyword-only ATS checker
 
-A generic ATS or keyword checker counts whether words from the job description appear somewhere in the CV. MyRecruiterCheck evaluates whether each requirement is actually supported by evidence in the CV — a specific project, a measurable result, a tool used in a real context — rather than just present as a word. Two CVs that list the same keywords can receive different Interview Scores depending on whether the underlying evidence is genuinely demonstrated.
+A generic ATS or keyword checker counts whether words from the job description appear somewhere in the CV. MyRecruiterCheck evaluates whether each requirement is actually supported by evidence in the CV, a specific project, a measurable result, a tool used in a real context, rather than just present as a word. Two CVs that list the same keywords can receive different Interview Scores depending on whether the underlying evidence is genuinely demonstrated.
 
 ## Early career and career-change candidates
 

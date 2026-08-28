@@ -12,7 +12,7 @@ export function SoftwareEngineerResumeCheckerPage() {
       benefits={[
         { title: 'Stack match', description: 'See whether your listed languages and frameworks line up with what the job description actually asks for.' },
         { title: 'Outcome check', description: 'Find bullets that describe duties instead of shipped, measurable results.' },
-        { title: 'Scale signal', description: 'Spot where scale — users, latency, team size — is missing and should be added.' },
+        { title: 'Scale signal', description: 'Spot where scale, such as users, latency, or team size, is missing and should be added.' },
       ]}
       steps={[
         'Upload your resume in PDF or DOCX format.',
@@ -24,18 +24,18 @@ export function SoftwareEngineerResumeCheckerPage() {
         reject: [
           'No languages or frameworks up top',
           'Duties instead of outcomes',
-          'No scale — users, latency, team size',
+          'No scale (users, latency, team size)',
         ],
         accept: [
           'Stack matched to the posting',
           'Every bullet has a number',
-          'Ownership language — "built," "shipped"',
+          'Ownership language ("built," "shipped")',
         ],
       }}
       faqs={[
         { question: 'Is the software engineer resume checker free?', answer: 'Yes. Your first Recruiter Check is free, so you can see how your resume matches a specific engineering role before deciding whether you need more checks.' },
         { question: 'Does it check my resume against a specific job description?', answer: 'Yes. Feedback is based on your resume and the job description together, so results are specific to the role you are applying for.' },
-        { question: 'Will it invent skills or projects I don\'t have?', answer: 'No. Feedback is based only on what\'s already in your resume — it never fabricates technologies or achievements on your behalf.' },
+        { question: 'Will it invent skills or projects I don\'t have?', answer: 'No. Feedback is based only on what\'s already in your resume. It never fabricates technologies or achievements on your behalf.' },
       ]}
       relatedLinks={[
         { label: 'ATS Resume Checker', to: '/ats-resume-checker' },

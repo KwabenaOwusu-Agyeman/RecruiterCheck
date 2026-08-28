@@ -73,6 +73,7 @@ export function SeoLandingPage({
                 See an example
               </Link>
             </div>
+            <p className="mt-3 text-xs font-medium text-text-secondary">First check free. No card required.</p>
           </div>
         </Container>
       </section>
@@ -178,7 +179,7 @@ export function SeoLandingPage({
             </div>
             {comparison.lastReviewed && (
               <p className="mx-auto mt-4 max-w-3xl text-xs text-text-secondary">
-                Last reviewed: {comparison.lastReviewed}. Competitor pricing and features change over time — verify current details on the competitor's own site before deciding.
+                Last reviewed: {comparison.lastReviewed}. Competitor pricing and features change over time, verify current details on the competitor's own site before deciding.
               </p>
             )}
           </Container>

@@ -72,11 +72,8 @@ export function TrustpilotFeedbackSection() {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between lg:gap-12">
           <div className="max-w-md">
             <h2 className="font-display text-xl font-semibold tracking-tight text-navy sm:text-2xl">
-              Help us improve MyRecruiterCheck
+              Share your experience on Trustpilot
             </h2>
-            <p className="mt-2 text-sm text-text-secondary sm:text-base">
-              Your feedback helps us build a better experience for job seekers.
-            </p>
           </div>
 
           <div className="w-full lg:w-[360px] lg:shrink-0">

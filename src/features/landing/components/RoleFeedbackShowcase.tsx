@@ -75,6 +75,21 @@ export function RoleFeedbackShowcase() {
 
         <div className="mx-auto mt-5 max-w-2xl transition-all duration-300 sm:mt-6 lg:max-w-[900px]">
           <Card tone={cardTone} className="relative overflow-hidden">
+            {/* Corner badge only from lg up, where the 2-column grid leaves
+                clear space in the top-right. Below lg the card is a single
+                stacked column, so an absolutely-positioned corner badge
+                lands directly on top of the role/company line instead —
+                the inline copy below replaces it on mobile/tablet. */}
+            <span
+              className={cn(
+                'absolute right-4 top-4 hidden rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide lg:inline-block',
+                isDarkText
+                  ? 'border-white/20 bg-white/10 text-white/80'
+                  : 'border-border-strong bg-surface/80 text-text-secondary',
+              )}
+            >
+              Example result
+            </span>
             <CardContent className="px-6 py-5 lg:grid lg:grid-cols-2 lg:gap-x-10 lg:gap-y-0 lg:p-[40px]">
               <div
                 className={cn(
@@ -82,6 +97,16 @@ export function RoleFeedbackShowcase() {
                   isDarkText ? 'lg:border-white/10' : 'lg:border-border',
                 )}
               >
+                <span
+                  className={cn(
+                    'mb-2 inline-block w-fit rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide lg:hidden',
+                    isDarkText
+                      ? 'border-white/20 bg-white/10 text-white/80'
+                      : 'border-border-strong bg-surface/80 text-text-secondary',
+                  )}
+                >
+                  Example result
+                </span>
                 <p className={cn('text-sm font-semibold', isDarkText ? 'text-white' : 'text-text-primary')}>
                   {active.role}
                 </p>

@@ -438,6 +438,65 @@ export async function submitCheckSentiment(
   if (error) throw new Error(error.message)
 }
 
+/**
+ * Explicit-consent public testimonial capture, feeding public.product_feedback
+ * (one row per user, upserted on user_id per the table's own unique index).
+ * feature_consent is always true here since this call only happens when the
+ * user has actively opted in, comment and displayName are required by the
+ * table's own check constraint whenever feature_consent is true. Shown on
+ * public_testimonials (see testimonialsService.ts) only after this.
+ */
+export async function submitFeatureTestimonial(params: {
+  checkId: string
+  rating: number
+  comment: string
+  displayName: string
+  targetRole?: string | null
+}): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user?.email) throw new Error('Not signed in')
+
+  const { error } = await supabase
+    .from('product_feedback')
+    .upsert(
+      {
+        user_id: user.id,
+        email: user.email,
+        check_id: params.checkId,
+        rating: params.rating,
+        comment: params.comment.trim(),
+        display_name: params.displayName.trim(),
+        target_role: params.targetRole?.trim() || null,
+        feature_consent: true,
+        feature_consent_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id' },
+    )
+
+  if (error) throw new Error(error.message)
+}
+
+/**
+ * Whether the current user already has a product_feedback row — the table
+ * allows exactly one per user (see product_feedback_one_per_user_idx), so a
+ * second submitFeatureTestimonial call would silently overwrite their first
+ * public testimonial rather than adding a new one. Used to stop asking once
+ * they've already given one, instead of re-prompting on every later check.
+ */
+export async function hasSubmittedTestimonial(): Promise<boolean> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return false
+
+  const { data, error } = await supabase
+    .from('product_feedback')
+    .select('id')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (error) throw new Error(error.message)
+  return data !== null
+}
+
 export async function requestRefund(): Promise<void> {
   const { data, error } = await supabase.functions.invoke('request-refund', {
     body: {},

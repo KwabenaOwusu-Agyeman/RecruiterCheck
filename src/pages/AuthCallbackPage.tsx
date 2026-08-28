@@ -6,6 +6,7 @@ import { Container } from '@/components/ui/Container'
 import { Logo } from '@/components/ui/Logo'
 import { consumePostAuthRedirect } from '@/features/auth/postAuthRedirect'
 import { supabase } from '@/lib/supabase'
+import { triggerWelcomeEmailOnce } from '@/services/welcomeEmailService'
 
 export function AuthCallbackPage() {
   const navigate = useNavigate()
@@ -13,10 +14,17 @@ export function AuthCallbackPage() {
 
   useEffect(() => {
     async function handleCallback() {
-      const { error: authError } = await supabase.auth.getSession()
+      const { data, error: authError } = await supabase.auth.getSession()
       if (authError) {
         setError(authError.message)
         return
+      }
+
+      // Fire-and-forget: never blocks navigation, never surfaces an error.
+      // The edge function itself decides eligibility (verified, rollout
+      // cutoff, not already sent) — this call is just the trigger.
+      if (data.session?.user.id) {
+        triggerWelcomeEmailOnce(data.session.user.id)
       }
 
       navigate(consumePostAuthRedirect(), { replace: true })

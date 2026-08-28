@@ -35,9 +35,12 @@ export default {
         'gradient-surface': 'linear-gradient(180deg, #FFFFFF 0%, #F8F6F2 100%)',
       },
       keyframes: {
+        // Content slides rightward (left-to-right motion) rather than the
+        // more common right-to-left ticker — per direct request. Only
+        // consumer is TestimonialsSection's marquee, so safe to flip here.
         marquee: {
-          from: { transform: 'translateX(0)' },
-          to: { transform: 'translateX(-50%)' },
+          from: { transform: 'translateX(-50%)' },
+          to: { transform: 'translateX(0)' },
         },
         'fill-bar': {
           from: { transform: 'scaleX(0)' },

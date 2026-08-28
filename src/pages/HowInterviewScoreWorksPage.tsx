@@ -12,18 +12,21 @@ const factors = [
     title: 'Experience',
     description:
       'Whether your background is at the level and scope this specific role needs. For early career candidates, relevant internships, academic projects, and coursework can count alongside paid roles, provided the CV describes what was actually done.',
+    subcriteria: 'Assessed across three checks: evidence of having applied the relevant skill in practice, the skill itself being applied at the level the role needs, and measurable results from that work.',
   },
   {
     weight: '35%',
     title: 'Skills',
     description:
       'Whether the tools and skills the job description asks for are shown with evidence, a project, a result, a specific context, rather than only appearing in a skills list.',
+    subcriteria: 'Assessed across four checks: coverage of the essential skills the job asks for, evidence those skills were actually applied, familiarity with the specific tools and platforms named, and relevant certifications where the role calls for them.',
   },
   {
     weight: '25%',
     title: 'Candidate value',
     description:
       'Whether there is a clear, specific reason to interview you over another applicant with a similar background, based on what your CV actually demonstrates.',
+    subcriteria: 'Assessed across four checks: overall fit with the role, a clear value proposition for why you specifically, how clearly your CV communicates technical work, and how well the CV itself is structured.',
   },
 ] as const
 
@@ -137,6 +140,7 @@ export function HowInterviewScoreWorksPage() {
                     <p className="text-sm font-semibold uppercase tracking-wide text-blue">{factor.weight}</p>
                     <h3 className="mt-2 text-xl font-semibold text-text-primary">{factor.title}</h3>
                     <p className="mt-3 leading-7 text-text-secondary">{factor.description}</p>
+                    <p className="mt-3 text-sm leading-6 text-text-secondary">{factor.subcriteria}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -158,6 +162,28 @@ export function HowInterviewScoreWorksPage() {
               evidence: a specific project, a measurable result, a tool used in a real context. Two CVs
               that list the same skills can receive different scores depending on whether those skills
               are actually demonstrated.
+            </p>
+          </div>
+        </Container>
+      </section>
+
+      <section className="py-10 sm:py-14">
+        <Container>
+          <div className="mx-auto max-w-3xl">
+            <h2 className="font-display text-2xl font-semibold tracking-tight text-text-primary sm:text-3xl">
+              What raises or lowers your score
+            </h2>
+            <p className="mt-4 leading-7 text-text-secondary">
+              Your score rises when your CV describes specific, verifiable evidence for the skills
+              and experience the job asks for, in context, not just as a listed keyword. A CV that
+              only claims a skill without showing where it was used gets partial credit at best.
+            </p>
+            <p className="mt-4 leading-7 text-text-secondary">
+              One rule can override everything else: if the job description names a genuinely
+              critical requirement and your CV shows no matching evidence for it, your score is
+              capped below the "Needs Improvement" threshold, regardless of how strong the rest of
+              your application is. This reflects how a recruiter actually screens, a single missing
+              must-have can rule an application out even when everything else looks good.
             </p>
           </div>
         </Container>
@@ -301,6 +327,7 @@ export function HowInterviewScoreWorksPage() {
                 Learn about the Application Checker
               </Link>
             </div>
+            <p className="text-xs font-medium text-text-secondary">First check free. No card required.</p>
           </div>
         </Container>
       </section>

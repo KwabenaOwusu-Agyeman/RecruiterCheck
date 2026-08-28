@@ -24,6 +24,7 @@ export type AnalyticsEventType =
   | 'trustpilot_footer_clicked'
   | 'trustpilot_results_clicked'
   | 'pricing_viewed'
+  | 'testimonial_submitted'
 
 export type DomainCategory = 'linkedin' | 'indeed' | 'greenhouse' | 'lever' | 'workday' | 'other'
 
