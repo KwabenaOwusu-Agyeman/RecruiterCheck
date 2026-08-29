@@ -62,20 +62,32 @@ function VerdictExample() {
 
 export function LlmComparisonSection() {
   return (
-    <section className="border-b border-border bg-background">
-      <Container className="py-[48px] sm:py-[64px] lg:py-[88px]">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue sm:text-sm">
-            Why not just use ChatGPT?
-          </p>
-          <h2 className="mt-3 text-balance font-display text-[22px] leading-[1.3] text-text-secondary sm:text-[28px] lg:text-[36px] lg:leading-[1.25]">
-            You could build the prompt yourself.
-            <br className="hidden sm:block" />{' '}
-            <span className="font-semibold text-navy">We built the application check for you.</span>
-          </h2>
-        </div>
+    <section className="border-b border-border">
+      {/* A compact navy hero opens the section on its own: "US vs ChatGPT"
+          as the eyebrow, the specialisation claim as the one thing a visitor
+          needs to read, done as plain heading text (never a pill/card) so it
+          carries the section rather than decorating it. No prompting-explainer
+          headline here — the READY TO USE row below already makes that case,
+          and stacking a second explanation on top of it would just repeat
+          the argument the comparison is about to make visually. */}
+      <div className="bg-navy">
+        <Container className="py-[32px] sm:py-[40px] lg:py-[56px]">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-light sm:text-sm">
+              US vs ChatGPT
+            </p>
+            <h2 className="mt-3 text-balance font-display text-[24px] text-white sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
+              Built specifically for AI, data and tech roles.
+            </h2>
+            <p className="mx-auto mt-3 max-w-lg text-sm text-white/70 sm:text-base">
+              A consistent application check with an Interview Score and Recruiter Verdict.
+            </p>
+          </div>
+        </Container>
+      </div>
 
-        <div className="mx-auto mt-8 max-w-[940px] overflow-hidden rounded-[20px] border border-border-soft bg-surface shadow-card sm:mt-9">
+      <Container className="pb-[48px] pt-[32px] sm:pb-[64px] sm:pt-[36px] lg:pb-[88px] lg:pt-[40px]">
+        <div className="mx-auto max-w-[940px] overflow-hidden rounded-[20px] border border-border-soft bg-surface shadow-card">
           {/* Column headings, once, above the rows — below lg every row
               carries its own inline labels instead (see the per-cell
               headings), so the surface never repeats itself as a table. */}
