@@ -44,15 +44,18 @@ export function LandingPage() {
   return (
     <>
       <HeroSection />
-      {/* The order is the argument: the hero hooks, then Us vs ChatGPT
-          kills the free-alternative objection while attention is highest,
-          then the process, then the honest-verdict trio proving the matrix's
-          "not a yes man" row, then breadth, outputs and retention. */}
-      <Reveal>
-        <LlmComparisonSection />
-      </Reveal>
+      {/* The order is the argument: the hero hooks, then How it works says
+          what the product actually is, then Us vs ChatGPT kills the free
+          alternative — a comparison only means something once the reader
+          knows what "us" is, so the mechanism comes first and every matrix
+          row lands as checkable rather than abstract. Then the
+          honest-verdict trio proves the matrix's "not a yes man" row, then
+          breadth, outputs and retention. */}
       <Reveal>
         <HowItWorksSection />
+      </Reveal>
+      <Reveal>
+        <LlmComparisonSection />
       </Reveal>
       <Reveal>
         <RoleFeedbackShowcase />
