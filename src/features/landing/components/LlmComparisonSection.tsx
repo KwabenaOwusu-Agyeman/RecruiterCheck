@@ -1,25 +1,54 @@
 import { Check, X } from 'lucide-react'
-import { Card, CardContent, CardHeader } from '@/components/ui/Card'
+import { Card } from '@/components/ui/Card'
 import { Container } from '@/components/ui/Container'
 import { SectionCta } from '@/features/landing/components/SectionCta'
-import { GlowCard } from '@/components/ui/GlowCard'
+import { cn } from '@/utils/cn'
 
-// Short, scannable phrases only — this section exists to be read in about
-// 10 seconds, not to make the full case (that's what
-// /myrecruitercheck-vs-chatgpt is for, linked below).
-const ROWS = [
-  'Same structured verdict every time',
-  'Recruiter style evidence framework, not a one off opinion',
-  'Real CV, cover letter & message you can download',
-  'Every check saved and tracked',
+/**
+ * A feature matrix instead of two side-by-side lists. In the old two-card
+ * layout each side carried differently worded sentences, so nothing lined
+ * up and no claim was checkable head to head. Here every row is one
+ * criterion judged for both columns — and two rows go to AI chat honestly,
+ * which is what makes the rows that go our way believable. One combined
+ * "AI chat" column, not one per chatbot: the products do not differ on
+ * these criteria, and a third column would not survive a phone screen.
+ *
+ * Every row is a current product truth: structured verdict, the three
+ * factor score, generated documents, the dashboard. Nothing here claims
+ * calibration studies or ATS parity we cannot evidence.
+ */
+interface MatrixRow {
+  label: string
+  chat: boolean
+  mrc: boolean
+}
+
+/**
+ * Five rows, written for a five second scan: a visitor gives this section
+ * one pass, so every label is a handful of plain words. Four go our way,
+ * one goes to chat honestly — the row we concede is what makes the four we
+ * claim believable.
+ */
+const ROWS: MatrixRow[] = [
+  { label: 'Same verdict every time', chat: false, mrc: true },
+  { label: 'A score for your exact job', chat: false, mrc: true },
+  { label: 'CV, cover letter and message, ready to send', chat: false, mrc: true },
+  { label: 'Every check saved and tracked', chat: false, mrc: true },
+  { label: 'Free unlimited chat', chat: true, mrc: false },
 ]
 
-const THEM_ROWS = [
-  'A different answer depending how you ask',
-  'A generic AI opinion',
-  'Chat text you reformat yourself',
-  'No consistent scoring framework',
-]
+function Verdict({ yes }: { yes: boolean }) {
+  return (
+    <span className="flex items-center justify-center">
+      {yes ? (
+        <Check className="h-[20px] w-[20px] text-success" strokeWidth={2} aria-hidden="true" />
+      ) : (
+        <X className="h-[18px] w-[18px] text-error/60" strokeWidth={2} aria-hidden="true" />
+      )}
+      <span className="sr-only">{yes ? 'Yes' : 'No'}</span>
+    </span>
+  )
+}
 
 export function LlmComparisonSection() {
   return (
@@ -37,43 +66,47 @@ export function LlmComparisonSection() {
           </p>
         </div>
 
-        <div className="mx-auto mt-7 grid max-w-[1000px] gap-5 sm:mt-8 sm:grid-cols-2 sm:gap-6">
-          <GlowCard className="h-full">
-            <Card tone="dark" className="h-full overflow-hidden">
-              <CardHeader tone="dark" className="px-7 py-5">
-                <h3 className="text-lg font-semibold text-white">MyRecruiterCheck</h3>
-              </CardHeader>
-              <CardContent className="px-7 py-6">
-                <ul className="space-y-4">
-                  {ROWS.map((row) => (
-                    <li key={row} className="flex items-start gap-3">
-                      <Check className="mt-[3px] h-[16px] w-[16px] shrink-0 text-success" aria-hidden="true" />
-                      <span className="text-[15px] leading-relaxed text-white/90">{row}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          </GlowCard>
+        <Card className="mx-auto mt-7 max-w-[860px] overflow-hidden sm:mt-8">
+          {/* Header row. On phones the product column abbreviates to MRC —
+              the full name sits in the heading directly above, so the
+              shorthand cannot be misread. */}
+          <div className="grid grid-cols-[1fr_60px_64px] items-center border-b border-border bg-background px-4 py-3 sm:grid-cols-[1fr_120px_170px] sm:px-6">
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-text-caption">
+              What you get
+            </span>
+            <span className="text-center text-xs font-semibold text-text-secondary sm:text-sm">
+              AI chat
+            </span>
+            <span className="mx-auto rounded-full bg-blue px-2.5 py-1 text-center text-xs font-semibold text-white sm:px-4 sm:text-sm">
+              <span className="sm:hidden">MRC</span>
+              <span className="hidden sm:inline">MyRecruiterCheck</span>
+            </span>
+          </div>
 
-          <Card tone="muted" className="overflow-hidden">
-            <CardHeader className="px-7 py-5">
-              <h3 className="text-lg font-semibold text-text-primary">ChatGPT, Gemini &amp; other AI chat</h3>
-            </CardHeader>
-            <CardContent className="px-7 py-6">
-              <ul className="space-y-4">
-                {THEM_ROWS.map((row) => (
-                  <li key={row} className="flex items-start gap-3">
-                    <X className="mt-[3px] h-[16px] w-[16px] shrink-0 text-error" aria-hidden="true" />
-                    <span className="text-[15px] leading-relaxed text-text-secondary">{row}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
+          {ROWS.map((row, index) => (
+            <div
+              key={row.label}
+              className={cn(
+                'grid grid-cols-[1fr_60px_64px] items-center px-4 py-4 sm:grid-cols-[1fr_120px_170px] sm:px-6',
+                index < ROWS.length - 1 && 'border-b border-border',
+              )}
+            >
+              <span className="pr-3 text-[15px] font-medium leading-snug text-text-primary sm:text-base">
+                {row.label}
+              </span>
+              <Verdict yes={row.chat} />
+              <span className="bg-navy-tint/50 py-2">
+                <Verdict yes={row.mrc} />
+              </span>
+            </div>
+          ))}
+        </Card>
 
-        <SectionCta secondaryTo="/myrecruitercheck-vs-chatgpt" secondaryLabel="See the full comparison" />
+        <SectionCta
+          secondaryTo="/myrecruitercheck-vs-chatgpt"
+          secondaryLabel="See the full comparison"
+          primary={false}
+        />
       </Container>
     </section>
   )

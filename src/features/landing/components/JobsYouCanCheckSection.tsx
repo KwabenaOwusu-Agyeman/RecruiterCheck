@@ -29,14 +29,24 @@ import { prefersReducedMotion } from '@/utils/prefersReducedMotion'
 const ROLES = [
   'Data Analyst, Entry Level',
   'AI Engineer',
+  'NLP Engineer',
   'Graduate Software Engineer',
+  'Computer Vision Engineer',
   'Junior Data Scientist',
+  'LLM Engineer',
   'Machine Learning Engineer',
+  'Prompt Engineer',
   'Backend Engineer',
+  'Deep Learning Engineer',
   'Data Engineer',
+  'Generative AI Engineer',
   'MLOps Engineer',
+  'AI Research Engineer',
   'QA Test Engineer',
+  'AI Solutions Engineer',
   'Analytics Engineer',
+  'Applied Scientist',
+  'ML Platform Engineer',
 ]
 
 const CHIP_TINTS = [
