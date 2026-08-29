@@ -9,9 +9,10 @@ const TIER_LABEL: Record<RoleExampleTier, string> = {
   'not-a-fit': 'Not a Fit',
 }
 
-const TEXT_TONE: Record<'light' | 'dark' | 'muted', 'light' | 'dark'> = {
+const TEXT_TONE: Record<'light' | 'dark' | 'ink' | 'muted', 'light' | 'dark'> = {
   light: 'light',
   dark: 'dark',
+  ink: 'dark',
   muted: 'light',
 }
 
@@ -23,8 +24,8 @@ const TIER_BAR: Record<RoleExampleTier, string> = {
 
 interface VerdictCardProps {
   example: RoleExample
-  /** Card ground. The tier sections use dark/muted to show the range of outcomes. */
-  tone?: 'light' | 'dark' | 'muted'
+  /** Card ground. The tier trio uses light/dark/ink to darken as the verdict worsens. */
+  tone?: 'light' | 'dark' | 'ink' | 'muted'
   /** One strength and one improvement instead of the full lists. */
   compact?: boolean
   /** Force a single column (for side-by-side tier cards); default is 2 columns from lg up. */

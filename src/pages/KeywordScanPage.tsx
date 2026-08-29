@@ -4,13 +4,23 @@ import { Alert } from '@/components/ui/Alert'
 import { BackLink } from '@/components/ui/BackLink'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import {
+  ACCEPTED_CV_TYPES,
+  ACCEPTED_JOB_FILE_TYPES,
+} from '@/lib/constants'
 import { FileDropzone } from '@/components/ui/FileDropzone'
+import { Input } from '@/components/ui/Input'
+import { Label } from '@/components/ui/Label'
+import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { PageHeader } from '@/components/ui/Badge'
 import { Textarea } from '@/components/ui/Textarea'
 import { useAuth } from '@/hooks/useAuth'
 import { usePageMeta } from '@/hooks/usePageMeta'
 import { trackEvent } from '@/lib/analytics'
-import { runKeywordScan } from '@/services/checkService'
+import { runKeywordScan,
+  extractJobDescriptionFromFile,
+  extractJobDescriptionFromUrl,
+} from '@/services/checkService'
 import type { KeywordScanResult } from '@/types'
 
 const FREE_SCAN_LIMIT = 3
@@ -96,7 +106,14 @@ export function KeywordScanPage() {
 
   const { profile } = useAuth()
   const [cvFile, setCvFile] = useState<File | null>(null)
+  const [cvInputMode, setCvInputMode] = useState<'file' | 'paste'>('file')
+  const [cvPastedText, setCvPastedText] = useState('')
   const [jobDescription, setJobDescription] = useState('')
+  const [jobInputMode, setJobInputMode] = useState<'paste' | 'url' | 'upload'>('paste')
+  const [jobUrl, setJobUrl] = useState('')
+  const [jobFileName, setJobFileName] = useState<string | null>(null)
+  const [extractingJob, setExtractingJob] = useState(false)
+  const [jobExtractError, setJobExtractError] = useState<string | null>(null)
   const [scanning, setScanning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<KeywordScanResult | null>(null)
@@ -105,15 +122,61 @@ export function KeywordScanPage() {
   const hasBalance = (profile?.checks_balance ?? 0) > 0
   const scansLeft = Math.max(FREE_SCAN_LIMIT - scansUsed, 0)
 
+  const PASTED_CV_FILE_NAME = 'cv.txt'
+  const MIN_PASTED_CV_LENGTH = 50
+
+  // A pasted CV is wrapped into a text File so runKeywordScan keeps its
+  // single File signature — the same shape NewCheckPage uses for its own
+  // paste path, and the scan edge function already accepts text/plain.
+  function resolveCvFile(): File | null {
+    if (cvInputMode === 'file') return cvFile
+    const text = cvPastedText.trim()
+    if (text.length < MIN_PASTED_CV_LENGTH) return null
+    return new File([text], PASTED_CV_FILE_NAME, { type: 'text/plain' })
+  }
+
+  async function handleExtractJobUrl() {
+    const url = jobUrl.trim()
+    if (!url) return
+    setExtractingJob(true)
+    setJobExtractError(null)
+    try {
+      const text = await extractJobDescriptionFromUrl(url)
+      setJobDescription(text)
+      trackEvent('keyword_scan_job_url_extracted')
+    } catch (err) {
+      setJobExtractError(err instanceof Error ? err.message : 'Could not read that job posting')
+    } finally {
+      setExtractingJob(false)
+    }
+  }
+
+  async function handleJobFile(file: File) {
+    setExtractingJob(true)
+    setJobExtractError(null)
+    setJobFileName(file.name)
+    try {
+      const text = await extractJobDescriptionFromFile(file)
+      setJobDescription(text)
+      trackEvent('keyword_scan_job_file_extracted')
+    } catch (err) {
+      setJobExtractError(err instanceof Error ? err.message : 'Could not read that file')
+      setJobFileName(null)
+    } finally {
+      setExtractingJob(false)
+    }
+  }
+
   async function handleScan() {
-    if (!cvFile || jobDescription.trim().length < 50) return
+    const cv = resolveCvFile()
+    if (!cv || jobDescription.trim().length < 50) return
 
     setScanning(true)
     setError(null)
     setResult(null)
 
     try {
-      const scanResult = await runKeywordScan(cvFile, jobDescription)
+      const scanResult = await runKeywordScan(cv, jobDescription)
       setResult(scanResult)
       trackEvent('keyword_scan_completed')
     } catch (err) {
@@ -123,7 +186,7 @@ export function KeywordScanPage() {
     }
   }
 
-  const canScan = Boolean(cvFile) && jobDescription.trim().length >= 50
+  const canScan = Boolean(resolveCvFile()) && jobDescription.trim().length >= 50
 
   return (
     <>
@@ -142,22 +205,130 @@ export function KeywordScanPage() {
       {!result ? (
         <Card className="mx-auto mt-4 max-w-xl p-4 sm:p-6">
           <div className="space-y-4">
-            <FileDropzone
-              id="scan-cv"
-              accept=".pdf,.docx"
-              fileName={cvFile?.name ?? null}
-              title="Upload your CV"
-              helperText={<p>PDF or DOCX &middot; Maximum 10 MB &middot; Not saved anywhere</p>}
-              onFileSelected={setCvFile}
-              onRemove={() => setCvFile(null)}
-            />
+            {/* Same input choices as a real check: a free scan that only
+                accepts an uploaded CV and pasted text turns away anyone
+                holding a PDF job posting or a CV they would rather paste. */}
             <div>
-              <Textarea
-                id="scan-job-description"
-                value={jobDescription}
-                onChange={(event) => setJobDescription(event.target.value)}
-                placeholder="Paste the job description here..."
-              />
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <Label htmlFor={cvInputMode === 'file' ? 'scan-cv' : 'scan-cv-text'}>Your CV</Label>
+                <SegmentedControl
+                  aria-label="CV input method"
+                  options={[
+                    { value: 'file', label: 'Upload' },
+                    { value: 'paste', label: 'Paste' },
+                  ]}
+                  value={cvInputMode}
+                  onChange={setCvInputMode}
+                />
+              </div>
+              {cvInputMode === 'file' ? (
+                <FileDropzone
+                  id="scan-cv"
+                  accept={ACCEPTED_CV_TYPES.join(',')}
+                  fileName={cvFile?.name ?? null}
+                  title="Upload your CV"
+                  helperText={<p>PDF or DOCX &middot; Maximum 10 MB &middot; Not saved anywhere</p>}
+                  onFileSelected={setCvFile}
+                  onRemove={() => setCvFile(null)}
+                />
+              ) : (
+                <Textarea
+                  id="scan-cv-text"
+                  value={cvPastedText}
+                  onChange={(event) => setCvPastedText(event.target.value)}
+                  placeholder="Paste your CV text here..."
+                />
+              )}
+            </div>
+
+            <div>
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <Label
+                  htmlFor={
+                    jobInputMode === 'paste'
+                      ? 'scan-job-description'
+                      : jobInputMode === 'url'
+                        ? 'scan-job-url'
+                        : 'scan-job-file'
+                  }
+                >
+                  Job description
+                </Label>
+                <SegmentedControl
+                  aria-label="Job description input method"
+                  options={[
+                    { value: 'paste', label: 'Paste' },
+                    { value: 'url', label: 'URL' },
+                    { value: 'upload', label: 'Upload' },
+                  ]}
+                  value={jobInputMode}
+                  onChange={setJobInputMode}
+                />
+              </div>
+
+              {jobInputMode === 'paste' ? (
+                <Textarea
+                  id="scan-job-description"
+                  value={jobDescription}
+                  onChange={(event) => setJobDescription(event.target.value)}
+                  placeholder="Paste the job description here..."
+                />
+              ) : jobInputMode === 'url' ? (
+                <div className="flex gap-2">
+                  <Input
+                    id="scan-job-url"
+                    type="url"
+                    value={jobUrl}
+                    disabled={extractingJob}
+                    onChange={(event) => setJobUrl(event.target.value)}
+                    placeholder="https://company.com/careers/job-posting"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="shrink-0"
+                    disabled={!jobUrl.trim() || extractingJob}
+                    onClick={() => void handleExtractJobUrl()}
+                  >
+                    {extractingJob ? 'Reading...' : 'Get'}
+                  </Button>
+                </div>
+              ) : (
+                <FileDropzone
+                  id="scan-job-file"
+                  accept={ACCEPTED_JOB_FILE_TYPES.join(',')}
+                  busy={extractingJob}
+                  busyLabel="Reading..."
+                  fileName={jobFileName}
+                  title="Upload the job description"
+                  helperText={<p>PDF, DOCX or TXT &middot; Maximum 10 MB &middot; Not saved anywhere</p>}
+                  onFileSelected={(file) => void handleJobFile(file)}
+                  onRemove={() => {
+                    setJobFileName(null)
+                    setJobDescription('')
+                  }}
+                />
+              )}
+
+              {jobExtractError ? (
+                <Alert variant="error" className="mt-3">
+                  {jobExtractError}
+                </Alert>
+              ) : null}
+
+              {/* Extracted text is shown, not hidden: a URL or file the
+                  parser misread should be visible and fixable before the
+                  scan runs. */}
+              {jobInputMode !== 'paste' && jobDescription ? (
+                <Textarea
+                  id="scan-job-extracted"
+                  className="mt-3"
+                  value={jobDescription}
+                  onChange={(event) => setJobDescription(event.target.value)}
+                />
+              ) : null}
             </div>
 
             {error ? <Alert variant="error">{error}</Alert> : null}

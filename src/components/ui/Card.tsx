@@ -11,6 +11,7 @@ type CardTone =
   | 'light'
   | 'seamless'
   | 'dark'
+  | 'ink'
   | 'muted'
   | 'nested'
   | 'nested-light'
@@ -32,6 +33,10 @@ const cardToneStyles: Record<CardTone, string> = {
   // ground, bold outline. Used by the testimonial cards.
   seamless: 'border-border-strong bg-background shadow-elevated ring-1 ring-border-strong',
   dark: 'border-white/20 bg-navy shadow-elevated',
+  // True near-black, one step past navy. Used by the verdict trio so the
+  // three outcomes darken white -> navy -> black; beige sat too close to
+  // the cream page ground to register as a step at all.
+  ink: 'border-white/15 bg-[#0B0D14] shadow-elevated',
   muted: 'border-border-strong bg-border-soft shadow-card',
   nested: 'border-white/10 bg-white/[0.04] shadow-card',
   'nested-light': 'border-border bg-background shadow-card',

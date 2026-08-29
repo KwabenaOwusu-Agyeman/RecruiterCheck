@@ -21,6 +21,8 @@ export type AnalyticsEventType =
   | 'check_sentiment_positive'
   | 'check_sentiment_negative'
   | 'keyword_scan_completed'
+  | 'keyword_scan_job_url_extracted'
+  | 'keyword_scan_job_file_extracted'
   | 'trustpilot_footer_clicked'
   | 'trustpilot_results_clicked'
   | 'pricing_viewed'
