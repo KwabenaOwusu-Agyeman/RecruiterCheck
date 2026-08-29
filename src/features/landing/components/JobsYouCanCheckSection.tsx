@@ -21,7 +21,8 @@ import { prefersReducedMotion } from '@/utils/prefersReducedMotion'
  * monday.com chip-row logic) while the rest of the page keeps its
  * single-accent discipline. The pastels are section-local on purpose —
  * decorative variety, not semantic colour. The page ground stays cream; the
- * navy is an object on it, bookending the closing card.
+ * brand-blue card is an object on it (the owner's call over navy: livelier,
+ * and the pastels separate harder against it).
  *
  * Deliberately no company names anywhere on this section.
  */
@@ -77,7 +78,7 @@ export function JobsYouCanCheckSection() {
   return (
     <section className="border-b border-border bg-background">
       <Container className="py-[48px] sm:py-14 lg:py-[80px]">
-        <div className="relative overflow-hidden rounded-[20px] bg-navy px-5 py-9 shadow-elevated sm:px-8 sm:py-11 lg:py-[52px]">
+        <div className="relative overflow-hidden rounded-[20px] bg-blue px-5 py-9 shadow-elevated sm:px-8 sm:py-11 lg:py-[52px]">
           {/* The hero's quiet texture family: dot grid and a soft light wash,
               the same layers the closing card carries. */}
           <div
@@ -90,7 +91,7 @@ export function JobsYouCanCheckSection() {
           />
 
           <div className="relative mx-auto max-w-2xl text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-light sm:text-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/80 sm:text-sm">
               Jobs we check
             </p>
             <h2 className="mt-2 font-display text-[24px] text-white sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
@@ -104,7 +105,7 @@ export function JobsYouCanCheckSection() {
           {/* Fixed height so a longer title in one trio never resizes the
               card; keyed by group so the cascade replays each cycle. */}
           <div
-            className="relative mx-auto mt-7 flex h-[156px] flex-col items-center justify-center gap-2.5 sm:mt-8 sm:h-[168px] sm:gap-3"
+            className="relative mx-auto mt-7 flex h-[176px] flex-col items-center justify-center gap-3 sm:mt-8 sm:h-[188px] sm:gap-3"
             onMouseEnter={() => setPaused(true)}
             onMouseLeave={() => setPaused(false)}
             key={reduced ? 'static' : group}
@@ -113,7 +114,7 @@ export function JobsYouCanCheckSection() {
               <span
                 key={role}
                 className={cn(
-                  'flex h-10 w-fit items-center whitespace-nowrap rounded-full px-5 text-sm font-semibold text-navy sm:h-11 sm:px-6 sm:text-[15px]',
+                  'flex h-12 w-fit items-center whitespace-nowrap rounded-full px-6 text-base font-semibold text-navy sm:h-[52px] sm:px-7 sm:text-lg',
                   tint,
                   CHIP_TILT[index],
                   !reduced && 'animate-row-fade-in-up',
@@ -131,7 +132,7 @@ export function JobsYouCanCheckSection() {
             </Button>
             <Link
               to="/free-cv-checker"
-              className="text-base font-medium text-blue-light underline-offset-4 transition-colors hover:text-white hover:underline"
+              className="text-base font-medium text-white/90 underline-offset-4 transition-colors hover:text-white hover:underline"
             >
               Try the free CV checker
             </Link>
