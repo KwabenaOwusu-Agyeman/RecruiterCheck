@@ -34,7 +34,7 @@ export function RoleFeedbackShowcase() {
 
   return (
     <section id="example" className="scroll-mt-[88px] border-b border-border bg-background">
-      <Container className="py-[56px] sm:py-16 lg:py-[112px]">
+      <Container className="py-[48px] sm:py-[64px] lg:py-[88px]">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue sm:text-sm">
             The full range of verdicts

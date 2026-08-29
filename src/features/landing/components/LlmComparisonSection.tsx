@@ -58,7 +58,7 @@ function Verdict({ yes }: { yes: boolean }) {
 export function LlmComparisonSection() {
   return (
     <section className="border-b border-border bg-background">
-      <Container className="py-[56px] sm:py-16 lg:py-[112px]">
+      <Container className="py-[48px] sm:py-[64px] lg:py-[88px]">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue sm:text-sm">
             The difference

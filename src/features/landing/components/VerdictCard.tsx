@@ -93,7 +93,7 @@ export function VerdictCard({ example, tone = 'light', compact = false, stacked 
                 : 'border-border-strong bg-surface/80 text-text-secondary',
             )}
           >
-            Example result
+            Example
           </span>
           <p className={cn('text-sm font-semibold', isDarkText ? 'text-white' : 'text-text-primary')}>
             {example.role}

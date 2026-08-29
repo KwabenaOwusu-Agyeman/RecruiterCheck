@@ -27,7 +27,7 @@ export function HeroSection() {
       <Container className="relative pb-[40px] pt-[40px] sm:pt-8 lg:pb-7 lg:pt-[80px]">
         <div className="mx-auto max-w-2xl text-center lg:max-w-[900px]">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue sm:text-sm">
-            Think like a recruiter
+            Think like a recruiter before you apply
           </p>
           <h1 className="font-display mt-3 text-balance text-[40px] leading-[1.12] text-text-primary sm:text-5xl lg:text-[60px] lg:leading-[1.08]">
             If you were the{' '}

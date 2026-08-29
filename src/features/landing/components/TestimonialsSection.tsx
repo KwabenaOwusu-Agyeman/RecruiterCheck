@@ -75,7 +75,7 @@ export function TestimonialsSection({ compact = false }: { compact?: boolean } =
 
   return (
     <section className="border-b border-border bg-background">
-      <Container className={compact ? 'py-6 sm:py-8' : 'py-[56px] sm:py-16 lg:py-[112px]'}>
+      <Container className={compact ? 'py-6 sm:py-8' : 'py-[48px] sm:py-[64px] lg:py-[88px]'}>
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue sm:text-sm">Job seeker stories</p>
           <h2 className="mt-2 font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
