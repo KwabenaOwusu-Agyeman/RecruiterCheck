@@ -67,7 +67,7 @@ export function HeroSection() {
                 with a dot separator from sm up; the dot itself is bound to
                 the second phrase so it can never wrap onto its own line. */}
             <p className="mx-auto mt-4 flex max-w-xs flex-col items-center gap-0.5 text-center text-sm font-bold uppercase tracking-[0.04em] text-navy sm:max-w-none sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-center sm:gap-x-2 sm:text-base lg:mx-0 lg:justify-start lg:text-left">
-              <span>For AI/ML, data &amp; tech roles</span>
+              <span>For AI/ML, data &amp; tech</span>
               <span>
                 <span className="hidden text-blue sm:inline" aria-hidden="true">
                   &middot;{' '}

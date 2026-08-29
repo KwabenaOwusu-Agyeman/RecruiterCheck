@@ -90,6 +90,17 @@ interface ScoreLockupProps {
   size?: 'lg' | 'sm'
   /** Adds the labelled weighted-framework row under the gauge. */
   showFramework?: boolean
+  /**
+   * Adds "How your CV matches this job" under the numeral. Opt-in, and
+   * deliberately used on ONE surface: the first Interview Score a visitor
+   * meets on the homepage (the hero preview). "Interview Score" is a brand
+   * term, and on first sight it can be misread as interview performance, as
+   * a probability of being invited, or as a generic CV rating — this line
+   * rules all three out. Once that meaning has landed, later scores on the
+   * page are just "Interview Score"; repeating the gloss at every occurrence
+   * would turn a teaching line into noise.
+   */
+  showScoreMeaning?: boolean
   /** Keying the fill replays the sweep when the example changes. */
   animationKey?: string
   className?: string
@@ -101,6 +112,7 @@ export function ScoreLockup({
   tone = 'light',
   size = 'lg',
   showFramework = false,
+  showScoreMeaning = false,
   animationKey,
   className,
 }: ScoreLockupProps) {
@@ -130,8 +142,19 @@ export function ScoreLockup({
         </span>
       </p>
 
+      {showScoreMeaning ? (
+        <p
+          className={cn(
+            'mt-[5px] text-[11px] leading-snug',
+            isDark ? 'text-white/70' : 'text-text-secondary',
+          )}
+        >
+          How your CV matches this job
+        </p>
+      ) : null}
+
       {size === 'lg' ? (
-        <p className="mt-[10px]">
+        <p className={cn(showScoreMeaning ? 'mt-[8px]' : 'mt-[10px]')}>
           <span
             className={cn(
               'inline-flex items-center gap-[8px] rounded-full px-[12px] py-[5px] text-[13px] font-semibold leading-none',

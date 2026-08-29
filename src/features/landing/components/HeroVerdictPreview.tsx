@@ -63,6 +63,7 @@ export function HeroVerdictPreview() {
           scoreWidthClass={example.scoreWidthClass}
           tone="dark"
           showFramework
+          showScoreMeaning
         />
 
         <div className="mt-[14px] grid gap-[10px] border-t border-white/10 pt-[12px]">
