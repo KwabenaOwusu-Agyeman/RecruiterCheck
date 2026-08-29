@@ -64,7 +64,7 @@ export function LlmComparisonSection() {
             The difference
           </p>
           <h2 className="mt-2 font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
-            Why not just use ChatGPT?
+            Us vs ChatGPT
           </h2>
           <p className="mt-3 text-base text-text-secondary sm:text-lg">
             You can paste your CV into ChatGPT for free. Here's the difference.
