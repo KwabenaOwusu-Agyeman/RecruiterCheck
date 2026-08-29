@@ -48,15 +48,14 @@ export function HeroSection() {
             <p className="mx-auto mt-4 max-w-[600px] text-base leading-relaxed text-text-secondary sm:text-lg lg:mx-0">
               See how a recruiter would score your CV against the job you want, before you apply.
             </p>
-            {/* The scoring basis, stated next to the word "score" rather than
-                anywhere else on the page: one line that turns the number from
-                "an AI's opinion" into a structured evaluation. Smaller and
-                quieter than the subheadline so the two grey lines read as
-                statement and footnote, not one paragraph. */}
-            <p className="mx-auto mt-2 max-w-[600px] text-[13px] font-medium text-text-secondary/80 sm:text-sm lg:mx-0">
-              Scored on experience, required skills and candidate value.
-            </p>
-
+            {/* No "Scored on experience, required skills and candidate value."
+                line here any more. The preview card beside it now labels the
+                same three dimensions under "What we assess" (they used to
+                differ: the card carried the 40/35/25 weights until those were
+                pulled from public view), so at lg the two sat side by side
+                saying the identical thing, and below lg the line only pushed
+                the CTA further down the phone. The card owns the scoring
+                basis; the headline column owns the hook. */}
             {/* The USP gets its own object rather than trailing the sentence
                 above: this line answers "is this built for me?", which is the
                 question a new visitor decides on. A plain typographic
