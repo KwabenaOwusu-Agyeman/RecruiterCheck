@@ -36,6 +36,7 @@ interface MatrixRow {
  */
 const ROWS: MatrixRow[] = [
   { label: 'Same verdict every time', chat: false, mrc: true },
+  { label: 'Not a yes man', chat: false, mrc: true },
   { label: 'A score for your exact job', chat: false, mrc: true },
   { label: 'No prompts to write', chat: false, mrc: true },
   { label: 'Every check saved and tracked', chat: false, mrc: true },
