@@ -47,20 +47,20 @@ interface ComparisonRow {
   label: string
   chatgpt: string
   /**
-   * false for the one row ChatGPT wins — its MyRecruiterCheck value drops to
-   * regular weight so "NO" reads as a plain fact rather than a claim. Colour
-   * is not used to concede: both columns stay at full contrast.
+   * Empty string renders the Interview Score example instead of a sentence.
+   * Note there is no de-emphasis flag: the row ChatGPT wins is set in the
+   * same white and the same weight as the three that go our way. Conceding
+   * quietly would look like hiding it — stating "NO" as plainly as
+   * "CV + job. That's it." is what makes the other three credible.
    */
-  mrcEmphasis: boolean
-  /** Empty string renders the Interview Score example instead of a sentence. */
   mrc: string
 }
 
 const ROWS: ComparisonRow[] = [
-  { label: 'Ready to use', chatgpt: 'You decide what to ask', mrcEmphasis: true, mrc: "CV + job. That's it." },
-  { label: 'Consistent check', chatgpt: 'Depends on your instructions', mrcEmphasis: true, mrc: 'Same recruiter framework every time' },
-  { label: 'Clear verdict', chatgpt: 'Open ended response', mrcEmphasis: true, mrc: '' },
-  { label: 'Unlimited chat', chatgpt: 'YES', mrcEmphasis: false, mrc: 'NO' },
+  { label: 'Ready to use', chatgpt: 'You decide what to ask', mrc: "CV + job. That's it." },
+  { label: 'Consistent check', chatgpt: 'Depends on your instructions', mrc: 'Same recruiter framework every time' },
+  { label: 'Clear verdict', chatgpt: 'Open ended response', mrc: '' },
+  { label: 'Unlimited chat', chatgpt: 'YES', mrc: 'NO' },
 ]
 
 // Column padding in one place so the three columns stay on one baseline
@@ -68,7 +68,13 @@ const ROWS: ComparisonRow[] = [
 // padding must not also do that job.
 const VALUE_CELL = 'px-[16px] py-[9px] sm:px-[20px] md:flex md:flex-col md:justify-center md:px-[24px] md:py-[15px]'
 const LABEL_CELL = 'bg-background px-[16px] py-[7px] sm:px-[20px] md:flex md:flex-col md:justify-center md:px-[24px] md:py-[15px]'
-const HEADING_CELL = 'hidden text-[14px] font-bold sm:text-[15px] md:block md:border-b md:px-[24px] md:py-[14px] lg:text-[16px]'
+const HEADING_CELL = 'hidden md:block md:border-b md:px-[24px] md:py-[12px]'
+// The two products are what the reader is comparing, so they carry the
+// column heading weight. "What you get" is a structural label for the rail
+// beneath it, not a third competitor — smaller, and in the secondary ink so
+// it recedes behind the two names without losing legibility.
+const HEADING_PRODUCT = 'font-bold leading-tight md:text-[17px] lg:text-[19px]'
+const HEADING_STRUCTURAL = 'font-bold uppercase leading-tight tracking-[0.08em] text-text-secondary md:text-[13px] lg:text-[14px]'
 // The repeated per-row column labels on the stacked layout — same names as
 // the desktop headers, small enough to stay out of the answer's way.
 const STACK_LABEL = 'text-[11px] font-bold tracking-[0.02em] md:hidden'
@@ -112,7 +118,7 @@ function VerdictExample() {
 export function LlmComparisonSection() {
   return (
     <section className="border-b border-border bg-background">
-      <Container className="pb-[36px] pt-[32px] sm:pb-[44px] sm:pt-[40px] lg:pb-[64px] lg:pt-[56px]">
+      <Container className="pb-[36px] pt-[22px] sm:pb-[44px] sm:pt-[28px] lg:pb-[64px] lg:pt-[40px]">
         {/* The landing page's standard section header: the same eyebrow
             treatment and heading scale every other section uses (see
             DocumentShowcase / HowItWorksSection), so this section reads as
@@ -128,15 +134,19 @@ export function LlmComparisonSection() {
           </h2>
         </div>
 
-        <div className="mx-auto mt-[20px] max-w-[940px] overflow-hidden rounded-[16px] border border-border-soft shadow-card sm:mt-[24px] md:grid md:grid-cols-[180px_1fr_1fr] lg:mt-[28px] lg:grid-cols-[220px_1fr_1fr]">
+        <div className="mx-auto mt-[14px] max-w-[940px] overflow-hidden rounded-[16px] border border-border-soft shadow-card sm:mt-[16px] md:grid md:grid-cols-[180px_1fr_1fr] lg:mt-[18px] lg:grid-cols-[220px_1fr_1fr]">
           {/* Column headings, once, at the top of each column. Below md every
               value carries its own inline label instead, since the columns
               stack there and one header row could not reach them. */}
-          <div className={cn(HEADING_CELL, 'bg-background uppercase tracking-[0.08em] text-text-primary md:border-border')}>
+          <div className={cn(HEADING_CELL, HEADING_STRUCTURAL, 'bg-background md:border-border')}>
             What you get
           </div>
-          <div className={cn(HEADING_CELL, 'bg-white text-black md:border-black/10')}>ChatGPT</div>
-          <div className={cn(HEADING_CELL, 'bg-navy text-white md:border-white/10')}>MyRecruiterCheck</div>
+          <div className={cn(HEADING_CELL, HEADING_PRODUCT, 'bg-white text-black md:border-black/10')}>
+            ChatGPT
+          </div>
+          <div className={cn(HEADING_CELL, HEADING_PRODUCT, 'bg-navy text-white md:border-white/10')}>
+            MyRecruiterCheck
+          </div>
 
           {ROWS.map((row, index) => {
             const divider = index > 0
@@ -164,12 +174,7 @@ export function LlmComparisonSection() {
                     {row.mrc === '' ? (
                       <VerdictExample />
                     ) : (
-                      <p
-                        className={cn(
-                          'text-[15px] leading-snug text-white sm:text-base',
-                          row.mrcEmphasis && 'font-semibold',
-                        )}
-                      >
+                      <p className="text-[15px] font-semibold leading-snug text-white sm:text-base">
                         {row.mrc}
                       </p>
                     )}
