@@ -201,7 +201,9 @@ function MobileReviews({ testimonials }: { testimonials: Testimonial[] }) {
             <ChevronLeft className="h-[16px] w-[16px]" aria-hidden="true" />
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center">
+            {/* The dot stays 8px; the button around it is a 24px target so
+                the row remains tappable without growing visually. */}
             {testimonials.map((testimonial, dotIndex) => (
               <button
                 key={testimonial.displayName + dotIndex}
@@ -209,11 +211,15 @@ function MobileReviews({ testimonials }: { testimonials: Testimonial[] }) {
                 onClick={() => setIndex(dotIndex)}
                 aria-label={`Review ${dotIndex + 1} of ${total}`}
                 aria-current={dotIndex === index}
-                className={cn(
-                  'h-[8px] rounded-full transition-all',
-                  dotIndex === index ? 'w-[20px] bg-blue' : 'w-[8px] bg-border-strong',
-                )}
-              />
+                className="flex h-[24px] min-w-[24px] items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue"
+              >
+                <span
+                  className={cn(
+                    'h-[8px] rounded-full transition-all',
+                    dotIndex === index ? 'w-[20px] bg-blue' : 'w-[8px] bg-border-strong',
+                  )}
+                />
+              </button>
             ))}
           </div>
 

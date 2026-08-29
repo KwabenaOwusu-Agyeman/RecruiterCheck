@@ -1,25 +1,14 @@
 import { Card, CardContent } from '@/components/ui/Card'
-import { FeedbackBullet, getVerdictColor } from '@/components/feedback/FeedbackBullet'
-import { type RoleExample, type RoleExampleTier } from '@/features/landing/data/exampleCheck'
+import { FeedbackBullet } from '@/components/feedback/FeedbackBullet'
+import { ScoreLockup } from '@/components/feedback/ScoreLockup'
+import { type RoleExample } from '@/features/landing/data/exampleCheck'
 import { cn } from '@/utils/cn'
-
-const TIER_LABEL: Record<RoleExampleTier, string> = {
-  likely: 'Likely Interview Candidate',
-  improve: 'Needs Improvement',
-  'not-a-fit': 'Not a Fit',
-}
 
 const TEXT_TONE: Record<'light' | 'dark' | 'ink' | 'muted', 'light' | 'dark'> = {
   light: 'light',
   dark: 'dark',
   ink: 'dark',
   muted: 'light',
-}
-
-const TIER_BAR: Record<RoleExampleTier, string> = {
-  likely: 'bg-success',
-  improve: 'bg-warning',
-  'not-a-fit': 'bg-error-light',
 }
 
 interface VerdictCardProps {
@@ -102,47 +91,17 @@ export function VerdictCard({ example, tone = 'light', compact = false, stacked 
             {example.experience}
           </p>
 
-          <p
-            className={cn(
-              'mt-4 text-3xl font-semibold tracking-[-0.02em] sm:text-4xl',
-              isDarkText ? 'text-white' : 'text-text-primary',
-            )}
-          >
-            {example.score}%{' '}
-            <span
-              className={cn(
-                'text-base font-semibold sm:text-lg',
-                isDarkText ? 'text-white/65' : 'text-text-secondary',
-              )}
-            >
-              Interview Score
-            </span>
-          </p>
-          <p className={cn('mt-1 text-base font-semibold', getVerdictColor(example.score, textTone))}>
-            {TIER_LABEL[example.tier]}
-          </p>
-
-          {/* The score as a picture, not just a number. Width comes from the
-              per-example literal class (see scoreWidthClass); the sweep is a
-              compiled keyframe, keyed by example id so switching roles
-              replays it — no inline styles, which the CSP's style-src has no
-              allowance for. */}
-          <div
-            className={cn(
-              'mt-3 h-[6px] w-full overflow-hidden rounded-full',
-              isDarkText ? 'bg-white/15' : 'bg-border-soft',
-            )}
-            aria-hidden="true"
-          >
-            <div
-              key={example.id}
-              className={cn(
-                'h-full origin-left animate-grow-bar rounded-full',
-                example.scoreWidthClass,
-                TIER_BAR[example.tier],
-              )}
-            />
-          </div>
+          {/* The shared Interview Score lockup — Fraunces numeral, verdict
+              pill, tier-coloured gauge — identical to the hero preview and
+              the step mock so the signature recurs instead of being
+              restyled per surface. */}
+          <ScoreLockup
+            className="mt-4"
+            score={example.score}
+            scoreWidthClass={example.scoreWidthClass}
+            tone={textTone}
+            animationKey={example.id}
+          />
         </div>
 
         <div className={cn('mt-[16px] grid gap-[16px] sm:mt-5 sm:gap-5', !stacked && 'lg:mt-0 lg:pl-10')}>
@@ -152,7 +111,7 @@ export function VerdictCard({ example, tone = 'light', compact = false, stacked 
             </h3>
             <ul className="mt-2 space-y-3">
               {strengths.map((item) => (
-                <FeedbackBullet key={item} text={item} tone={textTone} />
+                <FeedbackBullet key={item} text={item} tone={textTone} compact={compact} />
               ))}
             </ul>
           </div>
@@ -162,7 +121,7 @@ export function VerdictCard({ example, tone = 'light', compact = false, stacked 
             </h3>
             <ul className="mt-2 space-y-3">
               {improvements.map((item) => (
-                <FeedbackBullet key={item} text={item} tone={textTone} />
+                <FeedbackBullet key={item} text={item} tone={textTone} compact={compact} />
               ))}
             </ul>
           </div>

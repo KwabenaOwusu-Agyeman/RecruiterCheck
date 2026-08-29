@@ -334,30 +334,33 @@ export function DocumentShowcase() {
           <div className="w-[16px] shrink-0 sm:w-6 lg:w-8" aria-hidden="true" />
         </div>
 
-        {/* One shared set of controls, floating at the footer's vertical
-            position (not mid-card) so it never sits over card body text.
-            Fixed to the row itself, not per-card — desktop shows all three
-            cards at once and has nothing to scroll between. Disabled once
-            the scroller hits the first/last document so pressing an arrow
-            can never scroll past the ends. */}
-        <button
-          type="button"
-          aria-label="Show previous document"
-          onClick={() => scrollByCard(-1)}
-          disabled={atStart}
-          className="absolute bottom-[13px] left-2 flex h-8 w-8 items-center justify-center rounded-full border border-border-strong bg-surface text-text-primary shadow-card disabled:pointer-events-none disabled:opacity-40 sm:hidden"
-        >
-          <ChevronLeft className="h-[16px] w-[16px]" aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          aria-label="Show next document"
-          onClick={() => scrollByCard(1)}
-          disabled={atEnd}
-          className="absolute bottom-[13px] right-2 flex h-8 w-8 items-center justify-center rounded-full border border-border-strong bg-surface text-text-primary shadow-card disabled:pointer-events-none disabled:opacity-40 sm:hidden"
-        >
-          <ChevronRight className="h-[16px] w-[16px]" aria-hidden="true" />
-        </button>
+        {/* One shared set of controls in their own row under the scroller —
+            floating them over the cards put both arrows on the card
+            footers' text line. Same 44px targets as the testimonial
+            stepper. Fixed to the row itself, not per-card — desktop shows
+            all three cards at once and has nothing to scroll between.
+            Disabled once the scroller hits the first/last document so
+            pressing an arrow can never scroll past the ends. */}
+        <div className="mt-[12px] flex items-center justify-center gap-4 sm:hidden">
+          <button
+            type="button"
+            aria-label="Show previous document"
+            onClick={() => scrollByCard(-1)}
+            disabled={atStart}
+            className="flex h-[44px] w-[44px] items-center justify-center rounded-full border border-border-strong bg-surface text-text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue active:bg-border-soft disabled:pointer-events-none disabled:opacity-40"
+          >
+            <ChevronLeft className="h-[16px] w-[16px]" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            aria-label="Show next document"
+            onClick={() => scrollByCard(1)}
+            disabled={atEnd}
+            className="flex h-[44px] w-[44px] items-center justify-center rounded-full border border-border-strong bg-surface text-text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue active:bg-border-soft disabled:pointer-events-none disabled:opacity-40"
+          >
+            <ChevronRight className="h-[16px] w-[16px]" aria-hidden="true" />
+          </button>
+        </div>
       </div>
 
       {/* The action closes the section, after the documents rather than

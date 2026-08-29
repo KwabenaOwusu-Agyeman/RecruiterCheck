@@ -28,10 +28,12 @@ const cardToneStyles: Record<CardTone, string> = {
   // a set of cards read as one system rather than as several.
   light: 'border-border-soft bg-surface shadow-card',
   // Same cream as the page behind it, so the card never reads as a
-  // high-contrast panel — but the edge is deliberately strong: a dark border
-  // with a ring stacked on it for a 2px rule, plus a deep shadow. Seamless
-  // ground, bold outline. Used by the testimonial cards.
-  seamless: 'border-border-strong bg-background shadow-elevated ring-1 ring-border-strong',
+  // high-contrast panel. One border and the standard card shadow, like
+  // every other light card — the earlier 2px ring + elevated shadow made
+  // the testimonials the heaviest objects on the page, which is backwards:
+  // social proof should sit quieter than the product. Used by the
+  // testimonial cards.
+  seamless: 'border-border-strong bg-background shadow-card',
   dark: 'border-white/20 bg-navy shadow-elevated',
   // True near-black, one step past navy. Used by the verdict trio so the
   // three outcomes darken white -> navy -> black; beige sat too close to

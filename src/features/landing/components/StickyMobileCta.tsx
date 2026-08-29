@@ -11,29 +11,34 @@ export function StickyMobileCta() {
   const location = useLocation()
   const modalOpen = mode !== null
 
-  // Deferred while the page's own hero action is on screen. Rendering
-  // unconditionally meant a phone's first paint showed two buttons for the
-  // same action at once — "Check My Application" in the hero and "Check"
-  // fixed at the bottom, with different words — and spent ~76px of the
-  // first screen doing it. Pages without a marked hero action (legal pages,
-  // the 404) keep the old always-visible behaviour.
-  const [heroCtaVisible, setHeroCtaVisible] = useState(false)
+  // Deferred while one of the page's own check actions is on screen — the
+  // hero CTA ([data-hero-cta]) or the closing navy card ([data-closing-cta]).
+  // Rendering unconditionally meant two buttons for the same action in one
+  // viewport with different words: "Check My Application" in the hero or
+  // the closing card, and "Check" fixed at the bottom. Pages without any
+  // marked action (legal pages, the 404) keep the always-visible behaviour.
+  const [pageCtaVisible, setPageCtaVisible] = useState(false)
 
   useEffect(() => {
-    const heroCta = document.querySelector('[data-hero-cta]')
-    if (!heroCta || typeof IntersectionObserver === 'undefined') {
-      setHeroCtaVisible(false)
+    const pageCtas = document.querySelectorAll('[data-hero-cta], [data-closing-cta]')
+    if (pageCtas.length === 0 || typeof IntersectionObserver === 'undefined') {
+      setPageCtaVisible(false)
       return
     }
-    setHeroCtaVisible(true)
-    const observer = new IntersectionObserver(([entry]) => {
-      setHeroCtaVisible(entry.isIntersecting)
+    setPageCtaVisible(true)
+    const visible = new Set<Element>()
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) visible.add(entry.target)
+        else visible.delete(entry.target)
+      }
+      setPageCtaVisible(visible.size > 0)
     })
-    observer.observe(heroCta)
+    pageCtas.forEach((el) => observer.observe(el))
     return () => observer.disconnect()
   }, [location.pathname])
 
-  const hidden = modalOpen || heroCtaVisible
+  const hidden = modalOpen || pageCtaVisible
 
   return (
     <div

@@ -1,6 +1,7 @@
 import { useRef, type ReactNode } from 'react'
-import { Check, FileText, Upload } from 'lucide-react'
+import { Check, ChevronRight, FileText, Upload } from 'lucide-react'
 import { Container } from '@/components/ui/Container'
+import { ScoreLockup } from '@/components/feedback/ScoreLockup'
 import { SectionCta } from '@/features/landing/components/SectionCta'
 import { TimelineContent } from '@/components/ui/timeline-animation'
 
@@ -21,15 +22,12 @@ function StepMockUpload() {
 }
 
 function StepMockScore() {
+  // The miniature of the shared score lockup — same Fraunces numeral, same
+  // tier gauge as the hero preview and the trio, so step 2's picture is the
+  // signature at small size rather than an ad-hoc restyling of it.
   return (
-    <div className="flex h-[72px] flex-col justify-center gap-2 rounded-[8px] border border-border-soft bg-background px-4">
-      <div className="flex items-baseline gap-2">
-        <span className="text-xl font-semibold tracking-[-0.02em] text-text-primary">85%</span>
-        <span className="text-xs font-medium text-text-secondary">Interview Score</span>
-      </div>
-      <div className="h-[6px] w-full overflow-hidden rounded-full bg-border-soft" aria-hidden="true">
-        <div className="h-full w-[85%] rounded-full bg-success" />
-      </div>
+    <div className="flex h-[72px] flex-col justify-center rounded-[8px] border border-border-soft bg-background px-4">
+      <ScoreLockup score={85} scoreWidthClass="w-[85%]" size="sm" />
     </div>
   )
 }
@@ -94,6 +92,21 @@ export function HowItWorksSection() {
             className="pointer-events-none absolute left-[16.5%] right-[16.5%] top-[48px] hidden h-px bg-border-strong lg:block"
             aria-hidden="true"
           />
+          {/* Direction markers on the connector, sitting in the two column
+              gaps at the number-circle height, so the three cards read as
+              one journey (input, assessment, outcome) instead of three
+              parallel features. The x offsets centre each 24px badge in its
+              28px gap: a 3-column grid's gap centres sit at 33.333% minus
+              g/6 and 66.667% plus g/6. */}
+          {['left-[calc(33.333%-5px)]', 'left-[calc(66.667%+5px)]'].map((position) => (
+            <span
+              key={position}
+              aria-hidden="true"
+              className={`pointer-events-none absolute top-[48px] hidden h-[24px] w-[24px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border-strong bg-surface text-blue lg:flex ${position}`}
+            >
+              <ChevronRight className="h-[14px] w-[14px]" strokeWidth={2.5} />
+            </span>
+          ))}
           {steps.map((step, index) => (
             <TimelineContent
               key={step.number}

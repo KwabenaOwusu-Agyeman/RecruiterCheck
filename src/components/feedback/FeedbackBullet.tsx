@@ -1,8 +1,11 @@
 import { cn } from '@/utils/cn'
 
+// On light grounds the base success/warning fills measure 3.4:1 and 2.2:1
+// as text, below AA — the deep partners hold the same hue at 5+:1. Dark
+// grounds keep the brighter values, which already clear AA on navy and ink.
 export function getVerdictColor(score: number, tone: 'light' | 'dark' = 'light'): string {
-  if (score >= 85) return 'text-success'
-  if (score >= 61) return 'text-warning'
+  if (score >= 85) return tone === 'dark' ? 'text-success' : 'text-success-deep'
+  if (score >= 61) return tone === 'dark' ? 'text-warning' : 'text-warning-deep'
   return tone === 'dark' ? 'text-error-light' : 'text-error'
 }
 
@@ -30,7 +33,21 @@ export function splitFinding(text: string): { title: string; evidence: string; e
   return { title: restore(match[1].trim()), evidence: restore(match[2].trim()), example }
 }
 
-export function FeedbackBullet({ text, tone = 'light' }: { text: string; tone?: 'light' | 'dark' }) {
+export function FeedbackBullet({
+  text,
+  tone = 'light',
+  compact = false,
+}: {
+  text: string
+  tone?: 'light' | 'dark'
+  /**
+   * Phone-only trim for landing previews: clamps the finding to three lines
+   * and drops the italic Example line below sm, so a stacked card reads in
+   * seconds instead of scrolling like a report. Real feedback pages never
+   * pass this — a paying user's own report is not preview content.
+   */
+  compact?: boolean
+}) {
   const { title, evidence, example } = splitFinding(text)
   const isDark = tone === 'dark'
   return (
@@ -38,11 +55,23 @@ export function FeedbackBullet({ text, tone = 'light' }: { text: string; tone?: 
       <span className={isDark ? 'text-blue-light' : 'text-blue'} aria-hidden="true">
         •
       </span>
-      <span className={cn('text-sm leading-snug', isDark ? 'text-white/85' : 'text-text-secondary')}>
+      <span
+        className={cn(
+          'text-sm leading-snug',
+          compact && 'line-clamp-3 sm:line-clamp-none',
+          isDark ? 'text-white/85' : 'text-text-secondary',
+        )}
+      >
         <span className={cn('font-semibold', isDark ? 'text-white' : 'text-text-primary')}>{title}</span>
         {evidence ? ` ${evidence}` : null}
         {example ? (
-          <span className={cn('block mt-1 italic', isDark ? 'text-blue-light/90' : 'text-blue')}>
+          <span
+            className={cn(
+              'mt-1 italic',
+              compact ? 'hidden sm:block' : 'block',
+              isDark ? 'text-blue-light/90' : 'text-blue',
+            )}
+          >
             Example: &quot;{example}&quot;
           </span>
         ) : null}

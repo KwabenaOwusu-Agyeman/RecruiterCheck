@@ -14,10 +14,19 @@ export default {
         'navy-tint': '#F1F3FA',
         'text-primary': '#12172A',
         'text-secondary': '#4A5573',
-        'text-caption': '#7C859C',
+        // 4.7:1 on the cream page ground (#F8F6F2). The previous #7C859C sat
+        // at 3.7:1 on white, below AA for the 12px labels this token is
+        // used on ("What you get", footer column heads).
+        'text-caption': '#616A80',
         success: '#0EA063',
         warning: '#F59E0B',
         error: '#91151A',
+        // Text-safe partners for success/warning on light grounds. The base
+        // tokens stay for fills, bars and icons; as running text on white
+        // they measure 3.4:1 and 2.2:1, so verdict labels and any other
+        // text usage on a light card take these instead (5.4:1 / 5.0:1).
+        'success-deep': '#0B7A4B',
+        'warning-deep': '#9A5B00',
         'blue-light': '#8FB2F0',
         'error-light': '#FF8A8A',
       },
