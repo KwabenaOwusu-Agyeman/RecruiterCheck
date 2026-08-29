@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { Container } from '@/components/ui/Container'
 import { Logo } from '@/components/ui/Logo'
 import { Button } from '@/components/ui/Button'
@@ -10,10 +9,6 @@ import { useCheckCta } from '@/hooks/useCheckCta'
 const navLinks = [
   { href: '/#how-it-works', label: 'How it works' },
   { href: '/#example', label: 'See an example' },
-  // A plain <a> like the hash links above: on this prerendered site a full
-  // navigation to /pricing lands on static HTML, and one nav rendering
-  // keeps the desktop row and the mobile sheet identical.
-  { href: '/pricing', label: 'Pricing' },
 ] as const
 
 const FOCUSABLE_SELECTOR =
@@ -101,14 +96,12 @@ export function PublicHeader() {
             ))}
           </nav>
 
+          {/* No My Checks here: this is a marketing surface, and a signed-in
+              visitor's route back into the app is the action itself, which
+              lands them inside the app's own navigation. Signed-out
+              visitors still get Sign In. */}
           <div className="hidden items-center gap-3 lg:flex">
-            {session ? (
-              <Link to="/checks">
-                <Button variant="ghost" size="sm">
-                  My Checks
-                </Button>
-              </Link>
-            ) : (
+            {session ? null : (
               <Button variant="ghost" size="sm" onClick={() => open('sign-in')}>
                 Sign In
               </Button>
@@ -186,13 +179,7 @@ export function PublicHeader() {
             ))}
 
             <div className="mt-2 flex flex-col gap-2 border-t border-border pt-3">
-              {session ? (
-                <Link to="/checks" onClick={closeMobileNav}>
-                  <Button variant="secondary" className="w-full justify-center">
-                    My Checks
-                  </Button>
-                </Link>
-              ) : (
+              {session ? null : (
                 <Button
                   variant="secondary"
                   className="w-full justify-center"

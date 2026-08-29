@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { FileText } from 'lucide-react'
+import { FileText, Target } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Container } from '@/components/ui/Container'
 import { AppWindow } from '@/features/landing/components/AppWindow'
@@ -48,8 +48,19 @@ export function HeroSection() {
             <span className="bg-gradient-to-r from-blue to-navy bg-clip-text text-transparent">interview</span>?
           </h1>
           <p className="mx-auto mt-4 max-w-[600px] text-base leading-relaxed text-text-secondary sm:text-lg">
-            Get a recruiter's verdict on your CV before you apply. Built for AI/ML, data and tech
-            roles, zero to five years in.
+            Get a recruiter's verdict on your CV before you apply.
+          </p>
+
+          {/* The USP gets its own object rather than trailing the sentence
+              above: this line answers "is this built for me?", which is the
+              question a new visitor decides on, and as plain trailing copy
+              it read as an afterthought. Deliberately unlike the role pills
+              below — one wide capsule with an icon, tinted and bordered,
+              against their small unfilled buttons — so a static claim is
+              never mistaken for a control. */}
+          <p className="mx-auto mt-5 flex w-fit items-center gap-2.5 rounded-full border border-blue/25 bg-navy-tint px-4 py-2.5 text-left text-[15px] font-semibold leading-snug text-navy sm:gap-3 sm:px-5 sm:text-base">
+            <Target className="h-[18px] w-[18px] shrink-0 text-blue" strokeWidth={2} aria-hidden="true" />
+            Built for AI/ML, data and tech roles, zero to five years in.
           </p>
           <div data-hero-cta className="mt-5 flex flex-col items-center justify-center gap-3 sm:mt-6 sm:flex-row sm:gap-5">
             <Button size="lg" onClick={() => handleCheckCta({ role: active.role })}>
