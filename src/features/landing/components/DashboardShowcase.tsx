@@ -24,9 +24,15 @@ const TABS: { id: TabId; label: string }[] = [
 // and mixes in a draft (no score yet) so the list doesn't read as if every
 // check finishes instantly.
 const MOCK_STATUSES: ('completed' | 'draft')[] = ['completed', 'draft', 'completed']
+// No company names in the rows. The employers in ROLE_EXAMPLES are
+// invented, and an invented company on a public surface reads at a glance
+// like a real one this product is associated with — the same reason the
+// verdict card and the cover letter carry none. The experience level is
+// the more useful second line here anyway: it is what distinguishes two
+// checks for the same role.
 const MOCK_CHECKS = ROLE_EXAMPLES.slice(0, 3).map((example, index) => ({
   jobTitle: example.role,
-  companyName: example.companyName,
+  experience: example.experience,
   status: MOCK_STATUSES[index],
   score: MOCK_STATUSES[index] === 'completed' ? example.score : null,
   daysAgo: [1, 2, 4][index],
@@ -115,7 +121,7 @@ function ChecksListMock() {
         >
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-text-primary">{check.jobTitle}</p>
-            <p className="truncate text-sm text-text-secondary">{check.companyName}</p>
+            <p className="truncate text-sm text-text-secondary">{check.experience}</p>
           </div>
           <div className="flex shrink-0 items-center gap-4">
             <StatusBadge status={check.status} className="hidden w-[104px] justify-center sm:inline-flex" />

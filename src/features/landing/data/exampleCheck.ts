@@ -6,7 +6,14 @@
  * query, no OpenAI call. The 'software-engineer' entry is the exception: its
  * score, strengths, improvements, and prospects are the genuine output of a
  * real check run against this same CV and job description (Alex Morgan,
- * Software Engineer, Lumen Cloud) through the actual scoring pipeline.
+ * Software Engineer) through the actual scoring pipeline.
+ *
+ * No target employer is named anywhere in these documents. An invented
+ * company in the salutation of a cover letter reads, at a glance, like a
+ * real company this product is associated with; the generic form is also
+ * what the real generator produces when the job capture has no company
+ * name. The CV's own work history keeps its past-employer names, since a
+ * CV listing no employers would not read as a CV.
  */
 
 export type RoleExampleTier = 'likely' | 'improve' | 'not-a-fit'
@@ -15,7 +22,6 @@ export interface RoleExample {
   id: string
   role: string
   experience: string
-  companyName: string
   score: number
   /**
    * Literal Tailwind class for the score gauge's fill width. Written out
@@ -39,7 +45,6 @@ export const ROLE_EXAMPLES: readonly RoleExample[] = [
     id: 'software-engineer',
     role: 'Software Engineer',
     experience: '4 years experience',
-    companyName: 'Lumen Cloud',
     score: 85,
     scoreWidthClass: 'w-[85%]',
     tier: 'likely',
@@ -59,12 +64,11 @@ export const ROLE_EXAMPLES: readonly RoleExample[] = [
     id: 'ai-ml-engineer',
     role: 'AI/ML Engineer',
     experience: '2 years experience',
-    companyName: 'Vantage AI',
     score: 76,
     scoreWidthClass: 'w-[76%]',
     tier: 'improve',
     strengths: [
-      'Hands on model delivery. Shipped two production ML models at your current role, which is exactly the kind of end-to-end delivery Vantage AI is screening for.',
+      'Hands on model delivery. Shipped two production ML models at your current role, which is exactly the kind of end-to-end delivery this job description is screening for.',
       'Right tooling background. Your CV lists PyTorch, MLflow and the same cloud stack named in the job description.',
     ],
     improvements: [
@@ -80,7 +84,6 @@ export const ROLE_EXAMPLES: readonly RoleExample[] = [
     id: 'data-scientist',
     role: 'Data Scientist',
     experience: '3 years experience',
-    companyName: 'Harbor Analytics',
     score: 71,
     scoreWidthClass: 'w-[71%]',
     tier: 'improve',
@@ -102,7 +105,6 @@ export const ROLE_EXAMPLES: readonly RoleExample[] = [
     id: 'junior-data-analyst',
     role: 'Junior Data Analyst',
     experience: 'Less than 1 year of experience',
-    companyName: 'Marketflow Insights',
     score: 55,
     scoreWidthClass: 'w-[55%]',
     tier: 'not-a-fit',
@@ -123,7 +125,6 @@ export const ROLE_EXAMPLES: readonly RoleExample[] = [
     id: 'data-engineer',
     role: 'Data Engineer',
     experience: 'New graduate',
-    companyName: 'Pipeline Works',
     score: 48,
     scoreWidthClass: 'w-[48%]',
     tier: 'not-a-fit',
@@ -144,9 +145,9 @@ export const ROLE_EXAMPLES: readonly RoleExample[] = [
 
 /**
  * Example Improved CV Draft, Cover Letter, and Recruiter Message, all tied
- * to the Software Engineer / Lumen Cloud profile from ROLE_EXAMPLES so
- * Section 2 continues the same story as Section 1 rather than introducing
- * a new, disconnected candidate.
+ * to the Software Engineer profile from ROLE_EXAMPLES so this section
+ * continues the same story rather than introducing a new, disconnected
+ * candidate.
  */
 export const EXAMPLE_DOCUMENTS = {
   candidateName: 'Alex Morgan',
@@ -206,22 +207,22 @@ export const EXAMPLE_DOCUMENTS = {
    */
   coverLetter: {
     companyLocation: 'Austin, TX',
-    salutation: 'Dear Lumen Cloud Hiring Team,',
+    salutation: 'Dear Hiring Team,',
     introParagraph:
-      "I'm applying for the Software Engineer role at Lumen Cloud because the scope you're describing, owning services end to end rather than shipping tickets, is exactly the kind of work I've spent the last four years doing.",
+      "I'm applying for the Software Engineer role because the scope you're describing, owning services end to end rather than shipping tickets, is exactly the kind of work I've spent the last four years doing.",
     bodyParagraphs: [
-      "At Beacon Systems, I owned our payments microservice from design through production, cutting checkout latency from 800ms to 210ms by rethinking how we batched requests and managed connections. That kind of ownership, from architecture decisions through to the numbers that prove they worked, is what I want to bring to Lumen Cloud's platform team.",
+      "In my current role I owned our payments microservice from design through production, cutting checkout latency from 800ms to 210ms by rethinking how we batched requests and managed connections. That kind of ownership, from architecture decisions through to the numbers that prove they worked, is what I want to bring to your platform team.",
       "Beyond that one project, I led the migration off our monolith to a service oriented architecture, coordinating across three teams and shipping it with zero downtime. It's the kind of cross team technical leadership that only comes from being trusted with systems bigger than any one engineer's usual scope, and it's exactly the level I'm looking to keep operating at.",
       "Alongside the technical work, I've mentored two junior engineers through their first year on the team, both promoted to mid level within twelve months. I work well independently on ambiguous problems, but I care just as much about the engineers around me getting better, and that balance is something I'd bring to any team I join.",
     ],
     conclusionParagraph:
-      "I'd welcome the chance to talk through where I could contribute first, and I'm confident the impact I've had at Beacon Systems is a strong signal for what I'd bring to Lumen Cloud.",
+      "I'd welcome the chance to talk through where I could contribute first, and I'm confident the impact I've had so far is a strong signal for what I'd bring to your team.",
     thankYouLine: 'Thank you for considering my application.',
     closingPhrase: 'Yours sincerely,',
   },
   recruiterMessage: {
     body: [
-      "Hi, I saw the Software Engineer opening at Lumen Cloud and wanted to reach out directly.",
+      "Hi, I saw the Software Engineer opening on your team and wanted to reach out directly.",
       "For the last four years I've owned backend services end to end, most recently a payments microservice where I cut checkout latency from 800ms to 210ms, and I led our migration to a service oriented architecture with zero downtime.",
       "I think there's a strong fit with what you're building on the platform team, and I'd welcome a short call to discuss.",
     ],

@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ChevronLeft, ChevronRight, FileText } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Container } from '@/components/ui/Container'
+import { SectionCta } from '@/features/landing/components/SectionCta'
 import { GlowCard } from '@/components/ui/GlowCard'
 import { EXAMPLE_DOCUMENTS } from '@/features/landing/data/exampleCheck'
-import { useCheckCta } from '@/hooks/useCheckCta'
 import { cn } from '@/utils/cn'
 
 // Shared width for every document card in the scroller: narrow enough that
@@ -65,15 +64,6 @@ function CvDraftCard() {
   return (
     <GlowCard className={DOC_CARD_WIDTH}>
       <Card tone="light" className="relative flex h-full flex-col overflow-hidden">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center overflow-hidden"
-        >
-          <span className="-rotate-[32deg] whitespace-nowrap text-2xl font-bold tracking-[0.2em] text-text-secondary/20 sm:text-3xl">
-            DRAFT, NOT FOR SUBMISSION
-          </span>
-        </div>
-
         <CardHeader className="flex flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <FileText className="h-[16px] w-[16px] text-blue" aria-hidden="true" />
@@ -222,10 +212,33 @@ function RecruiterMessageCard() {
           <DraftBadge />
         </CardHeader>
         <CardContent className={cn('relative overflow-hidden px-6 pt-6 sm:px-10 sm:pt-8', PREVIEW_HEIGHT)}>
-          <p className="text-xs text-text-secondary">Ready to paste into LinkedIn or an email.</p>
-          <div className="mt-4 space-y-3">
-            {recruiterMessage.body.map((paragraph) => (
-              <p key={paragraph} className="text-sm leading-relaxed text-text-secondary">
+          {/* A recipient row and a lead line at display size. Without them
+              this card had nothing above 14px while the other two open at
+              28px and 18px, so it read as a wall of grey text beside two
+              designed documents. A message has a "to" and an opening —
+              using both as the anchor keeps the facsimile honest. */}
+          <div className="flex items-center gap-2.5">
+            <span
+              className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full bg-navy-tint text-xs font-semibold text-blue"
+              aria-hidden="true"
+            >
+              HM
+            </span>
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate text-sm font-semibold text-text-primary">Hiring Manager</span>
+              <span className="truncate text-xs text-text-caption">Ready to paste into LinkedIn or an email</span>
+            </span>
+          </div>
+          <div className="mt-5 space-y-3">
+            {recruiterMessage.body.map((paragraph, index) => (
+              <p
+                key={paragraph}
+                className={
+                  index === 0
+                    ? 'text-[17px] font-semibold leading-snug text-text-primary sm:text-lg'
+                    : 'text-sm leading-relaxed text-text-secondary'
+                }
+              >
                 {paragraph}
               </p>
             ))}
@@ -246,7 +259,6 @@ function RecruiterMessageCard() {
 }
 
 export function DocumentShowcase() {
-  const handleCheckCta = useCheckCta()
   const scrollerRef = useRef<HTMLDivElement>(null)
   const [atStart, setAtStart] = useState(true)
   const [atEnd, setAtEnd] = useState(false)
@@ -292,13 +304,6 @@ export function DocumentShowcase() {
           <p className="mt-3 text-xs font-medium text-text-secondary sm:hidden">
             Swipe or use the arrows to see all three &rarr;
           </p>
-          {/* Desktop only — mobile already has the global sticky "Check" CTA,
-              so a second one here would just duplicate it. */}
-          <div className="mt-6 hidden justify-center sm:flex">
-            <Button size="md" onClick={handleCheckCta}>
-              Check My Application
-            </Button>
-          </div>
         </div>
       </Container>
 
@@ -355,6 +360,14 @@ export function DocumentShowcase() {
           <ChevronRight className="h-[16px] w-[16px]" aria-hidden="true" />
         </button>
       </div>
+
+      {/* The action closes the section, after the documents rather than
+          before them — the same shape as every other section on the page.
+          SectionCta hides its primary on phones, where the sticky bar
+          already carries it. */}
+      <Container>
+        <SectionCta secondaryTo="/cover-letter-generator" secondaryLabel="More on the documents" />
+      </Container>
     </section>
   )
 }
