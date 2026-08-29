@@ -36,7 +36,15 @@ export function HeroSection() {
             <span className="bg-gradient-to-r from-blue to-navy bg-clip-text text-transparent">interview</span>?
           </h1>
           <p className="mx-auto mt-4 max-w-[600px] text-base leading-relaxed text-text-secondary sm:text-lg">
-            Get a recruiter's verdict on your CV before you apply.
+            See how a recruiter would score your CV against the job you want, before you apply.
+          </p>
+          {/* The scoring basis, stated next to the word "score" rather than
+              anywhere else on the page: one line that turns the number from
+              "an AI's opinion" into a structured evaluation. Smaller and
+              quieter than the subheadline so the two grey lines read as
+              statement and footnote, not one paragraph. */}
+          <p className="mx-auto mt-2 max-w-[600px] text-[13px] font-medium text-text-secondary/80 sm:text-sm">
+            Scored on experience, required skills and candidate value.
           </p>
 
           {/* The USP gets its own object rather than trailing the sentence

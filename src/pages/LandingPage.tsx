@@ -1,17 +1,13 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
-import { JobsYouCanCheckSection } from '@/features/landing/components/JobsYouCanCheckSection'
 import { ClosingCtaSection } from '@/features/landing/components/ClosingCtaSection'
-import { DashboardShowcase } from '@/features/landing/components/DashboardShowcase'
 import { DocumentShowcase } from '@/features/landing/components/DocumentShowcase'
 import { HeroSection } from '@/features/landing/components/HeroSection'
 import { HowItWorksSection } from '@/features/landing/components/HowItWorksSection'
 import { LlmComparisonSection } from '@/features/landing/components/LlmComparisonSection'
 import { ReassuranceSection } from '@/features/landing/components/ReassuranceSection'
 import { RoleFeedbackShowcase } from '@/features/landing/components/RoleFeedbackShowcase'
-import { StatsSection } from '@/features/landing/components/StatsSection'
 import { TestimonialsSection } from '@/features/landing/components/TestimonialsSection'
-import { TrustpilotFeedbackSection } from '@/features/landing/components/TrustpilotFeedbackSection'
 import { Reveal } from '@/components/ui/Reveal'
 import { trackEvent } from '@/lib/analytics'
 import { usePageMeta } from '@/hooks/usePageMeta'
@@ -44,54 +40,47 @@ export function LandingPage() {
   return (
     <>
       <HeroSection />
-      {/* The order is the argument: the hero hooks, then How it works says
-          what the product actually is, then Us vs ChatGPT kills the free
-          alternative — a comparison only means something once the reader
-          knows what "us" is, so the mechanism comes first and every matrix
-          row lands as checkable rather than abstract. Then the
-          honest-verdict trio proves the matrix's "not a yes man" row, then
-          breadth, outputs and retention. */}
+      {/* The order is the argument: the hero hooks, How it works states the
+          mechanism (CV plus job in, score and fixes out), then the verdict
+          trio proves the output before anything is claimed about it — three
+          real-looking results, including a "Not a Fit", are the evidence
+          that makes the comparison matrix's rows read as checked facts
+          rather than assertions. Us vs ChatGPT follows the proof, then the
+          documents, then the human proof, then the ask.
+
+          Deliberately absent (each earned its removal, don't re-add without
+          new evidence): the jobs ticker (recognition already delivered by
+          the hero capsule and the trio's role titles, and it carried a
+          competing CTA), the dashboard showcase (Before/Add/Track reframed
+          a pre-apply check as a tracking platform — it lives on
+          /application-checker), the stats grid (product facts posing as
+          usage figures; its one real fact, the three scoring dimensions,
+          moved into the hero), and the Trustpilot collector (it asked
+          strangers for reviews — it stays on FeedbackPage, where reviews
+          actually come from). */}
       <Reveal>
         <HowItWorksSection />
-      </Reveal>
-      <Reveal>
-        <LlmComparisonSection />
       </Reveal>
       <Reveal>
         <RoleFeedbackShowcase />
       </Reveal>
       <Reveal>
-        <JobsYouCanCheckSection />
+        <LlmComparisonSection />
       </Reveal>
       <Reveal>
         <DocumentShowcase />
-      </Reveal>
-      <Reveal>
-        <DashboardShowcase />
       </Reveal>
       {/* Proof before the close. Pricing is no longer previewed here at all,
           it lives on /pricing, where these same reviews sit under the packs. */}
       <Reveal>
         <TestimonialsSection />
       </Reveal>
-      {/* Live from day one: product commitments until real volume clears
-          the floor, then the same grid swaps to usage figures. */}
-      <Reveal>
-        <StatsSection />
-      </Reveal>
       {/* The objection strip works hardest next to the ask, not before the
           visitor knows what the product is — deletion, refunds and the
-          ChatGPT comparison are answers to late-stage hesitation. It sits
-          above the Trustpilot band rather than below it so the navy strip
-          never stacks directly against the navy closing card. */}
+          ChatGPT comparison are answers to late-stage hesitation. The navy
+          strip sits a full section-height of cream above the navy closing
+          card, which keeps the two from reading as one stacked block. */}
       <ReassuranceSection />
-      {/* Third-party credibility right before the ask: the official
-          Trustpilot collector, on a verified business profile. The same ask
-          also lives on FeedbackPage after a completed check, where the
-          reviews it collects actually come from. */}
-      <Reveal>
-        <TrustpilotFeedbackSection />
-      </Reveal>
       <Reveal>
         <ClosingCtaSection />
       </Reveal>

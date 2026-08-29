@@ -18,9 +18,15 @@ import { cn } from '@/utils/cn'
  * white with near-black text (its own scheme), ours is the brand blue and
  * navy tint, and the criteria rail stays neutral on the warm ground.
  *
- * Every row is a current product truth: structured verdict, the three
- * factor score, generated documents, the dashboard. Nothing here claims
- * calibration studies or ATS parity we cannot evidence.
+ * Every row is a current product truth: the job-specific evaluation, the
+ * fixed three factor framework, the structured verdict. Nothing here claims
+ * calibration studies or ATS parity we cannot evidence. The first two rows
+ * are facts, not adjectives — "scored against the specific job" and "same
+ * framework every time" replaced "tech recruitment scorecard" and
+ * "recruiter style feedback", which were jargon a first-time visitor could
+ * not check against anything. By the time this section renders, the reader
+ * has just seen the verdict trio above it, so each row lands as a
+ * description of something already witnessed.
  */
 interface MatrixRow {
   label: string
@@ -35,8 +41,8 @@ interface MatrixRow {
  * claim believable.
  */
 const ROWS: MatrixRow[] = [
-  { label: 'Tech recruitment scorecard', chat: false, mrc: true },
-  { label: 'Recruiter style feedback, not a one off opinion', chat: false, mrc: true },
+  { label: 'Scored against the specific job you want', chat: false, mrc: true },
+  { label: 'The same scoring framework every time', chat: false, mrc: true },
   { label: 'Not a yes man', chat: false, mrc: true },
   { label: 'No prompts to write', chat: false, mrc: true },
   { label: 'Free unlimited chat', chat: true, mrc: false },

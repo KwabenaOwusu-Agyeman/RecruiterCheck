@@ -53,7 +53,7 @@ const steps: readonly { number: string; title: string; description: string; mock
   {
     number: '01',
     title: 'Add your application',
-    description: 'Upload your CV and paste the job description.',
+    description: 'Upload your CV and paste the job you are applying for.',
     mock: <StepMockUpload />,
   },
   {

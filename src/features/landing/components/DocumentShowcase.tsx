@@ -298,8 +298,7 @@ export function DocumentShowcase() {
             From feedback to finished documents
           </h2>
           <p className="mt-3 text-base text-text-secondary sm:text-lg">
-            See the documents your check can write: an improved CV, a cover letter, and a ready to send
-            message.
+            An improved CV draft, a cover letter, and a message you can send.
           </p>
           <p className="mt-3 text-xs font-medium text-text-secondary sm:hidden">
             Swipe or use the arrows to see all three &rarr;

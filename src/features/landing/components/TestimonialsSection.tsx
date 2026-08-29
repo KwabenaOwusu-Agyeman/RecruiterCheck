@@ -79,7 +79,7 @@ export function TestimonialsSection({ compact = false }: { compact?: boolean } =
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue sm:text-sm">Job seeker stories</p>
           <h2 className="mt-2 font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
-            What changed after they started getting recruiter feedback
+            What changed after their first check
           </h2>
         </div>
 
