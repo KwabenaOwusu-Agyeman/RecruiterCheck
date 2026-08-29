@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom'
-import { Target } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Container } from '@/components/ui/Container'
 import { HeroVerdictPreview } from '@/features/landing/components/HeroVerdictPreview'
@@ -60,25 +59,25 @@ export function HeroSection() {
 
             {/* The USP gets its own object rather than trailing the sentence
                 above: this line answers "is this built for me?", which is the
-                question a new visitor decides on, and as plain trailing copy
-                it read as an afterthought. A gradient ring rather than a
-                tinted pill: the same navy-into-blue ramp as the headline
-                keywords, wrapped around a surface capsule (the GlowCard
-                border technique, static). */}
-            <div className="mx-auto mt-5 w-fit rounded-full bg-gradient-to-r from-navy via-blue to-blue-light p-[1.5px] lg:mx-0">
-              <p className="flex items-center gap-2.5 rounded-full bg-surface px-[16px] py-[10px] text-left text-[15px] font-semibold leading-snug text-navy sm:gap-3 sm:px-[20px] sm:text-base">
-                <Target className="h-[18px] w-[18px] shrink-0 text-blue" strokeWidth={2} aria-hidden="true" />
-                {/* text-balance: on a phone this runs to two lines; balancing
-                    splits them evenly at the comma instead of leaving one word
-                    orphaned on the second line. */}
-                <span className="text-balance">
-                  Built for AI/ML, data and tech roles. 0 to 5 years of work experience.
+                question a new visitor decides on. A plain typographic
+                statement, not a bordered pill: bold navy for who it is for,
+                the same blue accent as the headline keywords for the
+                experience range, so the emphasis comes from weight, case and
+                colour rather than a UI container. Stacked on phones, one line
+                with a dot separator from sm up; the dot itself is bound to
+                the second phrase so it can never wrap onto its own line. */}
+            <p className="mx-auto mt-4 flex max-w-xs flex-col items-center gap-0.5 text-center text-sm font-bold uppercase tracking-[0.04em] text-navy sm:max-w-none sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-center sm:gap-x-2 sm:text-base lg:mx-0 lg:justify-start lg:text-left">
+              <span>For AI/ML, data &amp; tech roles</span>
+              <span>
+                <span className="hidden text-blue sm:inline" aria-hidden="true">
+                  &middot;{' '}
                 </span>
-              </p>
-            </div>
+                <span className="text-blue">0 to 5 years experience</span>
+              </span>
+            </p>
             <div
               data-hero-cta
-              className="mt-5 flex flex-col items-center justify-center gap-3 sm:mt-6 sm:flex-row sm:gap-5 lg:justify-start"
+              className="mt-6 flex flex-col items-center justify-center gap-3 sm:mt-7 sm:flex-row sm:gap-5 lg:justify-start"
             >
               <Button size="lg" onClick={handleCheckCta}>
                 Check My Application

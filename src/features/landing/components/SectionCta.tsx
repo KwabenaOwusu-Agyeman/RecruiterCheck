@@ -34,7 +34,7 @@ export function SectionCta({ secondaryTo, secondaryLabel, primary = true, classN
   return (
     <div
       className={cn(
-        'mt-7 flex-col items-center justify-center gap-3 sm:mt-8 sm:flex sm:flex-row sm:gap-5',
+        'mt-6 flex-col items-center justify-center gap-3 sm:mt-7 sm:flex sm:flex-row sm:gap-5',
         secondaryTo ? 'flex' : 'hidden',
         className,
       )}

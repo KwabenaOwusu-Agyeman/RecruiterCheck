@@ -46,7 +46,7 @@ export function HeroVerdictPreview() {
       {/* Own padding rather than CardContent: this repo's cn() has no
           tailwind-merge, so overriding CardContent's responsive padding from
           outside is a stylesheet-order gamble. */}
-      <div className="px-[20px] py-[20px] sm:px-[24px] sm:py-[24px]">
+      <div className="px-[18px] py-[17px] sm:px-[24px] sm:py-[22px]">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-sm font-semibold text-white">{example.role}</p>
@@ -58,14 +58,14 @@ export function HeroVerdictPreview() {
         </div>
 
         <ScoreLockup
-          className="mt-[16px]"
+          className="mt-[14px]"
           score={example.score}
           scoreWidthClass={example.scoreWidthClass}
           tone="dark"
           showFramework
         />
 
-        <div className="mt-[16px] grid gap-[12px] border-t border-white/10 pt-[14px]">
+        <div className="mt-[14px] grid gap-[10px] border-t border-white/10 pt-[12px]">
           <PreviewFinding label="Strength" text={example.strengths[0]} />
           <PreviewFinding label="Area to improve" text={example.improvements[0]} />
         </div>
