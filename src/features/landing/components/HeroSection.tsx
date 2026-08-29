@@ -52,9 +52,14 @@ export function HeroSection() {
               perimeter of colour reads as considered where a filled tint
               pill reads as a default badge. */}
           <div className="mx-auto mt-5 w-fit rounded-full bg-gradient-to-r from-navy via-blue to-blue-light p-[1.5px]">
-            <p className="flex items-center gap-2.5 rounded-full bg-surface px-[16px] py-[10px] text-left text-[15px] sm:px-[20px] font-semibold leading-snug text-navy sm:gap-3 sm:px-5 sm:text-base">
+            <p className="flex items-center gap-2.5 rounded-full bg-surface px-[16px] py-[10px] text-left text-[15px] font-semibold leading-snug text-navy sm:gap-3 sm:px-[20px] sm:text-base">
               <Target className="h-[18px] w-[18px] shrink-0 text-blue" strokeWidth={2} aria-hidden="true" />
-              Built for AI/ML, data and tech roles, zero to five years in.
+              {/* text-balance: on a phone this runs to two lines; balancing
+                  splits them evenly at the comma instead of leaving one word
+                  orphaned on the second line. */}
+              <span className="text-balance">
+                Built for AI/ML, data and tech roles, 0 to 5 years of work experience.
+              </span>
             </p>
           </div>
           <div data-hero-cta className="mt-5 flex flex-col items-center justify-center gap-3 sm:mt-6 sm:flex-row sm:gap-5">
