@@ -28,7 +28,12 @@ export function HeroSection() {
   const active = ROLE_EXAMPLES.find((example) => example.id === activeId) ?? ROLE_EXAMPLES[0]
 
   return (
-    <section className="relative overflow-hidden border-b border-border bg-background">
+    // id="example": the header's "See an example" link and the 23 SEO pages'
+    // /#example anchor land here — the hero IS the example now. The old
+    // showcase section four screens down rendered the same VerdictCard from
+    // the same ROLE_EXAMPLES data the pills above rotate through, a straight
+    // duplication once the hero took over that job.
+    <section id="example" className="relative scroll-mt-[88px] overflow-hidden border-b border-border bg-background">
       {/* Faint dot-grid backdrop, the same "quiet technical texture" pattern
           Linear/Vercel use on light hero sections — radial-masked so it
           reads as depth near the edges rather than noise behind the text. */}
@@ -58,10 +63,17 @@ export function HeroSection() {
               below — one wide capsule with an icon, tinted and bordered,
               against their small unfilled buttons — so a static claim is
               never mistaken for a control. */}
-          <p className="mx-auto mt-5 flex w-fit items-center gap-2.5 rounded-full border border-blue/25 bg-navy-tint px-4 py-2.5 text-left text-[15px] font-semibold leading-snug text-navy sm:gap-3 sm:px-5 sm:text-base">
-            <Target className="h-[18px] w-[18px] shrink-0 text-blue" strokeWidth={2} aria-hidden="true" />
-            Built for AI/ML, data and tech roles, zero to five years in.
-          </p>
+          {/* A gradient ring rather than a tinted pill: the same
+              navy-into-blue ramp as the headline keywords, wrapped around a
+              surface capsule (the GlowCard border technique, static). One
+              perimeter of colour reads as considered where a filled tint
+              pill reads as a default badge. */}
+          <div className="mx-auto mt-5 w-fit rounded-full bg-gradient-to-r from-navy via-blue to-blue-light p-[1.5px]">
+            <p className="flex items-center gap-2.5 rounded-full bg-surface px-4 py-2.5 text-left text-[15px] font-semibold leading-snug text-navy sm:gap-3 sm:px-5 sm:text-base">
+              <Target className="h-[18px] w-[18px] shrink-0 text-blue" strokeWidth={2} aria-hidden="true" />
+              Built for AI/ML, data and tech roles, zero to five years in.
+            </p>
+          </div>
           <div data-hero-cta className="mt-5 flex flex-col items-center justify-center gap-3 sm:mt-6 sm:flex-row sm:gap-5">
             <Button size="lg" onClick={() => handleCheckCta({ role: active.role })}>
               Check My Application
@@ -125,6 +137,9 @@ export function HeroSection() {
           <AppWindow urlLabel="myrecruitercheck.com/checks/feedback">
             <VerdictCard example={active} compact frameless />
           </AppWindow>
+          <p className="mt-4 text-center text-sm text-text-secondary">
+            From Likely Interview Candidate to Not a Fit. Switch roles above to see the full range.
+          </p>
 
           <div
             aria-hidden="true"

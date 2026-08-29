@@ -213,7 +213,7 @@ export const EXAMPLE_DOCUMENTS = {
     bodyParagraphs: [
       "In my current role I owned our payments microservice from design through production, cutting checkout latency from 800ms to 210ms by rethinking how we batched requests and managed connections. That kind of ownership, from architecture decisions through to the numbers that prove they worked, is what I want to bring to your platform team.",
       "Beyond that one project, I led the migration off our monolith to a service oriented architecture, coordinating across three teams and shipping it with zero downtime. It's the kind of cross team technical leadership that only comes from being trusted with systems bigger than any one engineer's usual scope, and it's exactly the level I'm looking to keep operating at.",
-      "Alongside the technical work, I've mentored two junior engineers through their first year on the team, both promoted to mid level within twelve months. I work well independently on ambiguous problems, but I care just as much about the engineers around me getting better, and that balance is something I'd bring to any team I join.",
+      "Beyond the technical fit, the way this role is written tells me a lot about your culture: you ask for engineers who own outcomes and grow the people around them, and that is exactly how I work. I have mentored two junior engineers through their first year, both promoted to mid level within twelve months, and a team that values that kind of contribution is the kind of team I want to join.",
     ],
     conclusionParagraph:
       "I'd welcome the chance to talk through where I could contribute first, and I'm confident the impact I've had so far is a strong signal for what I'd bring to your team.",

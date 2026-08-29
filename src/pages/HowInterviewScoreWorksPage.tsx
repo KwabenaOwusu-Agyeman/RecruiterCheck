@@ -123,6 +123,12 @@ export function HowInterviewScoreWorksPage() {
               description, and the score, Strengths, Areas to Improve and Prospects are specific to
               that pairing.
             </p>
+            <p className="mt-4 leading-7 text-text-secondary">
+              The scorecard also assumes the toughest realistic competition. For many openings the
+              strongest candidate is an internal one who already has inside knowledge of the team,
+              the systems and the way decisions get made. An external application wins by bringing
+              evidence an insider cannot match, and your score reads your CV with that bar in mind.
+            </p>
           </div>
         </Container>
       </section>
