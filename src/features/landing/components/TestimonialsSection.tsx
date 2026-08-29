@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Star } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/Carousel'
 import { Container } from '@/components/ui/Container'
+import { SectionCta } from '@/features/landing/components/SectionCta'
 import { getPublicTestimonials, type Testimonial } from '@/services/testimonialsService'
 import { cn } from '@/utils/cn'
 import { isDesktopViewport } from '@/utils/isDesktopViewport'
@@ -160,6 +161,10 @@ export function TestimonialsSection({ compact = false }: { compact?: boolean } =
             </div>
           )}
         </div>
+
+        {compact ? null : (
+          <SectionCta secondaryTo="/pricing" secondaryLabel="See the packs" primary={false} />
+        )}
       </Container>
     </section>
   )

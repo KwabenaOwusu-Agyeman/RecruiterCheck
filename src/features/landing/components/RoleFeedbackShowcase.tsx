@@ -43,7 +43,7 @@ export function RoleFeedbackShowcase() {
           </p>
         </div>
 
-        <div className="mx-auto mt-6 grid max-w-2xl grid-cols-1 items-stretch gap-5 sm:mt-8 lg:max-w-none lg:grid-cols-3">
+        <div className="mx-auto mt-6 grid max-w-2xl grid-cols-1 items-stretch gap-[16px] sm:mt-8 sm:gap-5 lg:max-w-none lg:grid-cols-3">
           {examples.map(({ example, tone }) =>
             example ? (
               <VerdictCard key={example.id} example={example} tone={tone} compact stacked className="h-full" />
@@ -51,7 +51,7 @@ export function RoleFeedbackShowcase() {
           )}
         </div>
 
-        <SectionCta secondaryTo="/how-recruiters-evaluate-a-cv" secondaryLabel="How recruiters evaluate a CV" />
+        <SectionCta secondaryTo="/how-recruiters-evaluate-a-cv" secondaryLabel="How recruiters evaluate a CV" primary={false} />
       </Container>
     </section>
   )

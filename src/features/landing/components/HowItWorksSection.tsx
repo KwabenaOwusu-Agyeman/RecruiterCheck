@@ -118,7 +118,7 @@ export function HowItWorksSection() {
           ))}
         </ol>
 
-        <SectionCta secondaryTo="/how-interview-score-works" secondaryLabel="See how the Interview Score is calculated" />
+        <SectionCta secondaryTo="/how-interview-score-works" secondaryLabel="See how the Interview Score is calculated" primary={false} />
       </Container>
     </section>
   )

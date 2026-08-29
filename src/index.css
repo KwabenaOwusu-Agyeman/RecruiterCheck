@@ -27,6 +27,14 @@
        devtools-issued synthetic scrolls (which hit html directly) look
        fine. */
     -webkit-tap-highlight-color: transparent;
+    /* overflow-x: clip, not hidden — iOS Safari ignores html's overflow-x
+       for touch panning, so any descendant a pixel wider than the viewport
+       let the whole page wobble side to side. `hidden` here is forbidden by
+       the scroll-container quirk documented above; `clip` clips paint
+       without creating a scroll container, so it locks the axis on iOS
+       while leaving real scrolling (and inner overflow-x-auto rows)
+       untouched. */
+    overflow-x: clip;
   }
 
   /* Optical tracking, set here rather than per-heading. Every heading on

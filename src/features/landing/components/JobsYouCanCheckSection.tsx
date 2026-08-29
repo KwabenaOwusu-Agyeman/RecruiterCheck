@@ -78,7 +78,7 @@ export function JobsYouCanCheckSection() {
   return (
     <section className="border-b border-border bg-background">
       <Container className="py-[48px] sm:py-14 lg:py-[80px]">
-        <div className="relative overflow-hidden rounded-[20px] bg-blue px-5 py-9 shadow-elevated sm:px-8 sm:py-11 lg:py-[52px]">
+        <div className="relative overflow-hidden rounded-[20px] bg-blue px-[20px] py-[36px] shadow-elevated sm:px-[32px] sm:py-[44px] lg:py-[52px]">
           {/* The hero's quiet texture family: dot grid and a soft light wash,
               the same layers the closing card carries. */}
           <div
@@ -105,7 +105,7 @@ export function JobsYouCanCheckSection() {
           {/* Fixed height so a longer title in one trio never resizes the
               card; keyed by group so the cascade replays each cycle. */}
           <div
-            className="relative mx-auto mt-7 flex h-[176px] flex-col items-center justify-center gap-3 sm:mt-8 sm:h-[188px] sm:gap-3"
+            className="relative mx-auto mt-[28px] flex h-[172px] flex-col items-center justify-center gap-[12px] sm:mt-[32px] sm:h-[186px]"
             onMouseEnter={() => setPaused(true)}
             onMouseLeave={() => setPaused(false)}
             key={reduced ? 'static' : group}
@@ -114,7 +114,7 @@ export function JobsYouCanCheckSection() {
               <span
                 key={role}
                 className={cn(
-                  'flex h-12 w-fit items-center whitespace-nowrap rounded-full px-6 text-base font-semibold text-navy sm:h-[52px] sm:px-7 sm:text-lg',
+                  'flex h-12 w-fit items-center whitespace-nowrap rounded-full px-[20px] text-base font-semibold text-navy sm:h-[52px] sm:px-[24px] sm:text-lg',
                   tint,
                   CHIP_TILT[index],
                   !reduced && 'animate-row-fade-in-up',
@@ -126,7 +126,7 @@ export function JobsYouCanCheckSection() {
             ))}
           </div>
 
-          <div className="relative mt-7 flex flex-col items-center justify-center gap-3 sm:mt-9 sm:flex-row sm:gap-5">
+          <div className="relative mt-[28px] flex flex-col items-center justify-center gap-3 sm:mt-[36px] sm:flex-row sm:gap-5">
             <Button variant="light" size="md" onClick={handleCheckCta} className="hidden sm:inline-flex">
               Check My Application
             </Button>

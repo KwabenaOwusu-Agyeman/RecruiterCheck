@@ -7,6 +7,13 @@ interface SectionCtaProps {
   /** Where the quiet secondary link goes; omit for a primary-only close. */
   secondaryTo?: string
   secondaryLabel?: string
+  /**
+   * Set false to close the section with the secondary link alone. Used
+   * where a primary would sit within a screen of another one (the header
+   * is always visible, and some sections are neighbours) — nine identical
+   * buttons read as pressure, five read as rhythm.
+   */
+  primary?: boolean
   className?: string
 }
 
@@ -21,7 +28,7 @@ interface SectionCtaProps {
  * for the same action read as a bug. The secondary link stays, since it
  * navigates somewhere the sticky bar does not.
  */
-export function SectionCta({ secondaryTo, secondaryLabel, className }: SectionCtaProps) {
+export function SectionCta({ secondaryTo, secondaryLabel, primary = true, className }: SectionCtaProps) {
   const handleCheckCta = useCheckCta()
 
   return (
@@ -32,9 +39,11 @@ export function SectionCta({ secondaryTo, secondaryLabel, className }: SectionCt
         className,
       )}
     >
-      <Button size="md" onClick={handleCheckCta} className="hidden sm:inline-flex">
-        Check My Application
-      </Button>
+      {primary ? (
+        <Button size="md" onClick={handleCheckCta} className="hidden sm:inline-flex">
+          Check My Application
+        </Button>
+      ) : null}
       {secondaryTo ? (
         <Link
           to={secondaryTo}

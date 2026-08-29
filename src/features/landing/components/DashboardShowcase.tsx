@@ -291,7 +291,7 @@ export function DashboardShowcase() {
           </BrowserChrome>
         </div>
 
-        <SectionCta secondaryTo="/application-checker" secondaryLabel="What a full check covers" />
+        <SectionCta secondaryTo="/application-checker" secondaryLabel="What a full check covers" primary={false} />
       </Container>
     </section>
   )
