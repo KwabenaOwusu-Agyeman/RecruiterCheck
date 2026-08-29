@@ -131,7 +131,7 @@ export function PricingPage() {
         </Container>
       </section>
 
-      <section className="py-5 sm:py-6">
+      <section className="py-[32px] sm:py-[44px] lg:py-[56px]">
         <Container className="lg:max-w-[1400px]">
           <div className="mx-auto">
             {checkoutStatus === 'success' ? (

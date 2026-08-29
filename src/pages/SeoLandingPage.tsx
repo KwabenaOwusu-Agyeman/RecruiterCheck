@@ -57,7 +57,7 @@ export function SeoLandingPage({
 
   return (
     <main>
-      <section className="border-b border-border-soft bg-background py-12 sm:py-16 lg:py-20">
+      <section className="border-b border-border-soft bg-background py-[48px] sm:py-[64px] lg:py-[88px]">
         <Container>
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue">{eyebrow}</p>
@@ -79,7 +79,7 @@ export function SeoLandingPage({
       </section>
 
       {directAnswer && (
-        <section className="border-b border-border-soft bg-background py-8 sm:py-12">
+        <section className="border-b border-border-soft bg-background py-[32px] sm:py-[44px] lg:py-[56px]">
           <Container>
             <Card className="mx-auto max-w-3xl">
               <CardContent className="p-6 sm:p-8">
@@ -93,7 +93,7 @@ export function SeoLandingPage({
         </section>
       )}
 
-      <section className="py-10 sm:py-14">
+      <section className="py-[40px] sm:py-[56px] lg:py-[64px]">
         <Container>
           <div className="mx-auto grid max-w-5xl gap-5 md:grid-cols-3">
             {benefits.map((benefit) => (
@@ -109,7 +109,7 @@ export function SeoLandingPage({
       </section>
 
       {verdict && (
-        <section className="py-10 sm:py-14">
+        <section className="py-[40px] sm:py-[56px] lg:py-[64px]">
           <Container>
             <div className="mx-auto grid max-w-4xl gap-5 sm:grid-cols-2">
               <Card>
@@ -142,7 +142,7 @@ export function SeoLandingPage({
       )}
 
       {comparison && (
-        <section className="py-10 sm:py-14">
+        <section className="py-[40px] sm:py-[56px] lg:py-[64px]">
           <Container>
             <p className="mx-auto mb-2 max-w-3xl text-xs text-text-secondary sm:hidden" aria-hidden="true">
               Scroll to see the full comparison →
@@ -186,7 +186,7 @@ export function SeoLandingPage({
         </section>
       )}
 
-      <section className="border-y border-border-soft bg-background py-10 sm:py-14">
+      <section className="border-y border-border-soft bg-background py-[40px] sm:py-[56px] lg:py-[64px]">
         <Container>
           <div className="mx-auto max-w-3xl">
             <h2 className="font-display text-2xl text-text-primary sm:text-3xl">How it works</h2>
@@ -208,7 +208,7 @@ export function SeoLandingPage({
       </section>
 
       {example && (
-        <section className="py-10 sm:py-14">
+        <section className="py-[40px] sm:py-[56px] lg:py-[64px]">
           <Container>
             <Card className="mx-auto max-w-3xl">
               <CardContent className="p-6 sm:p-8">
@@ -222,7 +222,7 @@ export function SeoLandingPage({
       )}
 
       {faqs.length > 0 && (
-        <section className="border-t border-border-soft py-10 sm:py-14">
+        <section className="border-t border-border-soft py-[40px] sm:py-[56px] lg:py-[64px]">
           <Container>
             <div className="mx-auto max-w-3xl">
               <h2 className="font-display text-2xl text-text-primary sm:text-3xl">
@@ -273,7 +273,7 @@ export function SeoLandingPage({
       />
 
       {relatedLinks.length > 0 && (
-        <section className="border-t border-border-soft bg-background py-8">
+        <section className="border-t border-border-soft bg-background py-[32px] sm:py-[44px] lg:py-[56px]">
           <Container>
             <nav className="mx-auto flex max-w-3xl flex-wrap items-center gap-3" aria-label="Related tools">
               <span className="text-sm font-semibold text-text-primary">Related tools:</span>

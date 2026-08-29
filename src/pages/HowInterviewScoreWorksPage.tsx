@@ -75,7 +75,7 @@ export function HowInterviewScoreWorksPage() {
 
   return (
     <main>
-      <section className="border-b border-border-soft bg-background py-12 sm:py-16 lg:py-20">
+      <section className="border-b border-border-soft bg-background py-[48px] sm:py-[64px] lg:py-[88px]">
         <Container>
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue">Methodology</p>
@@ -89,7 +89,7 @@ export function HowInterviewScoreWorksPage() {
         </Container>
       </section>
 
-      <section className="border-b border-border-soft bg-background py-8 sm:py-12">
+      <section className="border-b border-border-soft bg-background py-[32px] sm:py-[44px] lg:py-[56px]">
         <Container>
           <Card className="mx-auto max-w-3xl">
             <CardContent className="p-6 sm:p-8">
@@ -109,7 +109,7 @@ export function HowInterviewScoreWorksPage() {
         </Container>
       </section>
 
-      <section className="py-10 sm:py-14">
+      <section className="py-[40px] sm:py-[56px] lg:py-[64px]">
         <Container>
           <div className="mx-auto max-w-3xl">
             <h2 className="font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[40px] lg:leading-[1.15]">
@@ -133,7 +133,7 @@ export function HowInterviewScoreWorksPage() {
         </Container>
       </section>
 
-      <section className="border-y border-border-soft bg-background py-10 sm:py-14">
+      <section className="border-y border-border-soft bg-background py-[40px] sm:py-[56px] lg:py-[64px]">
         <Container>
           <div className="mx-auto max-w-4xl">
             <h2 className="font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[40px] lg:leading-[1.15]">
@@ -155,7 +155,7 @@ export function HowInterviewScoreWorksPage() {
         </Container>
       </section>
 
-      <section className="py-10 sm:py-14">
+      <section className="py-[40px] sm:py-[56px] lg:py-[64px]">
         <Container>
           <div className="mx-auto max-w-3xl">
             <h2 className="font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[40px] lg:leading-[1.15]">
@@ -173,7 +173,7 @@ export function HowInterviewScoreWorksPage() {
         </Container>
       </section>
 
-      <section className="py-10 sm:py-14">
+      <section className="py-[40px] sm:py-[56px] lg:py-[64px]">
         <Container>
           <div className="mx-auto max-w-3xl">
             <h2 className="font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[40px] lg:leading-[1.15]">
@@ -195,7 +195,7 @@ export function HowInterviewScoreWorksPage() {
         </Container>
       </section>
 
-      <section className="border-y border-border-soft bg-background py-10 sm:py-14">
+      <section className="border-y border-border-soft bg-background py-[40px] sm:py-[56px] lg:py-[64px]">
         <Container>
           <div className="mx-auto max-w-3xl">
             <h2 className="font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[40px] lg:leading-[1.15]">
@@ -214,7 +214,7 @@ export function HowInterviewScoreWorksPage() {
         </Container>
       </section>
 
-      <section className="py-10 sm:py-14">
+      <section className="py-[40px] sm:py-[56px] lg:py-[64px]">
         <Container>
           <div className="mx-auto max-w-3xl">
             <h2 className="font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[40px] lg:leading-[1.15]">
@@ -230,7 +230,7 @@ export function HowInterviewScoreWorksPage() {
         </Container>
       </section>
 
-      <section className="border-y border-border-soft bg-background py-10 sm:py-14">
+      <section className="border-y border-border-soft bg-background py-[40px] sm:py-[56px] lg:py-[64px]">
         <Container>
           <div className="mx-auto max-w-3xl">
             <h2 className="font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[40px] lg:leading-[1.15]">
@@ -248,7 +248,7 @@ export function HowInterviewScoreWorksPage() {
         </Container>
       </section>
 
-      <section className="py-10 sm:py-14">
+      <section className="py-[40px] sm:py-[56px] lg:py-[64px]">
         <Container>
           <Card className="mx-auto max-w-3xl">
             <CardContent className="p-6 sm:p-8">
@@ -273,7 +273,7 @@ export function HowInterviewScoreWorksPage() {
         </Container>
       </section>
 
-      <section className="border-t border-border-soft py-10 sm:py-14">
+      <section className="border-t border-border-soft py-[40px] sm:py-[56px] lg:py-[64px]">
         <Container>
           <div className="mx-auto max-w-3xl">
             <h2 className="font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[40px] lg:leading-[1.15]">
@@ -320,7 +320,7 @@ export function HowInterviewScoreWorksPage() {
         }}
       />
 
-      <section className="border-t border-border-soft bg-background py-10 sm:py-14">
+      <section className="border-t border-border-soft bg-background py-[40px] sm:py-[56px] lg:py-[64px]">
         <Container>
           <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 text-center">
             <p className="text-lg font-medium text-text-primary">See your Interview Score for a real job</p>
