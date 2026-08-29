@@ -8,6 +8,7 @@ import { HeroSection } from '@/features/landing/components/HeroSection'
 import { HowItWorksSection } from '@/features/landing/components/HowItWorksSection'
 import { LlmComparisonSection } from '@/features/landing/components/LlmComparisonSection'
 import { ReassuranceSection } from '@/features/landing/components/ReassuranceSection'
+import { RoleFeedbackShowcase } from '@/features/landing/components/RoleFeedbackShowcase'
 import { StatsSection } from '@/features/landing/components/StatsSection'
 import { TestimonialsSection } from '@/features/landing/components/TestimonialsSection'
 import { TrustpilotFeedbackSection } from '@/features/landing/components/TrustpilotFeedbackSection'
@@ -50,6 +51,9 @@ export function LandingPage() {
           that here qualifies the visitor before the three demo sections. */}
       <Reveal>
         <JobsYouCanCheckSection />
+      </Reveal>
+      <Reveal>
+        <RoleFeedbackShowcase />
       </Reveal>
       <Reveal>
         <LlmComparisonSection />

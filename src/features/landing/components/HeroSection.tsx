@@ -1,39 +1,22 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { FileText, Target } from 'lucide-react'
+import { Target } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Container } from '@/components/ui/Container'
-import { AppWindow } from '@/features/landing/components/AppWindow'
-import { VerdictCard } from '@/features/landing/components/VerdictCard'
-import { ROLE_EXAMPLES } from '@/features/landing/data/exampleCheck'
 import { useCheckCta } from '@/hooks/useCheckCta'
-import { cn } from '@/utils/cn'
 
 /**
- * The first screen carries the product, not just the pitch: the same hero
- * system the 23 SEO pages already use (Fraunces headline, blue tracked
- * eyebrow, 18px subcopy, a primary action paired with a quiet secondary
- * link), plus the two things monday.com's brand-search hero has that a
- * text-only hero lacks — a control that asks the visitor to participate
- * (the role pills) and the product itself (the verdict card) visible before
- * any scrolling.
- *
- * The picked role is not forgotten on click: it rides into /checks/new as
- * ?role= and prefills the job title there, surviving the sign-up flow via
- * the stored post-auth redirect.
+ * The same hero system the 23 SEO pages use: Fraunces headline, blue
+ * tracked eyebrow, the USP capsule, and a primary action paired with a
+ * quiet secondary link. The example itself lives one scroll down in the
+ * tier trio (the owner's call: all three outcomes visible at once beats an
+ * interactive card that hides the range behind clicks), which also carries
+ * the #example anchor the header and SEO pages link to.
  */
 export function HeroSection() {
   const handleCheckCta = useCheckCta()
-  const [activeId, setActiveId] = useState(ROLE_EXAMPLES[0].id)
-  const active = ROLE_EXAMPLES.find((example) => example.id === activeId) ?? ROLE_EXAMPLES[0]
 
   return (
-    // id="example": the header's "See an example" link and the 23 SEO pages'
-    // /#example anchor land here — the hero IS the example now. The old
-    // showcase section four screens down rendered the same VerdictCard from
-    // the same ROLE_EXAMPLES data the pills above rotate through, a straight
-    // duplication once the hero took over that job.
-    <section id="example" className="relative scroll-mt-[88px] overflow-hidden border-b border-border bg-background">
+    <section className="relative overflow-hidden border-b border-border bg-background">
       {/* Faint dot-grid backdrop, the same "quiet technical texture" pattern
           Linear/Vercel use on light hero sections — radial-masked so it
           reads as depth near the edges rather than noise behind the text. */}
@@ -75,7 +58,7 @@ export function HeroSection() {
             </p>
           </div>
           <div data-hero-cta className="mt-5 flex flex-col items-center justify-center gap-3 sm:mt-6 sm:flex-row sm:gap-5">
-            <Button size="lg" onClick={() => handleCheckCta({ role: active.role })}>
+            <Button size="lg" onClick={handleCheckCta}>
               Check My Application
             </Button>
             <Link
@@ -88,81 +71,6 @@ export function HeroSection() {
           <p className="mt-3 text-xs font-medium text-text-secondary">First check free. No card required.</p>
         </div>
 
-        {/* The participation moment: pick your role, watch the verdict
-            change. The same device as monday's "What would you like to
-            explore?" card, built from this product's own material. */}
-        <div
-          role="tablist"
-          aria-label="Example role"
-          className="mx-auto mt-7 grid max-w-sm grid-cols-2 gap-2 sm:mt-8 sm:flex sm:max-w-full sm:flex-wrap sm:justify-center"
-        >
-          {ROLE_EXAMPLES.map((example, index) => {
-            const isActive = example.id === activeId
-            // Odd item count on the 2-column mobile grid — center the last
-            // one across both columns instead of leaving it stranded left.
-            const isLastOdd = index === ROLE_EXAMPLES.length - 1 && ROLE_EXAMPLES.length % 2 === 1
-            return (
-              <button
-                key={example.id}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => setActiveId(example.id)}
-                className={cn(
-                  'flex h-11 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-all duration-200 sm:h-[40px] sm:px-5',
-                  isActive
-                    ? 'border-blue bg-blue text-white'
-                    : 'border-border-soft bg-surface text-text-secondary hover:border-blue/40 hover:text-text-primary',
-                  isLastOdd && 'col-span-2 mx-auto w-full sm:col-span-1 sm:mx-0 sm:w-auto',
-                )}
-              >
-                {example.role}
-              </button>
-            )
-          })}
-        </div>
-
-        {/* The product as a composed scene, not a card: the verdict markup
-            inside browser chrome, over a soft colour wash, with two floating
-            UI fragments at the window's corners — the layered-screenshot
-            grammar the monday.com hero uses, built from this product's own
-            moments. Fragments are decorative duplicates of real UI, so they
-            are aria-hidden, desktop-only (the phone keeps its fold budget),
-            and they hold still under prefers-reduced-motion. */}
-        <div className="relative mx-auto mt-6 max-w-2xl sm:mt-8 lg:max-w-[900px]">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -inset-x-10 -bottom-8 -top-10 rounded-[40px] bg-[radial-gradient(ellipse_70%_60%_at_50%_45%,rgba(25,74,159,0.09),transparent_70%)]"
-          />
-          <AppWindow urlLabel="myrecruitercheck.com/checks/feedback">
-            <VerdictCard example={active} compact frameless />
-          </AppWindow>
-          <p className="mt-4 text-center text-sm text-text-secondary">
-            From Likely Interview Candidate to Not a Fit. Switch roles above to see the full range.
-          </p>
-
-          <div
-            aria-hidden="true"
-            className="absolute -right-8 -top-4 hidden animate-float-slow items-center gap-2 rounded-full border border-border-soft bg-surface py-2 pl-3 pr-4 shadow-elevated lg:flex"
-          >
-            <span className="h-[8px] w-[8px] rounded-full bg-success" />
-            <span className="text-sm font-semibold text-text-primary">Check complete</span>
-            <span className="text-sm text-text-secondary">{active.role}</span>
-          </div>
-
-          <div
-            aria-hidden="true"
-            className="absolute -bottom-5 -left-10 hidden animate-float-slow items-center gap-3 rounded-[8px] border border-border-soft bg-surface px-4 py-3 shadow-elevated [animation-delay:1.6s] lg:flex"
-          >
-            <span className="flex h-[36px] w-[36px] items-center justify-center rounded-[8px] bg-navy-tint">
-              <FileText className="h-[16px] w-[16px] text-blue" strokeWidth={2} />
-            </span>
-            <span className="flex flex-col">
-              <span className="text-sm font-semibold text-text-primary">Improved CV draft</span>
-              <span className="text-xs text-text-secondary">Ready to download</span>
-            </span>
-          </div>
-        </div>
       </Container>
     </section>
   )
