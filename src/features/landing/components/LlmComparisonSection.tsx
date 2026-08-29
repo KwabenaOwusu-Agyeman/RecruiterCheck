@@ -60,7 +60,7 @@ const ROWS: ComparisonRow[] = [
   { label: 'Ready to use', chatgpt: 'You decide what to ask', mrc: "CV + job. That's it." },
   { label: 'Consistent check', chatgpt: 'Depends on your instructions', mrc: 'Same recruiter framework every time' },
   { label: 'Clear verdict', chatgpt: 'Open ended response', mrc: '' },
-  { label: 'Unlimited chat', chatgpt: 'YES', mrc: 'NO' },
+  { label: 'Unlimited chat', chatgpt: 'Yes', mrc: 'No' },
 ]
 
 // Column padding in one place so the three columns stay on one baseline
