@@ -35,11 +35,10 @@ interface MatrixRow {
  * claim believable.
  */
 const ROWS: MatrixRow[] = [
-  { label: 'A tech recruitment scorecard for your exact job', chat: false, mrc: true },
+  { label: 'Tech recruitment scorecard', chat: false, mrc: true },
   { label: 'Recruiter style feedback, not a one off opinion', chat: false, mrc: true },
   { label: 'Not a yes man', chat: false, mrc: true },
   { label: 'No prompts to write', chat: false, mrc: true },
-  { label: 'Every check saved and tracked', chat: false, mrc: true },
   { label: 'Free unlimited chat', chat: true, mrc: false },
 ]
 
