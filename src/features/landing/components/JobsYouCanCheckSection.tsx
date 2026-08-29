@@ -108,7 +108,7 @@ export function JobsYouCanCheckSection() {
               Jobs you can check
             </h2>
             <p className="mt-3 text-base text-white/75 sm:text-lg">
-              AI, data and tech roles, 0 to 5 years of work experience.
+              From your first internship to your fifth year in.
             </p>
           </div>
 

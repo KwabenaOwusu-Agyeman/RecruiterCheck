@@ -58,7 +58,7 @@ export function HeroSection() {
                   splits them evenly at the comma instead of leaving one word
                   orphaned on the second line. */}
               <span className="text-balance">
-                Built for AI/ML, data and tech roles, 0 to 5 years of work experience.
+                Built for AI/ML, data and tech roles. 0 to 5 years of work experience.
               </span>
             </p>
           </div>

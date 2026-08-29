@@ -44,19 +44,21 @@ export function LandingPage() {
   return (
     <>
       <HeroSection />
+      {/* The order is the argument: the hero hooks, then Us vs ChatGPT
+          kills the free-alternative objection while attention is highest,
+          then the process, then the honest-verdict trio proving the matrix's
+          "not a yes man" row, then breadth, outputs and retention. */}
+      <Reveal>
+        <LlmComparisonSection />
+      </Reveal>
       <Reveal>
         <HowItWorksSection />
-      </Reveal>
-      {/* Straight after the mechanism: "does this apply to my job?". Answering
-          that here qualifies the visitor before the three demo sections. */}
-      <Reveal>
-        <JobsYouCanCheckSection />
       </Reveal>
       <Reveal>
         <RoleFeedbackShowcase />
       </Reveal>
       <Reveal>
-        <LlmComparisonSection />
+        <JobsYouCanCheckSection />
       </Reveal>
       <Reveal>
         <DocumentShowcase />

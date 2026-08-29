@@ -15,10 +15,14 @@ import { ROLE_EXAMPLES } from '@/features/landing/data/exampleCheck'
  * outcomes read as three different verdicts rather than one template with
  * the number swapped.
  */
+// The grounds darken as the verdict worsens: white for the strong result,
+// muted for the borderline one, near-black navy for the rejection — so the
+// severity reads before a single word does, and "Not a Fit" lands in red
+// on white text against the dark card.
 const TIER_SHOWCASE = [
   { id: 'software-engineer', tone: 'light' },
-  { id: 'ai-ml-engineer', tone: 'dark' },
-  { id: 'junior-data-analyst', tone: 'muted' },
+  { id: 'ai-ml-engineer', tone: 'muted' },
+  { id: 'junior-data-analyst', tone: 'dark' },
 ] as const
 
 export function RoleFeedbackShowcase() {
