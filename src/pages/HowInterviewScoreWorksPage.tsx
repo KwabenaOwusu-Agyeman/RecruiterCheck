@@ -8,21 +8,21 @@ import { BRAND } from '@/lib/constants'
 
 const factors = [
   {
-    weight: '40%',
+    number: '01',
     title: 'Experience',
     description:
       'Whether your background is at the level and scope this specific role needs. For early career candidates, relevant internships, academic projects, and coursework can count alongside paid roles, provided the CV describes what was actually done.',
     subcriteria: 'Assessed across three checks: evidence of having applied the relevant skill in practice, the skill itself being applied at the level the role needs, and measurable results from that work.',
   },
   {
-    weight: '35%',
+    number: '02',
     title: 'Skills',
     description:
       'Whether the tools and skills the job description asks for are shown with evidence, a project, a result, a specific context, rather than only appearing in a skills list.',
     subcriteria: 'Assessed across four checks: coverage of the essential skills the job asks for, evidence those skills were actually applied, familiarity with the specific tools and platforms named, and relevant certifications where the role calls for them.',
   },
   {
-    weight: '25%',
+    number: '03',
     title: 'Candidate value',
     description:
       'Whether there is a clear, specific reason to interview you over another applicant with a similar background, based on what your CV actually demonstrates.',
@@ -69,7 +69,7 @@ export function HowInterviewScoreWorksPage() {
   usePageMeta({
     title: 'How the MyRecruiterCheck Interview Score Works',
     description:
-      'How Interview Score is calculated from experience (40%), skills (35%) and candidate value (25%), what counts as evidence, and what the score does and does not measure.',
+      'How Interview Score is calculated from experience, skills and candidate value, what counts as evidence, and what the score does and does not measure.',
     path: '/how-interview-score-works',
   })
 
@@ -98,7 +98,7 @@ export function HowInterviewScoreWorksPage() {
               </h2>
               <p className="mt-4 leading-7 text-text-secondary">
                 Interview Score compares your CV with one specific job description and scores three
-                factors: experience (40%), skills (35%) and candidate value (25%). Each factor is
+                factors: experience, skills and candidate value. Each factor is
                 judged on evidence already in your CV, a project, a result, a tool used in context,
                 not on whether a keyword is present. It is an evidence based estimate of how
                 convincingly your application matches this role. It cannot guarantee an interview,
@@ -143,8 +143,10 @@ export function HowInterviewScoreWorksPage() {
               {factors.map((factor) => (
                 <Card key={factor.title} className="h-full">
                   <CardContent className="p-6">
-                    <p className="text-sm font-semibold uppercase tracking-wide text-blue">{factor.weight}</p>
-                    <h3 className="mt-2 text-xl font-semibold text-text-primary">{factor.title}</h3>
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-navy text-sm font-semibold text-white">
+                      {Number(factor.number)}
+                    </span>
+                    <h3 className="mt-3 text-xl font-semibold text-text-primary">{factor.title}</h3>
                     <p className="mt-3 leading-7 text-text-secondary">{factor.description}</p>
                     <p className="mt-3 text-sm leading-6 text-text-secondary">{factor.subcriteria}</p>
                   </CardContent>

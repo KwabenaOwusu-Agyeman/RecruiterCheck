@@ -1,63 +1,62 @@
-import { Check, X } from 'lucide-react'
 import { Container } from '@/components/ui/Container'
+import { TIER_LABEL } from '@/components/feedback/ScoreLockup'
 import { SectionCta } from '@/features/landing/components/SectionCta'
 import { cn } from '@/utils/cn'
 
 /**
- * A feature matrix instead of two side-by-side lists. In the old two-card
- * layout each side carried differently worded sentences, so nothing lined
- * up and no claim was checkable head to head. Here every row is one
- * criterion judged for both columns — and two rows go to AI chat honestly,
- * which is what makes the rows that go our way believable. The column is
- * named ChatGPT because that is the name visitors actually weigh us
- * against (the row facts hold for any chatbot, and the linked comparison
- * page covers the rest). Text only, no logo: nominative use of a
- * competitor's name in a truthful comparison, nothing more.
+ * One cohesive comparison surface, not a checkmark matrix. The old design
+ * scored ChatGPT vs MyRecruiterCheck as a five-row yes/no grid, which reads
+ * as a generic SaaS feature table and hides the actual argument: ChatGPT
+ * can do this work when prompted well, MyRecruiterCheck productises the
+ * prompting itself. So every row here is a short before/after pair, not a
+ * verdict icon, and the row we concede (Unlimited Chat) is styled exactly
+ * as quietly as the rows that go our way — an honest concession is what
+ * makes the other three believable.
  *
- * Column identities carry the comparison visually: ChatGPT's column is
- * white with near-black text (its own scheme), ours is the brand blue and
- * navy tint, and the criteria rail stays neutral on the warm ground.
- *
- * Every row is a current product truth: the job-specific evaluation, the
- * fixed three factor framework, the structured verdict. Nothing here claims
- * calibration studies or ATS parity we cannot evidence. The first two rows
- * are facts, not adjectives — "scored against the specific job" and "same
- * framework every time" replaced "tech recruitment scorecard" and
- * "recruiter style feedback", which were jargon a first-time visitor could
- * not check against anything. By the time this section renders, the reader
- * has just seen the verdict trio above it, so each row lands as a
- * description of something already witnessed.
+ * MyRecruiterCheck carries the stronger visual hierarchy (navy column
+ * heading, semibold navy body text) while ChatGPT stays neutral, matching
+ * how the rest of the landing page treats the product vs. the alternative.
+ * No icons, no colour-coded win/lose treatment: the CLEAR VERDICT row reuses
+ * the product's own Interview Score typography (Fraunces numeral, the exact
+ * semantic "Needs Improvement" pill token) as the one visual peak, never the
+ * internal scoring weights.
  */
-interface MatrixRow {
+interface ComparisonRow {
+  number: string
   label: string
-  chat: boolean
-  mrc: boolean
+  chatgpt: string
+  /** false for the one row ChatGPT wins — kept typographically equal, not styled as a loss. */
+  mrcEmphasis: boolean
+  mrc: string
 }
 
-/**
- * Five rows, written for a five second scan: a visitor gives this section
- * one pass, so every label is a handful of plain words. Four go our way,
- * one goes to chat honestly — the row we concede is what makes the four we
- * claim believable.
- */
-const ROWS: MatrixRow[] = [
-  { label: 'Scored against the specific job you want', chat: false, mrc: true },
-  { label: 'The same scoring framework every time', chat: false, mrc: true },
-  { label: 'Not a yes man', chat: false, mrc: true },
-  { label: 'No prompts to write', chat: false, mrc: true },
-  { label: 'Free unlimited chat', chat: true, mrc: false },
+const ROWS: ComparisonRow[] = [
+  { number: '01', label: 'Ready to use', chatgpt: 'You decide what to ask', mrcEmphasis: true, mrc: "CV + job. That's it." },
+  { number: '02', label: 'Consistent check', chatgpt: 'Depends on your instructions', mrcEmphasis: true, mrc: 'Same recruiter framework every time' },
+  { number: '03', label: 'Clear verdict', chatgpt: 'Open ended feedback', mrcEmphasis: true, mrc: '' },
+  { number: '04', label: 'Unlimited chat', chatgpt: 'Yes', mrcEmphasis: false, mrc: 'No' },
 ]
 
-function Verdict({ yes }: { yes: boolean }) {
+/**
+ * The compact score example for the Clear Verdict row. Deliberately not the
+ * full ScoreLockup: no gauge, no framework row, nothing beyond the numeral,
+ * the verdict pill, and one caption naming what they are. A proof point, not
+ * a second dashboard — and the score alone, never the weights behind it.
+ */
+function VerdictExample() {
   return (
-    <span className="flex items-center justify-center">
-      {yes ? (
-        <Check className="h-[20px] w-[20px] text-success" strokeWidth={2} aria-hidden="true" />
-      ) : (
-        <X className="h-[18px] w-[18px] text-error/60" strokeWidth={2} aria-hidden="true" />
-      )}
-      <span className="sr-only">{yes ? 'Yes' : 'No'}</span>
-    </span>
+    <div>
+      <p className="font-display text-[34px] font-semibold leading-none tracking-[-0.02em] text-navy [font-variant-numeric:tabular-nums] sm:text-[38px]">
+        76%
+      </p>
+      <p className="mt-[10px]">
+        <span className="inline-flex items-center gap-[6px] rounded-full bg-warning/15 px-[10px] py-[4px] text-[12px] font-semibold leading-none text-warning-deep">
+          <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-current" aria-hidden="true" />
+          {TIER_LABEL.improve}
+        </span>
+      </p>
+      <p className="mt-[10px] text-xs font-medium text-text-caption">Interview Score &middot; Recruiter Verdict</p>
+    </div>
   )
 }
 
@@ -67,50 +66,67 @@ export function LlmComparisonSection() {
       <Container className="py-[48px] sm:py-[64px] lg:py-[88px]">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue sm:text-sm">
-            The difference
+            Why not just use ChatGPT?
           </p>
-          <h2 className="mt-2 font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
-            Us vs ChatGPT
+          <h2 className="mt-3 text-balance font-display text-[22px] leading-[1.3] text-text-secondary sm:text-[28px] lg:text-[36px] lg:leading-[1.25]">
+            You could build the prompt yourself.
+            <br className="hidden sm:block" />{' '}
+            <span className="font-semibold text-navy">We built the application check for you.</span>
           </h2>
-          <p className="mt-3 text-base text-text-secondary sm:text-lg">
-            You can paste your CV into ChatGPT for free. Here's the difference.
-          </p>
         </div>
 
-        <div className="mx-auto mt-7 max-w-[860px] overflow-hidden rounded-[20px] border border-border-soft bg-background shadow-card sm:mt-8">
-          {/* Header row. On phones the product column abbreviates to MRC —
-              the full name sits in the heading directly above, so the
-              shorthand cannot be misread. */}
-          <div className="grid grid-cols-[1fr_72px_72px] items-center border-b border-border px-4 py-3 sm:grid-cols-[1fr_130px_170px] sm:px-6">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-text-caption">
-              What you get
-            </span>
-            <span className="mx-auto rounded-full border border-border-strong bg-white px-2.5 py-1 text-center text-xs font-semibold text-[#0D0D0D] sm:px-4 sm:text-sm">
-              ChatGPT
-            </span>
-            <span className="mx-auto rounded-full bg-blue px-2.5 py-1 text-center text-xs font-semibold text-white sm:px-4 sm:text-sm">
-              <span className="sm:hidden">MRC</span>
-              <span className="hidden sm:inline">MyRecruiterCheck</span>
-            </span>
+        <div className="mx-auto mt-8 max-w-[940px] overflow-hidden rounded-[20px] border border-border-soft bg-surface shadow-card sm:mt-9">
+          {/* Column headings, once, above the rows — below lg every row
+              carries its own inline labels instead (see the per-cell
+              headings), so the surface never repeats itself as a table. */}
+          <div className="hidden border-b border-border-soft px-8 py-3 lg:grid lg:grid-cols-[180px_1fr_1fr] lg:gap-x-10">
+            <span aria-hidden="true" />
+            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-text-caption">ChatGPT</span>
+            <span className="text-xs font-bold uppercase tracking-[0.12em] text-navy">MyRecruiterCheck</span>
           </div>
 
           {ROWS.map((row, index) => (
             <div
-              key={row.label}
+              key={row.number}
               className={cn(
-                'grid grid-cols-[1fr_72px_72px] items-stretch px-4 sm:grid-cols-[1fr_130px_170px] sm:px-6',
-                index < ROWS.length - 1 && 'border-b border-border',
+                'grid grid-cols-1 gap-x-10 gap-y-3 px-5 py-5 sm:px-7 sm:py-6 lg:grid-cols-[180px_1fr_1fr] lg:items-center lg:px-8 lg:py-7',
+                index > 0 && 'border-t border-border-soft',
               )}
             >
-              <span className="flex items-center py-4 pr-3 text-[15px] font-medium leading-snug text-text-primary sm:text-base">
+              <p className="text-[12px] font-bold uppercase tracking-[0.06em] text-text-primary sm:text-[13px]">
+                <span className="text-text-caption">{row.number}</span>
+                <span aria-hidden="true"> &middot; </span>
                 {row.label}
-              </span>
-              <span className="flex items-center justify-center bg-white">
-                <Verdict yes={row.chat} />
-              </span>
-              <span className="flex items-center justify-center bg-navy-tint/60">
-                <Verdict yes={row.mrc} />
-              </span>
+              </p>
+
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-text-caption lg:hidden">
+                  ChatGPT
+                </p>
+                <p className="mt-[4px] text-[15px] leading-snug text-text-secondary sm:text-base lg:mt-0">
+                  {row.chatgpt}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-navy lg:hidden">
+                  MyRecruiterCheck
+                </p>
+                <div className="mt-[4px] lg:mt-0">
+                  {row.mrc === '' ? (
+                    <VerdictExample />
+                  ) : (
+                    <p
+                      className={cn(
+                        'text-[15px] leading-snug sm:text-base',
+                        row.mrcEmphasis ? 'font-semibold text-navy' : 'text-text-secondary',
+                      )}
+                    >
+                      {row.mrc}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           ))}
         </div>

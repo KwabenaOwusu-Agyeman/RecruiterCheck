@@ -12,10 +12,11 @@ import { cn } from '@/utils/cn'
  * - The percentage is set in Fraunces. Display-face numerals are reserved
  *   for the Interview Score; every other number on the site stays in Inter.
  * - The gauge is the SCORE as a picture (one fill, one tier colour). The
- *   40/35/25 scoring weights are never drawn as bar segments, because a
- *   segmented bar reads as "you scored 40 on Experience" — the weights are
- *   properties of the model, not of the candidate, and appear only as the
- *   labelled "Scoring weights" row below.
+ *   internal weighting between dimensions is never drawn as bar segments or
+ *   disclosed as numbers anywhere public — a segmented bar reads as "you
+ *   scored 40 on Experience", and the exact formula is not something this
+ *   product publishes. Publicly we only ever name the three dimensions
+ *   themselves, in the labelled "What we assess" row below.
  *
  * Currently used by the landing surfaces (hero preview, verdict trio, How
  * it works mock). The real FeedbackPage still renders its own score header
@@ -39,15 +40,13 @@ export const TIER_LABEL: Record<ScoreTier, string> = {
 }
 
 /**
- * The three dimensions of the real scoring model, with their weights. Shown
- * only under the explicit "Scoring weights" label so a first-time visitor
- * cannot read them as the candidate's own sub-scores.
+ * The three dimensions of the real scoring model. The relative weighting
+ * between them is internal methodology and is never disclosed publicly —
+ * this list names only what is assessed, under the explicit "What we
+ * assess" label, so a first-time visitor cannot read it as the candidate's
+ * own sub-scores or reverse it into a formula.
  */
-export const SCORING_WEIGHTS = [
-  { label: 'Experience', weight: '40%' },
-  { label: 'Required skills', weight: '35%' },
-  { label: 'Candidate value', weight: '25%' },
-] as const
+export const ASSESSMENT_DIMENSIONS = ['Experience', 'Required skills', 'Candidate value'] as const
 
 // The pill always pairs a dot with the written verdict — the tier is never
 // colour alone. Light grounds use the text-safe deep tokens; dark grounds
@@ -171,30 +170,16 @@ export function ScoreLockup({
               isDark ? 'text-white/50' : 'text-text-caption',
             )}
           >
-            Scoring weights
+            What we assess
           </p>
-          <dl className="mt-[8px] grid grid-cols-3 gap-[8px]">
-            {SCORING_WEIGHTS.map((dimension) => (
-              <div key={dimension.label}>
-                <dt
-                  className={cn(
-                    'text-[13px] font-medium leading-snug',
-                    isDark ? 'text-white/85' : 'text-text-primary',
-                  )}
-                >
-                  {dimension.label}
-                </dt>
-                <dd
-                  className={cn(
-                    'mt-[2px] text-xs [font-variant-numeric:tabular-nums]',
-                    isDark ? 'text-white/55' : 'text-text-secondary',
-                  )}
-                >
-                  {dimension.weight}
-                </dd>
-              </div>
-            ))}
-          </dl>
+          <p
+            className={cn(
+              'mt-[8px] text-[13px] font-medium leading-snug',
+              isDark ? 'text-white/85' : 'text-text-primary',
+            )}
+          >
+            {ASSESSMENT_DIMENSIONS.join(' · ')}
+          </p>
         </div>
       ) : null}
     </div>
