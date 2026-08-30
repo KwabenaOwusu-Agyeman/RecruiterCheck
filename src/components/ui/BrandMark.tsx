@@ -1,14 +1,16 @@
 import { cn } from '@/utils/cn'
 
 /**
- * The app mark: outline figure, double ring, solid figure, cream on navy.
- * Inline SVG rather than an <img> to public/icons/logo.svg — it costs no
- * request, stays sharp at every size, and takes its colours from the
- * palette (fill-navy / the cream `background` token) instead of hardcoded
- * hexes, so a palette change carries here too.
+ * The app mark: outline figure, double ring, solid figure, cream on a navy
+ * tile — the same artwork the icon files in public/icons carry, so the
+ * header logo and the browser tab show the identical thing.
  *
- * Kept in geometric sync with public/icons/logo.svg, which is the master
- * the favicon and PWA rasters are generated from. Change one, change both.
+ * Inline SVG rather than an <img> to public/icons/logo.svg: no request, it
+ * stays sharp at any size, and the colours come from the palette
+ * (fill-navy, and the cream `background` token) instead of hardcoded hexes.
+ *
+ * Kept in geometric sync with public/icons/logo.svg, the master the raster
+ * icons are generated from. Change one, change both.
  */
 export function BrandMark({ className }: { className?: string }) {
   return (
