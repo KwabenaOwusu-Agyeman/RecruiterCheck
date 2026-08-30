@@ -1,12 +1,15 @@
 import { cn } from '@/utils/cn'
 
 /**
- * The mark as it appears beside the wordmark: outline figure, double ring,
- * solid figure, drawn bare in navy directly on the page's cream ground —
- * no tile, the way the reference lockup carries its mark. The icon files
- * in public/icons hold the inverse (cream on a navy tile) because a
- * standalone tab or launcher icon has to supply its own ground; a lockup
- * sits on the page's.
+ * The mark: outline figure, double ring, solid figure, navy on the app's
+ * cream ground. One treatment everywhere — the header lockup here and the
+ * icon files in public/icons are the same artwork in the same colours, so
+ * the tab, the home screen and the page all show one logo rather than a
+ * lockup and a recoloured icon variant.
+ *
+ * The header draws it bare (no ground of its own) because the page already
+ * supplies the cream; the icon files paint the cream themselves, since a
+ * tab or launcher tile has no ground to inherit.
  *
  * Inline SVG rather than an <img> to public/icons/logo.svg: no request, it
  * stays sharp at any size, and the colour comes from the palette
