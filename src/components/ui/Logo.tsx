@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { BrandMark } from '@/components/ui/BrandMark'
 import { cn } from '@/utils/cn'
 import { BRAND } from '@/lib/constants'
 
@@ -13,6 +14,7 @@ export function Logo({ className }: LogoProps) {
       className={cn('inline-flex items-center gap-2.5 text-text-primary', className)}
       aria-label={`${BRAND.name} home`}
     >
+      <BrandMark className="h-[30px] w-[30px] sm:h-[34px] sm:w-[34px]" />
       <span className="text-[19px] font-semibold tracking-[-0.025em] text-navy sm:text-[21px]">
         MyRecruiter<span className="text-blue">Check</span>
       </span>

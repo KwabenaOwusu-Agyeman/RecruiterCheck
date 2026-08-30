@@ -1,5 +1,6 @@
 import { Plus } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
+import { BrandMark } from '@/components/ui/BrandMark'
 import { Container } from '@/components/ui/Container'
 import { cn } from '@/utils/cn'
 
@@ -31,6 +32,7 @@ export function AppHeader() {
           {/* Intentionally not a link: navigation inside the app happens
               through My Checks / Account, not the logo. */}
           <span className="inline-flex items-center gap-2.5 text-text-primary">
+            <BrandMark className="h-[28px] w-[28px] sm:h-[32px] sm:w-[32px]" />
             <span className="text-[19px] font-semibold tracking-[-0.025em] text-navy sm:text-[21px]">
               MyRecruiter<span className="text-blue">Check</span>
             </span>
