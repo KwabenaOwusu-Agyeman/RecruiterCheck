@@ -31,8 +31,8 @@ export function AppHeader() {
         <div className="flex h-14 items-center gap-8 sm:h-16 lg:h-[72px]">
           {/* Intentionally not a link: navigation inside the app happens
               through My Checks / Account, not the logo. */}
-          <span className="inline-flex items-center gap-2 text-text-primary">
-            <BrandMark className="h-[26px] w-[26px] sm:h-[29px] sm:w-[29px]" />
+          <span className="inline-flex items-center gap-1.5 text-text-primary">
+            <BrandMark className="h-[20px] w-auto sm:h-[23px]" />
             <span className="text-[19px] font-semibold tracking-[-0.025em] text-navy sm:text-[21px]">
               MyRecruiter<span className="text-blue">Check</span>
             </span>

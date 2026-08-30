@@ -11,10 +11,10 @@ export function Logo({ className }: LogoProps) {
   return (
     <Link
       to="/"
-      className={cn('inline-flex items-center gap-2 text-text-primary', className)}
+      className={cn('inline-flex items-center gap-1.5 text-text-primary', className)}
       aria-label={`${BRAND.name} home`}
     >
-      <BrandMark className="h-[28px] w-[28px] sm:h-[31px] sm:w-[31px]" />
+      <BrandMark className="h-[21px] w-auto sm:h-[24px]" />
       <span className="text-[19px] font-semibold tracking-[-0.025em] text-navy sm:text-[21px]">
         MyRecruiter<span className="text-blue">Check</span>
       </span>
