@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="MyRecruiterCheck">
+  <rect width="512" height="512" fill="#020C38"/>
+  <g fill="none" stroke="#F8F6F2" stroke-width="10">
+    <circle cx="158" cy="202" r="28"/>
+    <rect x="127" y="246" width="62" height="94" rx="31"/>
+    <circle cx="258" cy="268" r="52"/>
+    <circle cx="258" cy="268" r="34"/>
+  </g>
+  <g fill="#F8F6F2">
+    <circle cx="356" cy="180" r="32"/>
+    <rect x="322" y="216" width="68" height="126" rx="34"/>
+  </g>
+</svg>
