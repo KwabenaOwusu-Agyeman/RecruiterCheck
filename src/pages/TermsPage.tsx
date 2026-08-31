@@ -94,6 +94,12 @@ export function TermsPage() {
           after purchase.
         </p>
         <p>
+          Every check pack includes access to your full Check History, regardless of which pack you
+          buy. Access to your history is not limited by pack size or price, and it remains available
+          for as long as your account is open, including after your purchased checks have been used
+          or have expired.
+        </p>
+        <p>
           If your most recently purchased pack is still fully unused, you may request a full refund
           within 7 days of that payment from your billing page, or by contacting{' '}
           <a href="mailto:support@recruitercheck.app" className="font-medium text-blue hover:underline">
