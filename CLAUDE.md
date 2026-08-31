@@ -123,23 +123,31 @@ test results before it merges.
 
 Production migrations, any SQL against the hosted project, Edge Function
 deployment, Stripe code or pricing, authentication flows, RLS policies, secret
-rotation, deployment, branch protection, `.gitignore` changes, adding a dependency,
-and pushing to `main` on either remote.
+rotation, deployment, branch protection, `.gitignore` changes, and adding a
+dependency.
 
 Level 3 means you stop and ask first. It does not mean you act and then report.
+
+`supabase db push` is the one Level 3 action you may now run yourself, and it
+sits behind a confirmation prompt rather than a block. Treat that prompt as the
+approval, not as a formality: it applies DDL to a database holding candidate
+CVs and payment records, and there is no undo. Verify the migration locally
+before you reach for it, and say plainly in the prompt what it will change.
 
 ## Git
 
 Two remotes, both carrying the same `main`: `origin` and `personal`. When `main` is
 pushed it goes to both. Work on a branch rather than committing straight to `main`.
 
-- Pushing `main` to either remote is blocked at the permission layer. The user does
-  that themselves. Do not look for a way around it.
-- A feature branch may be pushed **only when the user has explicitly asked for that
-  work to be pushed**. A general instruction to implement something is not a request
-  to push it. When in doubt, commit locally and say the branch is ready.
+- Pushing, opening a pull request and merging it are all yours to do without
+  asking, `main` included. When `main` moves it goes to both remotes, not one.
 - Never force push. `--force-with-lease` needs explicit approval each time.
-- Never merge a pull request. Opening one is fine when asked; merging is the user's.
+  `--mirror` and `--delete` stay blocked at the permission layer.
+- Merging is no longer a checkpoint, so the checks are the only thing standing
+  between a mistake and `main`. Run what `npm run checks` names, every time, and
+  do not merge on a red or unrun check.
+- Say what you pushed and merged in the report. The user is no longer typing
+  these commands, so the transcript is the only record they have of them.
 
 ## Security review triggers
 
