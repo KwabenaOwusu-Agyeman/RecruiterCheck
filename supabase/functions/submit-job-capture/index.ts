@@ -94,6 +94,10 @@ function sanitizeText(value: unknown, maxChars: number): string | null {
   // control characters before storage.
   const cleaned = value
     .replace(/<[^>]*>/g, ' ')
+    // Matching control characters is the entire point of this line: they are
+    // stripped before storage. The rule is right in general and stays on
+    // repo-wide; this one call site is the deliberate exception.
+    // eslint-disable-next-line no-control-regex
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
     .replace(/\s+/g, ' ')
     .trim()
