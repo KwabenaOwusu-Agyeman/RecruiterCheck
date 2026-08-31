@@ -1,10 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Container } from '@/components/ui/Container'
-import {
-  clearsStatsFloor,
-  getLandingStats,
-  type LandingStats,
-} from '@/services/landingStatsService'
+import { getLandingStats, type LandingStats } from '@/services/landingStatsService'
 
 interface Figure {
   value: string
@@ -30,16 +26,20 @@ const PRODUCT_FIGURES: Figure[] = [
 /**
  * The proof block. Live from day one, honest at every stage:
  *
- *  - Below the usage floor (250 checks across 100 accounts, see
- *    landingStatsService) it shows PRODUCT_FIGURES — commitments a visitor
+ *  - Below the usage floor it shows PRODUCT_FIGURES — commitments a visitor
  *    can verify, which build trust without inflating numbers a six-account
  *    product does not have yet. "7 checks run" would cost more trust than
  *    any figure here earns.
  *  - Once production volume clears the floor, the same grid swaps to the
- *    live aggregates from public.landing_stats, computed in the database so
- *    the published numbers can never drift from the truth. The swap
- *    replaces text inside the same cells, so nothing about the page's
+ *    live aggregates from public.get_landing_stats(), computed in the
+ *    database so the published numbers can never drift from the truth. The
+ *    swap replaces text inside the same cells, so nothing about the page's
  *    layout changes when it happens.
+ *
+ * The floor is the server's call, not this component's: below it the
+ * function sends meets_floor false and no figures at all, so there is
+ * nothing here to leak and nothing to keep in step with a second copy of
+ * the threshold.
  */
 export function StatsSection() {
   const [stats, setStats] = useState<LandingStats | null>(null)
@@ -59,9 +59,7 @@ export function StatsSection() {
     }
   }, [])
 
-  const live = stats !== null && clearsStatsFloor(stats)
-
-  const figures: Figure[] = live
+  const figures: Figure[] = stats?.meetsFloor
     ? [
         { value: stats.checksCompleted.toLocaleString('en-US'), label: 'Checks completed' },
         { value: stats.rolesCovered.toLocaleString('en-US'), label: 'Roles checked against' },
@@ -82,7 +80,7 @@ export function StatsSection() {
             In numbers
           </p>
           <h2 className="mt-2 font-display text-[24px] text-text-primary sm:text-[32px] lg:text-[44px] lg:leading-[1.14]">
-            {live ? 'Every figure here is live' : 'What every check commits to'}
+            {stats?.meetsFloor ? 'Every figure here is live' : 'What every check commits to'}
           </h2>
         </div>
 

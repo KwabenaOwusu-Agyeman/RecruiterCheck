@@ -949,17 +949,6 @@ export type Database = {
       }
     }
     Views: {
-      landing_stats: {
-        Row: {
-          accounts: number | null
-          avg_rerun_score_delta: number | null
-          checks_completed: number | null
-          median_minutes_to_verdict: number | null
-          rerun_pairs: number | null
-          roles_covered: number | null
-        }
-        Relationships: []
-      }
       public_testimonials: {
         Row: {
           comment: string | null
@@ -1091,6 +1080,18 @@ export type Database = {
           paid_keyword_scans_available: number
           total_checks_available: number
           total_keyword_scans_available: number
+        }[]
+      }
+      get_landing_stats: {
+        Args: never
+        Returns: {
+          accounts: number
+          avg_rerun_score_delta: number
+          checks_completed: number
+          median_minutes_to_verdict: number
+          meets_floor: boolean
+          rerun_pairs: number
+          roles_covered: number
         }[]
       }
       grant_check_credits: {
