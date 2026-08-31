@@ -1,4 +1,5 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { useAuth } from '@/hooks/useAuth'
 
 export function ProtectedRoute() {
@@ -8,7 +9,7 @@ export function ProtectedRoute() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-sm text-text-secondary">Loading...</p>
+        <Skeleton className="h-6 w-32" />
       </div>
     )
   }

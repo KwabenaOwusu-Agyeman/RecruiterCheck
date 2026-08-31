@@ -1,5 +1,5 @@
-import { type FormEvent, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Alert } from '@/components/ui/Alert'
 import { AuthCardHeader } from '@/components/ui/AuthCard'
 import { Button } from '@/components/ui/Button'
@@ -27,8 +27,26 @@ export function AuthModal() {
   const { mode, close, setMode } = useAuthModal()
   const { setSessionImmediate } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const dialogRef = useRef<HTMLDivElement>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
+
+  // The modal opens over whatever page the user was on, from a header button
+  // or any call to action, so dismissing it should leave them there. The
+  // exception is /sign-in and /sign-up, which are placeholder routes with no
+  // content of their own: closing the modal on one of those has to go
+  // somewhere, and the landing page is that somewhere.
+  //
+  // All three dismiss paths run through this. They used to disagree: Escape
+  // left you in place while the close button and the backdrop sent you to the
+  // landing page, so the same intent gave three different results depending on
+  // how you expressed it.
+  const handleDismiss = useCallback(() => {
+    close()
+    if (location.pathname === '/sign-in' || location.pathname === '/sign-up') {
+      void navigate('/', { replace: true })
+    }
+  }, [close, navigate, location.pathname])
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -68,7 +86,7 @@ export function AuthModal() {
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        close()
+        handleDismiss()
         return
       }
 
@@ -99,7 +117,7 @@ export function AuthModal() {
       document.body.style.overflow = ''
       previousFocusRef.current?.focus()
     }
-  }, [mode, close])
+  }, [mode, handleDismiss])
 
   if (!mode) return null
 
@@ -182,15 +200,7 @@ export function AuthModal() {
   const submitLoadingLabel = mode === 'sign-up' ? 'Creating account...' : 'Signing in...'
 
   return (
-    <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-[#05050D]/50 sm:p-[24px]"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
-          close()
-          void navigate('/', { replace: true })
-        }
-      }}
-    >
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#05050D]/50 sm:p-[24px]">
       {/* Centering lives on this inner, non-scrolling wrapper rather than on
           the scroll container itself — flex `items-center` + `overflow-y-auto`
           on the same element clips content taller than the viewport (the
@@ -201,7 +211,19 @@ export function AuthModal() {
           natural scrollable area starts at the true top of the content.
           Below `sm` the panel docks to the bottom edge as a native-style
           sheet (`items-end`); at `sm` and up it reverts to a centered modal. */}
-      <div className="flex min-h-full items-end justify-center sm:items-center">
+      {/* Dismiss on a click outside the panel lives on this wrapper, not on
+          the scroll container above it. The wrapper is `min-h-full`, so it
+          covers the container completely and every click inside the viewport
+          lands on the wrapper: a `target === currentTarget` check on the
+          container could never pass, and clicking away did nothing at all. */}
+      <div
+        className="flex min-h-full items-end justify-center sm:items-center"
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget) {
+            handleDismiss()
+          }
+        }}
+      >
         <div
           ref={dialogRef}
           role="dialog"
@@ -216,10 +238,7 @@ export function AuthModal() {
         <button
           type="button"
           aria-label="Close"
-          onClick={() => {
-            close()
-            void navigate('/', { replace: true })
-          }}
+          onClick={handleDismiss}
           className="absolute right-[8px] top-[8px] flex h-11 w-11 items-center justify-center rounded-lg border border-transparent text-text-secondary transition-colors duration-150 hover:bg-surface hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue sm:right-[16px] sm:top-[16px] sm:h-[36px] sm:w-[36px] sm:hover:bg-surface"
         >
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
