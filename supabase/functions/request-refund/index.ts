@@ -84,7 +84,9 @@ Deno.serve(async (req) => {
     // definitely drawn from, a batch with no draws yet is untouched.
     const { data: batch, error: batchError } = await adminClient
       .from('credit_batches')
-      .select('id, checks_granted, checks_remaining, stripe_payment_intent_id, granted_at')
+      .select(
+        'id, checks_granted, checks_remaining, keyword_scans_granted, keyword_scans_remaining, stripe_payment_intent_id, granted_at, refund_status',
+      )
       .eq('user_id', user.id)
       .eq('source', 'purchase')
       .order('granted_at', { ascending: false })
@@ -95,7 +97,16 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'No eligible purchase found for this account' }, 404)
     }
 
-    if (batch.checks_remaining !== batch.checks_granted) {
+    if (batch.refund_status !== 'active') {
+      return jsonResponse({ error: 'This pack has already been refunded' }, 409)
+    }
+
+    // A pack grants checks AND keyword scans (grant_pack_credits). Judging
+    // "untouched" on checks alone let a customer spend every keyword scan and
+    // still take a full refund.
+    const checksUntouched = batch.checks_remaining === batch.checks_granted
+    const scansUntouched = (batch.keyword_scans_remaining ?? 0) === (batch.keyword_scans_granted ?? 0)
+    if (!checksUntouched || !scansUntouched) {
       return jsonResponse({ error: 'This pack has already been used and is no longer refundable' }, 403)
     }
 
@@ -132,22 +143,48 @@ Deno.serve(async (req) => {
       .single()
 
     const clawback = Math.min(batch.checks_remaining, profile?.checks_balance ?? 0)
+    const scanClawback = batch.keyword_scans_remaining ?? 0
 
-    await adminClient.from('credit_batches').update({ checks_remaining: 0 }).eq('id', batch.id)
+    // refund_status is what marks the batch refunded; leaving it 'active' made
+    // a refunded pack indistinguishable from a live one. Keyword scans live on
+    // the batch itself (there is no profile-level scan balance), so zeroing
+    // them here is the whole claw-back for that credit type.
+    await adminClient
+      .from('credit_batches')
+      .update({ checks_remaining: 0, keyword_scans_remaining: 0, refund_status: 'refunded' })
+      .eq('id', batch.id)
     if (profile) {
       await adminClient
         .from('profiles')
         .update({ checks_balance: profile.checks_balance - clawback })
         .eq('id', user.id)
     }
-    await adminClient.from('check_ledger').insert({
-      user_id: user.id,
-      batch_id: batch.id,
-      entry_type: 'refunded',
-      amount: -clawback,
-      related_stripe_payment_intent_id: batch.stripe_payment_intent_id,
-      note: 'self-service request-refund',
-    })
+
+    // Both legs, mirroring the two rows grant_pack_credits writes on purchase,
+    // so the ledger balances per credit type instead of only for checks.
+    const ledgerRows = [
+      {
+        user_id: user.id,
+        batch_id: batch.id,
+        entry_type: 'refunded',
+        amount: -clawback,
+        credit_type: 'check',
+        related_stripe_payment_intent_id: batch.stripe_payment_intent_id,
+        note: 'self-service request-refund',
+      },
+    ]
+    if (scanClawback > 0) {
+      ledgerRows.push({
+        user_id: user.id,
+        batch_id: batch.id,
+        entry_type: 'refunded',
+        amount: -scanClawback,
+        credit_type: 'keyword_scan',
+        related_stripe_payment_intent_id: batch.stripe_payment_intent_id,
+        note: 'self-service request-refund',
+      })
+    }
+    await adminClient.from('check_ledger').insert(ledgerRows)
 
     return jsonResponse({ refunded: true })
   } catch (error) {

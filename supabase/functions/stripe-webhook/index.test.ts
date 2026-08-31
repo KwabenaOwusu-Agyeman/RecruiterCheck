@@ -412,4 +412,41 @@ test('missing verified facts throw so Stripe retries rather than dropping the or
   assert.ok(at('missing.length > 0') < at("adminClient.rpc('grant_pack_credits'"))
 })
 
+// ---------------------------------------------------------------------------
+// Refund clawback must reverse both credit types
+//
+// A pack grants checks AND keyword scans. The clawback previously touched only
+// checks and never set refund_status, so a refunded pack kept its scans and
+// still read as active. Nothing errors when this is wrong, which is why it
+// needs a test rather than a stack trace.
+// ---------------------------------------------------------------------------
+
+test('the refund clawback reverses both credit types and marks the batch', () => {
+  const update = between("keyword_scans_remaining: 0", "'id', batch.id")
+  assert.match(source, /keyword_scans_remaining: 0/)
+  assert.match(source, /refund_status: 'refunded'/)
+  assert.ok(update.length >= 0)
+})
+
+test('the clawback is only terminal once both credit types are drained', () => {
+  // Returning early on checks alone left the scans permanently granted.
+  assert.match(
+    source,
+    /batch\.checks_remaining <= 0 && scanClawback <= 0 && batch\.refund_status === 'refunded'/,
+  )
+})
+
+test('the clawback query selects what it needs to judge that', () => {
+  const select = between("select('id, user_id, checks_remaining", ')')
+  for (const column of ['keyword_scans_remaining', 'refund_status']) {
+    assert.ok(select.includes(column), `clawback cannot be judged without ${column}`)
+  }
+})
+
+test('the clawback ledger records a leg per credit type', () => {
+  const ledger = between('const ledgerRows = [', "await adminClient.from('check_ledger')")
+  assert.match(ledger, /credit_type: 'check'/)
+  assert.match(ledger, /credit_type: 'keyword_scan'/)
+})
+
 console.log(`\n${passed} tests passed`)

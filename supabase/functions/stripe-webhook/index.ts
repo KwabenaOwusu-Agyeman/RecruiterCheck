@@ -338,7 +338,7 @@ async function handleChargeRefunded(
 
   const { data: batch } = await adminClient
     .from('credit_batches')
-    .select('id, user_id, checks_remaining')
+    .select('id, user_id, checks_remaining, keyword_scans_remaining, refund_status')
     .eq('stripe_payment_intent_id', paymentIntentId)
     .maybeSingle()
 
@@ -349,8 +349,13 @@ async function handleChargeRefunded(
     return 'skipped'
   }
 
-  // Already clawed back, nothing left to reverse.
-  if (batch.checks_remaining <= 0) return 'fulfilled'
+  // Already clawed back, nothing left to reverse. Both credit types must be
+  // drained before this is terminal: checks alone was the old test, and it let
+  // a refunded pack keep its keyword scans.
+  const scanClawback = batch.keyword_scans_remaining ?? 0
+  if (batch.checks_remaining <= 0 && scanClawback <= 0 && batch.refund_status === 'refunded') {
+    return 'fulfilled'
+  }
 
   const { data: profile } = await adminClient
     .from('profiles')
@@ -364,19 +369,40 @@ async function handleChargeRefunded(
 
   await adminClient
     .from('credit_batches')
-    .update({ checks_remaining: batch.checks_remaining - clawback })
+    .update({
+      checks_remaining: batch.checks_remaining - clawback,
+      keyword_scans_remaining: 0,
+      refund_status: 'refunded',
+    })
     .eq('id', batch.id)
   await adminClient
     .from('profiles')
     .update({ checks_balance: profile.checks_balance - clawback })
     .eq('id', batch.user_id)
-  await adminClient.from('check_ledger').insert({
-    user_id: batch.user_id,
-    batch_id: batch.id,
-    entry_type: 'refunded',
-    amount: -clawback,
-    related_stripe_payment_intent_id: paymentIntentId,
-    note: 'charge.refunded webhook clawback',
-  })
+
+  // Both legs, mirroring the two rows grant_pack_credits writes on purchase.
+  const ledgerRows = [
+    {
+      user_id: batch.user_id,
+      batch_id: batch.id,
+      entry_type: 'refunded',
+      amount: -clawback,
+      credit_type: 'check',
+      related_stripe_payment_intent_id: paymentIntentId,
+      note: 'charge.refunded webhook clawback',
+    },
+  ]
+  if (scanClawback > 0) {
+    ledgerRows.push({
+      user_id: batch.user_id,
+      batch_id: batch.id,
+      entry_type: 'refunded',
+      amount: -scanClawback,
+      credit_type: 'keyword_scan',
+      related_stripe_payment_intent_id: paymentIntentId,
+      note: 'charge.refunded webhook clawback',
+    })
+  }
+  await adminClient.from('check_ledger').insert(ledgerRows)
   return 'fulfilled'
 }
