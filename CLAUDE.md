@@ -1,0 +1,212 @@
+# MyRecruiterCheck: agent working rules
+
+MyRecruiterCheck analyses a candidate's CV against a job description and returns a
+recruiter style score. The data it handles is candidate CVs, candidate contact
+details, Stripe payment records and Supabase auth accounts. Treat every rule below
+as binding, not advisory.
+
+Permission rules in `.claude/settings.json` are the enforcement layer. This file is
+the reasoning layer. If the two ever disagree, the permission rules win and you
+should say so rather than working around them.
+
+## Stack
+
+React 18 + TypeScript + Vite (SPA with SSR prerender), Tailwind, React Router.
+Supabase for auth, Postgres, Storage and Edge Functions. Stripe for payments.
+Vercel for hosting. A browser extension lives in `recruitercheck-extension/`.
+
+## Commands
+
+```
+npm run dev          Vite dev server on 5173
+npm run build        tsc -b, client build, SSR build, then scripts/prerender.mjs
+npm run lint         ESLint
+npm run typecheck    tsc -b
+npm test             Every test file
+npm run test:unit    src/ only
+npm run test:scoring Scoring plus the synthetic fixture regression
+npm run test:edge    Edge Function tests
+npm run verify       lint, typecheck and the full suite
+npm run checks       Which checks the current diff actually needs
+supabase start       Local stack: API 54321, DB 54322, Studio 54323, Inbucket 54324
+supabase db reset    Rebuild the LOCAL database from migrations
+supabase gen types typescript --project-id <ref> > src/types/database.ts
+```
+
+Regenerating types is part of applying a migration, not an optional tidy-up.
+`src/types/database.ts` once went un-regenerated across a whole migration and
+ended up missing four tables and seventeen RPCs. Every edge function that had
+fallen out of step with the schema still typechecked cleanly, and the drift
+surfaced only as production 500s. A stale types file makes the compiler agree
+with code the database will reject.
+
+Each test file is self-contained, uses `node:assert/strict`, and carries a
+`// Run with: npx tsx <path>` header that still works by hand.
+`scripts/run-tests.mjs` only discovers and runs them. Do not invent a
+different convention, and do not add a test framework without asking.
+
+`tsx` is not a declared dependency. It resolves from the npx cache or the
+network, unpinned. Adding it to devDependencies is Level 3.
+
+## Data classification
+
+| Class | What it covers | May it leave this machine? |
+| --- | --- | --- |
+| PUBLIC | Landing and SEO copy, `public/`, README | Yes |
+| SAFE TEST DATA | `fixtures/synthetic/**`: invented CVs, job descriptions and personas | Yes |
+| INTERNAL CODE | `src/`, `supabase/functions/`, `supabase/migrations/`, config | No, local tooling only |
+| SENSITIVE | Real check rows, uploaded documents, Storage objects, analytics events | Never |
+| SECRET | `.env*`, service role key, Stripe keys, Brevo key, Instagram secrets, MCP tokens | Never |
+| PRODUCTION USER DATA | Anything in the hosted Supabase project | Never |
+
+Rules that follow from the table:
+
+- Never read a value out of any `.env` file. Environment variable **names** may be
+  learned from `.env.example`, which is deliberately value free. Names are fine,
+  values are not.
+- Never write a secret, token, signed Storage URL, candidate name, candidate email
+  or production record into this file, into `.claude/settings.json`, into a commit,
+  or into a test fixture.
+- Never paste a candidate document or a real check result into a prompt, a report,
+  or a third party tool.
+- Testing uses invented data only. If a test needs a CV, write one.
+
+## Environment safety, fail closed
+
+Environments are local, preview and production. Automated work targets local only.
+
+- Anything automated that touches Supabase must assert its target is
+  `http://127.0.0.1` or `http://localhost` and **exit non-zero otherwise**.
+- If the target environment is unclear, stop and ask. Do not guess, and do not
+  proceed on the assumption that an action is probably safe.
+- Production is never a default and never a fallback. There is no condition under
+  which uncertainty resolves toward touching production.
+- Production Supabase is read only, and writes are blocked at the permission layer,
+  not merely discouraged here.
+
+## Approval levels
+
+### Level 1: proceed without asking
+
+Formatting, ESLint `--fix`, import ordering, straightforward type annotations,
+correcting a test fixture, adding a missing test, comments and documentation.
+
+### Level 2: implement, then show before merge
+
+Business logic, UI, API request or response shapes, Supabase query changes, SEO
+copy, and anything that changes what a user sees or receives. Show the diff and the
+test results before it merges.
+
+### Level 3: explicit approval before execution
+
+Production migrations, any SQL against the hosted project, Edge Function
+deployment, Stripe code or pricing, authentication flows, RLS policies, secret
+rotation, deployment, branch protection, `.gitignore` changes, adding a dependency,
+and pushing to `main` on either remote.
+
+Level 3 means you stop and ask first. It does not mean you act and then report.
+
+## Git
+
+Two remotes, both carrying the same `main`: `origin` and `personal`. When `main` is
+pushed it goes to both. Work on a branch rather than committing straight to `main`.
+
+- Pushing `main` to either remote is blocked at the permission layer. The user does
+  that themselves. Do not look for a way around it.
+- A feature branch may be pushed **only when the user has explicitly asked for that
+  work to be pushed**. A general instruction to implement something is not a request
+  to push it. When in doubt, commit locally and say the branch is ready.
+- Never force push. `--force-with-lease` needs explicit approval each time.
+- Never merge a pull request. Opening one is fine when asked; merging is the user's.
+
+## Security review triggers
+
+A security review is mandatory, not discretionary, when a diff touches
+authentication, payments or credits, RLS policies, Storage or uploads, Edge
+Function request handling, or anything that reads candidate data.
+
+## Configuration traps specific to this repo
+
+- `vercel.json` pins a Content Security Policy with roughly fifty inline script
+  hashes, tracked in `scripts/csp-managed-hashes.json`. Changing `index.html` or any
+  inline script without regenerating the hashes breaks production silently. Check
+  this whenever inline script content changes.
+- `supabase/config.toml` holds local auth email templates. Production templates live
+  in the Supabase dashboard and are maintained by hand. See `BREVO_SETUP.md`.
+- `scripts/reset-test-users.ts` permanently deletes users using the service role
+  key. It is never part of automated work.
+- Several Edge Functions have a test mode flag that must stay on outside production.
+
+## Which checks to run
+
+Run `npm run checks`. It reads the diff and names the relevant checks; run
+those. Running the full suite for an unrelated change is noise, not rigour,
+and skipping a relevant one is worse.
+
+| Changed | Run |
+| --- | --- |
+| Scoring, verdicts, evidence logic, thresholds, `analyze-check/**`, `fixtures/synthetic/**` | lint, typecheck, `test:scoring`, `node scripts/mutation-check.mjs` |
+| React, components, pages, styling, routing, frontend logic | lint, typecheck, `test:unit` |
+| Edge Functions and backend logic | lint, typecheck, `test:edge` |
+| Migrations | local `supabase db reset`, **regenerate types**, `test:edge`, RLS review |
+| SEO pages, metadata, sitemap, prerender | `npm run build`, sitemap and metadata check |
+| `vercel.json`, `middleware.ts`, `supabase/config.toml` | `npm run build`, CSP hash check |
+| Auth, payments, credits, RLS, storage, uploads | mandatory security review, on top of the above |
+| Documentation or agent config only | nothing; review the diff |
+
+Two checks have no tooling in this repo and must be reported as
+**MANUAL CHECK REQUIRED** rather than skipped silently:
+
+- Browser and console checks. No browser test framework is installed, and
+  permission rules cannot scope the Chrome connector to a URL. Verify by hand
+  against `localhost:5173`.
+- Structured data validation. No JSON-LD validator exists.
+
+Do not install a framework for either without asking.
+
+Automated testing is local only. Never point a test at the hosted project,
+never deploy a function to check something, never apply a migration to
+production, and never read production user data to verify a change.
+
+## Failure handling
+
+1. Explain the failure before touching anything.
+2. Decide which side is wrong, the test or the code, and say which.
+3. Fix only if the fix is genuinely safe and in scope.
+4. Rerun the specific check that failed.
+5. After two failed attempts, stop and report.
+
+Never weaken a test to make it pass. Never disable a security check to finish a
+task. Never delete validation logic without saying plainly what was removed and why.
+Never edit an expected score or verdict to make a regression go green: that is the
+regression, and rewriting the baseline hides it. A check that is failing for a real
+reason is doing its job.
+
+Correcting a test that asserts the wrong thing is legitimate, but it is a reportable
+decision, not a silent one. Say what the test asserted, what the code does, and why
+the test was the wrong one.
+
+## Report format
+
+End any significant implementation with exactly these headings:
+
+```
+CHANGE            What changed, in a sentence or two
+FILES CHANGED     Files modified
+CHECKS SELECTED   What `npm run checks` chose, and why
+TEST RESULTS      Commands run and their results
+SECURITY/PRIVACY  Checks performed; whether sensitive data was accessed
+REGRESSION RISK   Low, medium or high, with the reason
+MANUAL CHECKS     What the user still needs to verify
+NOT PUSHED
+NOT DEPLOYED
+```
+
+Keep it proportionate. A one-line fix does not need paragraphs under every
+heading, but no heading is dropped.
+
+## Copy conventions
+
+No dashes anywhere in user facing copy, including ranges, which are spelled out.
+Bullet lists in product copy stop at three items. The primary call to action is
+labelled "Check".

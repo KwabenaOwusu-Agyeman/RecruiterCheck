@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
+import { assertStripeEnvironment } from '../_shared/stripe-environment.ts'
 import Stripe from 'npm:stripe@17.5.0'
 
 const corsHeaders = {
@@ -6,7 +7,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const GUARANTEE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
 const RATE_LIMIT_BUCKET = 'request-refund'
 const RATE_LIMIT_MAX = 5
 const RATE_LIMIT_WINDOW_SECONDS = 3600
@@ -24,6 +24,16 @@ Deno.serve(async (req) => {
 
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
     if (!stripeSecretKey) {
+      return jsonResponse({ error: 'Billing is not configured' }, 503)
+    }
+
+    // Refuse to issue a refund against the wrong Stripe mode.
+    try {
+      assertStripeEnvironment(stripeSecretKey)
+    } catch (error) {
+      console.error('request-refund: stripe environment guard failed', {
+        message: error instanceof Error ? error.message : String(error),
+      })
       return jsonResponse({ error: 'Billing is not configured' }, 503)
     }
 
@@ -71,26 +81,89 @@ Deno.serve(async (req) => {
     // specific batch touched" is well-defined even with several packs
     // stacked — a batch with checks_remaining < checks_granted was
     // definitely drawn from, a batch with no draws yet is untouched.
+    // Optional reason capture. Allowlisted here rather than trusted from the
+    // client, and length-bounded to match the column constraint. Anything
+    // unrecognised is discarded rather than rejected: a malformed reason must
+    // never cost the customer their refund.
+    const ALLOWED_REASONS = ['wrong_pack', 'changed_mind', 'not_what_i_expected', 'something_else']
+    let refundReason: string | null = null
+    let refundReasonDetail: string | null = null
+    try {
+      const body = await req.json().catch(() => null)
+      const rawReason = typeof body?.reason === 'string' ? body.reason : null
+      refundReason = rawReason && ALLOWED_REASONS.includes(rawReason) ? rawReason : null
+      const rawDetail = typeof body?.reasonDetail === 'string' ? body.reasonDetail.trim() : ''
+      refundReasonDetail =
+        refundReason === 'something_else' && rawDetail.length > 0 ? rawDetail.slice(0, 500) : null
+    } catch {
+      refundReason = null
+      refundReasonDetail = null
+    }
+
     const { data: batch, error: batchError } = await adminClient
       .from('credit_batches')
-      .select('id, checks_granted, checks_remaining, stripe_payment_intent_id, granted_at')
+      .select('id')
       .eq('user_id', user.id)
       .eq('source', 'purchase')
       .order('granted_at', { ascending: false })
       .limit(1)
       .maybeSingle()
 
-    if (batchError || !batch || !batch.stripe_payment_intent_id) {
+    if (batchError || !batch) {
       return jsonResponse({ error: 'No eligible purchase found for this account' }, 404)
     }
 
-    if (batch.checks_remaining !== batch.checks_granted) {
-      return jsonResponse({ error: 'This pack has already been used and is no longer refundable' }, 403)
+    // Eligibility, the refund_pending reservation and the refund_events row are
+    // all decided inside reserve_refund, under the global profile-then-batch
+    // lock order. Doing those checks out here could not be atomic: two
+    // concurrent requests could both read an eligible batch and both refund it.
+    // reserve_refund is granted to `authenticated` and reads auth.uid(), so it
+    // must be called with the caller's own client, never the service role.
+    const { data: reservation, error: reserveError } = await userClient.rpc('reserve_refund', {
+      p_batch_id: batch.id,
+    })
+
+    if (reserveError) {
+      console.error('request-refund: reserve_refund failed', reserveError)
+      return jsonResponse({ error: 'Could not start the refund. Please try again.' }, 500)
     }
 
-    const purchaseAgeMs = Date.now() - new Date(batch.granted_at).getTime()
-    if (purchaseAgeMs > GUARANTEE_WINDOW_MS) {
-      return jsonResponse({ error: 'The 7 day refund window for this pack has passed' }, 403)
+    const reserved = Array.isArray(reservation) ? reservation[0] : reservation
+    switch (reserved?.outcome) {
+      case 'reserved':
+        break
+      case 'batch_not_found':
+        return jsonResponse({ error: 'No eligible purchase found for this account' }, 404)
+      case 'already_refunded':
+      case 'already_refund_pending':
+        return jsonResponse({ error: 'This pack has already been refunded' }, 409)
+      case 'already_used':
+        return jsonResponse({ error: 'This pack has already been used and is no longer refundable' }, 403)
+      case 'window_expired':
+        return jsonResponse({ error: 'The 7 day refund window for this pack has passed' }, 403)
+      case 'active_reservation_exists':
+        return jsonResponse(
+          { error: 'A Keyword Scan is still running on this pack. Please try again shortly.' },
+          409,
+        )
+      default:
+        console.error('request-refund: unexpected reserve_refund outcome', reserved?.outcome)
+        return jsonResponse({ error: 'Could not start the refund. Please try again.' }, 500)
+    }
+
+    const refundEventId = reserved.refund_event_id as string
+    const paymentIntentId = reserved.stripe_payment_intent_id as string | null
+
+    // From here the batch is held in refund_pending. Every exit must either
+    // finalize it or fail it, or the pack is left un-refundable forever.
+    const releaseReservation = async () => {
+      const { error } = await adminClient.rpc('fail_refund', { p_refund_event_id: refundEventId })
+      if (error) console.error('request-refund: fail_refund could not restore the batch', error)
+    }
+
+    if (!paymentIntentId) {
+      await releaseReservation()
+      return jsonResponse({ error: 'No eligible purchase found for this account' }, 404)
     }
 
     const stripe = new Stripe(stripeSecretKey, {
@@ -98,45 +171,64 @@ Deno.serve(async (req) => {
       httpClient: Stripe.createFetchHttpClient(),
     })
 
-    const paymentIntent = await stripe.paymentIntents.retrieve(batch.stripe_payment_intent_id)
-    if (paymentIntent.status !== 'succeeded') {
-      return jsonResponse({ error: 'This purchase cannot be refunded' }, 409)
+    let stripeRefundId: string
+    try {
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId)
+      if (paymentIntent.status !== 'succeeded') {
+        await releaseReservation()
+        return jsonResponse({ error: 'This purchase cannot be refunded' }, 409)
+      }
+
+      const existingRefunds = await stripe.refunds.list({ payment_intent: paymentIntentId, limit: 1 })
+      if (existingRefunds.data.length > 0) {
+        // Already refunded in Stripe but not recorded here: finalize against
+        // the existing refund rather than issuing a second one.
+        stripeRefundId = existingRefunds.data[0].id
+      } else {
+        const refund = await stripe.refunds.create({ payment_intent: paymentIntentId })
+        stripeRefundId = refund.id
+      }
+    } catch (stripeError) {
+      console.error('request-refund: Stripe refund failed', stripeError)
+      await releaseReservation()
+      return jsonResponse({ error: 'Could not issue the refund. Please try again or contact support.' }, 502)
     }
 
-    const existingRefunds = await stripe.refunds.list({ payment_intent: batch.stripe_payment_intent_id, limit: 1 })
-    if (existingRefunds.data.length > 0) {
-      return jsonResponse({ error: 'This pack has already been refunded' }, 409)
-    }
-
-    await stripe.refunds.create({ payment_intent: batch.stripe_payment_intent_id })
-
-    // Written synchronously so the billing page reflects the refund
-    // immediately — the charge.refunded webhook re-applies the same
-    // claw-back when it lands, a harmless no-op against an already-zeroed
-    // batch.
-    const { data: profile } = await adminClient
-      .from('profiles')
-      .select('checks_balance')
-      .eq('id', user.id)
-      .single()
-
-    const clawback = Math.min(batch.checks_remaining, profile?.checks_balance ?? 0)
-
-    await adminClient.from('credit_batches').update({ checks_remaining: 0 }).eq('id', batch.id)
-    if (profile) {
-      await adminClient
-        .from('profiles')
-        .update({ checks_balance: profile.checks_balance - clawback })
-        .eq('id', user.id)
-    }
-    await adminClient.from('check_ledger').insert({
-      user_id: user.id,
-      batch_id: batch.id,
-      entry_type: 'refunded',
-      amount: -clawback,
-      related_stripe_payment_intent_id: batch.stripe_payment_intent_id,
-      note: 'self-service request-refund',
+    // finalize_refund does the whole claw-back transactionally: zeroes both
+    // credit types, sets refund_status, adjusts the profile balance, writes a
+    // ledger leg per credit type, and marks the refund_events row succeeded.
+    const { error: finalizeError } = await adminClient.rpc('finalize_refund', {
+      p_refund_event_id: refundEventId,
+      p_stripe_refund_id: stripeRefundId,
     })
+
+    if (finalizeError) {
+      // The money has already left. Do NOT release the reservation here: that
+      // would mark the batch active again while the customer has been refunded.
+      // Leave it pending for reconciliation and report the failure loudly.
+      console.error('request-refund: refund issued but finalize_refund failed', {
+        refundEventId,
+        stripeRefundId,
+        message: finalizeError.message,
+      })
+      return jsonResponse(
+        { error: 'Your refund was issued but your account is still updating. Please contact support.' },
+        500,
+      )
+    }
+
+    // Recorded only after the refund itself has succeeded. A failure here is
+    // logged and swallowed: losing the product signal is not worth failing a
+    // response for a refund the customer has already been given.
+    if (refundReason) {
+      const { error: reasonError } = await adminClient
+        .from('refund_events')
+        .update({ reason: refundReason, reason_detail: refundReasonDetail })
+        .eq('id', refundEventId)
+      if (reasonError) {
+        console.error('request-refund: could not record the refund reason', reasonError)
+      }
+    }
 
     return jsonResponse({ refunded: true })
   } catch (error) {

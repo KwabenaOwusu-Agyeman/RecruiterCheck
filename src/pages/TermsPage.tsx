@@ -94,10 +94,16 @@ export function TermsPage() {
           after purchase.
         </p>
         <p>
+          Every check pack includes access to your full Check History, regardless of which pack you
+          buy. Access to your history is not limited by pack size or price, and it remains available
+          for as long as your account is open, including after your purchased checks have been used
+          or have expired.
+        </p>
+        <p>
           If your most recently purchased pack is still fully unused, you may request a full refund
           within 7 days of that payment from your billing page, or by contacting{' '}
-          <a href="mailto:support@recruitercheck.app" className="font-medium text-blue hover:underline">
-            support@recruitercheck.app
+          <a href="mailto:support@myrecruitercheck.com" className="font-medium text-blue hover:underline">
+            support@myrecruitercheck.com
           </a>
           . Beyond this guarantee, MyRecruiterCheck does not offer refunds or credits for partially
           used packs, expired checks, or dissatisfaction with generated results, except where
@@ -178,8 +184,8 @@ export function TermsPage() {
       <Section title="17. Contact">
         <p>
           Questions about these Terms can be sent to{' '}
-          <a href="mailto:support@recruitercheck.app" className="font-medium text-blue hover:underline">
-            support@recruitercheck.app
+          <a href="mailto:support@myrecruitercheck.com" className="font-medium text-blue hover:underline">
+            support@myrecruitercheck.com
           </a>
           .
         </p>

@@ -8,9 +8,10 @@ import { useAuth } from '@/hooks/useAuth'
 import { useAuthModal } from '@/features/auth/context/AuthModalContext'
 import { usePageMeta } from '@/hooks/usePageMeta'
 import { TestimonialsSection } from '@/features/landing/components/TestimonialsSection'
-import { CHECK_PACKS } from '@/lib/constants'
+import { CHECK_PACKS, type RefundReason } from '@/lib/constants'
+import { RefundReasonPicker } from '@/components/checks/RefundReasonPicker'
 import { trackEvent } from '@/lib/analytics'
-import { createCheckoutSession, requestRefund } from '@/services/checkService'
+import { createCheckoutSession, hasRefundablePurchase, requestRefund } from '@/services/checkService'
 import type { CheckPack } from '@/types'
 
 /**
@@ -41,6 +42,12 @@ export function PricingPage() {
   const [refundDialogOpen, setRefundDialogOpen] = useState(false)
   const [refundLoading, setRefundLoading] = useState(false)
   const [refundSuccess, setRefundSuccess] = useState(false)
+  const [refundReason, setRefundReason] = useState<RefundReason | null>(null)
+  const [refundDetail, setRefundDetail] = useState('')
+  // Starts false so the link never flashes in before we know, and a failed
+  // lookup simply leaves it hidden rather than offering a refund we cannot
+  // honour.
+  const [canRefund, setCanRefund] = useState(false)
 
   const checkoutStatus = searchParams.get('status')
 
@@ -59,6 +66,30 @@ export function PricingPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkoutStatus])
+
+  useEffect(() => {
+    if (!user) {
+      setCanRefund(false)
+      return
+    }
+
+    let cancelled = false
+    void hasRefundablePurchase(user.id)
+      .then((refundable) => {
+        if (!cancelled) setCanRefund(refundable)
+      })
+      .catch(() => {
+        // Fail closed: a lookup error hides the link rather than offering a
+        // refund that reserve_refund would then reject.
+        if (!cancelled) setCanRefund(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+    // profile is a dependency so a purchase completing in this tab reveals the
+    // link, and a refund completing hides it, without a page reload.
+  }, [user, profile])
 
   async function handleBuy(packId: CheckPack['id']) {
     if (!user) {
@@ -84,9 +115,17 @@ export function PricingPage() {
     setError(null)
 
     try {
-      await requestRefund()
+      await requestRefund({
+        reason: refundReason,
+        // Only meaningful alongside 'something_else'; trimmed so whitespace
+        // never counts as an answer.
+        reasonDetail: refundReason === 'something_else' ? refundDetail.trim() || null : null,
+      })
       setRefundDialogOpen(false)
       setRefundSuccess(true)
+      setRefundReason(null)
+      setRefundDetail('')
+      setCanRefund(false)
       trackEvent('refund_requested')
       await refreshProfile()
     } catch (err) {
@@ -173,10 +212,22 @@ export function PricingPage() {
         confirmingLabel="Processing..."
         cancelLabel="Never mind"
         busy={refundLoading}
-        destructive
+        destructive={false}
         onConfirm={() => void confirmRequestRefund()}
-        onCancel={() => setRefundDialogOpen(false)}
-      />
+        onCancel={() => {
+          setRefundDialogOpen(false)
+          setRefundReason(null)
+          setRefundDetail('')
+        }}
+      >
+        <RefundReasonPicker
+          reason={refundReason}
+          detail={refundDetail}
+          disabled={refundLoading}
+          onReasonChange={setRefundReason}
+          onDetailChange={setRefundDetail}
+        />
+      </ConfirmDialog>
 
       <Container className="py-8">
         <div className="flex flex-col items-center gap-1.5 text-center text-xs text-text-secondary">
@@ -192,8 +243,10 @@ export function PricingPage() {
             </svg>
             <span>Payments securely processed by Stripe. We never see or store your card details.</span>
           </div>
-          {/* Only offered to someone who could actually have a purchase to refund. */}
-          {user ? (
+          {/* Only offered to someone who actually has an unrefunded purchase.
+              Gating on `user` alone offered it to every signed-in account,
+              including ones that had never bought anything. */}
+          {user && canRefund ? (
             <span>
               Not happy with your last purchase?{' '}
               <button

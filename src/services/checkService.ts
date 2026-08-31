@@ -385,6 +385,36 @@ export async function getNearestBatchExpiry(userId: string): Promise<string | nu
 }
 
 /**
+ * Whether this account has a purchased pack that has not already been
+ * refunded. Used only to decide whether to OFFER a refund, never to decide
+ * whether one is allowed.
+ *
+ * Deliberately a single stored field rather than a client-side copy of the
+ * eligibility rules. reserve_refund owns the real gate — unused, inside the
+ * guarantee window, no in-flight Keyword Scan reservation — and duplicating
+ * that here would be the same contract drift that let the edge functions fall
+ * out of step with the Part A migration: the copy would go stale the moment
+ * the RPC changed, and nothing would fail loudly.
+ *
+ * So this answers only "could this person plausibly have something to refund",
+ * and the dialog's own outcome mapping explains precisely why not when the
+ * answer turns out to be no.
+ */
+export async function hasRefundablePurchase(userId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('credit_batches')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('source', 'purchase')
+    .eq('refund_status', 'active')
+    .limit(1)
+    .maybeSingle()
+
+  if (error) throw error
+  return data !== null
+}
+
+/**
  * The keyword-scan feature — entirely separate from analyzeCheck, no shared
  * code path. The CV file is sent directly as base64 rather than uploaded to
  * Storage first, since the CV itself is never persisted.
@@ -533,9 +563,13 @@ export async function hasSubmittedTestimonial(): Promise<boolean> {
   return data !== null
 }
 
-export async function requestRefund(): Promise<void> {
+export async function requestRefund(
+  input: { reason: string | null; reasonDetail: string | null } = { reason: null, reasonDetail: null },
+): Promise<void> {
+  // Both fields are optional by design: the refund never depends on them, and
+  // the edge function ignores anything it does not recognise.
   const { data, error } = await supabase.functions.invoke('request-refund', {
-    body: {},
+    body: { reason: input.reason, reasonDetail: input.reasonDetail },
   })
 
   if (error) throw await resolveFunctionError(error)
