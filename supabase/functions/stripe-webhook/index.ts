@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 import Stripe from 'npm:stripe@17.5.0'
+import { assertStripeEnvironment } from '../_shared/stripe-environment.ts'
 
 // Kept in sync with CHECK_PACKS in src/lib/constants.ts and PACKS in
 // create-checkout-session, per this codebase's existing convention of
@@ -15,6 +16,16 @@ Deno.serve(async (req) => {
   const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
 
   if (!stripeSecretKey || !webhookSecret) {
+    return new Response('Billing is not configured', { status: 503 })
+  }
+
+  // Refuse to process events with a key from the wrong Stripe mode.
+  try {
+    assertStripeEnvironment(stripeSecretKey)
+  } catch (error) {
+    console.error('stripe-webhook: stripe environment guard failed', {
+      message: error instanceof Error ? error.message : String(error),
+    })
     return new Response('Billing is not configured', { status: 503 })
   }
 

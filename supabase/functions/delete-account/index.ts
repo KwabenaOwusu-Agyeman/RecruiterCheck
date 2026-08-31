@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
+import { assertStripeEnvironment } from '../_shared/stripe-environment.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': 'https://myrecruitercheck.com',
@@ -44,6 +45,24 @@ Deno.serve(async (req) => {
     // (resource_missing — already cancelled, or never existed) is not a
     // failure and does not block deletion.
     if (stripeSecretKey) {
+      // Stripe is optional here: deletion already proceeds when no key is set.
+      // But a key from the wrong mode must not be treated as "no Stripe" and
+      // silently skipped, because that would delete the account while leaving a
+      // live subscription billing the user. A mode mismatch is a cancellation
+      // failure, so it returns the same 502 the existing failure path returns.
+      try {
+        assertStripeEnvironment(stripeSecretKey)
+      } catch (error) {
+        console.error('delete-account: stripe environment guard failed', {
+          userId: user.id,
+          message: error instanceof Error ? error.message : String(error),
+        })
+        return jsonResponse(
+          { error: 'Could not cancel your subscription. Please try again or contact support.' },
+          502,
+        )
+      }
+
       const { data: subscription } = await adminClient
         .from('subscriptions')
         .select('stripe_subscription_id')

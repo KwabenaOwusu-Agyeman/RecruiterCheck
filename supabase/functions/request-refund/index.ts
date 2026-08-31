@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
+import { assertStripeEnvironment } from '../_shared/stripe-environment.ts'
 import Stripe from 'npm:stripe@17.5.0'
 
 const corsHeaders = {
@@ -24,6 +25,16 @@ Deno.serve(async (req) => {
 
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
     if (!stripeSecretKey) {
+      return jsonResponse({ error: 'Billing is not configured' }, 503)
+    }
+
+    // Refuse to issue a refund against the wrong Stripe mode.
+    try {
+      assertStripeEnvironment(stripeSecretKey)
+    } catch (error) {
+      console.error('request-refund: stripe environment guard failed', {
+        message: error instanceof Error ? error.message : String(error),
+      })
       return jsonResponse({ error: 'Billing is not configured' }, 503)
     }
 

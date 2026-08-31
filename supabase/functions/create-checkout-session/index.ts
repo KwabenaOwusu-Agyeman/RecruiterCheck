@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
+import { assertStripeEnvironment } from '../_shared/stripe-environment.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': 'https://myrecruitercheck.com',
@@ -40,6 +41,17 @@ Deno.serve(async (req) => {
     const siteUrl = Deno.env.get('SITE_URL') ?? 'http://localhost:5173'
 
     if (!stripeSecretKey) {
+      return jsonResponse({ error: 'Billing is not configured' }, 503)
+    }
+
+    // Refuse to run against the wrong Stripe mode. A misconfigured environment
+    // is a configuration failure, so it reuses the same 503 as a missing key.
+    try {
+      assertStripeEnvironment(stripeSecretKey)
+    } catch (error) {
+      console.error('create-checkout-session: stripe environment guard failed', {
+        message: error instanceof Error ? error.message : String(error),
+      })
       return jsonResponse({ error: 'Billing is not configured' }, 503)
     }
 
