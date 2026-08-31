@@ -30,7 +30,15 @@ npm run verify       lint, typecheck and the full suite
 npm run checks       Which checks the current diff actually needs
 supabase start       Local stack: API 54321, DB 54322, Studio 54323, Inbucket 54324
 supabase db reset    Rebuild the LOCAL database from migrations
+supabase gen types typescript --project-id <ref> > src/types/database.ts
 ```
+
+Regenerating types is part of applying a migration, not an optional tidy-up.
+`src/types/database.ts` once went un-regenerated across a whole migration and
+ended up missing four tables and seventeen RPCs. Every edge function that had
+fallen out of step with the schema still typechecked cleanly, and the drift
+surfaced only as production 500s. A stale types file makes the compiler agree
+with code the database will reject.
 
 Each test file is self-contained, uses `node:assert/strict`, and carries a
 `// Run with: npx tsx <path>` header that still works by hand.
@@ -140,7 +148,7 @@ and skipping a relevant one is worse.
 | Scoring, verdicts, evidence logic, thresholds, `analyze-check/**`, `fixtures/synthetic/**` | lint, typecheck, `test:scoring`, `node scripts/mutation-check.mjs` |
 | React, components, pages, styling, routing, frontend logic | lint, typecheck, `test:unit` |
 | Edge Functions and backend logic | lint, typecheck, `test:edge` |
-| Migrations | local `supabase db reset`, `test:edge`, RLS review |
+| Migrations | local `supabase db reset`, **regenerate types**, `test:edge`, RLS review |
 | SEO pages, metadata, sitemap, prerender | `npm run build`, sitemap and metadata check |
 | `vercel.json`, `middleware.ts`, `supabase/config.toml` | `npm run build`, CSP hash check |
 | Auth, payments, credits, RLS, storage, uploads | mandatory security review, on top of the above |
