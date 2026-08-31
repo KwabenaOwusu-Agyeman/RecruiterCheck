@@ -413,40 +413,50 @@ test('missing verified facts throw so Stripe retries rather than dropping the or
 })
 
 // ---------------------------------------------------------------------------
-// Refund clawback must reverse both credit types
+// External refunds go through the state machine, not a hand-written clawback
 //
-// A pack grants checks AND keyword scans. The clawback previously touched only
-// checks and never set refund_status, so a refunded pack kept its scans and
-// still read as active. Nothing errors when this is wrong, which is why it
-// needs a test rather than a stack trace.
+// The old inline clawback touched only checks, never set refund_status, and
+// wrote no refund_events row. None of that errors, so it left silently wrong
+// state. recover_external_refund exists for this exact path and ends in the
+// same state as the self-service flow.
 // ---------------------------------------------------------------------------
 
-test('the refund clawback reverses both credit types and marks the batch', () => {
-  const update = between("keyword_scans_remaining: 0", "'id', batch.id")
-  assert.match(source, /keyword_scans_remaining: 0/)
-  assert.match(source, /refund_status: 'refunded'/)
-  assert.ok(update.length >= 0)
+test('the refund handler delegates to recover_external_refund', () => {
+  assert.match(source, /adminClient\.rpc\('recover_external_refund', \{/)
+  assert.match(source, /p_stripe_payment_intent_id: paymentIntentId/)
+  assert.match(source, /p_stripe_refund_id: stripeRefundId/)
 })
 
-test('the clawback is only terminal once both credit types are drained', () => {
-  // Returning early on checks alone left the scans permanently granted.
-  assert.match(
-    source,
-    /batch\.checks_remaining <= 0 && scanClawback <= 0 && batch\.refund_status === 'refunded'/,
-  )
-})
-
-test('the clawback query selects what it needs to judge that', () => {
-  const select = between("select('id, user_id, checks_remaining", ')')
-  for (const column of ['keyword_scans_remaining', 'refund_status']) {
-    assert.ok(select.includes(column), `clawback cannot be judged without ${column}`)
+test('the refund handler writes no credit state by hand', () => {
+  // Any direct write here would bypass the lock order, the refund_events audit
+  // trail, and the per-credit-type ledger legs that finalize_refund writes.
+  const body = between('async function handleChargeRefunded', '\n}')
+  for (const forbidden of ["from('credit_batches')", "from('profiles')", "from('check_ledger')"]) {
+    assert.ok(!body.includes(forbidden), `refund handler must not write ${forbidden} directly`)
   }
+  assert.ok(!body.includes('checks_remaining'), 'clawback arithmetic must live in the RPC')
 })
 
-test('the clawback ledger records a leg per credit type', () => {
-  const ledger = between('const ledgerRows = [', "await adminClient.from('check_ledger')")
-  assert.match(ledger, /credit_type: 'check'/)
-  assert.match(ledger, /credit_type: 'keyword_scan'/)
+test('it passes a Stripe Refund id, never the charge id', () => {
+  // refund_events.stripe_refund_id must be a re_ id; the column comment says so.
+  const body = between('async function handleChargeRefunded', '\n}')
+  assert.match(body, /stripe\.refunds\.list\(\{ payment_intent: paymentIntentId/)
+  assert.match(body, /const stripeRefundId = refunds\.data\[0\]\?\.id/)
+  assert.ok(!/p_stripe_refund_id: charge\.id/.test(body))
+})
+
+test('a missing refund is skipped rather than finalised against nothing', () => {
+  const body = between('async function handleChargeRefunded', '\n}')
+  assert.match(body, /if \(!stripeRefundId\) \{[\s\S]*?return 'skipped'/)
+})
+
+test('every recover_external_refund outcome is classified', () => {
+  const body = between('async function handleChargeRefunded', '\n}')
+  for (const outcome of ['finalized', 'already_finalized', 'already_refunded', 'batch_not_found']) {
+    assert.ok(body.includes(`case '${outcome}'`), `unhandled outcome: ${outcome}`)
+  }
+  // An unrecognised outcome must not be treated as done.
+  assert.match(body, /default:[\s\S]*?return 'skipped'/)
 })
 
 console.log(`\n${passed} tests passed`)

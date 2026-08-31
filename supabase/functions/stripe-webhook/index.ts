@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
         break
       }
       case 'charge.refunded': {
-        outcome = await handleChargeRefunded(adminClient, event.data.object as Stripe.Charge)
+        outcome = await handleChargeRefunded(adminClient, stripe, event.data.object as Stripe.Charge)
         break
       }
       default:
@@ -325,6 +325,7 @@ async function handlePackCheckoutCompleted(
  */
 async function handleChargeRefunded(
   adminClient: ReturnType<typeof createClient>,
+  stripe: Stripe,
   charge: Stripe.Charge,
 ): Promise<HandlerOutcome> {
   const paymentIntentId =
@@ -336,73 +337,47 @@ async function handleChargeRefunded(
     return 'fulfilled'
   }
 
-  const { data: batch } = await adminClient
-    .from('credit_batches')
-    .select('id, user_id, checks_remaining, keyword_scans_remaining, refund_status')
-    .eq('stripe_payment_intent_id', paymentIntentId)
-    .maybeSingle()
-
-  if (!batch) {
-    console.error('stripe-webhook: charge.refunded — no matching pack batch', paymentIntentId)
-    // The purchase may not have been fulfilled yet; a later attempt could find
-    // the batch, so this stays reprocessable.
+  // refund_events records the Stripe Refund id (prefix re_), never the charge
+  // id. The charge payload may not carry an expanded refunds list, so read it
+  // from the API rather than guessing.
+  const refunds = await stripe.refunds.list({ payment_intent: paymentIntentId, limit: 1 })
+  const stripeRefundId = refunds.data[0]?.id
+  if (!stripeRefundId) {
+    console.error('stripe-webhook: charge.refunded but no refund found for', paymentIntentId)
     return 'skipped'
   }
 
-  // Already clawed back, nothing left to reverse. Both credit types must be
-  // drained before this is terminal: checks alone was the old test, and it let
-  // a refunded pack keep its keyword scans.
-  const scanClawback = batch.keyword_scans_remaining ?? 0
-  if (batch.checks_remaining <= 0 && scanClawback <= 0 && batch.refund_status === 'refunded') {
-    return 'fulfilled'
+  // recover_external_refund exists for exactly this path: a refund issued
+  // outside the self-service flow (a Stripe Dashboard refund, or a dispute).
+  // It opens a refund_events row if one is not already pending and delegates
+  // to finalize_refund, so the dashboard path and the self-service path end in
+  // identical state. Doing the claw-back by hand here is what left refunds
+  // with no audit trail, an 'active' refund_status and un-reversed keyword
+  // scans.
+  const { data, error } = await adminClient.rpc('recover_external_refund', {
+    p_stripe_payment_intent_id: paymentIntentId,
+    p_stripe_refund_id: stripeRefundId,
+  })
+
+  if (error) {
+    console.error('stripe-webhook: recover_external_refund failed', error)
+    throw error
   }
 
-  const { data: profile } = await adminClient
-    .from('profiles')
-    .select('checks_balance')
-    .eq('id', batch.user_id)
-    .single()
+  const outcome = (Array.isArray(data) ? data[0] : data)?.outcome
+  console.log('stripe-webhook: external refund reconciled', { paymentIntentId, outcome })
 
-  if (!profile) return 'skipped'
-
-  const clawback = Math.min(batch.checks_remaining, profile.checks_balance)
-
-  await adminClient
-    .from('credit_batches')
-    .update({
-      checks_remaining: batch.checks_remaining - clawback,
-      keyword_scans_remaining: 0,
-      refund_status: 'refunded',
-    })
-    .eq('id', batch.id)
-  await adminClient
-    .from('profiles')
-    .update({ checks_balance: profile.checks_balance - clawback })
-    .eq('id', batch.user_id)
-
-  // Both legs, mirroring the two rows grant_pack_credits writes on purchase.
-  const ledgerRows = [
-    {
-      user_id: batch.user_id,
-      batch_id: batch.id,
-      entry_type: 'refunded',
-      amount: -clawback,
-      credit_type: 'check',
-      related_stripe_payment_intent_id: paymentIntentId,
-      note: 'charge.refunded webhook clawback',
-    },
-  ]
-  if (scanClawback > 0) {
-    ledgerRows.push({
-      user_id: batch.user_id,
-      batch_id: batch.id,
-      entry_type: 'refunded',
-      amount: -scanClawback,
-      credit_type: 'keyword_scan',
-      related_stripe_payment_intent_id: paymentIntentId,
-      note: 'charge.refunded webhook clawback',
-    })
+  switch (outcome) {
+    case 'finalized':
+    case 'already_finalized':
+    case 'already_refunded':
+      return 'fulfilled'
+    case 'batch_not_found':
+      // The purchase may not be fulfilled yet; a later attempt could find it.
+      return 'skipped'
+    default:
+      console.error('stripe-webhook: unexpected recover_external_refund outcome', outcome)
+      return 'skipped'
   }
-  await adminClient.from('check_ledger').insert(ledgerRows)
-  return 'fulfilled'
 }
+

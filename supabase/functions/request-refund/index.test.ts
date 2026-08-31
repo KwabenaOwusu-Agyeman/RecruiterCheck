@@ -24,7 +24,6 @@ function test(name: string, fn: () => void) {
 }
 
 const source = readFileSync(fileURLToPath(new URL('./index.ts', import.meta.url)), 'utf-8')
-const at = (needle: string) => source.indexOf(needle)
 
 function between(startNeedle: string, endNeedle: string): string {
   const start = source.indexOf(startNeedle)
@@ -35,65 +34,80 @@ function between(startNeedle: string, endNeedle: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Eligibility
+// Eligibility and reservation are the RPC's job, not this function's
 // ---------------------------------------------------------------------------
 
-test('the batch query selects both credit types and the refund status', () => {
-  const select = between(".from('credit_batches')", '.eq(')
-  for (const column of [
-    'checks_granted',
-    'checks_remaining',
-    'keyword_scans_granted',
-    'keyword_scans_remaining',
-    'refund_status',
+test('eligibility is decided by reserve_refund, not re-implemented here', () => {
+  // Checking eligibility out here cannot be atomic: two concurrent requests
+  // could both read an eligible batch and both refund it. reserve_refund does
+  // it under the global profile-then-batch lock order and reserves in the same
+  // transaction.
+  assert.match(source, /rpc\('reserve_refund', \{\s*\n?\s*p_batch_id: batch\.id/)
+  assert.ok(!source.includes('GUARANTEE_WINDOW_MS >'), 'window check belongs to the RPC')
+  assert.ok(!source.includes('checksUntouched'), 'used-pack check belongs to the RPC')
+})
+
+test('reserve_refund is called with the caller identity, not the service role', () => {
+  // It is granted to `authenticated` and reads auth.uid(); the service role
+  // would have no uid and the call would fail closed.
+  assert.match(source, /userClient\.rpc\('reserve_refund'/)
+  assert.ok(!/adminClient\.rpc\('reserve_refund'/.test(source))
+})
+
+test('every reservation outcome maps to a response', () => {
+  const sw = between("switch (reserved?.outcome)", 'const refundEventId')
+  for (const outcome of [
+    'reserved',
+    'batch_not_found',
+    'already_refunded',
+    'already_refund_pending',
+    'already_used',
+    'window_expired',
+    'active_reservation_exists',
   ]) {
-    assert.ok(select.includes(column), `eligibility cannot be judged without ${column}`)
+    assert.ok(sw.includes(`case '${outcome}'`), `unhandled reservation outcome: ${outcome}`)
   }
-})
-
-test('an already-refunded batch is rejected before any Stripe call', () => {
-  assert.match(source, /batch\.refund_status !== 'active'/)
-  assert.ok(at("batch.refund_status !== 'active'") < at('stripe.refunds.create'))
-})
-
-test('"untouched" considers keyword scans, not only checks', () => {
-  // A pack grants checks AND keyword scans. Judging on checks alone let a
-  // customer spend every scan and still take a full refund.
-  assert.match(source, /const scansUntouched =/)
-  assert.match(source, /!checksUntouched \|\| !scansUntouched/)
-})
-
-test('the refund is only created after every eligibility gate', () => {
-  for (const gate of [
-    "batch.refund_status !== 'active'",
-    '!checksUntouched || !scansUntouched',
-    'purchaseAgeMs > GUARANTEE_WINDOW_MS',
-    "paymentIntent.status !== 'succeeded'",
-  ]) {
-    assert.ok(at(gate) < at('stripe.refunds.create'), `${gate} must precede the refund`)
-  }
+  assert.match(sw, /default:/)
 })
 
 // ---------------------------------------------------------------------------
-// State written after the money moves
+// Once reserved, every exit must resolve the reservation
 // ---------------------------------------------------------------------------
 
-test('the batch is zeroed for both credit types and marked refunded', () => {
-  const update = between(".from('credit_batches')\n      .update(", '.eq(')
-  assert.match(update, /checks_remaining: 0/)
-  assert.match(update, /keyword_scans_remaining: 0/)
-  assert.match(update, /refund_status: 'refunded'/)
+test('a failure before the money moves releases the reservation', () => {
+  // Leaving the batch in refund_pending would make the pack permanently
+  // un-refundable.
+  assert.match(source, /rpc\('fail_refund', \{ p_refund_event_id: refundEventId \}\)/)
+  const guarded = between('const releaseReservation', 'finalize_refund')
+  const releases = guarded.match(/await releaseReservation\(\)/g) ?? []
+  assert.ok(releases.length >= 3, `expected every pre-refund exit to release, found ${releases.length}`)
 })
 
-test('the ledger records a leg per credit type', () => {
-  const ledger = between('const ledgerRows = [', "await adminClient.from('check_ledger')")
-  assert.match(ledger, /credit_type: 'check'/)
-  assert.match(ledger, /credit_type: 'keyword_scan'/)
-  assert.match(ledger, /amount: -scanClawback/)
+test('a Stripe failure releases rather than leaving the batch pending', () => {
+  const catchBlock = between('catch (stripeError)', '}')
+  assert.match(catchBlock, /await releaseReservation\(\)/)
 })
 
-test('the scan leg is omitted when there is nothing to claw back', () => {
-  assert.match(source, /if \(scanClawback > 0\) \{/)
+test('the claw-back is finalize_refund, not hand-written writes', () => {
+  assert.match(source, /rpc\('finalize_refund', \{/)
+  assert.match(source, /p_stripe_refund_id: stripeRefundId/)
+  for (const forbidden of ["from('credit_batches')\n      .update", "from('check_ledger')"]) {
+    assert.ok(!source.includes(forbidden), `must not write ${forbidden} by hand`)
+  }
+  assert.ok(!source.includes('keyword_scans_remaining: 0'), 'claw-back arithmetic belongs to the RPC')
+})
+
+test('a finalize failure after the refund does NOT release the reservation', () => {
+  // The money has already left. Marking the batch active again would show the
+  // customer a live pack they have been refunded for.
+  const block = between('if (finalizeError)', 'return jsonResponse')
+  assert.ok(!block.includes('releaseReservation'), 'must not restore a batch whose refund succeeded')
+  assert.match(block, /refund issued but finalize_refund failed/)
+})
+
+test('an already-refunded payment intent finalises rather than double-refunding', () => {
+  const block = between('existingRefunds.data.length > 0', 'const refund =')
+  assert.match(block, /stripeRefundId = existingRefunds\.data\[0\]\.id/)
 })
 
 console.log(`\n${passed} tests passed`)
