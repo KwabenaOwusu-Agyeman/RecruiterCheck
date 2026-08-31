@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.15"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -77,8 +77,10 @@ export type Database = {
           amount: number
           batch_id: string | null
           created_at: string
+          credit_type: string
           entry_type: string
           id: number
+          keyword_scan_reservation_id: string | null
           note: string | null
           related_check_id: string | null
           related_stripe_payment_intent_id: string | null
@@ -88,8 +90,10 @@ export type Database = {
           amount: number
           batch_id?: string | null
           created_at?: string
+          credit_type?: string
           entry_type: string
           id?: never
+          keyword_scan_reservation_id?: string | null
           note?: string | null
           related_check_id?: string | null
           related_stripe_payment_intent_id?: string | null
@@ -99,8 +103,10 @@ export type Database = {
           amount?: number
           batch_id?: string | null
           created_at?: string
+          credit_type?: string
           entry_type?: string
           id?: never
+          keyword_scan_reservation_id?: string | null
           note?: string | null
           related_check_id?: string | null
           related_stripe_payment_intent_id?: string | null
@@ -115,6 +121,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "check_ledger_keyword_scan_reservation_id_fkey"
+            columns: ["keyword_scan_reservation_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_scan_reservations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "check_ledger_related_check_id_fkey"
             columns: ["related_check_id"]
             isOneToOne: false
@@ -123,45 +136,6 @@ export type Database = {
           },
           {
             foreignKeyName: "check_ledger_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      check_sentiment: {
-        Row: {
-          check_id: string
-          created_at: string
-          note: string | null
-          sentiment: string
-          user_id: string
-        }
-        Insert: {
-          check_id: string
-          created_at?: string
-          note?: string | null
-          sentiment: string
-          user_id: string
-        }
-        Update: {
-          check_id?: string
-          created_at?: string
-          note?: string | null
-          sentiment?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "check_sentiment_check_id_fkey"
-            columns: ["check_id"]
-            isOneToOne: true
-            referencedRelation: "checks"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "check_sentiment_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -218,6 +192,45 @@ export type Database = {
             columns: ["check_id"]
             isOneToOne: true
             referencedRelation: "checks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      check_sentiment: {
+        Row: {
+          check_id: string
+          created_at: string
+          note: string | null
+          sentiment: string
+          user_id: string
+        }
+        Insert: {
+          check_id: string
+          created_at?: string
+          note?: string | null
+          sentiment: string
+          user_id: string
+        }
+        Update: {
+          check_id?: string
+          created_at?: string
+          note?: string | null
+          sentiment?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "check_sentiment_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: true
+            referencedRelation: "checks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "check_sentiment_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -313,39 +326,63 @@ export type Database = {
       }
       credit_batches: {
         Row: {
+          amount_paid: number | null
           checks_granted: number
           checks_remaining: number
+          currency: string | null
           expires_at: string | null
           granted_at: string
           id: string
+          keyword_scans_granted: number
+          keyword_scans_remaining: number
           pack_id: string | null
+          paid_at: string | null
+          quantity: number | null
+          refund_status: string
           source: string
           stripe_checkout_session_id: string | null
           stripe_payment_intent_id: string | null
+          stripe_price_id: string | null
           user_id: string
         }
         Insert: {
+          amount_paid?: number | null
           checks_granted: number
           checks_remaining: number
+          currency?: string | null
           expires_at?: string | null
           granted_at?: string
           id?: string
+          keyword_scans_granted?: number
+          keyword_scans_remaining?: number
           pack_id?: string | null
+          paid_at?: string | null
+          quantity?: number | null
+          refund_status?: string
           source: string
           stripe_checkout_session_id?: string | null
           stripe_payment_intent_id?: string | null
+          stripe_price_id?: string | null
           user_id: string
         }
         Update: {
+          amount_paid?: number | null
           checks_granted?: number
           checks_remaining?: number
+          currency?: string | null
           expires_at?: string | null
           granted_at?: string
           id?: string
+          keyword_scans_granted?: number
+          keyword_scans_remaining?: number
           pack_id?: string | null
+          paid_at?: string | null
+          quantity?: number | null
+          refund_status?: string
           source?: string
           stripe_checkout_session_id?: string | null
           stripe_payment_intent_id?: string | null
+          stripe_price_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -392,6 +429,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      feature_flags: {
+        Row: {
+          enabled: boolean
+          key: string
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          key: string
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          key?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       feedback: {
         Row: {
@@ -531,6 +586,86 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "job_captures_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      keyword_scan_canary_users: {
+        Row: {
+          user_id: string
+        }
+        Insert: {
+          user_id: string
+        }
+        Update: {
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "keyword_scan_canary_users_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      keyword_scan_reservations: {
+        Row: {
+          batch_id: string | null
+          completed_at: string | null
+          created_at: string
+          credit_source: string
+          id: string
+          idempotency_key: string
+          lease_expires_at: string | null
+          released_at: string | null
+          result: Json | null
+          result_expires_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          batch_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          credit_source: string
+          id?: string
+          idempotency_key: string
+          lease_expires_at?: string | null
+          released_at?: string | null
+          result?: Json | null
+          result_expires_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          batch_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          credit_source?: string
+          id?: string
+          idempotency_key?: string
+          lease_expires_at?: string | null
+          released_at?: string | null
+          result?: Json | null
+          result_expires_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "keyword_scan_reservations_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "credit_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "keyword_scan_reservations_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -684,18 +819,99 @@ export type Database = {
         }
         Relationships: []
       }
-      stripe_webhook_events: {
+      refund_events: {
         Row: {
+          attempt_number: number
+          batch_id: string
           created_at: string
+          finalized_at: string | null
           id: string
+          reason: string | null
+          reason_detail: string | null
+          status: string
+          stripe_refund_id: string | null
+          user_id: string
         }
         Insert: {
+          attempt_number?: number
+          batch_id: string
           created_at?: string
-          id: string
+          finalized_at?: string | null
+          id?: string
+          reason?: string | null
+          reason_detail?: string | null
+          status?: string
+          stripe_refund_id?: string | null
+          user_id: string
         }
         Update: {
+          attempt_number?: number
+          batch_id?: string
           created_at?: string
+          finalized_at?: string | null
           id?: string
+          reason?: string | null
+          reason_detail?: string | null
+          status?: string
+          stripe_refund_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refund_events_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "credit_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stripe_webhook_events: {
+        Row: {
+          attempt_count: number
+          claim_token: string | null
+          completed_at: string | null
+          created_at: string
+          error_category: string | null
+          event_type: string
+          first_received_at: string
+          id: string
+          last_attempted_at: string
+          lease_expires_at: string | null
+          status: string
+        }
+        Insert: {
+          attempt_count?: number
+          claim_token?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_category?: string | null
+          event_type: string
+          first_received_at?: string
+          id: string
+          last_attempted_at?: string
+          lease_expires_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempt_count?: number
+          claim_token?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_category?: string | null
+          event_type?: string
+          first_received_at?: string
+          id?: string
+          last_attempted_at?: string
+          lease_expires_at?: string | null
+          status?: string
         }
         Relationships: []
       }
@@ -779,6 +995,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      claim_stripe_webhook_event: {
+        Args: { p_event_id: string; p_event_type: string }
+        Returns: {
+          attempt_count: number
+          claim_token: string
+          outcome: string
+        }[]
+      }
+      cleanup_expired_keyword_scan_results: { Args: never; Returns: undefined }
       complete_check_analysis: {
         Args: {
           p_check_id: string
@@ -815,8 +1040,59 @@ export type Database = {
         }
         Returns: undefined
       }
+      complete_keyword_scan: {
+        Args: { p_reservation_id: string; p_result: Json }
+        Returns: {
+          cached_result: Json
+          outcome: string
+          result_expires_at: string
+        }[]
+      }
+      complete_stripe_webhook_event: {
+        Args: { p_claim_token: string; p_event_id: string }
+        Returns: {
+          outcome: string
+        }[]
+      }
       expire_credit_batches: { Args: never; Returns: undefined }
+      fail_refund: {
+        Args: { p_refund_event_id: string }
+        Returns: {
+          outcome: string
+        }[]
+      }
+      fail_stripe_webhook_event: {
+        Args: {
+          p_claim_token: string
+          p_error_category: string
+          p_event_id: string
+        }
+        Returns: {
+          outcome: string
+        }[]
+      }
+      finalize_refund: {
+        Args: { p_refund_event_id: string; p_stripe_refund_id: string }
+        Returns: {
+          outcome: string
+        }[]
+      }
       get_check_count: { Args: { p_user_id: string }; Returns: number }
+      get_credit_summary: {
+        Args: never
+        Returns: {
+          free_checks_available: number
+          free_keyword_scans_available: number
+          next_check_expiry: string
+          next_check_expiry_amount: number
+          next_keyword_scan_expiry: string
+          next_keyword_scan_expiry_amount: number
+          paid_checks_available: number
+          paid_keyword_scans_available: number
+          total_checks_available: number
+          total_keyword_scans_available: number
+        }[]
+      }
       grant_check_credits: {
         Args: {
           p_amount: number
@@ -829,19 +1105,96 @@ export type Database = {
         }
         Returns: undefined
       }
+      grant_pack_credits: {
+        Args: {
+          p_amount_paid: number
+          p_currency: string
+          p_pack_id: string
+          p_paid_at: string
+          p_quantity: number
+          p_stripe_checkout_session_id: string
+          p_stripe_payment_intent_id: string
+          p_stripe_price_id: string
+          p_user_id: string
+        }
+        Returns: {
+          already_granted: boolean
+          batch_id: string
+          checks_granted: number
+          keyword_scans_granted: number
+        }[]
+      }
       is_most_recent_check: {
         Args: { p_created_at: string; p_user_id: string }
         Returns: boolean
       }
+      list_ambiguous_refund_candidates: {
+        Args: never
+        Returns: {
+          refund_event_id: string
+          stripe_payment_intent_id: string
+        }[]
+      }
+      poll_keyword_scan_status: {
+        Args: { p_idempotency_key: string }
+        Returns: {
+          cached_result: Json
+          outcome: string
+          reservation_id: string
+        }[]
+      }
+      reconcile_abandoned_keyword_scan_reservations: {
+        Args: never
+        Returns: {
+          reconciled_count: number
+        }[]
+      }
+      reconcile_ambiguous_refunds: {
+        Args: never
+        Returns: {
+          reconciled_count: number
+        }[]
+      }
+      recover_external_refund: {
+        Args: { p_stripe_payment_intent_id: string; p_stripe_refund_id: string }
+        Returns: {
+          outcome: string
+        }[]
+      }
       refund_check_credit: {
         Args: { p_check_id: string; p_user_id: string }
         Returns: undefined
+      }
+      release_keyword_scan_reservation: {
+        Args: { p_reservation_id: string }
+        Returns: {
+          outcome: string
+        }[]
       }
       reserve_check_analysis: {
         Args: { p_check_id: string; p_user_id: string }
         Returns: {
           allowed: boolean
           reason: string
+        }[]
+      }
+      reserve_keyword_scan: {
+        Args: { p_idempotency_key: string }
+        Returns: {
+          cached_result: Json
+          outcome: string
+          reservation_id: string
+        }[]
+      }
+      reserve_refund: {
+        Args: { p_batch_id: string }
+        Returns: {
+          batch_id: string
+          checks_granted: number
+          keyword_scans_granted: number
+          outcome: string
+          refund_event_id: string
+          stripe_payment_intent_id: string
         }[]
       }
       sweep_old_purge_log: { Args: never; Returns: undefined }
