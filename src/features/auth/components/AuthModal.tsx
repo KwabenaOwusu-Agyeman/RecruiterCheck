@@ -200,14 +200,7 @@ export function AuthModal() {
   const submitLoadingLabel = mode === 'sign-up' ? 'Creating account...' : 'Signing in...'
 
   return (
-    <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-[#05050D]/50 sm:p-[24px]"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
-          handleDismiss()
-        }
-      }}
-    >
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#05050D]/50 sm:p-[24px]">
       {/* Centering lives on this inner, non-scrolling wrapper rather than on
           the scroll container itself — flex `items-center` + `overflow-y-auto`
           on the same element clips content taller than the viewport (the
@@ -218,7 +211,19 @@ export function AuthModal() {
           natural scrollable area starts at the true top of the content.
           Below `sm` the panel docks to the bottom edge as a native-style
           sheet (`items-end`); at `sm` and up it reverts to a centered modal. */}
-      <div className="flex min-h-full items-end justify-center sm:items-center">
+      {/* Dismiss on a click outside the panel lives on this wrapper, not on
+          the scroll container above it. The wrapper is `min-h-full`, so it
+          covers the container completely and every click inside the viewport
+          lands on the wrapper: a `target === currentTarget` check on the
+          container could never pass, and clicking away did nothing at all. */}
+      <div
+        className="flex min-h-full items-end justify-center sm:items-center"
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget) {
+            handleDismiss()
+          }
+        }}
+      >
         <div
           ref={dialogRef}
           role="dialog"
