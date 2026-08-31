@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Sparkles } from 'lucide-react'
 import { Alert } from '@/components/ui/Alert'
 import { BackLink } from '@/components/ui/BackLink'
@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { PageHeader } from '@/components/ui/Badge'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { StepIndicator } from '@/components/ui/StepIndicator'
 import { Textarea } from '@/components/ui/Textarea'
 import { AutoDeleteNotice } from '@/components/checks/AutoDeleteNotice'
@@ -37,6 +38,9 @@ import { categorizeUrlDomain, trackEvent } from '@/lib/analytics'
 
 const PASTED_CV_FILE_NAME = 'cv.txt'
 const MIN_PASTED_CV_LENGTH = 50
+// Named so the validation error and the character counter under the field can
+// never disagree about the threshold they are both describing.
+const MIN_JOB_DESCRIPTION_LENGTH = 50
 // Duplicated from keyword-scan's own FREE_SCAN_LIMIT (and KeywordScanPage's
 // copy of the same) per this codebase's existing convention of duplicating
 // small constants across independently-deployable pieces rather than
@@ -371,8 +375,10 @@ export function NewCheckPage() {
     const checkId = checkIdRef.current
     if (!checkId) return
 
-    if (jobDescription.trim().length < 50) {
-      setError('Please paste a complete job description (at least 50 characters).')
+    if (jobDescription.trim().length < MIN_JOB_DESCRIPTION_LENGTH) {
+      setError(
+        `Please paste a complete job description (at least ${MIN_JOB_DESCRIPTION_LENGTH} characters).`,
+      )
       return
     }
 
@@ -391,12 +397,40 @@ export function NewCheckPage() {
     }
   }
 
+  // A silent redirect to /checks left the user staring at a list, with no idea
+  // why the thing they clicked did not open. Say what happened and let them
+  // choose to go back.
   if (notFound) {
-    return <Navigate to="/checks" replace />
+    return (
+      <>
+        <BackLink to="/checks" />
+        <div className="mt-3">
+          <PageHeader title="New Check" />
+        </div>
+        <Card className="mx-auto max-w-md p-[20px] text-center sm:p-8">
+          <h2 className="text-base font-semibold text-text-primary">Check not found</h2>
+          <p className="mt-2 text-sm text-text-secondary">
+            This check no longer exists, or has already been completed.
+          </p>
+          <div className="mt-6 flex justify-center">
+            <Link to="/checks">
+              <Button size="sm" className="w-full sm:w-auto">
+                Back to My Checks
+              </Button>
+            </Link>
+          </div>
+        </Card>
+      </>
+    )
   }
 
   if (loadingDraft || !gateChecked) {
-    return <p className="text-sm text-text-secondary">Loading...</p>
+    return (
+      <div className="mx-auto max-w-2xl space-y-4 lg:max-w-[800px]">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    )
   }
 
   if (gateReason === 'free-tier') {
@@ -502,7 +536,38 @@ export function NewCheckPage() {
       </div>
 
       <Card className="mx-auto max-w-2xl space-y-[20px] p-[20px] sm:space-y-7 sm:p-7 lg:max-w-[800px] lg:space-y-[40px] lg:p-[40px]">
-        {captureError ? <Alert variant="error">{captureError}</Alert> : null}
+        {/* A capture failure is a dead end without a way out: the URL did not
+            work, and the error alone does not tell the user that pasting or
+            uploading would. The two ways forward sit inside the error. */}
+        {captureError ? (
+          <Alert variant="error">
+            <p>{captureError}</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setCaptureError(null)
+                  setJobInputMode('paste')
+                }}
+              >
+                Paste Job Description
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setCaptureError(null)
+                  setJobInputMode('url')
+                }}
+              >
+                Use a URL Instead
+              </Button>
+            </div>
+          </Alert>
+        ) : null}
 
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
@@ -533,12 +598,23 @@ export function NewCheckPage() {
           </div>
 
           {jobInputMode === 'paste' ? (
-            <Textarea
-              id="jobDescription"
-              value={jobDescription}
-              onChange={(event) => handleJobDescriptionChange(event.target.value)}
-              placeholder="Paste the full job description"
-            />
+            <>
+              <Textarea
+                id="jobDescription"
+                value={jobDescription}
+                onChange={(event) => handleJobDescriptionChange(event.target.value)}
+                placeholder="Paste the full job description"
+              />
+              {/* Shown while short and hidden once satisfied, so the minimum
+                  surfaces before the submit is refused rather than after. */}
+              {jobDescription.trim().length > 0 &&
+              jobDescription.trim().length < MIN_JOB_DESCRIPTION_LENGTH ? (
+                <p className="text-xs text-text-secondary">
+                  Add a bit more detail. At least {MIN_JOB_DESCRIPTION_LENGTH} characters (
+                  {jobDescription.trim().length} of {MIN_JOB_DESCRIPTION_LENGTH}).
+                </p>
+              ) : null}
+            </>
           ) : jobInputMode === 'url' ? (
             <>
               <div className="flex gap-2">
@@ -610,7 +686,35 @@ export function NewCheckPage() {
                   setJobFileError(null)
                 }}
               />
-              {jobFileError ? <Alert variant="error">{jobFileError}</Alert> : null}
+              {jobFileError ? (
+                <Alert variant="error">
+                  <p>{jobFileError}</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        setJobFileError(null)
+                        setJobInputMode('paste')
+                      }}
+                    >
+                      Paste Job Description
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        setJobFileError(null)
+                        setJobInputMode('url')
+                      }}
+                    >
+                      Use a URL Instead
+                    </Button>
+                  </div>
+                </Alert>
+              ) : null}
             </>
           )}
         </div>
@@ -661,7 +765,16 @@ export function NewCheckPage() {
                 Paste your CV as plain text. Saves automatically as you type.
               </p>
               <AutoDeleteNotice />
-              {cvFileName === PASTED_CV_FILE_NAME ? (
+              {/* Below the minimum nothing saves, and "CV text saved" never
+                  appears, which reads as the box being broken. Say what it is
+                  waiting for instead. */}
+              {cvPastedText.trim().length > 0 &&
+              cvPastedText.trim().length < MIN_PASTED_CV_LENGTH ? (
+                <p className="text-xs text-text-secondary">
+                  Add a bit more. At least {MIN_PASTED_CV_LENGTH} characters (
+                  {cvPastedText.trim().length} of {MIN_PASTED_CV_LENGTH}) to save.
+                </p>
+              ) : cvFileName === PASTED_CV_FILE_NAME ? (
                 <p className="text-sm text-text-secondary">CV text saved</p>
               ) : null}
             </>
@@ -676,6 +789,10 @@ export function NewCheckPage() {
           <p className="text-xs text-text-secondary">Saved</p>
         ) : saveState === 'error' ? (
           <p className="text-xs text-error">Could not save your changes</p>
+        ) : !checkIdRef.current && hasJobDescription ? (
+          // No check row exists until a CV lands, so nothing the user has
+          // typed so far is being saved. Silence here reads as saved.
+          <p className="text-xs text-text-secondary">Add your CV to start saving this check.</p>
         ) : null}
 
         <div className="flex flex-col gap-3 border-t border-border pt-[16px] sm:flex-row sm:items-center sm:justify-end sm:pt-6 lg:pt-8">

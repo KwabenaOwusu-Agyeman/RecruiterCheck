@@ -1,5 +1,5 @@
-import { type FormEvent, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Alert } from '@/components/ui/Alert'
 import { AuthCardHeader } from '@/components/ui/AuthCard'
 import { Button } from '@/components/ui/Button'
@@ -27,8 +27,26 @@ export function AuthModal() {
   const { mode, close, setMode } = useAuthModal()
   const { setSessionImmediate } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const dialogRef = useRef<HTMLDivElement>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
+
+  // The modal opens over whatever page the user was on, from a header button
+  // or any call to action, so dismissing it should leave them there. The
+  // exception is /sign-in and /sign-up, which are placeholder routes with no
+  // content of their own: closing the modal on one of those has to go
+  // somewhere, and the landing page is that somewhere.
+  //
+  // All three dismiss paths run through this. They used to disagree: Escape
+  // left you in place while the close button and the backdrop sent you to the
+  // landing page, so the same intent gave three different results depending on
+  // how you expressed it.
+  const handleDismiss = useCallback(() => {
+    close()
+    if (location.pathname === '/sign-in' || location.pathname === '/sign-up') {
+      void navigate('/', { replace: true })
+    }
+  }, [close, navigate, location.pathname])
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -68,7 +86,7 @@ export function AuthModal() {
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        close()
+        handleDismiss()
         return
       }
 
@@ -99,7 +117,7 @@ export function AuthModal() {
       document.body.style.overflow = ''
       previousFocusRef.current?.focus()
     }
-  }, [mode, close])
+  }, [mode, handleDismiss])
 
   if (!mode) return null
 
@@ -186,8 +204,7 @@ export function AuthModal() {
       className="fixed inset-0 z-50 overflow-y-auto bg-[#05050D]/50 sm:p-[24px]"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
-          close()
-          void navigate('/', { replace: true })
+          handleDismiss()
         }
       }}
     >
@@ -216,10 +233,7 @@ export function AuthModal() {
         <button
           type="button"
           aria-label="Close"
-          onClick={() => {
-            close()
-            void navigate('/', { replace: true })
-          }}
+          onClick={handleDismiss}
           className="absolute right-[8px] top-[8px] flex h-11 w-11 items-center justify-center rounded-lg border border-transparent text-text-secondary transition-colors duration-150 hover:bg-surface hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue sm:right-[16px] sm:top-[16px] sm:h-[36px] sm:w-[36px] sm:hover:bg-surface"
         >
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
