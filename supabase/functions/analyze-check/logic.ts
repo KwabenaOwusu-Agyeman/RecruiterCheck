@@ -488,6 +488,32 @@ export function calculateFitCommunicationScore(levels: {
 }
 
 /**
+ * The three category scores combine into the overall score with the weights
+ * the app has always used. Extracted from the inline expression at the call
+ * site so tests can import and verify it directly rather than restating the
+ * weights. Same operations, same order, same rounding — behaviour unchanged.
+ */
+export const CATEGORY_BLEND_WEIGHTS = {
+  evidenceAndAppliedAbility: 0.4,
+  technicalCapability: 0.35,
+  fitAndCommunication: 0.25,
+} as const
+
+export function blendCategoryScores(
+  evidenceAndAppliedAbility: number,
+  technicalCapability: number,
+  fitAndCommunication: number,
+): number {
+  return clampScore(
+    Math.round(
+      CATEGORY_BLEND_WEIGHTS.evidenceAndAppliedAbility * evidenceAndAppliedAbility +
+        CATEGORY_BLEND_WEIGHTS.technicalCapability * technicalCapability +
+        CATEGORY_BLEND_WEIGHTS.fitAndCommunication * fitAndCommunication,
+    ),
+  )
+}
+
+/**
  * A requirement missing a genuinely critical must-have (a licence, mandatory
  * registration, legal eligibility, etc — never a generic soft skill) caps
  * the final score below the "Needs Improvement" band regardless of how well
@@ -1540,7 +1566,7 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string, meta: { mode
     cvStructure: cvStructureLevel,
   })
 
-  const rawWeightedScore = clampScore(Math.round(0.4 * experienceScore + 0.35 * skillsScore + 0.25 * uvpScore))
+  const rawWeightedScore = blendCategoryScores(experienceScore, skillsScore, uvpScore)
   const finalScore = applyCriticalGapCap(rawWeightedScore, dedupedRequirements)
   const criticalGapCapped = finalScore !== rawWeightedScore
   const improvements = finalScore === 100
