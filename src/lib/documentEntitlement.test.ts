@@ -45,7 +45,9 @@ test('PACK NAMING: no blockedReason ever contains a legacy internal identifier',
     assert.ok(!/\blarge\b/i.test(reason), reason)
   }
   // The upsell message does name the Power pack by its real product name.
-  assert.ok(getDocumentEntitlement(null, 70).blockedReason!.includes('Power'))
+  // That is the pack-holder-with-a-strong-score branch; the no-pack message
+  // (null, 70) is a different string that deliberately names no pack at all.
+  assert.ok(getDocumentEntitlement('medium', 90).blockedReason!.includes('Power'))
 })
 
 // ---------------------------------------------------------------------------

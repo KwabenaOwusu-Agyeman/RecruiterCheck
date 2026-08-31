@@ -28,7 +28,10 @@ const source = readFileSync(fileURLToPath(new URL('./index.ts', import.meta.url)
 async function run() {
   await test('rejects any request without an Authorization bearer token', () => {
     assert.match(source, /req\.headers\.get\('Authorization'\)/)
-    assert.match(source, /return new Response\('Unauthorized', \{ status: 401 \}\)/)
+    // Matches the security property (a 401 'Unauthorized' Response) without
+    // pinning the rest of the ResponseInit, so adding e.g. CORS headers to the
+    // error path does not read as a security regression.
+    assert.match(source, /return new Response\('Unauthorized', \{\s*status: 401\b/)
   })
 
   await test('derives the user from a live auth.getUser(token) call, not a client-side claims decode', () => {
