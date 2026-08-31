@@ -56,6 +56,20 @@ verify_jwt = true
 [functions.create-checkout-session]
 verify_jwt = true
 
+# Stripe signs webhook deliveries; it cannot present a Supabase JWT, so the
+# gateway's JWT check rejected every delivery with 401
+# UNAUTHORIZED_NO_AUTH_HEADER before the function code ran. Same situation as
+# brevo-unsubscribe-webhook below: the gateway check is off and the function
+# authenticates the caller itself, here with the stronger guarantee of an
+# HMAC-SHA256 signature over the exact raw body, verified against
+# STRIPE_WEBHOOK_SECRET via constructEventAsync before anything else happens.
+# A missing or invalid Stripe-Signature is rejected with 400 and no database
+# client is created. This is the only function whose gateway check is being
+# turned off for Stripe; do not copy it to a function that lacks its own
+# request authentication.
+[functions.stripe-webhook]
+verify_jwt = false
+
 [functions.newsletter-subscribe]
 verify_jwt = false
 
