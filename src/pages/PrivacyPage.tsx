@@ -102,8 +102,8 @@ export function PrivacyPage() {
         </ul>
         <p>
           To exercise any of these rights, contact us at{' '}
-          <a href="mailto:privacy@myrecruitercheck.com" className="font-medium text-blue hover:underline">
-            privacy@myrecruitercheck.com
+          <a href="mailto:support@myrecruitercheck.com" className="font-medium text-blue hover:underline">
+            support@myrecruitercheck.com
           </a>
           .
         </p>
@@ -138,8 +138,8 @@ export function PrivacyPage() {
       <Section title="13. Contact">
         <p>
           For any privacy questions, contact us at{' '}
-          <a href="mailto:privacy@myrecruitercheck.com" className="font-medium text-blue hover:underline">
-            privacy@myrecruitercheck.com
+          <a href="mailto:support@myrecruitercheck.com" className="font-medium text-blue hover:underline">
+            support@myrecruitercheck.com
           </a>
           .
         </p>
