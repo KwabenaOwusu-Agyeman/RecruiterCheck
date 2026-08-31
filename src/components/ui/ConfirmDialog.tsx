@@ -10,6 +10,8 @@ interface ConfirmDialogProps {
   cancelLabel?: string
   busy?: boolean
   destructive?: boolean
+  /** Optional form content rendered between the description and the buttons. */
+  children?: ReactNode
   onConfirm: () => void
   onCancel: () => void
 }
@@ -23,6 +25,7 @@ export function ConfirmDialog({
   cancelLabel = 'Cancel',
   busy = false,
   destructive = true,
+  children,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -46,7 +49,7 @@ export function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#05050D]/50 p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-[#05050D]/50 p-0 sm:items-center sm:p-4"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget && !busy) onCancel()
       }}
@@ -55,19 +58,32 @@ export function ConfirmDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
-        className="w-full max-w-sm rounded-[20px] border border-border-soft bg-surface p-6 shadow-elevated"
+        className="max-h-[92dvh] w-full overflow-y-auto rounded-t-[20px] border border-border-soft bg-surface p-5 shadow-elevated sm:max-h-[85dvh] sm:max-w-md sm:rounded-[20px] sm:p-6"
       >
         <h2 id="confirm-dialog-title" className="text-base font-semibold text-text-primary">
           {title}
         </h2>
         <div className="mt-2 text-sm text-text-secondary">{description}</div>
-        <div className="mt-6 flex justify-end gap-3">
-          <Button type="button" variant="secondary" size="sm" disabled={busy} onClick={onCancel}>
+        {children ? <div className="mt-5">{children}</div> : null}
+        {/* Stacked and full width on a phone so neither button is a thumb
+            stretch; side by side from sm up. Confirm sits first in the DOM on
+            mobile via order utilities so the primary action is nearest the
+            thumb without changing focus order for keyboard users. */}
+        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="w-full sm:w-auto"
+            disabled={busy}
+            onClick={onCancel}
+          >
             {cancelLabel}
           </Button>
           <Button
             type="button"
             size="sm"
+            className="w-full sm:w-auto"
             disabled={busy}
             onClick={onConfirm}
             variant={destructive ? 'danger' : 'primary'}

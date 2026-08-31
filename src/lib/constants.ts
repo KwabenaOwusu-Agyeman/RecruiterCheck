@@ -86,6 +86,20 @@ export function getPackDisplayName(packId: FundingPackId): string {
   return packId ? PACK_DISPLAY_NAMES[packId] : 'Free'
 }
 
+/**
+ * Refund reasons offered on the pricing page dialog. Kept to three plus an
+ * escape hatch: a fixed vocabulary stays aggregatable, and a short list is
+ * answerable at a glance. Ids match the refund_events_reason_check constraint.
+ */
+export type RefundReason = 'wrong_pack' | 'changed_mind' | 'not_what_i_expected' | 'something_else'
+
+export const REFUND_REASONS: { id: RefundReason; label: string }[] = [
+  { id: 'wrong_pack', label: 'I bought the wrong pack' },
+  { id: 'changed_mind', label: 'I changed my mind' },
+  { id: 'not_what_i_expected', label: 'It is not what I expected' },
+  { id: 'something_else', label: 'Something else' },
+]
+
 export const ACCEPTED_CV_TYPES = [
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

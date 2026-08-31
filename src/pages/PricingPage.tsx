@@ -8,7 +8,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { useAuthModal } from '@/features/auth/context/AuthModalContext'
 import { usePageMeta } from '@/hooks/usePageMeta'
 import { TestimonialsSection } from '@/features/landing/components/TestimonialsSection'
-import { CHECK_PACKS } from '@/lib/constants'
+import { CHECK_PACKS, type RefundReason } from '@/lib/constants'
+import { RefundReasonPicker } from '@/components/checks/RefundReasonPicker'
 import { trackEvent } from '@/lib/analytics'
 import { createCheckoutSession, requestRefund } from '@/services/checkService'
 import type { CheckPack } from '@/types'
@@ -41,6 +42,8 @@ export function PricingPage() {
   const [refundDialogOpen, setRefundDialogOpen] = useState(false)
   const [refundLoading, setRefundLoading] = useState(false)
   const [refundSuccess, setRefundSuccess] = useState(false)
+  const [refundReason, setRefundReason] = useState<RefundReason | null>(null)
+  const [refundDetail, setRefundDetail] = useState('')
 
   const checkoutStatus = searchParams.get('status')
 
@@ -84,9 +87,16 @@ export function PricingPage() {
     setError(null)
 
     try {
-      await requestRefund()
+      await requestRefund({
+        reason: refundReason,
+        // Only meaningful alongside 'something_else'; trimmed so whitespace
+        // never counts as an answer.
+        reasonDetail: refundReason === 'something_else' ? refundDetail.trim() || null : null,
+      })
       setRefundDialogOpen(false)
       setRefundSuccess(true)
+      setRefundReason(null)
+      setRefundDetail('')
       trackEvent('refund_requested')
       await refreshProfile()
     } catch (err) {
@@ -173,10 +183,22 @@ export function PricingPage() {
         confirmingLabel="Processing..."
         cancelLabel="Never mind"
         busy={refundLoading}
-        destructive
+        destructive={false}
         onConfirm={() => void confirmRequestRefund()}
-        onCancel={() => setRefundDialogOpen(false)}
-      />
+        onCancel={() => {
+          setRefundDialogOpen(false)
+          setRefundReason(null)
+          setRefundDetail('')
+        }}
+      >
+        <RefundReasonPicker
+          reason={refundReason}
+          detail={refundDetail}
+          disabled={refundLoading}
+          onReasonChange={setRefundReason}
+          onDetailChange={setRefundDetail}
+        />
+      </ConfirmDialog>
 
       <Container className="py-8">
         <div className="flex flex-col items-center gap-1.5 text-center text-xs text-text-secondary">

@@ -81,6 +81,25 @@ Deno.serve(async (req) => {
     // specific batch touched" is well-defined even with several packs
     // stacked — a batch with checks_remaining < checks_granted was
     // definitely drawn from, a batch with no draws yet is untouched.
+    // Optional reason capture. Allowlisted here rather than trusted from the
+    // client, and length-bounded to match the column constraint. Anything
+    // unrecognised is discarded rather than rejected: a malformed reason must
+    // never cost the customer their refund.
+    const ALLOWED_REASONS = ['wrong_pack', 'changed_mind', 'not_what_i_expected', 'something_else']
+    let refundReason: string | null = null
+    let refundReasonDetail: string | null = null
+    try {
+      const body = await req.json().catch(() => null)
+      const rawReason = typeof body?.reason === 'string' ? body.reason : null
+      refundReason = rawReason && ALLOWED_REASONS.includes(rawReason) ? rawReason : null
+      const rawDetail = typeof body?.reasonDetail === 'string' ? body.reasonDetail.trim() : ''
+      refundReasonDetail =
+        refundReason === 'something_else' && rawDetail.length > 0 ? rawDetail.slice(0, 500) : null
+    } catch {
+      refundReason = null
+      refundReasonDetail = null
+    }
+
     const { data: batch, error: batchError } = await adminClient
       .from('credit_batches')
       .select('id')
@@ -196,6 +215,19 @@ Deno.serve(async (req) => {
         { error: 'Your refund was issued but your account is still updating. Please contact support.' },
         500,
       )
+    }
+
+    // Recorded only after the refund itself has succeeded. A failure here is
+    // logged and swallowed: losing the product signal is not worth failing a
+    // response for a refund the customer has already been given.
+    if (refundReason) {
+      const { error: reasonError } = await adminClient
+        .from('refund_events')
+        .update({ reason: refundReason, reason_detail: refundReasonDetail })
+        .eq('id', refundEventId)
+      if (reasonError) {
+        console.error('request-refund: could not record the refund reason', reasonError)
+      }
     }
 
     return jsonResponse({ refunded: true })

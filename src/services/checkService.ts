@@ -533,9 +533,13 @@ export async function hasSubmittedTestimonial(): Promise<boolean> {
   return data !== null
 }
 
-export async function requestRefund(): Promise<void> {
+export async function requestRefund(
+  input: { reason: string | null; reasonDetail: string | null } = { reason: null, reasonDetail: null },
+): Promise<void> {
+  // Both fields are optional by design: the refund never depends on them, and
+  // the edge function ignores anything it does not recognise.
   const { data, error } = await supabase.functions.invoke('request-refund', {
-    body: {},
+    body: { reason: input.reason, reasonDetail: input.reasonDetail },
   })
 
   if (error) throw await resolveFunctionError(error)

@@ -25,6 +25,8 @@ function test(name: string, fn: () => void) {
 
 const source = readFileSync(fileURLToPath(new URL('./index.ts', import.meta.url)), 'utf-8')
 
+const at = (needle: string) => source.indexOf(needle)
+
 function between(startNeedle: string, endNeedle: string): string {
   const start = source.indexOf(startNeedle)
   assert.ok(start !== -1, `anchor not found: ${startNeedle}`)
@@ -108,6 +110,41 @@ test('a finalize failure after the refund does NOT release the reservation', () 
 test('an already-refunded payment intent finalises rather than double-refunding', () => {
   const block = between('existingRefunds.data.length > 0', 'const refund =')
   assert.match(block, /stripeRefundId = existingRefunds\.data\[0\]\.id/)
+})
+
+// ---------------------------------------------------------------------------
+// Optional reason capture must never be able to cost someone their refund
+// ---------------------------------------------------------------------------
+
+test('the reason vocabulary is allowlisted server side', () => {
+  // The client picks from a list, but the client is not trusted: an arbitrary
+  // string would violate refund_events_reason_check and fail the update.
+  assert.match(source, /const ALLOWED_REASONS = \[/)
+  for (const id of ['wrong_pack', 'changed_mind', 'not_what_i_expected', 'something_else']) {
+    assert.ok(source.includes(`'${id}'`), `missing allowlisted reason: ${id}`)
+  }
+  assert.match(source, /ALLOWED_REASONS\.includes\(rawReason\)/)
+})
+
+test('free text is bounded to the column limit', () => {
+  assert.match(source, /\.slice\(0, 500\)/)
+  // Only meaningful alongside the escape hatch.
+  assert.match(source, /refundReason === 'something_else' && rawDetail\.length > 0/)
+})
+
+test('a malformed body cannot break the refund', () => {
+  const parse = between('const ALLOWED_REASONS', 'const { data: batch')
+  assert.match(parse, /catch \(\) => null|catch \{/)
+  assert.ok(!parse.includes('return jsonResponse'), 'parsing a reason must never reject the request')
+})
+
+test('the reason is recorded only after the refund has succeeded', () => {
+  // Written after finalize_refund so it can never influence whether the money
+  // moves, and a failure to record it is swallowed rather than surfaced.
+  assert.ok(at("rpc('finalize_refund'") < at("update({ reason: refundReason"))
+  const record = between('if (refundReason) {', 'return jsonResponse({ refunded: true })')
+  assert.match(record, /console\.error/)
+  assert.ok(!record.includes('return jsonResponse'), 'a failed reason write must not change the response')
 })
 
 console.log(`\n${passed} tests passed`)
