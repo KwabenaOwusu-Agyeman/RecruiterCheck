@@ -110,7 +110,9 @@
       "mcp__*__read_clipboard",
       "mcp__*__write_clipboard",
       "mcp__*__computer_batch",
-      "mcp__*__search_session_transcripts"
+      "mcp__*__search_session_transcripts",
+      "mcp__*__COMPOSIO_REMOTE_BASH_TOOL",
+      "mcp__*__COMPOSIO_REMOTE_WORKBENCH"
     ],
     "ask": [
       "Bash(git reset --hard*)",
@@ -142,7 +144,9 @@
       "mcp__Read_and_Write_Apple_Notes__*",
       "mcp__scheduled-tasks__*",
       "mcp__63c70dfd-cbbf-44c5-a570-be85144ebf98__*",
-      "Artifact"
+      "Artifact",
+      "mcp__*__COMPOSIO_MULTI_EXECUTE_TOOL",
+      "mcp__*__COMPOSIO_MANAGE_CONNECTIONS"
     ],
     "allow": [
       "Bash(npm ci)",
