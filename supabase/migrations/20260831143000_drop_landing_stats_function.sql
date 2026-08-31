@@ -1,0 +1,21 @@
+-- Removes public.get_landing_stats() along with the feature that called it.
+--
+-- The proof block this served was built on 29 August (0dd2c6b) and cut the
+-- same day (815001a). LandingPage.tsx records why, and says not to re-add it
+-- without new evidence: below the publication floor the grid showed product
+-- facts posing as usage figures, and the one real fact in it, the three
+-- scoring dimensions, moved into the hero instead.
+--
+-- What was left behind was a component nothing imported, a service nothing
+-- called, and an unauthenticated RPC over public.checks with no consumer. A
+-- security definer function callable by anon is a reasonable thing to own
+-- when something needs it. Owning one for a feature that was deleted two
+-- days earlier is not: it is standing attack surface kept alive by
+-- inattention, and it is the reason the advisor still reports
+-- anon_security_definer_function_executable against this project.
+--
+-- Dropping it also clears that warning. If check volume ever justifies the
+-- proof block, git holds every piece of it: the function body, the floor,
+-- the mapper and its tests, all in the two commits before this one.
+
+drop function if exists public.get_landing_stats();

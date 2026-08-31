@@ -949,17 +949,6 @@ export type Database = {
       }
     }
     Views: {
-      landing_stats: {
-        Row: {
-          accounts: number | null
-          avg_rerun_score_delta: number | null
-          checks_completed: number | null
-          median_minutes_to_verdict: number | null
-          rerun_pairs: number | null
-          roles_covered: number | null
-        }
-        Relationships: []
-      }
       public_testimonials: {
         Row: {
           comment: string | null

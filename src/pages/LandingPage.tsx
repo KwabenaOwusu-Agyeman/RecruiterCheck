@@ -55,7 +55,9 @@ export function LandingPage() {
           a pre-apply check as a tracking platform — it lives on
           /application-checker), the stats grid (product facts posing as
           usage figures; its one real fact, the three scoring dimensions,
-          moved into the hero), and the Trustpilot collector (it asked
+          moved into the hero, and its component, service and RPC were
+          deleted on 31 August rather than left dormant), and the
+          Trustpilot collector (it asked
           strangers for reviews — it stays on FeedbackPage, where reviews
           actually come from). */}
       <Reveal>
