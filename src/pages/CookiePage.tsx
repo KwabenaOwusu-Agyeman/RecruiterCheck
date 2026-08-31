@@ -86,8 +86,8 @@ export function CookiePage() {
       <Section title="7. Contact">
         <p>
           Questions about this Cookie Policy can be sent to{' '}
-          <a href="mailto:privacy@recruitercheck.app" className="font-medium text-blue hover:underline">
-            privacy@recruitercheck.app
+          <a href="mailto:privacy@myrecruitercheck.com" className="font-medium text-blue hover:underline">
+            privacy@myrecruitercheck.com
           </a>
           .
         </p>

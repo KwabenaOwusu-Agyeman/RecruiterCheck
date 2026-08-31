@@ -102,8 +102,8 @@ export function TermsPage() {
         <p>
           If your most recently purchased pack is still fully unused, you may request a full refund
           within 7 days of that payment from your billing page, or by contacting{' '}
-          <a href="mailto:support@recruitercheck.app" className="font-medium text-blue hover:underline">
-            support@recruitercheck.app
+          <a href="mailto:support@myrecruitercheck.com" className="font-medium text-blue hover:underline">
+            support@myrecruitercheck.com
           </a>
           . Beyond this guarantee, MyRecruiterCheck does not offer refunds or credits for partially
           used packs, expired checks, or dissatisfaction with generated results, except where
@@ -184,8 +184,8 @@ export function TermsPage() {
       <Section title="17. Contact">
         <p>
           Questions about these Terms can be sent to{' '}
-          <a href="mailto:support@recruitercheck.app" className="font-medium text-blue hover:underline">
-            support@recruitercheck.app
+          <a href="mailto:support@myrecruitercheck.com" className="font-medium text-blue hover:underline">
+            support@myrecruitercheck.com
           </a>
           .
         </p>
