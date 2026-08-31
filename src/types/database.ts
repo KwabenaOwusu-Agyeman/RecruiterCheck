@@ -1082,18 +1082,6 @@ export type Database = {
           total_keyword_scans_available: number
         }[]
       }
-      get_landing_stats: {
-        Args: never
-        Returns: {
-          accounts: number
-          avg_rerun_score_delta: number
-          checks_completed: number
-          median_minutes_to_verdict: number
-          meets_floor: boolean
-          rerun_pairs: number
-          roles_covered: number
-        }[]
-      }
       grant_check_credits: {
         Args: {
           p_amount: number
