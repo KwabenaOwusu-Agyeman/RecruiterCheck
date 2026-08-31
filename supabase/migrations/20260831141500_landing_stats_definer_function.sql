@@ -1,6 +1,9 @@
 -- Replaces the public.landing_stats view with a security definer function.
 --
--- Two problems with the view this drops (20260829002146_landing_stats_view):
+-- Two problems with the view this drops (20260828222210_landing_stats_view,
+-- renamed from 20260829002146: production had recorded it under the earlier
+-- version because it was applied to the hosted project directly, and the
+-- repo's copy carried a fresh timestamp that had never been pushed):
 --
 --  1. It ran with owner privileges over public.checks with no
 --     security_invoker, which the Supabase linter flags as a Security
