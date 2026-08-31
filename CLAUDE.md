@@ -84,6 +84,28 @@ Environments are local, preview and production. Automated work targets local onl
 - Production Supabase is read only, and writes are blocked at the permission layer,
   not merely discouraged here.
 
+### Schema changes reach production one way only
+
+Through `supabase db push`, from a migration file committed to this repo. Never
+the dashboard SQL editor, never MCP `apply_migration`, never `psql` against the
+hosted project.
+
+DDL applied by any other route is invisible to the repo until something breaks.
+On 2026-08-31 a single push failed on two separate instances of this at once:
+the `landing_stats` view had been applied directly on the 28th and recorded
+under a version with no local file, while the repo held the same DDL under a
+later timestamp that had never been pushed, and the `refund_events` reason
+columns turned out to already exist when their migration finally ran. Neither
+was visible until `db push` refused to start.
+
+The recovery is worse than the discipline. The CLI offers
+`migration repair --status reverted <version>`, which sounds like an undo and is
+not: it deletes production's record of a migration while leaving everything that
+migration did in place, so the repo ends up insisting something never happened
+while it goes on being true. Reach for it only after establishing what the
+orphan version actually was, and prefer renaming the local file to the version
+production recorded, which reconciles the two without rewriting history.
+
 ## Approval levels
 
 ### Level 1: proceed without asking
