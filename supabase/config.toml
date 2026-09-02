@@ -56,6 +56,14 @@ verify_jwt = true
 [functions.create-checkout-session]
 verify_jwt = true
 
+# The browser extension redeems a connect code before it has a session, so
+# there is no user JWT to present. Production has run this function with
+# verify_jwt off since it was created, but the entry was missing here, and
+# any CLI deploy (including the GitHub Actions workflow) defaults a function
+# with no entry to verify_jwt = true, which would lock the extension out.
+[functions.exchange-extension-connect-code]
+verify_jwt = false
+
 # Stripe signs webhook deliveries; it cannot present a Supabase JWT, so the
 # gateway's JWT check rejected every delivery with 401
 # UNAUTHORIZED_NO_AUTH_HEADER before the function code ran. Same situation as

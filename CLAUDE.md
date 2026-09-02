@@ -108,6 +108,35 @@ while it goes on being true. Reach for it only after establishing what the
 orphan version actually was, and prefer renaming the local file to the version
 production recorded, which reconciles the two without rewriting history.
 
+### Edge Functions deploy automatically from `main`
+
+`.github/workflows/deploy-edge-functions.yml` runs on every push to `main`
+that touches `supabase/functions/**`, the function settings in
+`supabase/config.toml`, or the workflow file itself. It runs lint, typecheck
+and `npm run test:edge`, plus the scoring mutation check when `analyze-check`
+changed, and only then deploys the functions whose directories changed. A
+change under `supabase/functions/_shared/` or to `supabase/config.toml`
+deploys every function, since any of them may depend on it. One deploy runs
+at a time, later runs queue behind it, and a failure at any step stops the
+run with nothing further deployed. The workflow never runs a migration and
+never touches function secrets; both stay manual.
+
+What follows from that:
+
+- Merging a pull request that touches an Edge Function is the deploy. Name
+  the functions it will deploy in the report, and do not merge until the
+  checks `npm run checks` selected are green locally: the workflow repeats
+  them, but a red run on `main` still means a broken merge to unpick.
+- The frontend deploys separately from the same merge, through Vercel's
+  GitHub integration. When a change spans a writer and a reader of a stored
+  format, keep both sides tolerant of the other's old version, because the
+  two deploys do not finish together.
+- The credentials live only in GitHub Actions secrets (`SUPABASE_ACCESS_TOKEN`
+  and `SUPABASE_PROJECT_REF`). Nothing in this repo or on this machine holds
+  them. Manual deployment, by CLI or MCP tool, is off limits by rule; nothing
+  blocks it for you.
+- Deploying to verify a change is still off limits. Testing is local only.
+
 ## Approval levels
 
 ### Level 1: proceed without asking
@@ -137,6 +166,10 @@ applies DDL to a database holding candidate CVs and payment records, and
 there is no undo. Verify the migration locally before you reach for it, and
 say plainly, before you run it, what it will change.
 
+Edge Function deployment is not yours to run at all, by hand or through the
+MCP tool. It happens automatically from `main`, see "Edge Functions deploy
+automatically" above, so merging the pull request is the approval step.
+
 ## Git
 
 Two remotes, both carrying the same `main`: `origin` and `personal`. When `main` is
@@ -149,8 +182,9 @@ pushed it goes to both. Work on a branch rather than committing straight to `mai
 - Merging is no longer a checkpoint, so the checks are the only thing standing
   between a mistake and `main`. Run what `npm run checks` names, every time, and
   do not merge on a red or unrun check.
-- Say what you pushed and merged in the report. The user is no longer typing
-  these commands, so the transcript is the only record they have of them.
+- Say what you pushed and merged in the report, and which Edge Functions that
+  merge deploys. The user is no longer typing these commands, so the
+  transcript is the only record they have of them.
 
 ## Security review triggers
 
