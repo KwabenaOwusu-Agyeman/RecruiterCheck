@@ -50,9 +50,8 @@ const RULES = [
     label: 'Frontend or UI change',
     checks: ['npm run lint', 'npm run typecheck', 'npm run test:unit', 'git diff review'],
     notes: ['MANUAL CHECK REQUIRED: no browser or console test tooling exists in this repo.',
-            'The Chrome connector is approval gated and cannot be scoped to a URL by permission',
-            'rules, so browser and console checks are a manual step against localhost:5173.',
-            'Do not add a browser framework without asking.'],
+            'Browser and console checks are a manual step against localhost:5173 only,',
+            'never against the hosted site. Do not add a browser framework without asking.'],
   },
   {
     id: 'edge',

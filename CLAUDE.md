@@ -5,9 +5,10 @@ recruiter style score. The data it handles is candidate CVs, candidate contact
 details, Stripe payment records and Supabase auth accounts. Treat every rule below
 as binding, not advisory.
 
-Permission rules in `.claude/settings.json` are the enforcement layer. This file is
-the reasoning layer. If the two ever disagree, the permission rules win and you
-should say so rather than working around them.
+There is no separate enforcement layer. `.claude/settings.json` carries no
+permission rules, so nothing blocks or prompts on your behalf: this file is the
+only set of rules, and following it is entirely your responsibility. Where a
+rule below says an action needs approval, stop and ask in the conversation.
 
 ## Stack
 
@@ -81,8 +82,9 @@ Environments are local, preview and production. Automated work targets local onl
   proceed on the assumption that an action is probably safe.
 - Production is never a default and never a fallback. There is no condition under
   which uncertainty resolves toward touching production.
-- Production Supabase is read only, and writes are blocked at the permission layer,
-  not merely discouraged here.
+- Production Supabase is read only. Nothing enforces that for you: the MCP
+  `execute_sql` and `apply_migration` tools and any command against the hosted
+  project are off limits by this rule alone.
 
 ### Schema changes reach production one way only
 
@@ -128,11 +130,12 @@ dependency.
 
 Level 3 means you stop and ask first. It does not mean you act and then report.
 
-`supabase db push` is the one Level 3 action you may now run yourself, and it
-sits behind a confirmation prompt rather than a block. Treat that prompt as the
-approval, not as a formality: it applies DDL to a database holding candidate
-CVs and payment records, and there is no undo. Verify the migration locally
-before you reach for it, and say plainly in the prompt what it will change.
+`supabase db push` is the one Level 3 action you may run yourself, and only
+after explicit approval in the conversation for that specific push. Nothing
+prompts or blocks on your behalf, so that approval is the whole gate: it
+applies DDL to a database holding candidate CVs and payment records, and
+there is no undo. Verify the migration locally before you reach for it, and
+say plainly, before you run it, what it will change.
 
 ## Git
 
@@ -141,8 +144,8 @@ pushed it goes to both. Work on a branch rather than committing straight to `mai
 
 - Pushing, opening a pull request and merging it are all yours to do without
   asking, `main` included. When `main` moves it goes to both remotes, not one.
-- Never force push. `--force-with-lease` needs explicit approval each time.
-  `--mirror` and `--delete` stay blocked at the permission layer.
+- Never force push, `--mirror` or `--delete`. `--force-with-lease` needs
+  explicit approval each time. Nothing blocks these for you.
 - Merging is no longer a checkpoint, so the checks are the only thing standing
   between a mistake and `main`. Run what `npm run checks` names, every time, and
   do not merge on a red or unrun check.
@@ -187,9 +190,9 @@ and skipping a relevant one is worse.
 Two checks have no tooling in this repo and must be reported as
 **MANUAL CHECK REQUIRED** rather than skipped silently:
 
-- Browser and console checks. No browser test framework is installed, and
-  permission rules cannot scope the Chrome connector to a URL. Verify by hand
-  against `localhost:5173`.
+- Browser and console checks. No browser test framework is installed. The
+  Chrome connector may be used against `localhost:5173` only, never against
+  the hosted site, and the result is still reported as a manual check.
 - Structured data validation. No JSON-LD validator exists.
 
 Do not install a framework for either without asking.
