@@ -6,7 +6,8 @@ import { StatusBadge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Skeleton } from '@/components/ui/Skeleton'
-import { FeedbackBullet, getVerdictColor, splitFinding } from '@/components/feedback/FeedbackBullet'
+import { FeedbackBullet, getVerdictColor } from '@/components/feedback/FeedbackBullet'
+import { FICTIONAL_SAMPLE_NOTICE, hasSampleWording, splitFinding } from '@/lib/feedbackText'
 import { SentimentPrompt } from '@/components/feedback/SentimentPrompt'
 import { TrustpilotResultsLink } from '@/components/feedback/TrustpilotResultsLink'
 import { useAuth } from '@/hooks/useAuth'
@@ -389,11 +390,20 @@ export function FeedbackPage() {
                 </CardHeader>
                 <CardContent className="px-5 py-4">
                   {visibleImprovements.length > 0 ? (
-                    <ul className="space-y-3">
-                      {visibleImprovements.map((item) => (
-                        <FeedbackBullet key={item} text={item} tone={textTone} />
-                      ))}
-                    </ul>
+                    <>
+                      {/* Shown once per card, above the first sample wording
+                          line, and only for checks that carry sample wording
+                          at all: historical checks keep their old Example
+                          clause and need no fictional notice. */}
+                      {visibleImprovements.some(hasSampleWording) ? (
+                        <p className={cn('mb-3 text-xs leading-snug', t.faint)}>{FICTIONAL_SAMPLE_NOTICE}</p>
+                      ) : null}
+                      <ul className="space-y-3">
+                        {visibleImprovements.map((item) => (
+                          <FeedbackBullet key={item} text={item} tone={textTone} />
+                        ))}
+                      </ul>
+                    </>
                   ) : (
                     <p className={cn('text-sm', t.sub)}>
                       {score === 100

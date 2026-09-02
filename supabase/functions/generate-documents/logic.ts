@@ -263,6 +263,20 @@ export function containsPlaceholder(text: string): boolean {
   return PLACEHOLDER_PATTERN.test(text)
 }
 
+/**
+ * Areas to improve are stored as "Finding. Evidence. Sample wording: ..."
+ * (checks generated under the sample wording rules) or the historical
+ * "Finding. Evidence. Example: ...". The trailing clause exists only to show
+ * a human reader on the Feedback page what a stronger bullet could look
+ * like: sample wording is fictional by design and a legacy example carries
+ * "X%" style placeholders. The document generator must act on the
+ * finding/evidence and never copy either into a real document, so this
+ * strips the clause before the text reaches the prompt.
+ */
+export function stripExampleClause(text: string): string {
+  return text.replace(/\s*(?:Sample wording|Example):\s*[\s\S]*$/i, '').trim()
+}
+
 export function validateDocuments(raw: RawDocuments): RawDocuments {
   const cv = raw.tailored_cv
   const letter = raw.cover_letter

@@ -1,6 +1,6 @@
 // Run with: npx tsx supabase/functions/generate-documents/logic.test.ts
 import assert from 'node:assert/strict'
-import { containsName, containsPlaceholder, getDocumentEntitlement, PACK_DISPLAY_NAMES, looksLikeEnglish, splitSentences, stripDashes, validateDocuments, type RawDocuments } from './logic.ts'
+import { containsName, containsPlaceholder, getDocumentEntitlement, PACK_DISPLAY_NAMES, looksLikeEnglish, splitSentences, stripDashes, stripExampleClause, validateDocuments, type RawDocuments } from './logic.ts'
 
 let passed = 0
 function test(name: string, fn: () => void) {
@@ -352,6 +352,26 @@ test('LEGACY IDS: a check stored with the legacy internal pack id resolves to th
     assert.equal(entitlement.cv, true, `${legacyId} (${displayName}) should be entitled to a CV at Needs Improvement`)
     assert.equal(PACK_DISPLAY_NAMES[legacyId], displayName)
   }
+})
+
+test('stripExampleClause drops sample wording so its fictional figures never reach a document', () => {
+  assert.equal(
+    stripExampleClause(
+      'Expand on open source contributions. The CV does not show open source work. Sample wording: Submitted 5 pull requests to an open source React dashboard, fixing 12 components.',
+    ),
+    'Expand on open source contributions. The CV does not show open source work.',
+  )
+})
+
+test('stripExampleClause still drops the historical Example clause', () => {
+  assert.equal(
+    stripExampleClause('Quantify your impact. No result is shown. Example: Improved X by Y% within Z months.'),
+    'Quantify your impact. No result is shown.',
+  )
+})
+
+test('stripExampleClause leaves an item with no clause untouched', () => {
+  assert.equal(stripExampleClause('Strong sales performance. Your record supports the role.'), 'Strong sales performance. Your record supports the role.')
 })
 
 console.log(`\n${passed} tests passed`)

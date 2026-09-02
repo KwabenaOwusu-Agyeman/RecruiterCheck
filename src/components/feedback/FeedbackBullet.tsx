@@ -1,4 +1,5 @@
 import { cn } from '@/utils/cn'
+import { SAMPLE_WORDING_LABEL, splitFinding } from '@/lib/feedbackText'
 
 // On light grounds the base success/warning fills measure 3.4:1 and 2.2:1
 // as text, below AA — the deep partners hold the same hue at 5+:1. Dark
@@ -10,29 +11,13 @@ export function getVerdictColor(score: number, tone: 'light' | 'dark' = 'light')
 }
 
 /**
- * Strengths and areas to improve are written server side as a short
- * finding/action, then evidence, then (for some areas to improve) a
- * trailing " Example: ..." clause. This pulls the example out first, then
- * splits the remaining text on the first sentence boundary so the finding
- * can render bold, the evidence as normal text, and the example as its own
- * visually separated line (the Tell -> Show structure). Decimal points
- * (e.g. "7.2%") are protected first so a stat never gets mistaken for a
- * sentence break.
+ * One strength or area to improve. The stored string is split (see
+ * src/lib/feedbackText.ts) into a bold finding, plain evidence, and an
+ * optional trailing line: "Sample wording" (a complete fictional CV bullet,
+ * checks generated under prompt v6 and later) or the historical "Example"
+ * clause. Both render on their own line under the evidence so the card
+ * layout is identical for old and new checks.
  */
-export function splitFinding(text: string): { title: string; evidence: string; example: string } {
-  const DECIMAL_MARK = '@@DECIMAL@@'
-  const protectedText = text.replace(/(\d)\.(\d)/g, `$1${DECIMAL_MARK}$2`)
-  const restore = (value: string) => value.split(DECIMAL_MARK).join('.')
-
-  const exampleMatch = protectedText.match(/^([\s\S]*?)\s*Example:\s*([\s\S]*)$/)
-  const mainText = exampleMatch ? exampleMatch[1] : protectedText
-  const example = exampleMatch ? restore(exampleMatch[2].trim()) : ''
-
-  const match = mainText.match(/^([^.!?]+[.!?])\s*([\s\S]*)$/)
-  if (!match) return { title: restore(mainText.trim()), evidence: '', example }
-  return { title: restore(match[1].trim()), evidence: restore(match[2].trim()), example }
-}
-
 export function FeedbackBullet({
   text,
   tone = 'light',
@@ -42,14 +27,16 @@ export function FeedbackBullet({
   tone?: 'light' | 'dark'
   /**
    * Phone-only trim for landing previews: clamps the finding to three lines
-   * and drops the italic Example line below sm, so a stacked card reads in
-   * seconds instead of scrolling like a report. Real feedback pages never
-   * pass this — a paying user's own report is not preview content.
+   * and drops the sample wording or example line below sm, so a stacked
+   * card reads in seconds instead of scrolling like a report. Real feedback
+   * pages never pass this — a paying user's own report is not preview
+   * content.
    */
   compact?: boolean
 }) {
-  const { title, evidence, example } = splitFinding(text)
+  const { title, evidence, example, sampleWording } = splitFinding(text)
   const isDark = tone === 'dark'
+  const clauseClass = cn('mt-1', compact ? 'hidden sm:block' : 'block', isDark ? 'text-blue-light/90' : 'text-blue')
   return (
     <li className="flex gap-2">
       <span className={isDark ? 'text-blue-light' : 'text-blue'} aria-hidden="true">
@@ -64,14 +51,13 @@ export function FeedbackBullet({
       >
         <span className={cn('font-semibold', isDark ? 'text-white' : 'text-text-primary')}>{title}</span>
         {evidence ? ` ${evidence}` : null}
-        {example ? (
-          <span
-            className={cn(
-              'mt-1 italic',
-              compact ? 'hidden sm:block' : 'block',
-              isDark ? 'text-blue-light/90' : 'text-blue',
-            )}
-          >
+        {sampleWording ? (
+          <span className={clauseClass}>
+            <span className="font-semibold">{SAMPLE_WORDING_LABEL}:</span>{' '}
+            <span className="italic">&quot;{sampleWording}&quot;</span>
+          </span>
+        ) : example ? (
+          <span className={cn(clauseClass, 'italic')}>
             Example: &quot;{example}&quot;
           </span>
         ) : null}

@@ -8,9 +8,13 @@
 export const RUBRIC_VERSION = 'early_career_tech_v1'
 // Bump whenever the system prompt's scoring-relevant instructions change
 // (new/removed subcriteria, changed grounding rules, changed fairness
-// guidance) — cosmetic wording fixes that don't change what's measured
-// don't need a bump.
-export const PROMPT_VERSION = 'analyze-check-prompt-v5'
+// guidance) or the written feedback contract changes materially (v6: areas
+// to improve end in fictional "Sample wording" CV bullets instead of
+// placeholder instructions, and each requirement carries sample_wording).
+// The audit row's prompt_version is how a reviewer tells which rules a
+// stored check was generated under. Cosmetic wording fixes that don't
+// change what's measured or produced don't need a bump.
+export const PROMPT_VERSION = 'analyze-check-prompt-v6'
 
 /**
  * Generic, network-free retry wrapper: try `attempt` up to `maxAttempts`
@@ -160,6 +164,13 @@ export interface RawRequirement {
   critical: boolean
   match_strength: MatchStrength
   cv_evidence: string
+  // One fictional sample CV bullet demonstrating this requirement for this
+  // role (empty for a strong match). Optional in the type because synthetic
+  // fixtures and older callers build requirement objects without it; the
+  // strict response schema always returns it. Consumed only by the
+  // deterministic Needs Improvement fill (requirementImprovement), never by
+  // scoring, and never persisted on its own.
+  sample_wording?: string
 }
 
 export interface RawAnalysis {
@@ -305,13 +316,22 @@ export function sanitizeStrings(value: unknown): string[] {
     .filter((item) => item.length > 0)
 }
 
+// The label that introduces the fictional CV bullet at the end of every
+// stored area to improve. The Feedback page (src/lib/feedbackText.ts) and
+// the document generator both key on this exact text, alongside the
+// historical "Example:" label that checks generated before prompt v6 carry.
+export const SAMPLE_WORDING_LABEL = 'Sample wording:'
+
 /**
  * Strengths and areas to improve arrive as separate finding/evidence(/example)
  * schema fields (so the model can't skip the evidence half — see the JSON
  * schema's required list) and get joined back into a single
- * "Finding. Evidence. Example: ..." string here, which is what the Feedback
- * page's splitFinding() expects in order to bold the finding and render the
- * rest (evidence and, when present, the example) as plain text.
+ * "Finding. Evidence. Sample wording: ..." string here, which is what the
+ * Feedback page's splitFinding() expects in order to bold the finding and
+ * render the rest (evidence and, when present, the sample wording) as its
+ * own line. The example is normalised here (quotes, dashes, number words)
+ * but not validated: validateSampleWording is the caller's job, because a
+ * privacy rewritten item never keeps the model's example at all.
  */
 export function combineFinding(finding: unknown, evidence: unknown, example?: unknown): string | null {
   if (typeof finding !== 'string' || typeof evidence !== 'string') return null
@@ -320,12 +340,154 @@ export function combineFinding(finding: unknown, evidence: unknown, example?: un
   const cleanEvidence = stripDashes(evidence.trim())
   if (!cleanFinding || !cleanEvidence) return null
 
-  const cleanExample = typeof example === 'string' ? stripDashes(example.trim()) : ''
+  const cleanExample = normalizeSampleWording(example)
   const evidenceSentence = cleanEvidence.match(/[.!?]$/) ? cleanEvidence : `${cleanEvidence}.`
 
   return cleanExample
-    ? `${cleanFinding}. ${evidenceSentence} Example: ${cleanExample}`
+    ? `${cleanFinding}. ${evidenceSentence} ${SAMPLE_WORDING_LABEL} ${cleanExample}`
     : `${cleanFinding}. ${cleanEvidence}`
+}
+
+// ---------------------------------------------------------------------------
+// Sample wording
+//
+// Every area to improve ends in one complete, fictional CV bullet the
+// candidate can adapt ("Sample wording"), never an instruction about what to
+// add. The prompt (prompt.ts, SAMPLE WORDING section) asks for this; the
+// helpers below make it deterministic: normalise what the model wrote, then
+// reject the shapes the old placeholder style examples took, so a non
+// compliant example is corrected on retry rather than shown to a candidate.
+// ---------------------------------------------------------------------------
+
+// Spelled out counts the sample wording rules require as digits ("5", not
+// "five"). "one" is deliberately absent: "one of the", "one click" and the
+// like are not counts. "Six Sigma" is a methodology name, not a count.
+const NUMBER_WORDS: Record<string, string> = {
+  two: '2',
+  three: '3',
+  four: '4',
+  five: '5',
+  six: '6',
+  seven: '7',
+  eight: '8',
+  nine: '9',
+  ten: '10',
+  eleven: '11',
+  twelve: '12',
+  fifteen: '15',
+  twenty: '20',
+  thirty: '30',
+  forty: '40',
+  fifty: '50',
+}
+const NUMBER_WORD_ALTERNATION = Object.keys(NUMBER_WORDS).join('|')
+// A number word is converted only when it stands alone as a count: not as
+// part of a compound ("twenty five", "two hundred"), which would otherwise
+// come out as "20 5", not a library name ("Three.js"), and not "Six Sigma".
+const NUMBER_WORD_PATTERN = new RegExp(
+  `\\b(?<!(?:${NUMBER_WORD_ALTERNATION}|hundred|thousand|million)\\s)(${NUMBER_WORD_ALTERNATION})\\b(?![\\s.]?js\\b)(?!\\s+(?:sigma|hundred|thousand|million|${NUMBER_WORD_ALTERNATION})\\b)`,
+  'gi',
+)
+
+export function digitizeNumberWords(text: string): string {
+  return text.replace(NUMBER_WORD_PATTERN, (word) => NUMBER_WORDS[word.toLowerCase()] ?? word)
+}
+
+/**
+ * The model's raw example field, made storable: trimmed, any label it
+ * repeated ("Sample wording:", "Example:") and any wrapping quotes removed
+ * (the UI adds the quotes), dashes stripped per the copy rules, number words
+ * converted to digits. Returns an empty string for anything that is not a
+ * non empty string.
+ */
+export function normalizeSampleWording(value: unknown): string {
+  if (typeof value !== 'string') return ''
+  const unlabelled = value.trim().replace(/^(?:sample wording|example)\s*:\s*/i, '')
+  const unquoted = unlabelled.replace(/^["“”'‘’]+/, '').replace(/["“”'‘’]+$/, '').trim()
+  return digitizeNumberWords(stripDashes(unquoted))
+}
+
+// Imperative openers that mark advice rather than a finished CV bullet. The
+// trailing \b keeps their past tense forms usable as bullet openers ("Used",
+// "Presented", "Documented", "Included" all pass), which is exactly the
+// distinction between telling the candidate what to write and showing it.
+const INSTRUCTION_OPENER_PATTERN =
+  /^(?:please\s+)?(?:consider|include|mention|provide|add|try|make sure|ensure|highlight|describe|detail|list|state|explain|quantify|show|demonstrate|elaborate|emphasi[sz]e|focus on|be|remember|avoid|clarify|specify|indicate|note|incorporate|expand|outline|present|share|give|write|insert|feature|showcase|tailor|rewrite|revise|update|strengthen|improve|use|if accurate|where possible|for example|e\.g\.|such as|it would|it is|this (?:could|should|would)|you)\b/i
+const SECOND_PERSON_PATTERN = /\b(?:you|your|yours|yourself)\b/i
+// Placeholder shapes from the old example style and the document generator's
+// own placeholder vocabulary: bracketed text, "X%" style tokens, a currency
+// sign with a letter, a bare letter before a unit, and unfinished markers.
+const SAMPLE_PLACEHOLDER_PATTERN =
+  /\[[^\]]*\]|\{[^}]*\}|<[^>]*>|\b[XYZN]\s?%|[€$£]\s?[XYZN]\b|\b[XYZN]\s+(?:percent|months?|years?|weeks?|days?|hours?|customers?|clients?|users?|records?|people|projects?|teams?)\b|\bTBD\b|\bNN\b|_{2,}|\.{3}|…/i
+const MIN_SAMPLE_WORDS = 8
+const MAX_SAMPLE_WORDS = 60
+
+/**
+ * Returns null when the (already normalised) sample wording is a usable CV
+ * bullet, otherwise a short reason. The reason is written to be sent back to
+ * the model as the retry correction note, so it names the fix; it is never
+ * logged verbatim (see classifyValidationFailure).
+ */
+export function validateSampleWording(sample: string): string | null {
+  const text = sample.trim()
+  if (!text) return 'is empty: every area to improve must end in one complete fictional CV bullet as sample wording'
+  const words = text.split(/\s+/)
+  if (words.length < MIN_SAMPLE_WORDS) {
+    return 'is too short to be a complete CV bullet: write one full sentence with a specific action, the technical implementation and an outcome'
+  }
+  if (words.length > MAX_SAMPLE_WORDS) return 'is too long: keep the sample wording to one concise CV bullet of roughly 15 to 35 words'
+  if (INSTRUCTION_OPENER_PATTERN.test(text)) {
+    return `reads as an instruction (it opens with "${words.slice(0, 2).join(' ')}"): write the finished CV bullet itself, in past tense, not advice about what to add`
+  }
+  if (SECOND_PERSON_PATTERN.test(text)) return 'addresses the candidate as "you" or "your": a CV bullet never does, write the bullet itself'
+  if (SAMPLE_PLACEHOLDER_PATTERN.test(text)) return 'contains a placeholder such as X% or bracketed text: use a fictional but believable digit instead'
+  if (text.includes('?')) return 'is a question: write a statement in past tense'
+  if (PRIVATE_IDENTIFIER_PATTERN.test(text)) {
+    return 'names a private identifier such as a BSN or permit number: sample wording must never include one'
+  }
+  return null
+}
+
+/**
+ * The model self reports invented facts in new_claims_introduced and the
+ * check is failed and retried on any entry. Sample wording is fictional by
+ * design and the prompt says never to list it, but a model can still report
+ * its own sample bullets there. A reported claim that merely restates one of
+ * the sample wording strings is therefore not an unverified claim about the
+ * candidate and is dismissed; anything else is treated exactly as before.
+ */
+// Function words carry no evidence that a claim came from a sample; a
+// fabricated "Experience with Docker" and a sample about Docker share them
+// by construction, since both are written about the same requirement.
+const CLAIM_STOPWORDS = new Set([
+  'the', 'and', 'with', 'for', 'from', 'that', 'this', 'over', 'into', 'using', 'used', 'across', 'within', 'after',
+  'before', 'than', 'then', 'was', 'were', 'are', 'has', 'have', 'had', 'per', 'its', 'our', 'their', 'each', 'all',
+  'any', 'via', 'under', 'through', 'while', 'which', 'who', 'also', 'both', 'about', 'more', 'most', 'new', 'own',
+])
+
+export function isClaimFromSampleWording(claim: string, sampleWordings: string[]): boolean {
+  const normalise = (text: string) => text.toLowerCase().replace(/[^a-z0-9%.]+/g, ' ').trim()
+  const normalisedClaim = normalise(claim)
+  if (!normalisedClaim) return false
+  const claimTokens = normalisedClaim.split(' ')
+  const claimWords = claimTokens.filter((word) => word.length > 2 && !CLAIM_STOPWORDS.has(word))
+  const claimNumbers = claimTokens.filter((word) => /\d/.test(word))
+  for (const sample of sampleWordings) {
+    const normalisedSample = normalise(sample)
+    if (!normalisedSample) continue
+    // The usual case: the model copied the sample, or a clause of it, into
+    // the report verbatim.
+    if (normalisedSample.includes(normalisedClaim) || normalisedClaim.includes(normalisedSample)) return true
+    // Otherwise only a near restatement counts: most of the claim's content
+    // words and every figure it cites must come from this one sample.
+    if (claimWords.length >= 3) {
+      const sampleWords = new Set(normalisedSample.split(' '))
+      const figuresMatch = claimNumbers.every((number) => sampleWords.has(number))
+      const shared = claimWords.filter((word) => sampleWords.has(word)).length
+      if (figuresMatch && shared / claimWords.length >= 0.75) return true
+    }
+  }
+  return false
 }
 
 /**
@@ -914,7 +1076,8 @@ function isValidRequirement(value: unknown): value is RawRequirement {
     (r.importance === 'must_have' || r.importance === 'important' || r.importance === 'nice_to_have') &&
     typeof r.critical === 'boolean' &&
     (r.match_strength === 'strong' || r.match_strength === 'partial' || r.match_strength === 'none') &&
-    typeof r.cv_evidence === 'string'
+    typeof r.cv_evidence === 'string' &&
+    (r.sample_wording === undefined || typeof r.sample_wording === 'string')
   )
 }
 
@@ -933,13 +1096,33 @@ function verificationStage(requirement: RawRequirement): VerificationStage {
   return 'cv'
 }
 
+// Fixed, privacy safe replacements for application stage items. Their sample
+// wording is an application statement rather than a CV achievement, because
+// availability and work eligibility are confirmed in the application form,
+// summary or recruiter message, never evidenced by a CV bullet. Neither may
+// ever name a BSN, permit number or any other private identifier.
+const AVAILABILITY_IMPROVEMENT = `Confirm your availability. State your availability for the required shifts in the application form or recruiter message. ${SAMPLE_WORDING_LABEL} Available for weekend and evening shifts, including public holidays, from the advertised start date.`
+const WORK_AUTHORIZATION_IMPROVEMENT = `Clarify work authorization. State your general eligibility to work in the required country in your professional summary or CV footer, only if accurate. Never include a BSN or permit number. ${SAMPLE_WORDING_LABEL} Authorized to work in the Netherlands.`
+
+// The finding and evidence of a stored item, without its sample wording.
+function improvementHead(item: string): string {
+  const index = item.indexOf(SAMPLE_WORDING_LABEL)
+  return index === -1 ? item : item.slice(0, index)
+}
+
+// Decided on the finding and evidence only. The sample wording is a fictional
+// CV bullet in which "available", "shift" or "weekend" are ordinary words
+// ("made refreshed data available to 12 analysts"), so matching the whole
+// item would replace a genuine improvement with the availability notice. The
+// sample itself is screened separately: validateSampleWording rejects a
+// private identifier in a model example, and requirementSampleWording drops
+// one from a requirement's sample_wording.
 function makePrivacySafeImprovement(item: string): string | null {
-  if (AVAILABILITY_PATTERN.test(item)) {
-    return 'Confirm your availability. State your availability for the required shifts in the application form or recruiter message.'
-  }
-  if (PRIVATE_IDENTIFIER_PATTERN.test(item)) {
-    if (!WORK_AUTH_PATTERN.test(item)) return null
-    return 'Clarify work authorization. If accurate, add “Authorized to work in the Netherlands” to your professional summary or CV footer. Never include a BSN or permit number.'
+  const head = improvementHead(item)
+  if (AVAILABILITY_PATTERN.test(head)) return AVAILABILITY_IMPROVEMENT
+  if (PRIVATE_IDENTIFIER_PATTERN.test(head)) {
+    if (!WORK_AUTH_PATTERN.test(head)) return null
+    return WORK_AUTHORIZATION_IMPROVEMENT
   }
   return item
 }
@@ -949,31 +1132,51 @@ function requirementName(requirement: RawRequirement | undefined): string | null
   return requirement.requirement.trim().replace(/[.!?]+$/, '') || null
 }
 
-function withPracticalExample(item: string): string {
-  if (/\bExample:/i.test(item)) return item
-  return `${item.replace(/[.!?]+$/, '')}. Example: Add one truthful CV bullet that shows the relevant action, context, and result.`
+/**
+ * The sample bullet for a deterministic, requirement based fill: the model's
+ * own sample_wording for that requirement when it passes the same rules as
+ * an improvement example, otherwise a generic but rule compliant bullet
+ * built around the requirement name. The generic form is the last resort
+ * and deliberately plain: it can name the requirement, but it cannot know
+ * the job description's technologies the way the model's sample can.
+ */
+function requirementSampleWording(requirement: RawRequirement): string {
+  const own = normalizeSampleWording(requirement.sample_wording)
+  if (own && validateSampleWording(own) === null && !PRIVATE_IDENTIFIER_PATTERN.test(own)) return own
+  const name = requirementName(requirement) ?? 'this requirement'
+  return requirement.category === 'skills'
+    ? `Delivered a 6 week project feature that relied on ${name}, owning the implementation from design through release and documenting it so 2 teammates could maintain it.`
+    : `Delivered 3 releases of a production feature over 6 months, work that directly involved ${name}, and presented the results to a team of 8.`
 }
 
 function requirementImprovement(requirement: RawRequirement): string {
   const name = requirementName(requirement) ?? 'this requirement'
   if (verificationStage(requirement) === 'application') {
-    if (WORK_AUTH_PATTERN.test(requirement.requirement)) {
-      return 'Clarify work authorization. The application does not show your general eligibility to work in the required country. Example: If accurate, add “Authorized to work in the Netherlands” to your professional summary or CV footer. Never include a BSN or permit number.'
-    }
-    return 'Confirm your availability. The application does not confirm your availability for the required shifts. Example: State your availability in the application form or recruiter message.'
+    return WORK_AUTH_PATTERN.test(requirement.requirement) ? WORK_AUTHORIZATION_IMPROVEMENT : AVAILABILITY_IMPROVEMENT
   }
+  const sample = requirementSampleWording(requirement)
   if (requirement.match_strength === 'partial') {
-    return `Strengthen evidence for ${name}. Your CV shows related evidence but does not fully demonstrate this requirement. Example: Add a truthful bullet explaining where you used this capability and the result achieved.`
+    return `Strengthen evidence for ${name}. Your CV shows related evidence but does not fully demonstrate this requirement. ${SAMPLE_WORDING_LABEL} ${sample}`
   }
-  return `Show evidence for ${name}. Your CV does not currently provide verified evidence for this requirement. Example: Add the relevant qualification, skill, or experience only if you genuinely have it.`
+  return `Show evidence for ${name}. Your CV does not currently provide verified evidence for this requirement. ${SAMPLE_WORDING_LABEL} ${sample}`
 }
+
+// Generic, rule compliant last resort fills, used only when the model's own
+// items plus every requirement gap still leave the Needs Improvement band
+// short of three. They cannot know this job's technologies, so they lean on
+// tooling common across the early career tech roles this product serves.
+const UVP_IMPROVEMENT = `Strengthen your unique value. Your CV does not yet show a strong, role specific reason to choose you over another qualified candidate. ${SAMPLE_WORDING_LABEL} Owned the migration of 3 legacy weekly reports to an automated Python and SQL pipeline, cutting manual reporting from 6 hours to 45 minutes for a team of 4.`
+const CLOSEST_MATCH_IMPROVEMENT = `Prioritize your closest match. Make the experience most relevant to this job the easiest evidence for a recruiter to find. ${SAMPLE_WORDING_LABEL} Led the 3 month build of a customer facing feature from requirements through release, adopted by 200 internal users in its first month.`
+const SCANNABLE_IMPACT_IMPROVEMENT = `Make impact easy to scan. Strengthen one relevant achievement with a clear result where accurate. ${SAMPLE_WORDING_LABEL} Cut nightly batch processing from 3 hours to 40 minutes by rewriting 2 SQL queries and adding a missing index, removing a daily reporting delay.`
 
 function ensureThreeNeedsImprovementItems(
   generated: string[],
   requirements: RawRequirement[],
   uvpLevel: UvpEvidenceLevel,
 ): string[] {
-  const candidates = generated.map(withPracticalExample)
+  // Every generated item already ends in validated sample wording (see
+  // normalizeAnalysis), and every deterministic fill below carries its own.
+  const candidates = [...generated]
   const gaps = [
     ...requirements.filter((item) => item.match_strength === 'none' && item.importance === 'must_have'),
     ...requirements.filter((item) => item.match_strength === 'partial'),
@@ -981,15 +1184,8 @@ function ensureThreeNeedsImprovementItems(
   ]
   for (const gap of gaps) candidates.push(requirementImprovement(gap))
 
-  if (uvpLevel !== 'strong') {
-    candidates.push(
-      'Strengthen your unique value. Your CV does not yet show a strong, role specific reason to choose you over another qualified candidate. Example: Add one truthful achievement using Evidence, Strength, and Employer Value.',
-    )
-  }
-  candidates.push(
-    'Prioritize your closest match. Make the experience most relevant to this job the easiest evidence for a recruiter to find. Example: Move the closest matching role or achievement higher and describe its employer value.',
-    'Make impact easy to scan. Strengthen one relevant achievement with a clear result where accurate. Example: “Improved X by Y% within Z months” using only figures you can verify.',
-  )
+  if (uvpLevel !== 'strong') candidates.push(UVP_IMPROVEMENT)
+  candidates.push(CLOSEST_MATCH_IMPROVEMENT, SCANNABLE_IMPACT_IMPROVEMENT)
 
   const unique: string[] = []
   const seen = new Set<string>()
@@ -1305,6 +1501,7 @@ export type ValidationFailureReasonCode =
   | 'invalid_score_total'
   | 'invalid_requirement_matrix'
   | 'unverified_claim_reported'
+  | 'invalid_sample_wording'
   | 'non_english_content'
   | 'model_timeout'
   | 'model_api_error'
@@ -1327,6 +1524,7 @@ export function classifyValidationFailure(message: string): ValidationFailureRea
   if (/evidence_basis is identical, unadapted filler/i.test(message)) return 'reused_generic_evidence'
   if (/score_breakdown:/i.test(message)) return 'invalid_score_total'
   if (/requirement matrix|uvp_evidence_level|cv_structure_level/i.test(message)) return 'invalid_requirement_matrix'
+  if (/improvement_\d_example/i.test(message)) return 'invalid_sample_wording'
   if (/unverified claims/i.test(message)) return 'unverified_claim_reported'
   if (/did not look like English/i.test(message)) return 'non_english_content'
   return 'other_validation_failure'
@@ -1374,14 +1572,27 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string, meta: { mode
     combineFinding(raw.strength_1_finding, raw.strength_1_evidence),
     combineFinding(raw.strength_2_finding, raw.strength_2_evidence),
   ].filter((item): item is string => item !== null)
-  const generatedImprovements = [
-    combineFinding(raw.improvement_1_finding, raw.improvement_1_evidence, raw.improvement_1_example),
-    combineFinding(raw.improvement_2_finding, raw.improvement_2_evidence, raw.improvement_2_example),
-    combineFinding(raw.improvement_3_finding, raw.improvement_3_evidence, raw.improvement_3_example),
+  const improvementSlots = [
+    { slot: 1, finding: raw.improvement_1_finding, evidence: raw.improvement_1_evidence, example: raw.improvement_1_example },
+    { slot: 2, finding: raw.improvement_2_finding, evidence: raw.improvement_2_evidence, example: raw.improvement_2_example },
+    { slot: 3, finding: raw.improvement_3_finding, evidence: raw.improvement_3_evidence, example: raw.improvement_3_example },
   ]
-    .filter((item): item is string => item !== null)
-    .map(makePrivacySafeImprovement)
-    .filter((item): item is string => item !== null)
+  const generatedImprovements: string[] = []
+  const sampleWordingProblems: string[] = []
+  for (const { slot, finding, evidence, example } of improvementSlots) {
+    const combined = combineFinding(finding, evidence, example)
+    if (combined === null) continue
+    const safe = makePrivacySafeImprovement(combined)
+    if (safe === null) continue
+    // A privacy rewrite replaces the whole item, sample included, with fixed
+    // wording, so only an item that kept the model's own text is held to the
+    // sample wording rules.
+    if (safe === combined) {
+      const problem = validateSampleWording(normalizeSampleWording(example))
+      if (problem) sampleWordingProblems.push(`improvement_${slot}_example ${problem}`)
+    }
+    generatedImprovements.push(safe)
+  }
   const prospects = sanitizeStrings([raw.prospect_1, raw.prospect_2])
 
   if (strengths.length > 2) throw new Error('Expected at most 2 strengths')
@@ -1393,13 +1604,34 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string, meta: { mode
     throw new Error('Content did not look like English')
   }
 
+  // Every area to improve the model wrote must end in usable sample wording
+  // (see validateSampleWording). Thrown after the English check so a non
+  // English response is reported as that, and thrown as one message naming
+  // every failing slot so a single retry can correct all of them.
+  if (sampleWordingProblems.length > 0) throw new Error(sampleWordingProblems.join('; '))
+
   // The model self-reports any candidate fact it introduced beyond the
   // original CV (new_claims_introduced, required by the schema). A non-empty
   // report is treated as a failed generation and retried, rather than
-  // trusting the "do not invent" prompt instructions alone.
-  const newClaims = Array.isArray(raw.new_claims_introduced)
-    ? raw.new_claims_introduced.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
-    : []
+  // trusting the "do not invent" prompt instructions alone. The one
+  // exception is a report that only restates sample wording, which is
+  // fictional by design and not a claim about the candidate (see
+  // isClaimFromSampleWording); every other reported claim still fails.
+  const sampleWordings = [
+    ...improvementSlots.map(({ example }) => normalizeSampleWording(example)),
+    ...(Array.isArray(raw.requirements)
+      ? raw.requirements.map((item) =>
+          normalizeSampleWording(
+            typeof item === 'object' && item !== null ? (item as { sample_wording?: unknown }).sample_wording : '',
+          ),
+        )
+      : []),
+  ].filter((item) => item.length > 0)
+  const newClaims = (
+    Array.isArray(raw.new_claims_introduced)
+      ? raw.new_claims_introduced.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+      : []
+  ).filter((claim) => !isClaimFromSampleWording(claim, sampleWordings))
   if (newClaims.length > 0) {
     throw new Error(`Model reported unverified claims not present in the original CV: ${JSON.stringify(newClaims)}`)
   }

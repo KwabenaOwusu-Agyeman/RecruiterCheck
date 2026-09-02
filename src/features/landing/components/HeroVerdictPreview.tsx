@@ -1,5 +1,5 @@
 import { Card } from '@/components/ui/Card'
-import { splitFinding } from '@/components/feedback/FeedbackBullet'
+import { splitFinding } from '@/lib/feedbackText'
 import { ScoreLockup } from '@/components/feedback/ScoreLockup'
 import { ROLE_EXAMPLES } from '@/features/landing/data/exampleCheck'
 

@@ -6,6 +6,7 @@ import { PDFDocument, PDFFont, PDFPage, StandardFonts, degrees, rgb } from 'npm:
 import { extractText as extractPdfText, getDocumentProxy } from 'npm:unpdf@0.12.1'
 import {
   getDocumentEntitlement,
+  stripExampleClause,
   validateDocuments,
   type FundingPackId,
   type RawDocuments,
@@ -163,11 +164,12 @@ Deno.serve(async (req) => {
       jobTitle: check.job_title,
       companyName: check.company_name,
       strengths: feedbackRow.strengths as string[],
-      // The example clause (e.g. "Example: X% within X months") exists to
-      // show a human reader on the Feedback page what a stronger bullet
-      // could look like, using generic placeholders — it is never a value to
-      // fill in. Strip it before this reaches the generator so a placeholder
-      // like "X%" can't get echoed straight into a real document.
+      // The trailing clause ("Sample wording: ..." on current checks, a
+      // placeholder style "Example: ..." on historical ones) exists to show
+      // a human reader on the Feedback page what a stronger bullet could
+      // look like. Sample wording is fictional by design, so neither its
+      // invented figures nor a legacy "X%" placeholder may ever reach a real
+      // document: strip the clause before this reaches the generator.
       improvements: (feedbackRow.improvements as string[]).map(stripExampleClause),
       prospects: feedbackRow.prospects as string[],
     })
@@ -330,18 +332,6 @@ async function extractText(file: Blob, fileName: string): Promise<string> {
 
   const cleaned = text.replace(/\s+/g, ' ').trim()
   return cleaned.slice(0, MAX_CV_CHARS)
-}
-
-/**
- * Areas to improve are stored as "Finding. Evidence. Example: ...", where the
- * example clause exists only to show a human reader on the Feedback page what
- * a stronger bullet could look like, using generic placeholders like "X%".
- * The document generator must act on the finding/evidence, never copy the
- * placeholder itself into a real document, so this strips the clause before
- * the text reaches the prompt.
- */
-function stripExampleClause(text: string): string {
-  return text.replace(/\s*Example:\s*[\s\S]*$/i, '').trim()
 }
 
 async function generateDocuments(

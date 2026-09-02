@@ -12,6 +12,7 @@ import {
   CATEGORY_2_POINTS,
   CATEGORY_3_POINTS,
   combineFinding,
+  digitizeNumberWords,
   extractQuantifiedClaims,
   findReusedEvidenceBasis,
   hasUnsupportedNamedEntity,
@@ -20,12 +21,14 @@ import {
   levelScore,
   looksLikeEnglish,
   normalizeAnalysis,
+  normalizeSampleWording,
   PROMPT_VERSION,
   RUBRIC_VERSION,
   stripDashes,
   toAuditRecord,
   classifyValidationFailure,
   resolveEvidenceDependentClassification,
+  validateSampleWording,
   validateScoreBreakdown,
   withRetry,
   type EvidenceLevel,
@@ -35,6 +38,7 @@ import {
   type ScoreBreakdown,
 } from './logic.ts'
 import { getScoreLabel } from '../../../src/lib/scoring'
+import { SAMPLE_WORDING_ROLES } from '../../../fixtures/synthetic/sample-wording-roles.ts'
 
 let passed = 0
 function test(name: string, fn: () => void) {
@@ -117,8 +121,11 @@ function listedOnlyReference(): EvidenceReference {
   return { cv_section: 'skills', entry_reference: 'Skills list', evidence_basis: 'Listed as a skill.', evidence_type: 'employment' }
 }
 
-function subcriteriaDefaults(level: EvidenceLevel): Partial<RawAnalysis> {
-  const evidence = level === 'none' ? '' : GROUNDED_EVIDENCE
+// `excerpt` lets a test that runs against its own CV text (the three role
+// flows at the bottom of this file) ground every subcriterion in that CV
+// instead of the shared CV_TEXT above.
+function subcriteriaDefaults(level: EvidenceLevel, excerpt: string = GROUNDED_EVIDENCE): Partial<RawAnalysis> {
+  const evidence = level === 'none' ? '' : excerpt
   const ref = (field: string) => (level === 'none' ? null : demonstratingReference(field))
   return {
     applied_evidence_level: level,
@@ -163,13 +170,13 @@ function baseRaw(overrides: Partial<RawAnalysis> = {}): RawAnalysis {
     strength_2_evidence: 'You have hands on experience with the exact stack this role uses.',
     improvement_1_finding: 'Quantify your impact',
     improvement_1_evidence: 'Add conversion rates, revenue generated, or targets exceeded.',
-    improvement_1_example: 'Implemented a new workflow that increased retention by X% within X months.',
+    improvement_1_example: 'Implemented a new onboarding workflow in Node.js that increased 30 day retention from 62% to 71% within 4 months.',
     improvement_2_finding: 'Strengthen leadership evidence',
     improvement_2_evidence: 'Show whether you led, mentored, or owned a project end to end.',
-    improvement_2_example: '',
+    improvement_2_example: 'Led a team of 3 backend engineers through the 6 month rebuild of the billing service, owning planning, code review and the release.',
     improvement_3_finding: 'Elaborate on your most relevant role',
     improvement_3_evidence: 'Add more detail to the role closest to this job description.',
-    improvement_3_example: '',
+    improvement_3_example: 'Designed and shipped 4 REST endpoints in Node.js for the payments API, handling 12,000 daily requests with 0 production incidents in the first quarter.',
     prospect_1: 'Your background is a reasonable match for this role.',
     prospect_2: 'Adding measurable outcomes would most increase your interview odds.',
     new_claims_introduced: [],
@@ -185,21 +192,34 @@ function analyze(overrides: Partial<RawAnalysis> = {}, cvText: string = CV_TEXT)
 // Formatting helpers (unchanged behavior)
 // ---------------------------------------------------------------------------
 
-test('combineFinding produces Tell -> Show format with a placeholder example', () => {
+test('combineFinding produces Tell -> Show format with sample wording', () => {
   const combined = combineFinding(
     'Quantify your impact',
     'You mention improving onboarding but do not show the result',
-    'Implemented a new onboarding process that increased retention by X% within X months.',
+    'Implemented a new onboarding flow in React that lifted 30 day retention from 58% to 66% within 3 months.',
   )
   assert.equal(
     combined,
-    'Quantify your impact. You mention improving onboarding but do not show the result. Example: Implemented a new onboarding process that increased retention by X% within X months.',
+    'Quantify your impact. You mention improving onboarding but do not show the result. Sample wording: Implemented a new onboarding flow in React that lifted 30 day retention from 58% to 66% within 3 months.',
   )
 })
 
-test('combineFinding omits the example clause when no example is given', () => {
+test('combineFinding normalises the sample wording: a repeated label and wrapping quotes go, number words become digits', () => {
+  const combined = combineFinding(
+    'Quantify your impact',
+    'No result is shown.',
+    'Sample wording: “Cut the release cycle from two weeks to five days by automating the deploy in GitHub Actions.”',
+  )
+  assert.equal(
+    combined,
+    'Quantify your impact. No result is shown. Sample wording: Cut the release cycle from 2 weeks to 5 days by automating the deploy in GitHub Actions.',
+  )
+})
+
+test('combineFinding omits the sample wording clause when no example is given', () => {
   const combined = combineFinding('Strong sales performance', 'Your record of exceeding targets supports this role.')
   assert.equal(combined, 'Strong sales performance. Your record of exceeding targets supports this role.')
+  assert.ok(!combined!.includes('Sample wording:'))
   assert.ok(!combined!.includes('Example:'))
 })
 
@@ -618,7 +638,7 @@ test('normalizeAnalysis: a mix of strong/partial/none lands in Needs Improvement
   const label = getScoreLabel(result.interview_probability_score)
   assert.equal(label, 'Needs Improvement')
   assert.equal(result.improvements.length, 3)
-  assert.ok(result.improvements.every((item) => /Example:/i.test(item)))
+  assert.ok(result.improvements.every((item) => /Sample wording:/.test(item)))
 })
 
 test('normalizeAnalysis deterministically completes three Needs Improvement items when the model returns only two', () => {
@@ -639,7 +659,7 @@ test('normalizeAnalysis deterministically completes three Needs Improvement item
   })
   assert.equal(getScoreLabel(result.interview_probability_score), 'Needs Improvement')
   assert.equal(result.improvements.length, 3)
-  assert.ok(result.improvements.every((item) => /Example:/i.test(item)))
+  assert.ok(result.improvements.every((item) => /Sample wording:/.test(item)))
 })
 
 // TEST 3 — poor candidate
@@ -1832,5 +1852,607 @@ test('WRITTEN FEEDBACK: strengths/improvements/prospects are plain prose strings
     assert.ok(!item.includes('evidence_reference'))
   }
 })
+
+// ---------------------------------------------------------------------------
+// Sample wording: every area to improve ends in a complete fictional CV
+// bullet, never an instruction (see the SAMPLE WORDING section of prompt.ts
+// and validateSampleWording in logic.ts).
+// ---------------------------------------------------------------------------
+
+const QUALITY_SAMPLES = [
+  'Submitted 5 pull requests to an open source React and TypeScript dashboard, resolving WCAG 2.2 keyboard navigation issues across 12 reusable components.',
+  'Diagnosed a Safari rendering defect using Chrome DevTools and BrowserStack, corrected conflicting CSS Grid rules and reduced cross browser UI issues by 30%.',
+  'Created OpenAPI documentation for 18 REST API endpoints, covering OAuth 2.0 authentication, request schemas and error responses, reducing developer onboarding time by 2 days.',
+]
+
+test('validateSampleWording accepts the three calibration quality examples', () => {
+  for (const sample of QUALITY_SAMPLES) assert.equal(validateSampleWording(normalizeSampleWording(sample)), null, sample)
+})
+
+test('validateSampleWording rejects the old instruction style examples', () => {
+  const instructions = [
+    'Consider detailing any open source projects you have contributed to or any relevant coding challenges you have participated in.',
+    'Include a specific instance where you identified and resolved a significant bug in your code.',
+    'Mention the frameworks used and the outcome of the project in your experience section.',
+    'Provide details of the debugging tools used and the reduction in defects achieved.',
+    'Add a bullet describing the REST API integration and its measurable outcome for the team.',
+    'Highlight measurable outcomes such as reduced load time or improved conversion rates on the site.',
+    'Consider adding a project or experience where you documented your work or explained technical concepts clearly to others.',
+  ]
+  for (const sample of instructions) {
+    const problem = validateSampleWording(sample)
+    assert.ok(problem !== null, `accepted an instruction: ${sample}`)
+    assert.match(problem!, /instruction|"you" or "your"/)
+  }
+})
+
+test('validateSampleWording rejects second person, placeholders, questions and fragments', () => {
+  assert.match(validateSampleWording('Reduced page load time on your checkout page by improving the image pipeline for the team.')!, /"you" or "your"/)
+  assert.match(validateSampleWording('Improved dashboard load time by X% within the first 3 months of the project.')!, /placeholder/)
+  assert.match(validateSampleWording('Improved dashboard load time by [X%] after migrating the reporting layer to dbt.')!, /placeholder/)
+  assert.match(validateSampleWording('Built a [project] in [technology] that reduced processing time for the operations team.')!, /placeholder/)
+  assert.match(validateSampleWording('Saved the finance team €X per month by automating the invoice matching step.')!, /placeholder/)
+  assert.match(validateSampleWording('Did the migration reduce the reporting time for the finance team by 3 hours each week?')!, /question/)
+  assert.match(validateSampleWording('Built a dashboard.')!, /too short/)
+  assert.match(validateSampleWording('')!, /empty/)
+})
+
+test('validateSampleWording keeps past tense bullets whose stem matches an instruction verb', () => {
+  const bullets = [
+    'Presented quarterly retention analysis to 12 stakeholders, shaping the next roadmap.',
+    'Used SQL and dbt to rebuild 6 revenue models, cutting the monthly close by 2 days.',
+    'Documented 18 REST endpoints in OpenAPI so 3 partner teams could integrate without support calls.',
+    'Included accessibility checks in the CI pipeline, catching 40 WCAG issues before release.',
+    'Showcased the model on a Streamlit demo used by 25 analysts during the pilot.',
+    'Improved p95 API latency from 480 ms to 140 ms by adding a Redis cache in front of 3 endpoints.',
+  ]
+  for (const bullet of bullets) assert.equal(validateSampleWording(bullet), null, bullet)
+})
+
+test('digitizeNumberWords writes counts as digits without touching names, idioms or compounds', () => {
+  assert.equal(digitizeNumberWords('Submitted five pull requests over two days'), 'Submitted 5 pull requests over 2 days')
+  assert.equal(digitizeNumberWords('Completed a Six Sigma green belt'), 'Completed a Six Sigma green belt')
+  assert.equal(digitizeNumberWords('One of the three engineers'), 'One of the 3 engineers')
+  assert.equal(digitizeNumberWords('Twenty reports, fifteen dashboards'), '20 reports, 15 dashboards')
+  // Library names and compound numbers are left alone rather than mangled.
+  assert.equal(digitizeNumberWords('Built a Three.js scene and a three js demo'), 'Built a Three.js scene and a three js demo')
+  assert.equal(digitizeNumberWords('Migrated twenty five reports and two hundred records'), 'Migrated twenty five reports and two hundred records')
+})
+
+test('validateSampleWording catches lower case placeholders and private identifiers', () => {
+  assert.match(validateSampleWording('Improved dashboard load time by x% within the first 3 months of the project.')!, /placeholder/)
+  assert.match(validateSampleWording('Listed the BSN and start date on the application form for the 2 warehouse roles.')!, /private identifier/)
+})
+
+test('an ordinary "available" inside sample wording does not turn an item into the availability notice', () => {
+  const result = analyze({
+    improvement_1_finding: 'Show data pipeline ownership',
+    improvement_1_evidence: 'The CV does not show an end to end pipeline you owned.',
+    improvement_1_example:
+      'Built a nightly Airflow pipeline that made refreshed sales data available to 12 analysts by 7am each day, replacing a manual export.',
+  })
+  assert.match(result.improvements[0], /^Show data pipeline ownership\./)
+  assert.doesNotMatch(result.improvements.join(' '), /Confirm your availability/)
+})
+
+test('a requirement sample_wording containing "available" still produces its own fill, not the availability notice', () => {
+  const result = analyze({
+    requirements: [
+      requirement({ requirement: 'Relevant experience', category: 'experience', importance: 'must_have', match_strength: 'strong' }),
+      requirement({
+        requirement: 'dbt models',
+        category: 'skills',
+        importance: 'important',
+        match_strength: 'partial',
+        sample_wording: 'Rebuilt 6 shipment reports as dbt models with 18 schema tests, making refreshed data available to 12 analysts each morning.',
+      }),
+    ],
+    uvp_evidence_level: 'partial',
+    ...subcriteriaDefaults('strong'),
+    skill_application_evidence_level: 'partial',
+    tools_platforms_evidence_level: 'partial',
+    certifications_evidence_level: 'partial',
+    improvement_3_finding: '',
+    improvement_3_evidence: '',
+    improvement_3_example: '',
+  })
+  const fill = result.improvements.find((item) => /Strengthen evidence for dbt models/.test(item))
+  assert.ok(fill, 'the dbt fill was replaced')
+  assert.match(fill!, /Sample wording: Rebuilt 6 shipment reports as dbt models/)
+})
+
+test('a fabricated claim that merely shares a technology name with a sample is still rejected', () => {
+  const withDockerSample = {
+    requirements: [
+      requirement({ requirement: '5+ years backend experience', category: 'experience', importance: 'must_have' }),
+      requirement({
+        requirement: 'Docker',
+        category: 'skills',
+        importance: 'important',
+        match_strength: 'none',
+        cv_evidence: '',
+        sample_wording: 'Containerised 4 internal services with Docker and wrote the Compose setup that cut local onboarding from 2 days to 1 hour.',
+      }),
+    ],
+  }
+  assert.throws(() => analyze({ ...withDockerSample, new_claims_introduced: ['Experience with Docker'] }), /unverified claims/)
+  assert.throws(() => analyze({ ...withDockerSample, new_claims_introduced: ['Deployed models with Docker'] }), /unverified claims/)
+  assert.throws(
+    () => analyze({ ...withDockerSample, new_claims_introduced: ['Containerised 9 services with Docker across 3 teams'] }),
+    /unverified claims/,
+  )
+})
+
+test('normalizeSampleWording strips a repeated label, wrapping quotes and dashes, and converts number words', () => {
+  assert.equal(
+    normalizeSampleWording('Example: "Fixed cross-browser layout bugs across twelve components"'),
+    'Fixed cross browser layout bugs across 12 components',
+  )
+  assert.equal(normalizeSampleWording('Sample wording: “Shipped 3 features.”'), 'Shipped 3 features.')
+  assert.equal(normalizeSampleWording(undefined), '')
+  assert.equal(normalizeSampleWording('   '), '')
+})
+
+test('normalizeAnalysis rejects an area to improve whose example is an instruction, naming the slot for the retry', () => {
+  assert.throws(
+    () => analyze({ improvement_2_example: 'Consider detailing any open source projects you have contributed to.' }),
+    /improvement_2_example reads as an instruction/,
+  )
+})
+
+test('normalizeAnalysis rejects an area to improve with no sample wording at all', () => {
+  assert.throws(() => analyze({ improvement_3_example: '' }), /improvement_3_example is empty/)
+})
+
+test('normalizeAnalysis reports every failing slot in one message so a single retry can fix all of them', () => {
+  assert.throws(
+    () => analyze({ improvement_1_example: 'Add numbers to your bullets.', improvement_3_example: 'Improved something by X% in the first year of the role.' }),
+    (error: Error) => /improvement_1_example/.test(error.message) && /improvement_3_example/.test(error.message),
+  )
+})
+
+test('normalizeAnalysis leaves an unused improvement slot alone even though its example is empty', () => {
+  const result = analyze({ improvement_3_finding: '', improvement_3_evidence: '', improvement_3_example: '' })
+  assert.ok(result.improvements.length >= 1)
+})
+
+test('classifyValidationFailure maps a sample wording rejection to its own reason code', () => {
+  assert.equal(classifyValidationFailure('improvement_2_example reads as an instruction (it opens with "Consider adding")'), 'invalid_sample_wording')
+  assert.equal(classifyValidationFailure('All 2 attempts failed: ["improvement_1_example is empty: every area to improve must end in one complete fictional CV bullet"]'), 'invalid_sample_wording')
+})
+
+test('normalizeAnalysis dismisses a self reported claim that only restates sample wording', () => {
+  const result = analyze({
+    new_claims_introduced: ['Increased 30 day retention from 62% to 71% within 4 months', 'Led a team of 3 backend engineers'],
+  })
+  assert.ok(result.improvements.length > 0)
+})
+
+test('normalizeAnalysis dismisses a self reported claim that restates a requirement sample_wording', () => {
+  const result = analyze({
+    requirements: [
+      requirement({ requirement: '5+ years backend experience', category: 'experience', importance: 'must_have' }),
+      requirement({
+        requirement: 'Docker',
+        category: 'skills',
+        importance: 'important',
+        match_strength: 'none',
+        cv_evidence: '',
+        sample_wording: 'Containerised 4 internal services with Docker and wrote the Compose setup that cut local onboarding from 2 days to 1 hour.',
+      }),
+    ],
+    new_claims_introduced: ['Containerised 4 internal services with Docker'],
+  })
+  assert.ok(result.improvements.length > 0)
+})
+
+test('normalizeAnalysis still rejects a genuine invented claim that no sample wording contains', () => {
+  assert.throws(() => analyze({ new_claims_introduced: ['Increased revenue by 25%'] }), /unverified claims/)
+  assert.throws(
+    () => analyze({ new_claims_introduced: ['Increased 30 day retention from 62% to 71% within 4 months', 'Holds an AWS Solutions Architect certification'] }),
+    /unverified claims not present in the original CV: \["Holds an AWS Solutions Architect certification"\]/,
+  )
+})
+
+test('a deterministic requirement fill uses the requirement\'s own sample wording when it is valid', () => {
+  const result = analyze({
+    requirements: [
+      requirement({ requirement: 'Relevant experience', category: 'experience', importance: 'must_have', match_strength: 'strong' }),
+      requirement({
+        requirement: 'Experiment tracking with MLflow',
+        category: 'skills',
+        importance: 'important',
+        match_strength: 'partial',
+        sample_wording: 'Tracked forty training runs in MLflow, comparing 6 feature sets and promoting the best LightGBM model to staging.',
+      }),
+      requirement({ requirement: 'Reporting tools', category: 'skills', importance: 'nice_to_have', match_strength: 'none', cv_evidence: '' }),
+    ],
+    uvp_evidence_level: 'partial',
+    ...subcriteriaDefaults('strong'),
+    skill_application_evidence_level: 'partial',
+    tools_platforms_evidence_level: 'partial',
+    certifications_evidence_level: 'partial',
+    improvement_3_finding: '',
+    improvement_3_evidence: '',
+    improvement_3_example: '',
+  })
+  assert.equal(getScoreLabel(result.interview_probability_score), 'Needs Improvement')
+  const fill = result.improvements.find((item) => /Experiment tracking with MLflow/.test(item))
+  assert.ok(fill, 'the MLflow gap did not become an area to improve')
+  // The model's sample is normalised the same way an improvement example is.
+  assert.match(fill!, /Sample wording: Tracked 40 training runs in MLflow/)
+})
+
+test('a deterministic requirement fill falls back to generic sample wording when the model\'s is an instruction', () => {
+  const result = analyze({
+    requirements: [
+      requirement({ requirement: 'Relevant experience', category: 'experience', importance: 'must_have', match_strength: 'strong' }),
+      requirement({
+        requirement: 'Docker',
+        category: 'skills',
+        importance: 'important',
+        match_strength: 'partial',
+        sample_wording: 'Consider mentioning any Docker experience you have.',
+      }),
+    ],
+    uvp_evidence_level: 'partial',
+    ...subcriteriaDefaults('strong'),
+    skill_application_evidence_level: 'partial',
+    tools_platforms_evidence_level: 'partial',
+    certifications_evidence_level: 'partial',
+    improvement_3_finding: '',
+    improvement_3_evidence: '',
+    improvement_3_example: '',
+  })
+  const fill = result.improvements.find((item) => /Strengthen evidence for Docker/.test(item))
+  assert.ok(fill)
+  assert.doesNotMatch(fill!, /Consider mentioning/)
+  assert.match(fill!, /Sample wording: Delivered a 6 week project feature that relied on Docker/)
+})
+
+// Splits a stored item the way src/lib/feedbackText.ts does, so these tests
+// hold the deterministic fills to the same rules as the model's examples.
+function storedSampleWording(item: string): string {
+  const match = item.match(/Sample wording:\s*([\s\S]*)$/)
+  return match ? match[1].trim() : ''
+}
+
+function assertCompliantSampleWording(item: string, roleTerms: string[] = []) {
+  const sample = storedSampleWording(item)
+  assert.ok(sample, `no sample wording: ${item}`)
+  assert.equal(validateSampleWording(sample), null, item)
+  assert.match(sample, /\d/, `no digit in sample: ${sample}`)
+  assert.ok(!/[-–—]/.test(item), `dash in item: ${item}`)
+  assert.ok(!/\b(?:you|your)\b/i.test(sample), `second person in sample: ${sample}`)
+  assert.ok(!/\[|\]|\bX\s?%/.test(sample), `placeholder in sample: ${sample}`)
+  if (roleTerms.length > 0) {
+    assert.ok(
+      roleTerms.some((term) => sample.toLowerCase().includes(term.toLowerCase())),
+      `sample uses none of the role terms: ${sample}`,
+    )
+  }
+}
+
+test('every Needs Improvement item, generated or deterministic, ends in rule compliant sample wording', () => {
+  const emptySlots = {
+    improvement_1_finding: '',
+    improvement_1_evidence: '',
+    improvement_1_example: '',
+    improvement_2_finding: '',
+    improvement_2_evidence: '',
+    improvement_2_example: '',
+    improvement_3_finding: '',
+    improvement_3_evidence: '',
+    improvement_3_example: '',
+  }
+  const scenarios = [
+    // Model returned nothing usable: every item is a deterministic fill,
+    // including the generic last resort ones.
+    analyze({
+      requirements: [
+        requirement({ requirement: 'Relevant experience', category: 'experience', importance: 'must_have', match_strength: 'strong' }),
+        requirement({ requirement: 'Stakeholder management', category: 'skills', importance: 'important', match_strength: 'partial' }),
+      ],
+      uvp_evidence_level: 'partial',
+      ...subcriteriaDefaults('strong'),
+      skill_application_evidence_level: 'partial',
+      tools_platforms_evidence_level: 'partial',
+      certifications_evidence_level: 'partial',
+      ...emptySlots,
+    }),
+    // Nothing from the model and no requirement gap at all: only the
+    // generic fills remain.
+    analyze({
+      requirements: [requirement({ requirement: 'Relevant experience', category: 'experience', importance: 'must_have', match_strength: 'strong' })],
+      uvp_evidence_level: 'partial',
+      ...subcriteriaDefaults('strong'),
+      skill_application_evidence_level: 'partial',
+      tools_platforms_evidence_level: 'partial',
+      certifications_evidence_level: 'partial',
+      ...emptySlots,
+    }),
+    // Mixed: two model items plus one requirement fill.
+    analyze({
+      requirements: [
+        requirement({ requirement: 'Relevant experience', category: 'experience', importance: 'must_have', match_strength: 'strong' }),
+        requirement({ requirement: 'Reporting tools', category: 'skills', importance: 'nice_to_have', match_strength: 'none', cv_evidence: '' }),
+      ],
+      uvp_evidence_level: 'partial',
+      ...subcriteriaDefaults('strong'),
+      skill_application_evidence_level: 'partial',
+      tools_platforms_evidence_level: 'partial',
+      certifications_evidence_level: 'partial',
+      improvement_3_finding: '',
+      improvement_3_evidence: '',
+      improvement_3_example: '',
+    }),
+  ]
+  for (const result of scenarios) {
+    assert.equal(getScoreLabel(result.interview_probability_score), 'Needs Improvement')
+    assert.equal(result.improvements.length, 3)
+    for (const item of result.improvements) assertCompliantSampleWording(item)
+  }
+})
+
+test('privacy safe rewrites carry application statement sample wording and never a private identifier', () => {
+  const result = analyze({
+    requirements: [
+      requirement({ requirement: 'BSN and work permit required', category: 'skills', importance: 'must_have', critical: true, match_strength: 'none', cv_evidence: '' }),
+      requirement({ requirement: 'Weekend shift availability', category: 'skills', importance: 'important', match_strength: 'none', cv_evidence: '' }),
+      requirement({ requirement: 'Customer service', category: 'skills', importance: 'important', match_strength: 'strong' }),
+    ],
+    ...subcriteriaDefaults('partial'),
+    uvp_evidence_level: 'none',
+    uvp_evidence: '',
+    improvement_1_finding: 'Include BSN and work permit status',
+    improvement_1_evidence: 'Your CV does not mention your BSN or work permit status.',
+    improvement_1_example: 'Clearly state your BSN and work permit status in your application.',
+    improvement_2_finding: 'Add weekend availability',
+    improvement_2_evidence: 'The application does not confirm your availability for weekend shifts.',
+    improvement_2_example: '',
+    improvement_3_finding: '',
+    improvement_3_evidence: '',
+    improvement_3_example: '',
+  })
+  const joined = result.improvements.join(' ')
+  assert.match(joined, /Sample wording: Authorized to work in the Netherlands\./)
+  assert.match(joined, /Sample wording: Available for weekend and evening shifts/)
+  assert.doesNotMatch(joined, /state your BSN|include your BSN/i)
+})
+
+// ---------------------------------------------------------------------------
+// Three role flows: Frontend Developer, Machine Learning Engineer, Data
+// Analyst. Each drives a hand written model output (the shape the prompt in
+// prompt.ts asks for, with excerpts quoted from the role's synthetic CV so
+// grounding passes) through the real normalizeAnalysis, then holds every
+// stored area to improve, including the deterministic third item built from
+// a requirement's sample_wording, to the sample wording rules. The live
+// model run for the same three roles is scripts/live-sample-wording.ts.
+// ---------------------------------------------------------------------------
+
+type RoleFlow = {
+  roleId: string
+  excerpt: string
+  requirements: RawRequirement[]
+  improvements: Pick<
+    RawAnalysis,
+    | 'improvement_1_finding'
+    | 'improvement_1_evidence'
+    | 'improvement_1_example'
+    | 'improvement_2_finding'
+    | 'improvement_2_evidence'
+    | 'improvement_2_example'
+  >
+}
+
+const ROLE_FLOWS: RoleFlow[] = [
+  {
+    roleId: 'frontend-developer',
+    excerpt: 'built responsive React components in TypeScript for the client booking pages',
+    requirements: [
+      requirement({
+        requirement: 'Responsive React components with TypeScript',
+        category: 'skills',
+        importance: 'must_have',
+        match_strength: 'strong',
+        cv_evidence: 'built responsive React components in TypeScript for the client booking pages',
+        sample_wording: '',
+      }),
+      requirement({
+        requirement: 'Connecting frontend pages to REST APIs',
+        category: 'skills',
+        importance: 'must_have',
+        match_strength: 'strong',
+        cv_evidence: 'Connected the booking pages to the REST API',
+        sample_wording: '',
+      }),
+      requirement({
+        requirement: 'Open source contributions',
+        category: 'experience',
+        importance: 'must_have',
+        match_strength: 'none',
+        cv_evidence: '',
+        sample_wording: 'Submitted 4 pull requests to an open source React component library, fixing 9 TypeScript typing errors and adding Jest coverage for 3 hooks.',
+      }),
+      requirement({
+        requirement: 'Unit tests with Jest and React Testing Library',
+        category: 'skills',
+        importance: 'important',
+        match_strength: 'partial',
+        cv_evidence: 'Wrote Jest tests for the date picker component',
+        sample_wording: 'Wrote 35 Jest and React Testing Library tests for the booking flow, raising component coverage from 48% to 82% before release.',
+      }),
+      requirement({
+        requirement: 'WCAG 2.2 accessibility',
+        category: 'skills',
+        importance: 'nice_to_have',
+        match_strength: 'none',
+        cv_evidence: '',
+        sample_wording: 'Audited 12 booking components against WCAG 2.2 with axe DevTools and fixed 17 keyboard navigation and contrast issues.',
+      }),
+    ],
+    improvements: {
+      improvement_1_finding: 'Expand on open source contributions',
+      improvement_1_evidence: 'The CV does not show any open source contributions, which this role requires.',
+      improvement_1_example:
+        'Submitted 5 pull requests to an open source React and TypeScript date picker library, resolving 8 keyboard navigation defects across 12 reusable components.',
+      improvement_2_finding: 'Demonstrate debugging skills',
+      improvement_2_evidence: 'The CV mentions fixing layout and browser compatibility issues but not how they were diagnosed.',
+      improvement_2_example:
+        'Diagnosed a Safari flexbox rendering defect using Chrome DevTools and BrowserStack, corrected the conflicting CSS rules and cut cross browser bug reports by 30% over two months.',
+    },
+  },
+  {
+    roleId: 'machine-learning-engineer',
+    excerpt: 'trained gradient boosting models in Python with scikit-learn to score support tickets by urgency',
+    requirements: [
+      requirement({
+        requirement: 'Strong Python',
+        category: 'skills',
+        importance: 'must_have',
+        match_strength: 'strong',
+        cv_evidence: 'trained gradient boosting models in Python with scikit-learn',
+        sample_wording: '',
+      }),
+      requirement({
+        requirement: 'Hands on PyTorch or scikit-learn',
+        category: 'skills',
+        importance: 'must_have',
+        match_strength: 'strong',
+        cv_evidence: 'Thesis on text classification with transformers in PyTorch',
+        sample_wording: '',
+      }),
+      requirement({
+        requirement: 'Experiment tracking with MLflow',
+        category: 'skills',
+        importance: 'must_have',
+        match_strength: 'none',
+        cv_evidence: '',
+        sample_wording: 'Tracked 60 training runs in MLflow with logged parameters and precision and recall metrics, promoting the best scikit-learn model to staging in 2 days.',
+      }),
+      requirement({
+        requirement: 'Deploying models with Docker and FastAPI',
+        category: 'skills',
+        importance: 'must_have',
+        match_strength: 'none',
+        cv_evidence: '',
+        sample_wording: 'Packaged a scikit-learn ticket scoring model as a FastAPI service in Docker, serving 2,000 predictions per hour with p95 latency under 120 ms.',
+      }),
+      requirement({
+        requirement: 'Evaluating models with offline metrics and A/B tests',
+        category: 'skills',
+        importance: 'important',
+        match_strength: 'partial',
+        cv_evidence: 'reports precision and recall for each release',
+        sample_wording: 'Ran a 3 week A/B test on the ticket ranking model across 40,000 tickets, confirming a 12% lift in first response speed against the control.',
+      }),
+    ],
+    improvements: {
+      improvement_1_finding: 'Show model deployment experience',
+      improvement_1_evidence: 'The CV does not show any model deployed as a service, which this role requires.',
+      improvement_1_example:
+        'Deployed a PyTorch text classifier as a FastAPI service in Docker on AWS, handling 1,500 requests per hour with automated health checks.',
+      improvement_2_finding: 'Add experiment tracking evidence',
+      improvement_2_evidence: 'The CV does not mention MLflow or any other experiment tracking.',
+      improvement_2_example:
+        'Logged 45 experiments in MLflow, comparing 5 feature sets for the urgency model and cutting model selection time from 3 days to 1 day.',
+    },
+  },
+  {
+    roleId: 'data-analyst',
+    excerpt: 'wrote SQL queries against the Snowflake warehouse to report weekly delivery performance',
+    requirements: [
+      requirement({
+        requirement: 'Advanced SQL on Snowflake',
+        category: 'skills',
+        importance: 'must_have',
+        match_strength: 'strong',
+        cv_evidence: 'wrote SQL queries against the Snowflake warehouse to report weekly delivery performance',
+        sample_wording: '',
+      }),
+      requirement({
+        requirement: 'Power BI dashboards',
+        category: 'skills',
+        importance: 'must_have',
+        match_strength: 'strong',
+        cv_evidence: 'Built a Power BI dashboard for the operations team',
+        sample_wording: '',
+      }),
+      requirement({
+        requirement: 'dbt models and data quality checks',
+        category: 'skills',
+        importance: 'must_have',
+        match_strength: 'none',
+        cv_evidence: '',
+        sample_wording: 'Built 8 dbt models with 20 schema tests for the stock reporting layer, catching 3 duplicate load issues before they reached the dashboards.',
+      }),
+      requirement({
+        requirement: 'Presenting findings to non technical stakeholders',
+        category: 'skills',
+        importance: 'important',
+        match_strength: 'none',
+        cv_evidence: '',
+        sample_wording: 'Presented monthly delivery performance findings to 3 category managers, leading to a 15% reduction in late shipments the following quarter.',
+      }),
+      requirement({
+        requirement: 'Excel modelling',
+        category: 'skills',
+        importance: 'nice_to_have',
+        match_strength: 'partial',
+        cv_evidence: 'Skills: SQL, Snowflake, Power BI, Python, pandas, Excel',
+        sample_wording: 'Built an Excel stock forecast model with 6 scenario inputs that 3 category teams used to plan a 12 week promotion.',
+      }),
+    ],
+    improvements: {
+      improvement_1_finding: 'Show stakeholder presentation',
+      improvement_1_evidence: 'The CV does not show findings being presented to non technical stakeholders, which this role requires.',
+      improvement_1_example:
+        'Presented weekly delivery performance findings to 4 operations managers in Power BI, reshaping the carrier schedule and cutting late deliveries by 9% in 1 quarter.',
+      improvement_2_finding: 'Add dbt and data quality evidence',
+      improvement_2_evidence: 'The CV does not mention dbt models or data quality checks.',
+      improvement_2_example:
+        'Rebuilt 6 shipment reports as dbt models with 18 schema tests on Snowflake, removing 2 recurring duplicate row issues from the weekly dashboards.',
+    },
+  },
+]
+
+for (const flow of ROLE_FLOWS) {
+  const role = SAMPLE_WORDING_ROLES.find((candidate) => candidate.id === flow.roleId)!
+  test(`ROLE FLOW ${role.jobTitle}: every area to improve carries role specific, digit bearing, usable sample wording`, () => {
+    const result = normalizeAnalysis(
+      baseRaw({
+        job_title: role.jobTitle,
+        company_name: '',
+        requirements: flow.requirements,
+        uvp_evidence_level: 'partial',
+        uvp_evidence: flow.excerpt,
+        ...subcriteriaDefaults('strong', flow.excerpt),
+        results_evidence_level: 'partial',
+        skill_application_evidence_level: 'partial',
+        tools_platforms_evidence_level: 'partial',
+        certifications_evidence_level: 'partial',
+        technical_communication_level: 'partial',
+        ...flow.improvements,
+        improvement_3_finding: '',
+        improvement_3_evidence: '',
+        improvement_3_example: '',
+      }),
+      role.cv,
+    )
+    assert.equal(getScoreLabel(result.interview_probability_score), 'Needs Improvement', `${role.jobTitle} scored ${result.interview_probability_score}`)
+    assert.equal(result.improvements.length, 3)
+    // Items 1 and 2 are the model's, item 3 is the deterministic fill built
+    // from the first requirement gap's own sample_wording.
+    for (const item of result.improvements) assertCompliantSampleWording(item, role.roleTerms)
+    const samples = result.improvements.map(storedSampleWording)
+    assert.equal(new Set(samples.map((sample) => sample.toLowerCase())).size, 3, 'sample wording repeated within one check')
+    assert.match(result.improvements[2], /^(?:Show|Strengthen) evidence for /)
+    // Number words in a model sample come out as digits ("two months" above).
+    assert.doesNotMatch(result.improvements.join(' '), /\b(?:two|three|four|five) (?:months|weeks|days|years)\b/i)
+    // Nothing was invented about the candidate: strengths and prospects
+    // stay grounded, and the fictional bullets never claim to be CV facts.
+    assert.ok(!result.improvements.some((item) => /according to the CV|as stated in the CV/i.test(item)))
+  })
+}
 
 console.log(`\n${passed} tests passed`)
