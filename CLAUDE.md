@@ -119,7 +119,10 @@ change under `supabase/functions/_shared/` or to `supabase/config.toml`
 deploys every function, since any of them may depend on it. One deploy runs
 at a time, later runs queue behind it, and a failure at any step stops the
 run with nothing further deployed. The workflow never runs a migration and
-never touches function secrets; both stay manual.
+never touches function secrets; both stay manual. It can also be started by
+hand from the Actions tab (workflow_dispatch), which deploys every function
+from `main`; use that when a push run failed before deploying and the fix
+that followed did not touch every function that needed to go out.
 
 What follows from that:
 

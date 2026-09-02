@@ -138,6 +138,12 @@ test('no other function had its verify_jwt setting changed', () => {
   const EXPECTED: Record<string, string> = {
     'analyze-check': 'true',
     'create-checkout-session': 'true',
+    // The browser extension redeems a connect code before it has a session,
+    // so there is no JWT to present; the function authenticates the code
+    // itself. Production has run it unverified since it was created, and
+    // the config entry was added so an automated deploy cannot switch the
+    // gateway check on and lock the extension out.
+    'exchange-extension-connect-code': 'false',
     'stripe-webhook': 'false',
     'newsletter-subscribe': 'false',
     'send-welcome-email': 'true',

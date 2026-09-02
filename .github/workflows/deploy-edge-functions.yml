@@ -30,6 +30,12 @@ on:
       - 'supabase/functions/**'
       - 'supabase/config.toml'
       - '.github/workflows/deploy-edge-functions.yml'
+  # Manual full redeploy of every function from main, started from the
+  # Actions tab. For when a push run failed before deploying and the fix
+  # that followed did not itself touch every function that needed to go out.
+  # A dispatch has no "before" commit, so the selection step below deploys
+  # everything.
+  workflow_dispatch:
 
 permissions:
   contents: read
