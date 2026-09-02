@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { CONNECTION_DROPPED_MESSAGE, startAnalysis, type AnalysisInvokeOutcome } from '@/lib/analysisStart'
 import type { Check, CheckLedgerEntry, CheckWithFeedback, Feedback, KeywordScanResult, PackId, Profile } from '@/types'
 
 /**
@@ -25,6 +26,7 @@ function extensionForMimeType(mimeType: string): string {
  * silently replaced by that generic string. This recovers it.
  */
 async function resolveFunctionError(error: unknown): Promise<Error> {
+  if (isTransportFailure(error)) return new Error(CONNECTION_DROPPED_MESSAGE)
   const context = (error as { context?: unknown } | null)?.context
   if (context instanceof Response) {
     try {
@@ -35,6 +37,21 @@ async function resolveFunctionError(error: unknown): Promise<Error> {
     }
   }
   return error instanceof Error ? error : new Error('Something went wrong')
+}
+
+/**
+ * supabase-js raises FunctionsFetchError when fetch itself rejects: the
+ * request produced no response at all (signal lost, tab suspended, the
+ * connection closed mid-flight). Its message, "Failed to send a request to
+ * the Edge Function", was reaching users verbatim.
+ */
+function isTransportFailure(error: unknown): boolean {
+  return (error as { name?: unknown } | null)?.name === 'FunctionsFetchError'
+}
+
+function httpStatus(error: unknown): number | null {
+  const context = (error as { context?: unknown } | null)?.context
+  return context instanceof Response ? context.status : null
 }
 
 export interface DraftCheckUpdate {
@@ -267,13 +284,50 @@ export async function replaceDraftCv(
   return mapCheck(data as Check)
 }
 
+/**
+ * Resolves once the server has accepted the check, not once the analysis has
+ * finished. analyze-check holds its response until the CV is parsed and the
+ * model has answered, easily a minute, and a phone on a weak signal (or a
+ * tab iOS suspends) drops a request that long. The server carries on and
+ * completes the check regardless, so the old "wait for the response" model
+ * left the user staring at a raw transport error on the form while their
+ * result quietly landed in the database. See analysisStart.ts for the exact
+ * rules; the results page polls for the outcome from there.
+ */
 export async function analyzeCheck(checkId: string): Promise<void> {
+  await startAnalysis({
+    invoke: () => invokeAnalyzeCheck(checkId),
+    getStatus: () => getCheckStatus(checkId),
+    sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  })
+}
+
+async function invokeAnalyzeCheck(checkId: string): Promise<AnalysisInvokeOutcome> {
   const { data, error } = await supabase.functions.invoke('analyze-check', {
     body: { checkId },
   })
 
-  if (error) throw await resolveFunctionError(error)
-  if (data?.error) throw new Error(String(data.error))
+  if (error) {
+    if (isTransportFailure(error)) return { kind: 'transport-failure' }
+    // reserve_check_analysis answers 409 when the check is already processing
+    // or already completed. Either way the results page is the right place
+    // to be, so this is not an error to show, it is a check to go and look at.
+    if (httpStatus(error) === 409) return { kind: 'already-started' }
+    return { kind: 'rejected', error: await resolveFunctionError(error) }
+  }
+  if (data?.error) return { kind: 'rejected', error: new Error(String(data.error)) }
+  return { kind: 'accepted' }
+}
+
+async function getCheckStatus(checkId: string): Promise<Check['status'] | null> {
+  const { data, error } = await supabase
+    .from('checks')
+    .select('status')
+    .eq('id', checkId)
+    .maybeSingle()
+
+  if (error) throw error
+  return data?.status ?? null
 }
 
 /**

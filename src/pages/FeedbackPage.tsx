@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { Alert } from '@/components/ui/Alert'
@@ -26,6 +26,16 @@ import {
 } from '@/services/checkService'
 import type { CheckWithFeedback } from '@/types'
 import { cn } from '@/utils/cn'
+
+// A check now arrives here while the server is still working on it: the New
+// Check page navigates as soon as analyze-check has accepted the job rather
+// than holding one long request open (see analysisStart.ts). So the page
+// polls for the outcome instead of asking the user to refresh.
+const RESULT_POLL_MS = 3000
+// reserve_check_analysis treats a 'processing' row as stale after 10 minutes
+// and the cron sweep flips anything older than 12 to 'failed', so there is
+// nothing left to wait for past this point.
+const RESULT_POLL_MAX_MS = 13 * 60 * 1000
 
 function lowerFirstClause(text: string): string {
   const trimmed = text.trim().replace(/[.!?]+$/, '')
@@ -92,6 +102,8 @@ export function FeedbackPage() {
   const [documents, setDocuments] = useState<GeneratedDocuments | null>(null)
   const [generatingDocs, setGeneratingDocs] = useState(false)
   const [documentsError, setDocumentsError] = useState<string | null>(null)
+  const [pollExpired, setPollExpired] = useState(false)
+  const feedbackViewedRef = useRef(false)
 
   useEffect(() => {
     async function loadCheck() {
@@ -104,7 +116,6 @@ export function FeedbackPage() {
           return
         }
         setCheck(data)
-        if (data.feedback) trackEvent('feedback_viewed')
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Could not load feedback')
       } finally {
@@ -114,6 +125,40 @@ export function FeedbackPage() {
 
     void loadCheck()
   }, [id])
+
+  // Feedback can be there on first load or turn up a few polls later; either
+  // way it counts as viewed exactly once per visit.
+  useEffect(() => {
+    if (!check?.feedback || feedbackViewedRef.current) return
+    feedbackViewedRef.current = true
+    trackEvent('feedback_viewed')
+  }, [check?.feedback])
+
+  useEffect(() => {
+    if (!id || check?.status !== 'processing' || pollExpired) return
+
+    let cancelled = false
+    const startedAt = Date.now()
+    const timer = setInterval(() => {
+      if (Date.now() - startedAt > RESULT_POLL_MAX_MS) {
+        setPollExpired(true)
+        return
+      }
+      getCheckWithFeedback(id)
+        .then((data) => {
+          if (!cancelled && data) setCheck(data)
+        })
+        .catch(() => {
+          // A single failed poll (a flaky signal, most likely) is not worth
+          // an error banner; the next tick simply tries again.
+        })
+    }, RESULT_POLL_MS)
+
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+    }
+  }, [id, check?.status, pollExpired])
 
   async function handleRetry() {
     if (!id) return
@@ -308,7 +353,13 @@ export function FeedbackPage() {
           </Alert>
         ) : null}
 
-        {check.status === 'processing' || check.status === 'draft' ? (
+        {check.status === 'processing' ? (
+          <Alert variant="info" className="mt-5">
+            {pollExpired
+              ? 'Your check is taking longer than usual. Refresh this page in a moment.'
+              : 'Your check is being reviewed. Results usually appear within a minute, and this page updates on its own.'}
+          </Alert>
+        ) : check.status === 'draft' ? (
           <Alert variant="info" className="mt-5">
             Your check is still being reviewed. Refresh this page in a moment.
           </Alert>
