@@ -4,9 +4,20 @@
  * entries are fully fictional illustrations of what the real Feedback page
  * and generate-documents function produce — no production data, no database
  * query, no OpenAI call. The 'software-engineer' entry is the exception: its
- * score, strengths, improvements, and prospects are the genuine output of a
- * real check run against this same CV and job description (Alex Morgan,
- * Software Engineer) through the actual scoring pipeline.
+ * score, strengths, improvement finding and evidence, and prospects are the
+ * genuine output of a real check run against this same CV and job
+ * description (Alex Morgan, Software Engineer) through the actual scoring
+ * pipeline. Its sample wording line was rewritten by hand when the product
+ * moved from placeholder style examples to fictional "Sample wording" CV
+ * bullets (analyze-check prompt v6), so the preview shows what a check
+ * produces today.
+ *
+ * Every improvement ends in a "Sample wording:" clause, the same stored
+ * shape the Feedback page renders (see src/lib/feedbackText.ts), so the
+ * landing preview and a real report can never drift apart in format. The
+ * sample bullets follow the product's own rules: one complete fictional CV
+ * bullet, past tense, digits for every number, no placeholders, no second
+ * person.
  *
  * No target employer is named anywhere in these documents. An invented
  * company in the salutation of a cover letter reads, at a glance, like a
@@ -53,7 +64,7 @@ export const ROLE_EXAMPLES: readonly RoleExample[] = [
       'Effective cross team collaboration. Your ability to coordinate across teams during architecture migrations highlights your strong communication skills.',
     ],
     improvements: [
-      'Quantify your impact. While you mention improving checkout API performance, providing specific metrics would strengthen your application. Example: Consider adding details like the percentage increase in performance or reduction in response time.',
+      'Quantify your impact. While you mention improving checkout API performance, providing specific metrics would strengthen your application. Sample wording: Cut checkout API p95 latency from 820 ms to 310 ms by adding a Redis cache for cart lookups and batching 3 downstream calls, lifting checkout completion by 4%.',
     ],
     prospects: [
       'Your CV shows strong documented evidence for 3+ years of professional software engineering experience.',
@@ -68,12 +79,12 @@ export const ROLE_EXAMPLES: readonly RoleExample[] = [
     scoreWidthClass: 'w-[76%]',
     tier: 'improve',
     strengths: [
-      'Hands on model delivery. Shipped two production ML models at your current role, which is exactly the kind of end-to-end delivery this job description is screening for.',
+      'Hands on model delivery. Shipped two production ML models at your current role, which is exactly the kind of end to end delivery this job description is screening for.',
       'Right tooling background. Your CV lists PyTorch, MLflow and the same cloud stack named in the job description.',
     ],
     improvements: [
-      "Show cross functional collaboration. The role asks for close work with product and data engineering, but your CV only describes solo model-building. Example: Partnered with data engineering to productionise the recommendation model behind a 12% lift in click-through rate.",
-      "Quantify model impact. You describe what the models do but not what changed because of them. Example: Reduced fraud false-positive rate from 4.1% to 1.6% after retraining on the new feature set.",
+      'Show cross functional collaboration. The role asks for close work with product and data engineering, but your CV only describes solo model building. Sample wording: Partnered with 2 data engineers to productionise the recommendation model in Airflow and MLflow, delivering a 12% lift in click through rate across 3 markets.',
+      'Quantify model impact. You describe what the models do but not what changed because of them. Sample wording: Reduced the fraud model false positive rate from 4.1% to 1.6% by retraining in PyTorch on 14 new features, saving the review team 30 hours a week.',
     ],
     prospects: [
       'Solid candidate for mid level ML engineering roles once impact is quantified.',
@@ -88,17 +99,17 @@ export const ROLE_EXAMPLES: readonly RoleExample[] = [
     scoreWidthClass: 'w-[71%]',
     tier: 'improve',
     strengths: [
-      'Solid analytical foundation. Three years running A/B tests and building forecasting models lines up with what Harbor Analytics wants for this role.',
+      'Solid analytical foundation. Three years running A/B tests and building forecasting models lines up with what this role asks for.',
       'Clear tooling match. SQL, Python and dbt all appear on your CV and all appear in the job description.',
     ],
     improvements: [
-      "Lead with business outcomes, not methods. Your bullet points describe techniques used (regression, clustering) rather than what changed for the business. Example: Built a churn model that flagged at risk accounts 3 weeks earlier, reducing churn by 9%.",
-      "Show stakeholder communication. The job description asks for someone who can present findings to non technical teams, but nothing on your CV shows that. Example: Presented quarterly retention analysis to the executive team, shaping the Q3 roadmap.",
-      'Tighten your summary. It reads as a general data analyst summary rather than one focused on the modeling work this role needs.',
+      'Lead with business outcomes, not methods. Your bullet points describe techniques used (regression, clustering) rather than what changed for the business. Sample wording: Built a churn model in Python that flagged at risk accounts 3 weeks earlier, cutting monthly churn by 9% across 40,000 subscribers.',
+      'Show stakeholder communication. The job description asks for someone who can present findings to non technical teams, but nothing on your CV shows that. Sample wording: Presented quarterly retention analysis to 6 executives and 2 product leads, reshaping the Q3 roadmap around 2 at risk segments.',
+      'Tighten your summary. It reads as a general data analyst summary rather than one focused on the modeling work this role needs. Sample wording: Data scientist with 3 years building forecasting and churn models in Python and SQL, including 5 A/B tests that changed pricing for 120,000 customers.',
     ],
     prospects: [
       'Reasonable candidate for mid level data science roles once outcomes are foregrounded.',
-      'Needs stronger evidence of stakeholder-facing work to clear this specific bar.',
+      'Needs stronger evidence of stakeholder facing work to clear this specific bar.',
     ],
   },
   {
@@ -112,9 +123,9 @@ export const ROLE_EXAMPLES: readonly RoleExample[] = [
       'Strong academic foundation. Your degree project and two internship placements show real exposure to SQL and dashboarding tools before this application.',
     ],
     improvements: [
-      "Show any measurable outcome. Every bullet describes a task (built dashboards, cleaned data) with no result attached. Example: Rebuilt the weekly sales dashboard, cutting reporting time from 3 hours to 20 minutes.",
-      "This role asks for 2+ years of stakeholder-facing analytics experience. Your CV shows academic and internship work only, which is a real gap the job post is explicit about, not something phrasing can fix.",
-      'Add tool depth. The job description names Looker and dbt specifically; neither appears anywhere on your CV.',
+      'Show any measurable outcome. Every bullet describes a task (built dashboards, cleaned data) with no result attached. Sample wording: Rebuilt the weekly sales dashboard in Power BI, cutting reporting time from 3 hours to 20 minutes for a team of 5.',
+      'Address the experience gap directly. This role asks for 2+ years of stakeholder facing analytics experience and your CV shows academic and internship work only, which is a real gap the job post is explicit about. Sample wording: Analysed 8 months of order data in SQL during a logistics internship and presented 3 recommendations to the operations manager, 2 of which were adopted.',
+      'Add tool depth. The job description names Looker and dbt specifically; neither appears anywhere on your CV. Sample wording: Built 4 Looker dashboards on dbt models for a university capstone, tracking 12 KPIs for a student run cafe over 2 semesters.',
     ],
     prospects: [
       'Better matched to entry level or associate analyst roles than this specific posting.',
@@ -132,12 +143,12 @@ export const ROLE_EXAMPLES: readonly RoleExample[] = [
       'Relevant coursework and a self built pipeline project show genuine interest and some hands on exposure to the tools this role uses.',
     ],
     improvements: [
-      "The job description asks for production experience with Airflow and Spark at scale. Your CV shows one class project using both, which is a real seniority gap for this specific posting.",
-      'No professional experience listed. Internships, freelance work, or open-source contributions would all help establish credibility here, even outside a full time role.',
-      "Quantify the project you do have. Example: Built an Airflow pipeline processing 2M records daily for a course project, with 99% uptime over the semester.",
+      'Show production scale evidence. The job description asks for production experience with Airflow and Spark at scale, and your CV shows one class project using both, which is a real seniority gap for this specific posting. Sample wording: Ran a nightly Spark job on a 4 node cluster over 2 million rows for a course project, scheduled and monitored in Airflow with alerts on 3 failure types.',
+      'Add professional experience of any kind. No professional experience is listed; internships, freelance work or open source contributions would all establish credibility, even outside a full time role. Sample wording: Contributed 3 merged pull requests to an open source dbt package, adding tests for 2 macros used by 400 downstream projects.',
+      'Quantify the project you do have. The pipeline project lists tools but no volume, duration or reliability figures. Sample wording: Built an Airflow pipeline loading 150,000 records a day into Postgres over a 10 week semester, with 2 failed runs caught and reprocessed.',
     ],
     prospects: [
-      'Better matched to internship or new-grad-labeled data engineering roles than this posting, which is scoped for an experienced hire.',
+      'Better matched to internship or new grad labeled data engineering roles than this posting, which is scoped for an experienced hire.',
       'The underlying skills are on the right track; the CV just needs a role at the right level to land an interview.',
     ],
   },

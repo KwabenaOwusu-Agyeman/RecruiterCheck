@@ -2,6 +2,7 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { FeedbackBullet } from '@/components/feedback/FeedbackBullet'
 import { ScoreLockup } from '@/components/feedback/ScoreLockup'
 import { type RoleExample } from '@/features/landing/data/exampleCheck'
+import { FICTIONAL_SAMPLE_NOTICE, hasSampleWording } from '@/lib/feedbackText'
 import { cn } from '@/utils/cn'
 
 const TEXT_TONE: Record<'light' | 'dark' | 'ink' | 'muted', 'light' | 'dark'> = {
@@ -119,6 +120,20 @@ export function VerdictCard({ example, tone = 'light', compact = false, stacked 
             <h3 className={cn('text-sm font-semibold', isDarkText ? 'text-white' : 'text-text-primary')}>
               Areas to Improve
             </h3>
+            {/* The same once per card notice the real Feedback page shows
+                above its sample wording. Hidden on phones in compact mode,
+                where the sample line itself is hidden too. */}
+            {improvements.some(hasSampleWording) ? (
+              <p
+                className={cn(
+                  'mt-1 text-xs leading-snug',
+                  compact ? 'hidden sm:block' : 'block',
+                  isDarkText ? 'text-white/55' : 'text-text-secondary',
+                )}
+              >
+                {FICTIONAL_SAMPLE_NOTICE}
+              </p>
+            ) : null}
             <ul className="mt-2 space-y-3">
               {improvements.map((item) => (
                 <FeedbackBullet key={item} text={item} tone={textTone} compact={compact} />
