@@ -125,3 +125,11 @@ verify_jwt = false
 # exactly as send-password-changed-email does.
 [functions.brevo-unsubscribe-webhook]
 verify_jwt = false
+
+# Meant to be invoked by pg_cron through pg_net with an x-cron-secret header,
+# which the function checks itself and fails closed on when CRON_INVOKE_SECRET
+# is unset. Deployed to production with verify_jwt off since 2026-08-28; this
+# entry records that so a redeploy keeps it. Not scheduled yet, see the
+# function's header comment.
+[functions.reconcile-ambiguous-refunds]
+verify_jwt = false

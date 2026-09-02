@@ -153,6 +153,9 @@ test('no other function had its verify_jwt setting changed', () => {
     'instagram-oauth-callback': 'false',
     'instagram-mcp': 'false',
     'brevo-unsubscribe-webhook': 'false',
+    // pg_cron target authenticated by its own x-cron-secret check, which
+    // fails closed when the secret is unset. See its index.ts header.
+    'reconcile-ambiguous-refunds': 'false',
   }
   const found: Record<string, string> = {}
   for (const m of config.matchAll(/\[functions\.([a-z-]+)\]\s*\nverify_jwt\s*=\s*(true|false)/g)) {
