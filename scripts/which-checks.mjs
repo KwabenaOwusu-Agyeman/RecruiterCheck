@@ -54,6 +54,18 @@ const RULES = [
             'never against the hosted site. Do not add a browser framework without asking.'],
   },
   {
+    id: 'admin',
+    when: () => has(/^admin\//),
+    label: 'Admin dashboard change',
+    checks: ['npm run test:admin', 'cd admin && npm run lint', 'cd admin && npm run typecheck',
+             'cd admin && npm run build', 'git diff review'],
+    notes: ['The admin app is a separate Vercel project with its own package.json;',
+            'its lint, typecheck and build do not run from the repo root.',
+            'It reads production data with the service role, so any change to',
+            'src/server/ is a mandatory security review, not a discretionary one.',
+            'MANUAL CHECK REQUIRED: no browser test tooling exists for it either.'],
+  },
+  {
     id: 'edge',
     when: () => has(/^supabase\/functions\//),
     label: 'Supabase Edge Function change',

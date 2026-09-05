@@ -28,7 +28,14 @@ export default tseslint.config(
     //                    request-refund). Excluded from lint, but do not treat
     //                    it as dead: price-config.ts contains the Stripe
     //                    test/live key guard that was never shipped.
+    //   admin            a separate Next.js app with its own package.json and
+    //                    its own Next-aware ESLint config. This config's
+    //                    react-refresh rules misjudge server components, and
+    //                    its browser globals do not describe a server runtime.
+    //                    Lint it with `cd admin && npm run lint`, which
+    //                    which-checks.mjs already selects for admin changes.
     ignores: [
+      'admin/**',
       'dist',
       'dist-ssr',
       '.agents/**',

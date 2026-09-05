@@ -1,0 +1,10 @@
+# Never upload local secrets as deployment source. The real values are set as
+# encrypted environment variables on the project; a plaintext copy in the build
+# context would be a second, needless place for the service role key to live.
+.env
+.env.*
+
+node_modules
+.next
+.vercel
+*.tsbuildinfo

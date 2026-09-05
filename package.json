@@ -13,6 +13,7 @@
     "test:unit": "node scripts/run-tests.mjs --filter=src/",
     "test:scoring": "node scripts/run-tests.mjs --filter=scoring,analyze-check",
     "test:edge": "node scripts/run-tests.mjs --filter=supabase/functions",
+    "test:admin": "node scripts/run-tests.mjs --filter=admin/",
     "test:mutation": "node scripts/mutation-check.mjs",
     "verify": "npm run lint && npm run typecheck && npm test",
     "checks": "node scripts/which-checks.mjs"
