@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { currentPageContext } from '@/lib/attribution'
 
 export type AnalyticsEventType =
   | 'job_input_paste_selected'
@@ -73,9 +74,29 @@ function diagnosticsEnabled(): boolean {
 // the request. Chaining .then() here is what makes the insert actually
 // fire, while still not awaiting or throwing into the caller.
 export function trackEvent(eventType: AnalyticsEventType, domainCategory?: DomainCategory): void {
+  // Page context is read here rather than passed by each caller, so all 26 call
+  // sites gain it without changing, and none can forget it. It also fixes the
+  // specific gap that made SEO reporting impossible: `landing_view` is fired
+  // identically by LandingPage and by all 23 SeoLandingPage routes, so without
+  // a path every one of them was indistinguishable from the others.
+  //
+  // The UTM values are those on the URL at the moment of the event, so they are
+  // populated on events fired on a campaign-tagged landing URL and null on
+  // events fired after a client-side navigation has dropped the query string.
+  // That is the intended reading: the campaign is credited where it landed.
+  const context = currentPageContext()
+
   supabase
     .from('analytics_events')
-    .insert({ event_type: eventType, domain_category: domainCategory ?? null })
+    .insert({
+      event_type: eventType,
+      domain_category: domainCategory ?? null,
+      page_path: context.pagePath,
+      utm_source: context.utm.source,
+      utm_medium: context.utm.medium,
+      utm_campaign: context.utm.campaign,
+      referrer_host: context.referrerHost,
+    })
     .then(({ error }) => {
       if (error && diagnosticsEnabled()) {
         // Never the payload/row itself — only the event name and Postgrest's

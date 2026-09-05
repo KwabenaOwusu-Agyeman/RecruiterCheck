@@ -13,6 +13,15 @@ const SECTIONS: { title: string; items: { href: string; label: string }[] }[] = 
     items: [{ href: '/', label: 'Overview' }],
   },
   {
+    title: 'Marketing',
+    items: [
+      { href: '/acquisition', label: 'Acquisition' },
+      { href: '/content', label: 'Content' },
+      { href: '/audience', label: 'Audience' },
+      { href: '/email', label: 'Email' },
+    ],
+  },
+  {
     title: 'Customers',
     items: [
       { href: '/users', label: 'Users' },

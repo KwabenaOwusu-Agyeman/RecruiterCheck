@@ -11,6 +11,7 @@ import {
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { getProfile } from '@/services/checkService'
+import { recordAcquisitionOnce } from '@/services/attributionService'
 import { triggerWelcomeEmailOnce } from '@/services/welcomeEmailService'
 import type { Profile } from '@/types'
 
@@ -72,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false)
       void loadProfile(nextSession.user.id)
       triggerWelcomeEmailOnce(nextSession.user.id)
+      recordAcquisitionOnce(nextSession.user.id)
     },
     [loadProfile],
   )
@@ -96,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // app), not just fresh sign-in/verification — the edge function's
         // own idempotent claim makes this a cheap no-op once already sent.
         triggerWelcomeEmailOnce(data.session.user.id)
+        recordAcquisitionOnce(data.session.user.id)
       }
 
       setLoading(false)
@@ -118,6 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Not awaited, for the same reason as init() above.
         void loadProfile(nextSession.user.id)
         triggerWelcomeEmailOnce(nextSession.user.id)
+        recordAcquisitionOnce(nextSession.user.id)
       } else {
         setProfile(null)
       }

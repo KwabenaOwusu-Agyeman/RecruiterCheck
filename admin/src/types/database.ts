@@ -182,21 +182,36 @@ export type Database = {
           domain_category: string | null
           event_type: string
           id: string
+          page_path: string | null
+          referrer_host: string | null
           user_id: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
         }
         Insert: {
           created_at?: string
           domain_category?: string | null
           event_type: string
           id?: string
+          page_path?: string | null
+          referrer_host?: string | null
           user_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Update: {
           created_at?: string
           domain_category?: string | null
           event_type?: string
           id?: string
+          page_path?: string | null
+          referrer_host?: string | null
           user_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Relationships: [
           {
@@ -933,6 +948,12 @@ export type Database = {
       }
       profiles: {
         Row: {
+          acquisition_campaign: string | null
+          acquisition_captured_at: string | null
+          acquisition_landing_path: string | null
+          acquisition_medium: string | null
+          acquisition_referrer_host: string | null
+          acquisition_source: string | null
           checks_balance: number
           created_at: string
           email: string
@@ -944,6 +965,12 @@ export type Database = {
           welcome_email_sent_at: string | null
         }
         Insert: {
+          acquisition_campaign?: string | null
+          acquisition_captured_at?: string | null
+          acquisition_landing_path?: string | null
+          acquisition_medium?: string | null
+          acquisition_referrer_host?: string | null
+          acquisition_source?: string | null
           checks_balance?: number
           created_at?: string
           email: string
@@ -955,6 +982,12 @@ export type Database = {
           welcome_email_sent_at?: string | null
         }
         Update: {
+          acquisition_campaign?: string | null
+          acquisition_captured_at?: string | null
+          acquisition_landing_path?: string | null
+          acquisition_medium?: string | null
+          acquisition_referrer_host?: string | null
+          acquisition_source?: string | null
           checks_balance?: number
           created_at?: string
           email?: string

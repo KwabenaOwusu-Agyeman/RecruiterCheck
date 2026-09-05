@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { CaptureAttribution } from '@/components/CaptureAttribution'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { ScrollToTop } from '@/components/ScrollToTop'
 import { AuthProvider } from '@/hooks/useAuth'
@@ -129,6 +130,7 @@ export function App() {
     <AuthProvider>
       <BrowserRouter>
         <ScrollToTop />
+        <CaptureAttribution />
         <AppRoutes />
       </BrowserRouter>
     </AuthProvider>
