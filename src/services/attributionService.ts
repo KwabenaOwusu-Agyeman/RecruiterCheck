@@ -16,6 +16,14 @@ import { readFirstTouch } from '@/lib/attribution'
  * confirming by email, and returning later. The `is null` filter means every
  * call after the first matches no rows.
  *
+ * Because it runs on ANY session start, it is also filtered to accounts created
+ * at or after the visit being credited. Without that, a long-standing customer
+ * who clicks a campaign link once would have that campaign written as their
+ * first touch, crediting it with an acquisition that happened months earlier.
+ * The window is what makes "first touch" mean the visit that actually produced
+ * the signup. This was caught by a verification run that credited a real
+ * account to a synthetic test campaign.
+ *
  * Three layers stop this being rewritable, which matters because the values
  * are client-supplied and attribution that can be changed at will is not
  * evidence of anything:
@@ -52,6 +60,9 @@ export function recordAcquisitionOnce(userId: string): void {
     })
     .eq('id', userId)
     .is('acquisition_captured_at', null)
+    // Only credit a visit that preceded the account. An older account clicking
+    // a campaign link is a returning customer, not an acquisition.
+    .gte('created_at', firstTouch.capturedAt)
     .then(() => {
       // Intentionally silent, success or failure alike. See the doc comment.
     })
