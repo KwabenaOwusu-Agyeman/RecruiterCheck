@@ -23,9 +23,17 @@ deploying every function rather than narrowing: a redeploy of an unchanged
 function is a slow no-op, while skipping one that needed to go out is invisible.
 
 How to prevent recurrence
-After any merge that touches `supabase/functions/**`, confirm the function's
-version actually moved with `supabase functions list`, rather than trusting a
-green run. A green run can mean "deployed nothing". When a run fails before
+After any merge that touches `supabase/functions/**`, confirm the run's log
+actually contains a `Deploying <function>` line for the function you expect. A
+green run can mean "deployed nothing", because the deploy job is skipped when
+the selection is empty.
+
+Do not use the version number from `supabase functions list` as that check. It
+is a weaker signal than it looks: Supabase does not bump the version when the
+deployed bundle is unchanged, so a genuine redeploy can leave the version and
+UPDATED_AT untouched. Observed on 2026-09-06, when a run that logged
+`Deploying brevo-stats` left it on version 2. The version moving proves a
+deploy happened; it not moving proves nothing either way. When a run fails before
 deploying and the fix does not touch every affected directory, use the manual
 `workflow_dispatch` full redeploy, which CLAUDE.md already documents.
 
