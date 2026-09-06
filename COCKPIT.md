@@ -47,6 +47,43 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-06 — `git push` now reaches both remotes
+
+**Objective.** Make the Git section's "when main is pushed it goes to both"
+true. It was not.
+
+**Completed.**
+- `origin` now carries two push URLs, `fullcircleAI/RecruiterCheck` and
+  `KwabenaOwusu-Agyeman/RecruiterCheck`, set with
+  `git remote set-url --add --push`. A single `git push` reaches both.
+- Both remotes brought level at `abdbc82`.
+
+**Verified.** `git push` printed two `To ...` blocks. The second remote
+fast-forwarded `b9dfba3..abdbc82`, three commits, with no rejection, so the
+two repositories were behind rather than diverged.
+
+**What was wrong before.** `origin` and `personal` were separate remotes with
+one push URL each, so a plain `git push` only ever reached
+`fullcircleAI/RecruiterCheck`. `personal` had been silently falling behind, and
+`CLAUDE.md` described a workflow the configuration did not implement. This is
+invisible in the code: it cost a session's confusion when a container cloned
+`KwabenaOwusu-Agyeman/RecruiterCheck` and correctly reported that committed
+work was absent from it. If a push ever reaches only one remote again, check
+`git remote -v` for two `(push)` lines on `origin` first. Adding a push URL
+replaces the implicit default, so both must be listed explicitly.
+
+**Blockers.** None.
+
+**Founder action required.** None.
+
+**Next technical step.** None. `personal` remains a second remote for fetching;
+only the push path changed.
+
+**Commit / PR.** Local Git configuration, not a commit. Recorded here because
+nothing in the repository carries it.
+
+---
+
 ## 2026-09-06 — Memory system audit, five documentation fixes
 
 **Objective.** Audit the cockpit and memory system against its own goals, then
