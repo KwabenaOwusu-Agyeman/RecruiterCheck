@@ -137,6 +137,11 @@ test('config.toml turns the gateway JWT check off for stripe-webhook', () => {
 test('no other function had its verify_jwt setting changed', () => {
   const EXPECTED: Record<string, string> = {
     'analyze-check': 'true',
+    // Read-only Brevo proxy for the admin dashboard. Its own check decodes the
+    // role claim without verifying the signature, so it is only sound while the
+    // gateway verifies it first; pinned here rather than left to the CLI
+    // default so an automated deploy cannot quietly turn that off.
+    'brevo-stats': 'true',
     'create-checkout-session': 'true',
     // The browser extension redeems a connect code before it has a session,
     // so there is no JWT to present; the function authenticates the code
