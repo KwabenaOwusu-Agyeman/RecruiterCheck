@@ -47,6 +47,46 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-06 — Memory system audit, five documentation fixes
+
+**Objective.** Audit the cockpit and memory system against its own goals, then
+close the defects the audit found.
+
+**Completed.**
+- `CLAUDE.md` report format: `NOT PUSHED` and `NOT DEPLOYED` replaced by
+  `PUSHED`, `MERGED` and `DEPLOYED`, which state what happened. The old footer
+  contradicted the Git section, so a merge that deployed an Edge Function was
+  reported as deploying nothing.
+- `CLAUDE.md` Git section: staging named paths is now a rule, `git add -A` and
+  `git add .` are forbidden by name, with the `06d16bf` incident cited.
+- `CLAUDE.md` source of truth: links to Notion HQ, Product and Pricing (the
+  approved current product specification), Product Roadmap and Decision Log.
+  Levels 2 and 4 of the hierarchy were named but unreachable, so a session
+  fell back to levels 5 and 6.
+- `CLAUDE.md` working memory: the `COCKPIT.md` field list is now explicit, and
+  moving founder-blocking items to Open items is a step.
+- `COCKPIT.md`: Open items block added at the top; the historical pointer now
+  records that the Part A keyword scan work shipped.
+
+**Verified.** Documentation only. Diff was 58 insertions and 5 deletions across
+two files, the five deletions being the reworded step lines and the two footer
+lines. No application code, tooling, configuration or scoring logic changed.
+`admin/**` matrix row confirmed against the `admin` rule in
+`scripts/which-checks.mjs`; it documents existing behaviour.
+
+**Blockers.** None.
+
+**Founder action required.** None from this work. See Open items.
+
+**Next technical step.** None outstanding. The audit's remaining observations
+were deliberately not acted on: the historical `PART_A_*` files and `review/`
+stay unmodified, and `README.md` still describes an older stack than
+`CLAUDE.md`.
+
+**Commit / PR.** `59d1ac2`, staged as named paths.
+
+---
+
 ## 2026-09-06 — Marketing reporting, Brevo proxy, deploy base corrected
 
 **Objective.** Add marketing reporting to the Admin Dashboard, and stop the
@@ -114,4 +154,5 @@ sessions, without duplicating Notion HQ.
 **Next technical step.** At the end of the next piece of implementation work,
 add an entry here using the fields above.
 
-**Commit / PR.** _to fill on commit_
+**Commit / PR.** `06d16bf`, which also carried unrelated marketing work. See
+the correction in the entry above.
