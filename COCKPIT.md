@@ -25,6 +25,45 @@ current status record. This file is.
 
 ---
 
+## 2026-09-06 — Marketing reporting, Brevo proxy, deploy base corrected
+
+**Objective.** Add marketing reporting to the Admin Dashboard, and stop the
+Edge Function workflow silently skipping functions after a failed run.
+
+**Completed.**
+- Acquisition attribution in the SPA: `src/lib/attribution.ts` (first touch in
+  `localStorage`, UTM and referrer host only), `src/components/CaptureAttribution.tsx`,
+  `src/services/attributionService.ts`. `trackEvent` now records `page_path`, so
+  `landing_view` is per page rather than identical across all 23 SEO routes.
+- Migration `20260905140000_acquisition_attribution.sql`: nullable columns on
+  `analytics_events` and `profiles`, plus `protect_profile_acquisition_fields`
+  making the acquisition columns write once. `handle_new_user` untouched.
+- Admin routes `/acquisition`, `/content`, `/audience`, `/email` with
+  `admin/src/server/metrics/marketing.ts`. `analytics_events` now has a reader.
+- `supabase/functions/brevo-stats/`: read-only Brevo proxy so `BREVO_API_KEY`
+  stays only in Supabase secrets. The admin app holds no Brevo credential.
+  `verify_jwt = true` pinned in `config.toml` and recorded in the guard map in
+  `stripe-webhook/index.test.ts`.
+- `.github/workflows/deploy-edge-functions.yml` now diffs against the last
+  successful run rather than `github.event.before`. See
+  `memory/2026-09-06-deploy-base-was-previous-commit.md`.
+
+**Verified.** `test:edge` 19/19 files, 314 assertions. `test:admin` 7/7, 96.
+`test:unit` 12/12, 164. Build reports 52 CSP hashes unchanged. Deployed
+`brevo-stats` returns real figures (22 delivered, 14 unique opens) and rejects
+an absent header, the anon key and a forged `service_role` token with 401.
+
+**Not done.** `STRIPE_SECRET_KEY` is still unset, so Payments shows
+"Not reconciled against Stripe". Acquisition data begins 2026-09-05; earlier
+accounts cannot be attributed.
+
+**Correction made in this session.** Commit `06d16bf` also carried `CLAUDE.md`,
+`COCKPIT.md` and `memory/README.md`, which were unrelated working tree changes
+swept in by `git add -A`. Nothing sensitive, but the commit message does not
+describe them.
+
+---
+
 ## 2026-09-06 — Cockpit and memory system installed
 
 **Objective.** Give Claude Code a small technical memory that survives between
