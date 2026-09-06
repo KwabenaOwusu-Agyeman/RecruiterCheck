@@ -13,7 +13,6 @@
 import {
   brevoPathFor,
   isServiceRoleToken,
-  matchesServiceRoleKey,
   parseAction,
   shapeCampaigns,
   shapeList,
@@ -36,16 +35,11 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Method not allowed' }, 405)
   }
 
-  // Two checks, and the second is the one that matters. The claim decode is a
-  // cheap filter; proving the caller actually holds the service-role key is the
-  // gate, so authorisation does not depend on the gateway's verify_jwt default
-  // staying true. An ordinary signed-in customer presents a valid JWT and is
-  // rejected by both.
-  const authorization = req.headers.get('Authorization')
-  if (
-    !isServiceRoleToken(authorization) ||
-    !matchesServiceRoleKey(authorization, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
-  ) {
+  // The gateway has verified the signature (config.toml pins verify_jwt = true
+  // for this function), so this only has to decide whether the verified caller
+  // is the service role. An ordinary signed-in customer also presents a validly
+  // signed JWT and must not read company email figures.
+  if (!isServiceRoleToken(req.headers.get('Authorization'))) {
     return jsonResponse({ error: 'Unauthorized' }, 401)
   }
 

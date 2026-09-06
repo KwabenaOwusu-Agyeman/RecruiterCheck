@@ -50,6 +50,13 @@ enabled = false
 enabled = false
 file_size_limit = "10MiB"
 
+# Read-only Brevo proxy for the admin dashboard. Pinned explicitly rather than
+# left to the CLI default, because the function's own check decodes the role
+# claim without verifying the signature and is only sound while the gateway
+# verifies it first.
+[functions.brevo-stats]
+verify_jwt = true
+
 [functions.analyze-check]
 verify_jwt = true
 

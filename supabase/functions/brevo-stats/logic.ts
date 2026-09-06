@@ -16,17 +16,24 @@ export type BrevoAction = 'transactional' | 'list' | 'campaigns'
 const ACTIONS: readonly BrevoAction[] = ['transactional', 'list', 'campaigns']
 
 /**
- * Whether the caller presented a token SHAPED like a service-role JWT.
+ * Whether the caller presented a service-role JWT.
  *
- * This is a cheap pre-filter only, and is deliberately NOT the gate. It decodes
- * the payload without verifying the signature, so on its own it would accept a
- * forged unsigned token claiming role: service_role. It is safe here only
- * because callers must also pass matchesServiceRoleKey below.
+ * The signature is verified by the gateway, which config.toml pins explicitly
+ * to verify_jwt = true for this function rather than leaving it to the CLI
+ * default. That is what makes decoding the claim here sufficient: a token that
+ * reaches this code has already been proven to be signed by the project.
  *
- * purge-expired-uploads relies on a decode like this alone, which is sound
- * today because verify_jwt defaults to true for a function not listed in
- * config.toml. Resting a gate on an implicit default is not something to repeat
- * in new code.
+ * The check still has work to do, because an ordinary signed-in CUSTOMER also
+ * presents a validly signed JWT and must not be able to read the company's
+ * email performance. Same approach as purge-expired-uploads.
+ *
+ * An earlier version of this also compared the bearer token against
+ * SUPABASE_SERVICE_ROLE_KEY, on the theory that proving possession beat
+ * trusting a claim. It rejected the legitimate caller: the value injected into
+ * the function is not byte-identical to the key the dashboard authenticates
+ * with. Comparing against a value whose format this code cannot verify would
+ * have kept breaking on any key rotation, so the gate is the signature plus the
+ * claim, and the signature is pinned in config.
  */
 export function isServiceRoleToken(authorizationHeader: string | null): boolean {
   const match = (authorizationHeader ?? '').match(/^Bearer (.+)$/)
@@ -43,36 +50,6 @@ export function isServiceRoleToken(authorizationHeader: string | null): boolean 
   } catch {
     return false
   }
-}
-
-/**
- * Whether the presented bearer token IS the service-role key.
- *
- * This is the actual gate. Comparing against the key the function itself holds
- * proves the caller possesses it, rather than trusting an unverified claim
- * inside the token, so the check holds even if the gateway ever stopped
- * verifying signatures for this function.
- *
- * The comparison is constant time: a length-leaking or early-exit compare on a
- * secret lets an attacker recover it byte by byte from response timings.
- */
-export function matchesServiceRoleKey(
-  authorizationHeader: string | null,
-  serviceRoleKey: string | undefined,
-): boolean {
-  if (!serviceRoleKey) return false
-
-  const match = (authorizationHeader ?? '').match(/^Bearer (.+)$/)
-  if (!match) return false
-
-  const presented = match[1]
-  if (presented.length !== serviceRoleKey.length) return false
-
-  let difference = 0
-  for (let i = 0; i < presented.length; i += 1) {
-    difference |= presented.charCodeAt(i) ^ serviceRoleKey.charCodeAt(i)
-  }
-  return difference === 0
 }
 
 export function parseAction(value: unknown): BrevoAction | null {

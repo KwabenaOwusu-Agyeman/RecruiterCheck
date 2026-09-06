@@ -3,7 +3,6 @@ import assert from 'node:assert/strict'
 import {
   brevoPathFor,
   isServiceRoleToken,
-  matchesServiceRoleKey,
   parseAction,
   shapeCampaigns,
   shapeList,
@@ -59,52 +58,6 @@ test('a missing or malformed header is rejected', () => {
 
 test('a token whose payload is not JSON is rejected rather than throwing', () => {
   assert.equal(isServiceRoleToken('Bearer header.bm90LWpzb24.sig'), false)
-})
-
-const REAL_KEY = 'eyJhbGciOiJIUzI1NiJ9.service-role-key-stand-in.signature'
-
-test('the real gate accepts the exact service-role key', () => {
-  assert.equal(matchesServiceRoleKey(`Bearer ${REAL_KEY}`, REAL_KEY), true)
-})
-
-test('the real gate rejects a forged token that merely CLAIMS service_role', () => {
-  // This is the case the claim decode alone would let through. isServiceRoleToken
-  // accepts it, so without this second check an unsigned forgery would be
-  // authorised the moment verify_jwt was ever turned off for this function.
-  const forged = `Bearer ${tokenWith({ role: 'service_role' })}`
-  assert.equal(isServiceRoleToken(forged), true)
-  assert.equal(matchesServiceRoleKey(forged, REAL_KEY), false)
-})
-
-test('the real gate rejects a near-miss key', () => {
-  assert.equal(matchesServiceRoleKey(`Bearer ${REAL_KEY}x`, REAL_KEY), false)
-  assert.equal(matchesServiceRoleKey(`Bearer ${REAL_KEY.slice(0, -1)}`, REAL_KEY), false)
-  assert.equal(
-    matchesServiceRoleKey(`Bearer ${REAL_KEY.slice(0, -1)}X`, REAL_KEY),
-    false,
-  )
-})
-
-test('the real gate fails closed when the function holds no key', () => {
-  assert.equal(matchesServiceRoleKey(`Bearer ${REAL_KEY}`, undefined), false)
-  assert.equal(matchesServiceRoleKey(`Bearer ${REAL_KEY}`, ''), false)
-})
-
-test('the real gate rejects a missing or malformed header', () => {
-  assert.equal(matchesServiceRoleKey(null, REAL_KEY), false)
-  assert.equal(matchesServiceRoleKey('Basic ' + REAL_KEY, REAL_KEY), false)
-  assert.equal(matchesServiceRoleKey(REAL_KEY, REAL_KEY), false)
-})
-
-test('the comparison does not exit early on the first differing byte', () => {
-  // A compare that returns as soon as bytes differ leaks the key one character
-  // at a time through response timing. Same-length inputs differing at the
-  // first and last position must behave identically.
-  const differsFirst = 'X' + REAL_KEY.slice(1)
-  const differsLast = REAL_KEY.slice(0, -1) + 'X'
-  assert.equal(matchesServiceRoleKey(`Bearer ${differsFirst}`, REAL_KEY), false)
-  assert.equal(matchesServiceRoleKey(`Bearer ${differsLast}`, REAL_KEY), false)
-  assert.equal(differsFirst.length, differsLast.length)
 })
 
 test('parseAction accepts only the three read operations', () => {
