@@ -3,14 +3,28 @@
 # Scope, deliberately narrow:
 #   - runs only on a push to main that touches supabase/functions/**, the
 #     function settings in supabase/config.toml, or this file
-#   - deploys only the functions whose directories changed; a change under
-#     supabase/functions/_shared/, to supabase/config.toml or to this file
-#     deploys every function, since any of them may depend on it
+#   - deploys only the functions whose directories changed SINCE THE LAST
+#     SUCCESSFUL RUN of this workflow, not since the previous commit; a
+#     change under supabase/functions/_shared/, to supabase/config.toml or
+#     to this file deploys every function, since any of them may depend on it
 #   - never runs a database migration (no supabase db push) and never
 #     touches function secrets (no supabase secrets); both stay manual, see
 #     CLAUDE.md
 #   - fails closed: lint, typecheck and the Edge Function test suite must
 #     pass first, and a failed deploy fails the run
+#
+# Why the base is the last successful run rather than the previous commit.
+# Diffing against the previous commit loses work whenever a run fails. If a
+# run fails during validation and the commit that fixes it touches different
+# directories, the functions from the failed run are never selected again:
+# main carries the new code, production still runs the old, and nothing says
+# so. That happened on 2026-09-06 with brevo-stats, and only its version
+# number gave it away. Anchoring to the last SUCCESSFUL run means a failed
+# run's changes are simply included in the next one.
+#
+# Every failure path here widens to deploying everything rather than
+# narrowing. A redeploy of an unchanged function is a no-op that costs time;
+# skipping one that needed to go out is silent and is the thing being fixed.
 #
 # The frontend is not handled here. Vercel's GitHub integration already
 # builds every push to main and promotes it to production.
@@ -39,6 +53,8 @@ on:
 
 permissions:
   contents: read
+  # Required to look up the last successful run of this workflow.
+  actions: read
 
 # One production deploy at a time. Queued, not cancelled: cancelling a run
 # part way through could leave some functions on the new code and some on
@@ -62,23 +78,48 @@ jobs:
       - name: Check out main
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # The diff below needs the previous main commit as well.
+          # The diff below reaches back to the last successful run, which may
+          # be several commits ago, so the full history is needed.
           fetch-depth: 0
 
       - name: Work out which functions changed
         id: changed
         env:
-          BEFORE: ${{ github.event.before }}
+          EVENT: ${{ github.event_name }}
           AFTER: ${{ github.sha }}
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_FILE: deploy-edge-functions.yml
         run: |
           set -euo pipefail
           all=$(find supabase/functions -mindepth 1 -maxdepth 1 -type d ! -name '_shared' -printf '%f\n' | sort)
 
-          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
-            echo "No usable previous commit on main; deploying every function."
+          # The base is the commit this workflow last DEPLOYED from, i.e. the
+          # head of its last successful run. Not github.event.before: see the
+          # header comment for the failure that caused.
+          base=""
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            echo "Manual dispatch; deploying every function."
+          else
+            base=$(gh api \
+              "repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_FILE}/runs?branch=main&status=success&per_page=1" \
+              --jq '.workflow_runs[0].head_sha // empty' 2>/dev/null || true)
+
+            if [ -z "$base" ]; then
+              echo "No previous successful run found; deploying every function."
+            elif ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+              # A force push or a rewritten history can leave that commit
+              # unreachable. Deploy everything rather than guess.
+              echo "Last successful run's commit ${base} is not in this history; deploying every function."
+              base=""
+            else
+              echo "Diffing against the last successful run: ${base}"
+            fi
+          fi
+
+          if [ -z "$base" ]; then
             selected="$all"
           else
-            changed=$(git diff --name-only "$BEFORE" "$AFTER" -- supabase/functions supabase/config.toml .github/workflows/deploy-edge-functions.yml)
+            changed=$(git diff --name-only "$base" "$AFTER" -- supabase/functions supabase/config.toml .github/workflows/deploy-edge-functions.yml)
             if printf '%s\n' "$changed" | grep -qE '^(supabase/functions/_shared/|supabase/config\.toml$|\.github/workflows/deploy-edge-functions\.yml$)'; then
               echo "A shared dependency or configuration file changed; deploying every function."
               selected="$all"

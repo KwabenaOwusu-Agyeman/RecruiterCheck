@@ -10,11 +10,36 @@ permission rules, so nothing blocks or prompts on your behalf: this file is the
 only set of rules, and following it is entirely your responsibility. Where a
 rule below says an action needs approval, stop and ask in the conversation.
 
+## Source of truth
+
+When you need to know how something currently behaves, prefer sources in this
+order, highest first:
+
+1. Verified current production behaviour and database rules
+2. The approved current product specification
+3. The current MyRecruiterCheck website
+4. Approved Notion HQ decisions
+5. Repository documentation, including `COCKPIT.md` and `memory/`
+6. Historical conversations and notes
+
+A lower source never overrides a higher one. When two sources disagree, say so
+plainly and name both. Do not silently pick one, and do not fill the gap with a
+plausible answer. An unresolved conflict reported is correct work; a resolved
+conflict invented is not.
+
+Note what level 5 means in practice: `COCKPIT.md` and `memory/` record what was
+true when they were written. Before asserting a current fact, go back to the
+primary source. See "Working memory" below.
+
 ## Stack
 
 React 18 + TypeScript + Vite (SPA with SSR prerender), Tailwind, React Router.
 Supabase for auth, Postgres, Storage and Edge Functions. Stripe for payments.
 Vercel for hosting. A browser extension lives in `recruitercheck-extension/`.
+
+The Admin Dashboard is a second application in this repo, `admin/`: Next.js 15
+with its own `package.json`, its own Vercel project and its own deploy. See
+"Admin Dashboard" below.
 
 ## Commands
 
@@ -27,8 +52,14 @@ npm test             Every test file
 npm run test:unit    src/ only
 npm run test:scoring Scoring plus the synthetic fixture regression
 npm run test:edge    Edge Function tests
+npm run test:admin   Admin Dashboard tests
 npm run verify       lint, typecheck and the full suite
 npm run checks       Which checks the current diff actually needs
+
+cd admin && npm run dev        Admin Dashboard on 3001
+cd admin && npm run lint       Its own ESLint, does not run from the root
+cd admin && npm run typecheck  Its own tsc, does not run from the root
+cd admin && npm run build      Its own Next build
 supabase start       Local stack: API 54321, DB 54322, Studio 54323, Inbucket 54324
 supabase db reset    Rebuild the LOCAL database from migrations
 supabase gen types typescript --project-id <ref> > src/types/database.ts
@@ -140,6 +171,41 @@ What follows from that:
   blocks it for you.
 - Deploying to verify a change is still off limits. Testing is local only.
 
+## Admin Dashboard
+
+### Purpose
+
+`admin/` is the operations surface for the live product. It exists so live
+operations are run through a reviewed, audited interface rather than by hand
+against the database. It is internal, never customer facing.
+
+### Responsibilities
+
+It owns the reading and operational handling of live product, user and
+transactional state: the overview and metrics pages, users, checks, credits,
+payments, refunds, acquisition, audience, content, email, support notes, the
+audit log, and the CSV export routes under `src/app/export/`. Supabase remains
+the source of truth for that data. The dashboard reads and operates on it; it
+does not become a second copy of it.
+
+### Boundaries
+
+- It is a separate application. Its lint, typecheck and build do not run from
+  the repo root, and it deploys as its own Vercel project, separately from the
+  SPA and separately from Edge Functions.
+- It reaches production with the service role. Everything under `admin/src/server/`
+  is therefore SENSITIVE and PRODUCTION USER DATA by the classification table
+  above, and any change to it is a mandatory security review, not a discretionary
+  one. `admin/src/lib/redact.ts` exists for this reason; do not route around it.
+- Reading production user data to verify a change remains off limits, here as
+  everywhere else. Develop and test against the local stack.
+- No user record, email address, CV, application, payment record or export file
+  is ever pasted into this repo, a commit, a report, a fixture or `COCKPIT.md`.
+  Use anonymised identifiers when operational context is genuinely needed.
+- The operational actions it can perform are Level 3, listed below.
+
+Do not change the Admin Dashboard's own behaviour as part of documentation work.
+
 ## Approval levels
 
 ### Level 1: proceed without asking
@@ -159,6 +225,12 @@ Production migrations, any SQL against the hosted project, Edge Function
 deployment, Stripe code or pricing, authentication flows, RLS policies, secret
 rotation, deployment, branch protection, `.gitignore` changes, and adding a
 dependency.
+
+And, on the operational side: issuing a refund, changing a user's credits,
+deleting a user, deleting production data, and changing access or permissions.
+Prepare and verify the action, state exactly what it will do and to which
+record, then stop and ask. Standing authorisation exists only where this file
+documents it for that exact action.
 
 Level 3 means you stop and ask first. It does not mean you act and then report.
 
@@ -217,6 +289,7 @@ and skipping a relevant one is worse.
 | --- | --- |
 | Scoring, verdicts, evidence logic, thresholds, `analyze-check/**`, `fixtures/synthetic/**` | lint, typecheck, `test:scoring`, `node scripts/mutation-check.mjs` |
 | React, components, pages, styling, routing, frontend logic | lint, typecheck, `test:unit` |
+| `admin/**` | `test:admin`, then `lint`, `typecheck` and `build` from inside `admin/`; security review for `admin/src/server/**` |
 | Edge Functions and backend logic | lint, typecheck, `test:edge` |
 | Migrations | local `supabase db reset`, **regenerate types**, `test:edge`, RLS review |
 | SEO pages, metadata, sitemap, prerender | `npm run build`, sitemap and metadata check |
@@ -255,6 +328,60 @@ reason is doing its job.
 Correcting a test that asserts the wrong thing is legitimate, but it is a reportable
 decision, not a silent one. Say what the test asserted, what the code does, and why
 the test was the wrong one.
+
+## Working memory
+
+Two files carry state between sessions: `COCKPIT.md`, the current technical
+status, and `memory/`, durable corrections. Neither replaces this file, and
+neither outranks a primary source.
+
+### Before implementing
+
+1. Read this file.
+2. Read the latest relevant entries in `COCKPIT.md`.
+3. `grep` the repo for an existing implementation or existing documentation of
+   the thing you are about to build. A deliverable with a precedent follows the
+   precedent's format.
+4. Check `memory/` for a record covering this area.
+5. Verify anything important about current behaviour at its primary source, per
+   the hierarchy above. Do not assert a current fact from `COCKPIT.md` alone.
+
+### During
+
+Leave unrelated changes alone. Record only durable technical information, and
+record it when you learn it, not at the end. Label what is verified, what is an
+assumption and what is a proposal, distinctly. Never write a secret, a token, a
+candidate document, an email address or a production record into any of these
+files.
+
+### After meaningful work
+
+1. Run the checks `npm run checks` names.
+2. Produce the report below.
+3. Add one concise `COCKPIT.md` entry. It is a status record, not a transcript.
+4. Write a `memory/` record only when the lesson is durable and would plausibly
+   prevent the same mistake again. Most work produces no record. Then `grep` for
+   the same mistake elsewhere in the repo and fix it there too, the same day.
+5. Commit only completed, coherent work.
+
+Push and merge authority is unchanged: see "Git" above. Updating one of these
+files is not by itself a reason to push.
+
+### What does not belong in this repo
+
+Notion HQ is the source of truth for company strategy, projects, tasks,
+decisions and anonymised customer insights. None of the following is duplicated
+here, in `COCKPIT.md`, in `memory/`, or anywhere else in the repository:
+
+company project management · marketing calendars · business metrics · customer
+lists · general company decisions · content planning · customer feedback records
+
+An approved Notion decision may be referenced by title, date and safe URL on one
+line where it explains a technical constraint. Its content is not restated here.
+
+The test for a `COCKPIT.md` entry: it must name a file, a migration, a function,
+a test, a commit or a branch. If it could have been written without knowing this
+codebase, it belongs in Notion.
 
 ## Report format
 

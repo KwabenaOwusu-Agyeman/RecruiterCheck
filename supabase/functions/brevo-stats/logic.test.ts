@@ -1,5 +1,6 @@
 // Run with: npx tsx supabase/functions/brevo-stats/logic.test.ts
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import {
   brevoPathFor,
   isServiceRoleToken,
@@ -188,6 +189,53 @@ test('shapeCampaigns tolerates a campaign with no statistics block', () => {
   const shaped = shapeCampaigns({ campaigns: [{ id: 1, name: 'Draft' }] })
   assert.equal(shaped[0].sent, null)
   assert.equal(shaped[0].name, 'Draft')
+})
+
+// The deploy workflow is guarded here rather than in its own file because the
+// test runner only discovers tests under src, admin/src and supabase/functions,
+// and because this function is the one whose silent staleness prompted the fix.
+// The verify_jwt map guard in stripe-webhook/index.test.ts sets the precedent
+// for a cross-cutting config assertion living in a function's test file.
+const workflow = readFileSync('.github/workflows/deploy-edge-functions.yml', 'utf8')
+
+test('the deploy workflow diffs against the last successful run', () => {
+  // Diffing against the previous commit loses work whenever a run fails: if the
+  // commit that fixes a failed run touches different directories, the functions
+  // from the failed run are never selected again, main carries new code, and
+  // production quietly runs the old. That happened to brevo-stats on
+  // 2026-09-06 and only its version number revealed it.
+  assert.ok(
+    workflow.includes('actions/workflows/${WORKFLOW_FILE}/runs?branch=main&status=success'),
+    'the workflow must resolve its diff base from the last successful run',
+  )
+  // Comment lines are stripped first: the header explains WHY
+  // github.event.before is not the base, and mentioning it there is the point.
+  // What must not come back is an actual reference that feeds the diff.
+  const executable = workflow
+    .split('\n')
+    .filter((line) => !line.trim().startsWith('#'))
+    .join('\n')
+  assert.ok(
+    !executable.includes('github.event.before'),
+    'github.event.before is the base that caused the silent-staleness bug',
+  )
+})
+
+test('every base-resolution failure widens to deploying everything', () => {
+  // Narrowing on failure is what fails silently. Redeploying an unchanged
+  // function is a slow no-op; skipping one that needed to go out is invisible.
+  const widenings = workflow.match(/deploying every function/g) ?? []
+  assert.ok(
+    widenings.length >= 4,
+    `expected every fallback to deploy everything, found ${widenings.length}`,
+  )
+})
+
+test('the workflow can list its own runs', () => {
+  // Resolving the base calls the Actions API, which needs this permission.
+  // Without it the lookup returns nothing and every run deploys everything:
+  // correct, but slow, and it would hide that the base is never resolving.
+  assert.match(workflow, /permissions:[\s\S]*actions: read/)
 })
 
 console.log(`\n${passed} tests passed`)
