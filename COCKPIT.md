@@ -15,6 +15,19 @@ No secrets, tokens, CV contents, applications, email addresses, payment records
 or production data appear in this file. Use anonymised identifiers where
 operational context is needed.
 
+## Open items
+
+Technical work that is blocked, unfinished, or waiting on the founder. Kept
+current in place rather than appended: delete a line when it is done. Strictly
+technical and founder-blocking; everything else goes in a dated entry or in
+Notion. If this list keeps growing, Claude is handing work back instead of
+doing it.
+
+- **Founder action.** `STRIPE_SECRET_KEY` is unset, so the Admin Dashboard
+  Payments page shows "Not reconciled against Stripe". Recorded 2026-09-06.
+- **Known limit.** Acquisition data begins 2026-09-05. Accounts created before
+  that date cannot be attributed. Recorded 2026-09-06.
+
 ## Historical review material
 
 `PART_A_KEYWORD_SCAN_REVIEW.md`, `PART_A_KEYWORD_SCAN_CORRECTED_REVIEW.md`,
@@ -22,6 +35,15 @@ operational context is needed.
 `review/` directory, are historical review and validation material from earlier
 workstreams. They are kept as a record and are not maintained. They are not the
 current status record. This file is.
+
+Read them with one correction in mind. Each states in bold near the top that
+nothing in it has been applied, deployed, committed or pushed. That was true
+when each was written and is false now: the Part A keyword scan work shipped.
+It is carried by
+`supabase/migrations/20260828064817_part_a_keyword_scan_credits_and_refund_integrity.sql`
+and the live `supabase/functions/keyword-scan/`. Treat every "nothing applied"
+statement in those files as describing the moment of writing, not the present.
+For current behaviour go to the migration, the function and the database.
 
 ---
 

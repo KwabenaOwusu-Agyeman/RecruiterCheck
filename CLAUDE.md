@@ -27,6 +27,21 @@ plainly and name both. Do not silently pick one, and do not fill the gap with a
 plausible answer. An unresolved conflict reported is correct work; a resolved
 conflict invented is not.
 
+### Where the higher sources live
+
+Levels 2 and 4 are in Notion. Go and read them rather than falling back to a
+lower source. Reference them by title, date and link; never restate their
+content here.
+
+- **MyRecruiterCheck HQ**, the workspace root:
+  https://app.notion.com/p/MyRecruiterCheck-HQ-3c80b9d863fc81d2abf9c5cd71a226f1
+- **Product and Pricing**, the approved current product specification:
+  https://app.notion.com/p/Product-and-Pricing-3c80b9d863fc81b49b52da5c855d94cf
+- **Product Roadmap**, what is approved and planned:
+  https://app.notion.com/p/3e870f42348346978ab235ea166182c4?v=4148d1bdd0e649dc8ac5e5f6910ff33b
+- **Decision Log**, approved company decisions:
+  https://app.notion.com/p/20e615e57e2941b1957b99a600bb71d1?v=7e18a15b9aa44e2fa5c5d4925384d2d2
+
 Note what level 5 means in practice: `COCKPIT.md` and `memory/` record what was
 true when they were written. Before asserting a current fact, go back to the
 primary source. See "Working memory" below.
@@ -260,6 +275,10 @@ pushed it goes to both. Work on a branch rather than committing straight to `mai
 - Say what you pushed and merged in the report, and which Edge Functions that
   merge deploys. The user is no longer typing these commands, so the
   transcript is the only record they have of them.
+- Stage named paths. Never `git add -A` or `git add .`: on 2026-09-06 that
+  swept `CLAUDE.md`, `COCKPIT.md` and `memory/README.md` into a commit about
+  marketing reporting, under a message that does not mention them. Read
+  `git status` before committing and commit only what the work touched.
 
 ## Security review triggers
 
@@ -358,11 +377,17 @@ files.
 
 1. Run the checks `npm run checks` names.
 2. Produce the report below.
-3. Add one concise `COCKPIT.md` entry. It is a status record, not a transcript.
-4. Write a `memory/` record only when the lesson is durable and would plausibly
+3. Add one concise `COCKPIT.md` entry using its fields: Date, Objective,
+   Completed, Verified, Blockers, Founder action required, Next technical step,
+   Commit or PR. Keep every field, write "none" where one is empty, and do not
+   substitute headings of your own. It is a status record, not a transcript.
+4. Move anything still blocking or waiting on the founder into the "Open items"
+   block at the top of `COCKPIT.md`, and clear from it whatever this work
+   closed. A blocker recorded only inside a dated entry scrolls out of sight.
+5. Write a `memory/` record only when the lesson is durable and would plausibly
    prevent the same mistake again. Most work produces no record. Then `grep` for
    the same mistake elsewhere in the repo and fix it there too, the same day.
-5. Commit only completed, coherent work.
+6. Commit only completed, coherent work.
 
 Push and merge authority is unchanged: see "Git" above. Updating one of these
 files is not by itself a reason to push.
@@ -395,12 +420,18 @@ TEST RESULTS      Commands run and their results
 SECURITY/PRIVACY  Checks performed; whether sensitive data was accessed
 REGRESSION RISK   Low, medium or high, with the reason
 MANUAL CHECKS     What the user still needs to verify
-NOT PUSHED
-NOT DEPLOYED
+PUSHED            Branch and remotes, or "no"
+MERGED            Pull request merged, or "no"
+DEPLOYED          Edge Functions this merge deployed, or "none". Say when the
+                  frontend went out from the same merge through Vercel.
 ```
 
 Keep it proportionate. A one-line fix does not need paragraphs under every
 heading, but no heading is dropped.
+
+The last three state what happened, not what was withheld. Merging a pull
+request that touches an Edge Function is the deploy, so a report that says
+nothing deployed after such a merge is false. Name the functions.
 
 ## Copy conventions
 
