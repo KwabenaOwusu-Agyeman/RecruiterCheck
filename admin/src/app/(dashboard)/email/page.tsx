@@ -1,11 +1,6 @@
 import { requireAdmin } from '@/server/auth'
 import { serviceClient } from '@/server/supabase'
-import {
-  getCampaigns,
-  getNewsletterList,
-  getTransactionalStats,
-  isBrevoConfigured,
-} from '@/server/brevo'
+import { getCampaigns, getNewsletterList, getTransactionalStats } from '@/server/brevo'
 import { resolvePeriod } from '@/lib/time'
 import { parseCustomRange, parsePeriod } from '@/lib/params'
 import { formatDate, formatNumber, formatPercent } from '@/lib/format'
@@ -148,13 +143,14 @@ export default async function EmailPage({
 
       <PeriodPicker active={periodId} />
 
-      {!isBrevoConfigured() ? (
+      {stats.state === 'not_configured' ? (
         <Alert tone="warning" title="Brevo is not connected">
-          {stats.detail}
+          {stats.detail ??
+            'BREVO_API_KEY is not set on the brevo-stats function, so email performance has not been read.'}
         </Alert>
       ) : null}
 
-      {isBrevoConfigured() && stats.state === 'failed' ? (
+      {stats.state === 'failed' ? (
         <Alert tone="danger" title="Could not read Brevo">
           {stats.detail} The figures below are missing rather than zero.
         </Alert>

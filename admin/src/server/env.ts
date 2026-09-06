@@ -51,21 +51,6 @@ export const env = {
   get isStripeConfigured(): boolean {
     return Boolean(optional('STRIPE_SECRET_KEY'))
   },
-  /**
-   * PRIVILEGED but optional. Read-only use here. Absent means the Email screen
-   * says plainly that Brevo is not connected rather than rendering zeros, which
-   * would read as "no email was delivered".
-   *
-   * It currently exists only as a Supabase Edge Function secret, so it has to
-   * be added to this project separately.
-   */
-  get brevoApiKey(): string | null {
-    return optional('BREVO_API_KEY')
-  },
-  /** The newsletter list id, for reconciling Brevo's count against ours. */
-  get brevoNewsletterListId(): string | null {
-    return optional('BREVO_NEWSLETTER_LIST_ID')
-  },
   /** Where the "Back to MyRecruiterCheck" link points. */
   get publicSiteUrl(): string {
     return optional('NEXT_PUBLIC_SITE_URL') ?? 'https://myrecruitercheck.com'
