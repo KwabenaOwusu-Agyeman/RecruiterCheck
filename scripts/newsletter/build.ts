@@ -1,6 +1,6 @@
 // Builds one weekly issue and writes Brevo ready HTML beside the input.
 //
-//   npx tsx scripts/newsletter/build.ts scripts/newsletter/week37.json
+//   npx tsx scripts/newsletter/build.ts scripts/newsletter/example-issue.json
 //
 // Then paste the HTML into Brevo: Campaigns > Email > Design > Paste your code.
 //

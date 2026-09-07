@@ -5,39 +5,39 @@
   "intro": "Five roles worth a look, one reason applications die, and what changed in job descriptions.",
   "postings": [
     {
-      "role": "REPLACE ME. Role 1",
-      "company": "REPLACE ME",
+      "role": "Machine Learning Engineer",
+      "company": "Example employer one",
       "location": "Amsterdam",
       "note": "Names its stack up front.",
-      "url": "https://example.com/replace-me"
+      "url": "https://example.com/a-role"
     },
     {
-      "role": "REPLACE ME. Role 2",
-      "company": "REPLACE ME",
+      "role": "Data Scientist",
+      "company": "Example employer two",
       "location": "Remote",
       "note": "Junior friendly, rare at this level.",
-      "url": "https://example.com/replace-me"
+      "url": "https://example.com/a-role"
     },
     {
-      "role": "REPLACE ME. Role 3",
-      "company": "REPLACE ME",
+      "role": "LLM Engineer",
+      "company": "Example employer three",
       "location": "Rotterdam",
       "note": "Small team, broad remit.",
-      "url": "https://example.com/replace-me"
+      "url": "https://example.com/a-role"
     },
     {
-      "role": "REPLACE ME. Role 4",
-      "company": "REPLACE ME",
+      "role": "Platform Engineer",
+      "company": "Example employer four",
       "location": "Utrecht",
       "note": "Pays above the band.",
-      "url": "https://example.com/replace-me"
+      "url": "https://example.com/a-role"
     },
     {
-      "role": "REPLACE ME. Role 5",
-      "company": "REPLACE ME",
+      "role": "Backend Engineer",
+      "company": "Example employer five",
       "location": "Remote",
       "note": "No take home exercise.",
-      "url": "https://example.com/replace-me"
+      "url": "https://example.com/a-role"
     }
   ],
   "rejection": "rejection-week37",
