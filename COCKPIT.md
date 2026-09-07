@@ -112,10 +112,11 @@ model. Then approve `supabase db push` for the two migrations, after which
 `src/types/database.ts` and `admin/src/types/database.ts` must be regenerated:
 the `newsletter_issues` entry in both was hand written to match, not generated.
 
-**Next technical step.** Merge PR #53 once the dry run reads acceptably. That
+**Next technical step.** Merge PR #52 once the dry run reads acceptably. That
 deploys every edge function, because `_shared/` changed.
 
-**Commit or PR.** `b4d77a4` on `newsletter-three-section`, PR #53.
+**Commit or PR.** `b4d77a4` on `newsletter-three-section`, PR #52, which now
+carries the whole newsletter branch rather than only the template work.
 
 ## 2026-09-07 — Newsletter template: five roles, one budget for the whole issue
 
