@@ -196,7 +196,7 @@ export async function loadAlerts(db: Db, now: Date): Promise<SystemAlert[]> {
   //    in nine days says the cron job itself is not firing.
   const { data: lastIssue, error: issueError } = await db
     .from('newsletter_issues')
-    .select('status, year, week, error, created_at')
+    .select('status, year, week, error, campaign_id, created_at')
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
@@ -219,6 +219,24 @@ export async function loadAlerts(db: Db, now: Date): Promise<SystemAlert[]> {
       detail:
         'The weekly job schedules a campaign every Sunday. Nothing recorded means it is not running at all, rather than running and declining to send. Check the publish-weekly-newsletter cron job and the function logs.',
       count: 0,
+    })
+  } else if (lastIssue.status === 'scheduled' && lastIssue.campaign_id === null) {
+    // The function reserves the week before calling Brevo, so that a lost write
+    // cannot become a second campaign. The cost of that ordering is this state:
+    // a reserved row whose campaign id never came back. Either Brevo was never
+    // reached, in which case nothing sends and the week is silently skipped, or
+    // it was reached and the id was lost, in which case an email IS going out
+    // and there is no id to cancel it by. Both need a person, and neither is
+    // visible anywhere else.
+    alerts.push({
+      id: 'newsletter-no-campaign-id',
+      severity: 'critical',
+      service: 'Newsletter',
+      title: `Week ${lastIssue.week} of ${lastIssue.year} is reserved with no campaign id`,
+      detail:
+        'The issue was built and the week reserved, but Brevo never returned a campaign id. Check the Brevo campaign list: if a campaign for this week exists it will send on schedule and can only be cancelled there, and if none exists nothing will go out. The reservation deliberately blocks an automatic retry, because retrying is how a duplicate reaches the whole list.',
+      count: 1,
+      href: '/email',
     })
   } else if (lastIssue.status === 'failed') {
     alerts.push({
