@@ -51,7 +51,7 @@ select cron.schedule(
           'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'service_role_key' limit 1)
         ),
         body := '{"firstRun": true}'::jsonb,
-        timeout_milliseconds := 120000
+        timeout_milliseconds := 180000
       );
     end if;
   end
