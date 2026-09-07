@@ -87,13 +87,31 @@ const RULES = [
   },
   {
     id: 'seo',
-    when: () => has(/^src\/pages\//) || has(/^content\//) || has(/^index\.html$/) ||
+    // content/ is SEO page source EXCEPT content/newsletter/, which is email
+    // copy: it is never prerendered and no build step reads it. Matching it here
+    // selected a build and a sitemap check for an email, and selected no test at
+    // all for the renderer, which is the newsletter rule below.
+    when: () => has(/^src\/pages\//) || has(/^content\/(?!newsletter\/)/) || has(/^index\.html$/) ||
                 has(/^public\/(sitemap|robots)/) || has(/^scripts\/prerender\.mjs$/),
     label: 'SEO or prerendered content change',
     checks: ['npm run build (build validation, includes prerender)',
              'sitemap and metadata check against dist/', 'git diff review'],
     notes: ['MANUAL CHECK REQUIRED: no structured data validator exists in this repo.',
             'Validate JSON-LD by hand or in an external validator. Do not install a tool for it.'],
+  },
+  {
+    id: 'newsletter',
+    when: () => has(/^scripts\/newsletter\//) || has(/^content\/newsletter\//),
+    label: 'Newsletter template or copy change',
+    checks: ['npm run lint', 'npm run typecheck',
+             'npx tsx scripts/newsletter/issue.test.ts',
+             'npx tsx scripts/newsletter/piece.test.ts',
+             'npx tsx scripts/newsletter/build.ts scripts/newsletter/week37.json',
+             'git diff review'],
+    notes: ['The build is the check that matters: it enforces the one minute word budget',
+            'for the WHOLE issue and refuses to render an issue that breaks the copy rules.',
+            'MANUAL CHECK REQUIRED: no email client rendering tool exists in this repo.',
+            'Preview the HTML in Brevo before sending. Gmail and Outlook are not tested here.'],
   },
   {
     id: 'config',
