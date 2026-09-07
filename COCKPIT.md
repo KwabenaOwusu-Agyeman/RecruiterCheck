@@ -28,6 +28,9 @@ doing it.
 - **Founder action.** Verify a real Google sign-in end to end after the move
   to the `myrecruitercheck` Cloud project, then delete the old `RecruiterCheck`
   OAuth client in `theorycoach-ai`. Recorded 2026-09-07.
+- **Founder action.** Do not send the week 37 newsletter until a frontend
+  deploy has published `public/newsletter/`. Until then every image in the
+  email 404s. Merging PR #52 triggers that deploy. Recorded 2026-09-07.
 - **Known limit.** Acquisition data begins 2026-09-05. Accounts created before
   that date cannot be attributed. Recorded 2026-09-06.
 
@@ -49,6 +52,54 @@ statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
 
 ---
+
+## 2026-09-07 — Newsletter template: five roles, one budget for the whole issue
+
+**Objective.** Fix the weekly Brevo newsletter at three sections and make the
+whole issue a one minute read.
+
+**Completed.** `scripts/newsletter/issue.ts` renders the fixed format: up to
+`MAX_POSTINGS` job postings, one rejection piece, hiring trends.
+`scripts/newsletter/piece.ts` loads each prose section from markdown under
+`content/newsletter/pieces/`, escaping before producing markup so raw HTML in a
+piece is inert rather than sanitised. `scripts/newsletter/build.ts` assembles an
+issue from a weekly JSON frame and writes pasteable HTML. Week 37 is committed
+as `week37.json` and `week37.html`. Four images under `public/newsletter/` with
+`CREDITS.md`; week 37 uses two of them.
+
+**Verified.** `npm run checks` selected lint, typecheck, both newsletter tests
+and the build. Lint 0 errors (5 pre-existing react-refresh warnings in `src/`),
+typecheck clean, `issue.test.ts` 18 passed, `piece.test.ts` 13 passed, build
+renders at 225 words. Full suite run because exported symbols changed: 35/35
+files, 526 assertions.
+
+Two findings worth keeping. Ten postings and a one minute read are not
+compatible: a note per role came to 190 words against a 200 word budget, which
+is why `MAX_POSTINGS` is 5. And a per section word target does not bound an
+issue, because two sections can each pass one and still total three minutes, so
+the budget is counted by `countIssueWords` over everything a reader reads and
+`piece.ts` now reports its count without judging it. Its `warnings` channel was
+removed rather than left unused.
+
+`scripts/which-checks.mjs` had no rule for `scripts/newsletter/**`, so a change
+to the renderer selected no test at all, and `content/newsletter/` matched the
+SEO rule, selecting a build and a sitemap check for email copy nothing
+prerenders. Both fixed in the same commit.
+
+**Blockers.** None.
+
+**Founder action required.** The email must not be sent before a frontend
+deploy has published `public/newsletter/`, or every image 404s in the inbox.
+Merging PR #52 triggers that deploy. Sending itself is manual in Brevo.
+
+**Next technical step.** Fill the five `REPLACE ME` posting slots in
+`week37.json` and rebuild. `content/newsletter/` still holds four drafts from
+the abandoned article digest direction (`01-strong-cv-wrong-job.md` through
+`04-contact-recruiter.md`); nothing references them and they are tracked, so
+they were left in place rather than deleted.
+
+**Commit or PR.** `ac7d82a` on `newsletter-three-section`, PR #52. Not merged.
+
 
 ## 2026-09-07 — Google sign-in moved to its own Cloud project and published
 
