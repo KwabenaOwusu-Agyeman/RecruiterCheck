@@ -24,6 +24,18 @@ function test(name: string, fn: () => void) {
 
 const actions = readFileSync('admin/src/app/actions.ts', 'utf8')
 
+/**
+ * Strips line comments, so a guard asserts on code rather than on prose.
+ * Without this, explaining WHY something is absent by naming it makes the guard
+ * that checks for its absence fail on the explanation.
+ */
+function withoutComments(source: string): string {
+  return source
+    .split('\n')
+    .filter((line) => !line.trim().startsWith('//') && !line.trim().startsWith('*'))
+    .join('\n')
+}
+
 /** The body of a named exported async function, up to the next export. */
 function bodyOf(name: string): string {
   const start = actions.indexOf(`export async function ${name}`)
@@ -112,13 +124,19 @@ test('sendMagicLinkAction answers identically whatever happens', () => {
 })
 
 test('no rate-limit bucket is keyed on the submitted address', () => {
-  // An unauthenticated counter keyed on an attacker-supplied value is itself a
-  // denial-of-service tool: anyone could exhaust the owner's allowance by
-  // submitting the owner's address. Supabase applies its own per-address send
-  // limits.
-  const body = bodyOf('sendMagicLinkAction')
+  // check_and_record_rate_limit is keyed on the user id after authentication,
+  // deliberately, so nobody can exhaust someone else's counter by guessing
+  // their address. A pre-auth bucket keyed on an address undoes that, and is
+  // itself an enumeration oracle: a rate-limited address answers differently
+  // from one that is not, defeating the fixed response this action exists to
+  // give. Supabase's own OTP rate limiting covers it.
+  // Comments are stripped first: the comment in actions.ts names
+  // check_and_record_rate_limit in order to explain why this action does not
+  // use it, and a guard that failed on its own explanation would be a guard
+  // against writing the reason down.
+  const code = withoutComments(bodyOf('sendMagicLinkAction'))
   assert.ok(
-    !/check_and_record_rate_limit/.test(body),
+    !/check_and_record_rate_limit/.test(code),
     'sendMagicLinkAction must not add an email-keyed rate limit bucket',
   )
 })

@@ -163,10 +163,20 @@ export async function sendMagicLinkAction(
     console.warn('[login] magic link request failed:', safeErrorSummary(caught))
   }
 
-  // No rate-limit bucket keyed on the submitted address: an unauthenticated
-  // counter keyed on an attacker-supplied value is itself a denial-of-service
-  // tool, since anyone could exhaust the owner's allowance by submitting their
-  // address. Supabase applies its own send limits per address and per project.
+  // No rate-limit bucket keyed on the submitted address, deliberately.
+  //
+  // check_and_record_rate_limit is keyed on the user id AFTER authentication,
+  // as signInAction above does, so that nobody can exhaust someone else's
+  // counter by guessing their address. A pre-auth bucket keyed on an address
+  // undoes that.
+  //
+  // It is also an enumeration oracle in its own right: a rate-limited address
+  // answers differently from one that is not, which defeats the fixed response
+  // this action exists to give. The limiter would leak exactly what the wording
+  // above is there to hide.
+  //
+  // Supabase's own OTP rate limiting covers this. If that proves insufficient,
+  // that is a separate decision.
   return { message: MAGIC_LINK_RESPONSE, error: null }
 }
 
