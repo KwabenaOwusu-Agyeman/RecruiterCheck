@@ -32,14 +32,13 @@ doing it.
   result before the weekly job is ever scheduled:
   `OPENAI_API_KEY=<key> npx tsx scripts/newsletter/dry-run.ts`. Nothing else
   exercises the model. Recorded 2026-09-07.
-- **Founder action.** Approve `supabase db push` for
+- **Founder action.** Run `supabase db push` yourself for
   `20260907190000_newsletter_issues.sql` and
   `20260907190100_publish_weekly_newsletter_cron.sql`, then regenerate both
-  `database.ts` files. Until pushed, publish-weekly-newsletter cannot run.
+  `database.ts` files. This environment's classifier refused the command, so it
+  did not run. The function is deployed but nothing invokes it and the
+  Control Centre shows a Newsletter warning until the table exists.
   Recorded 2026-09-07.
-- **Founder action.** Do not send the week 37 newsletter until a frontend
-  deploy has published `public/newsletter/`. Until then every image in the
-  email 404s. Merging PR #52 triggers that deploy. Recorded 2026-09-07.
 - **Known limit.** Acquisition data begins 2026-09-05. Accounts created before
   that date cannot be attributed. Recorded 2026-09-06.
 
@@ -61,6 +60,49 @@ statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
 
 ---
+
+## 2026-09-07 — Newsletter automation merged and deployed, migrations blocked
+
+**Objective.** Ship the automatic newsletter: merge, deploy, apply the schema.
+
+**Completed.** PR #52 merged as `8369065`. The Edge Function deploy run
+(34148830631) succeeded and deployed all 27 functions, `_shared/newsletter/`
+having changed, `publish-weekly-newsletter` among them. The frontend went out
+from the same merge through Vercel, which published `public/newsletter/`.
+
+**Verified.** The deploy run log carries a `Deploying <fn>` line for all 27
+functions, which is the check that matters rather than a version number.
+`https://myrecruitercheck.com/newsletter/reviewing-an-application.jpg` returns
+200 with `image/jpeg`, so newsletter images no longer 404 in an inbox.
+An unauthenticated POST to the function returns 401
+`UNAUTHORIZED_NO_AUTH_HEADER`, which is the Supabase gateway rather than the
+function's own check, confirming that omitting a `config.toml` entry does give
+`verify_jwt = true`. That was the one assumption in the design inferred rather
+than confirmed.
+
+`supabase migration list --linked` before the attempted push showed local and
+remote identical for every prior migration, with only the two new ones pending.
+No drift and no orphaned versions, unlike 2026-08-31.
+
+**Blockers.** `supabase db push` was refused by this environment's command
+classifier, so the two migrations are still unapplied. Until they are,
+`newsletter_issues` does not exist and the `publish-weekly-newsletter` cron job
+is not scheduled, so the function is deployed but nothing invokes it and no
+newsletter can be produced. The Control Centre will show a Newsletter warning
+reading "This check could not run" until the table exists; that is the alert
+behaving correctly, not a fault.
+
+**Founder action required.** Run `supabase db push` from the repo root to apply
+`20260907190000_newsletter_issues.sql` and
+`20260907190100_publish_weekly_newsletter_cron.sql`, then regenerate types.
+Do the dry run first, since the schedule goes live the moment the cron
+migration lands and the next firing is Sunday 13 September 08:00 UTC.
+
+**Next technical step.** After the push, regenerate `src/types/database.ts` and
+`admin/src/types/database.ts` and confirm the hand written `newsletter_issues`
+entry matches what the generator produces.
+
+**Commit or PR.** `8369065` on `main`, PR #52. Deploy run 34148830631.
 
 ## 2026-09-07 — The weekly newsletter builds and schedules itself
 
