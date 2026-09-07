@@ -47,6 +47,42 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-07 — Google sign-in and magic link on the Control Centre
+
+**Objective.** Make the Control Centre login usable. `admin/src/app/actions.ts`
+called `signInWithPassword` and nothing else, while the admin account has only a
+Google identity, so the form could never have succeeded.
+
+**Completed.** Merged in `bae32ad` (#47). Not deployed.
+- `admin/src/lib/redirectTarget.ts`: the open-redirect rule extracted from
+  `auth/confirm/route.ts` and shared with the new `auth/callback/route.ts`,
+  hardened for backslash and percent-encoded variants. 11 tests.
+- `admin/src/app/auth/callback/route.ts`: OAuth code exchange. Grants nothing;
+  `requireAdmin()` still decides.
+- `admin/src/app/actions.ts`: `signInWithGoogleAction` returns the provider URL
+  and never redirects to it, because `form-action 'self'` in middleware
+  constrains the redirects a form submission follows. `sendMagicLinkAction` sets
+  `shouldCreateUser: false` and returns one constant for every outcome.
+- `admin/src/lib/actionContract.test.ts`: source-level guards for both, verified
+  non-vacuous by injecting the redirect.
+
+**Verified.** `test:admin` 9/9 files, 113 assertions. Admin lint, typecheck and
+build clean. Two of the new tests found real bugs in the change itself: the
+control-character rule applied to a decoded target rejected `/users?q=a%20b`,
+and a stray NUL byte made a test file binary to git.
+
+**Not verified.** The Google round trip. No container runtime for a local
+Supabase, `supabase/config.toml:44` disables Google locally, and this was not
+deployed. Route logic, redirect constraint, compilation and rendering only.
+
+**Blocked on dashboard configuration.** Both flows hand Supabase a return
+address, and Supabase falls back to `site_url` for an unlisted one, which lands
+the user on the public site. Needs `/auth/callback` and `/auth/confirm` on the
+admin origin under Authentication > URL Configuration, and Google enabled under
+Providers.
+
+---
+
 ## 2026-09-06 — `git push` now reaches both remotes
 
 **Objective.** Make the Git section's "when main is pushed it goes to both"
