@@ -13,6 +13,7 @@ import {
   imagesForWeek,
   isoWeek,
   nextMondayNineAm,
+  nextNineAm,
   parseArbeitnow,
   parseGeneration,
   parseRemotive,
@@ -55,6 +56,13 @@ const MAX_GENERATION_ATTEMPTS = 2
 
 /** How far back to look when avoiding a repeated role or a repeated angle. */
 const RECENT_ISSUES = 8
+
+/**
+ * Minimum notice for a first run, which is the only run that does not get the
+ * usual day of lead. Stated as a number rather than left implicit: this is the
+ * window in which a first issue could still be cancelled in Brevo.
+ */
+const FIRST_RUN_MIN_LEAD_HOURS = 3
 
 function isServiceRoleRequest(req: Request): boolean {
   const match = (req.headers.get('Authorization') ?? '').match(/^Bearer (.+)$/)
@@ -119,10 +127,16 @@ Deno.serve(async (req) => {
 
   // dryRun builds and returns the whole issue but creates no campaign and
   // writes no row. It is how this gets exercised without touching the list.
+  //
+  // firstRun asks for the next morning rather than the next Monday. Only the
+  // one-off first run migration sets it, so a newsletter does not have to wait
+  // a week for its first issue. The weekly cadence is unaffected.
   let dryRun = false
+  let firstRun = false
   try {
     const body = await req.json()
     dryRun = body?.dryRun === true
+    firstRun = body?.firstRun === true
   } catch {
     // No body is the normal cron case.
   }
@@ -267,11 +281,11 @@ Deno.serve(async (req) => {
       return await fail(`Copy failed validation after ${MAX_GENERATION_ATTEMPTS} attempts: ${lastProblem}`, 502)
     }
 
-    const scheduledAt = nextMondayNineAm(now)
+    const scheduledAt = firstRun ? nextNineAm(now, FIRST_RUN_MIN_LEAD_HOURS) : nextMondayNineAm(now)
 
     if (dryRun) {
       return jsonResponse({
-        dryRun: true, year, week, subject,
+        dryRun: true, firstRun, year, week, subject,
         scheduledAt: scheduledAt.toISOString(),
         postings: issue.postings, html,
       })

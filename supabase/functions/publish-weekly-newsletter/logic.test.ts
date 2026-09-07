@@ -11,6 +11,7 @@ import {
   imagesForWeek,
   isoWeek,
   nextMondayNineAm,
+  nextNineAm,
   normaliseText,
   parseArbeitnow,
   parseGeneration,
@@ -264,6 +265,35 @@ test('Monday schedules a week out, never the same morning', () => {
   const at = nextMondayNineAm(new Date('2026-09-07T06:00:00Z'))
   assert.equal(amsterdam(at), 'Mon 09:00')
   assert.ok(at.getTime() - Date.parse('2026-09-07T06:00:00Z') > 6 * 86400000)
+})
+
+test('a first run takes tomorrow morning, not next Monday', () => {
+  // Monday 7 September 2026, evening. The weekly slot would be a week away;
+  // the first ever issue should not wait that long.
+  const evening = new Date('2026-09-07T19:00:00Z')
+  const first = nextNineAm(evening, 3)
+  assert.equal(amsterdam(first), 'Tue 09:00')
+  assert.equal(first.toISOString(), '2026-09-08T07:00:00.000Z')
+  // And it is genuinely earlier than the weekly slot it replaces.
+  assert.ok(first.getTime() < nextMondayNineAm(evening).getTime())
+})
+
+test('a first run never schedules inside the notice window', () => {
+  // Fires at 08:00 Amsterdam, so today's 09:00 is only an hour away. Rolling to
+  // tomorrow is the point: below the threshold there is no window in which the
+  // issue could be cancelled, and an unattended send with no window is the one
+  // thing this design refuses.
+  const tooLate = new Date('2026-09-08T06:00:00Z')
+  const at = nextNineAm(tooLate, 3)
+  assert.equal(amsterdam(at), 'Wed 09:00')
+  assert.ok(at.getTime() - tooLate.getTime() >= 3 * 3_600_000)
+})
+
+test('a first run keeps the notice window across the clocks changing', () => {
+  // Saturday 24 October 2026, the night before summer time ends.
+  const at = nextNineAm(new Date('2026-10-24T20:00:00Z'), 3)
+  assert.equal(amsterdam(at), 'Sun 09:00')
+  assert.equal(at.toISOString(), '2026-10-25T08:00:00.000Z')
 })
 
 test('the ISO week is the week-numbering one, not the calendar year', () => {
