@@ -11,6 +11,7 @@ import { consumePostAuthRedirect } from '@/features/auth/postAuthRedirect'
 import { useAuth } from '@/hooks/useAuth'
 import { trackEvent } from '@/lib/analytics'
 import { FEATURE_FLAGS } from '@/lib/constants'
+import { subscribeToNewsletter } from '@/services/newsletterService'
 import {
   mapAuthError,
   resetPasswordForEmail,
@@ -51,6 +52,9 @@ export function AuthModal() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  // Unticked by default and never pre-selected. Consent has to be a positive
+  // act, separate from creating the account, or it is not consent at all.
+  const [newsletterOptIn, setNewsletterOptIn] = useState(false)
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -171,6 +175,17 @@ export function AuthModal() {
       if (mode === 'sign-up') {
         const { session } = await signUpWithPassword(email.trim(), password)
         trackEvent('signup_completed')
+
+        // Fire and forget, deliberately after the account exists and outside
+        // the try that reports sign-up errors. A newsletter that is briefly
+        // unreachable must never turn a successful registration into a visible
+        // failure, and must never stop the user reaching their account.
+        if (newsletterOptIn) {
+          void subscribeToNewsletter(email.trim(), true, 'signup').catch(() => {
+            // Silent by design. The consent record is the durable artefact and
+            // it can be recreated; the account is what matters here.
+          })
+        }
         if (!session) {
           setMessage('Check your email to confirm your account.')
         } else {
@@ -363,6 +378,26 @@ export function AuthModal() {
                 </p>
               ) : null}
             </div>
+          ) : null}
+
+          {mode === 'sign-up' ? (
+            <label
+              htmlFor="auth-modal-newsletter"
+              className="flex cursor-pointer items-start gap-[10px] text-[13px] leading-5 text-text-secondary"
+            >
+              <input
+                id="auth-modal-newsletter"
+                name="newsletter"
+                type="checkbox"
+                checked={newsletterOptIn}
+                onChange={(event) => setNewsletterOptIn(event.target.checked)}
+                className="mt-[2px] h-4 w-4 shrink-0 rounded border-border-strong accent-navy"
+              />
+              <span>
+                Send me the MyRecruiterCheck weekly newsletter about AI, tech and hiring trends.
+                Unsubscribe any time.
+              </span>
+            </label>
           ) : null}
 
           <Button

@@ -8,7 +8,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const CONSENT_TEXT = 'Send me The Recruiter Check newsletter and related career advice. I can unsubscribe at any time.'
+// The exact wording agreed to, stored verbatim on every subscriber row. It has
+// to describe what is actually sent: consent to "career advice" is not consent
+// to a weekly AI and tech digest, and the row is the evidence if anyone asks.
+// Changing this changes what new subscribers agreed to, never what existing
+// ones did, since their row keeps the wording they saw.
+const CONSENT_TEXT = 'Send me the MyRecruiterCheck weekly newsletter about AI, tech and hiring trends. I can unsubscribe at any time.'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
