@@ -43,7 +43,21 @@ Each is between 60 and 80 words, which fits the budget: the whole issue is one
 minute, not one minute per section, and `issue.ts` enforces that over
 everything a reader reads.
 
-Two of them advise a fix. The rejection section is the pain and nothing else,
-because the product is the resolution and it sits in the call to action, so
-resolving it in the copy spends the only reason to click. They suit the trends
-section, or the rejection section rewritten to withhold the answer.
+Judged against the two prose slots, one is worth converting and the others are
+weaker than they look:
+
+- `01-strong-cv-wrong-job.md` is the usable one. "Well written and still fails
+  to show why you fit one specific role" is a distinct pain from week 37's, and
+  worth the rejection slot. Its body is advice and would be rewritten; only the
+  premise survives.
+- `02-first-recruiter-scan.md` is week 37's rejection piece already, near enough
+  word for word.
+- `03-show-impact.md` and `04-contact-recruiter.md` are general application
+  advice, which the format rules out. The rejection section is the pain and
+  nothing else: the product is the resolution and it sits in the call to action,
+  so resolving it in the copy spends the only reason to click.
+
+None of the four is a hiring trend, and trends is the section needing new
+material weekly. They are evergreen advice with no observation in them. The
+postings gathered for section one are the natural source, since what changed in
+job descriptions falls out of reading them.
