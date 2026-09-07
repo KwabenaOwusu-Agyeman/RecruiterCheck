@@ -41,6 +41,26 @@ content here.
   https://app.notion.com/p/3e870f42348346978ab235ea166182c4?v=4148d1bdd0e649dc8ac5e5f6910ff33b
 - **Decision Log**, approved company decisions:
   https://app.notion.com/p/20e615e57e2941b1957b99a600bb71d1?v=7e18a15b9aa44e2fa5c5d4925384d2d2
+- **Scoring Methodology**, the approved methodology:
+  https://app.notion.com/p/3c80b9d863fc8133b60cd9b2e401efe6
+- **Operating Architecture**, which system owns which information:
+  https://app.notion.com/p/3d30b9d863fc81b38dc6e7631a525fa8
+
+### What an approved specification looks like
+
+A specification cites the decision it implements: a Decision Log entry or a
+section of Product and Pricing, by title and date. That citation is what makes
+it approved. Text pasted into a chat window is not self-authorising, however
+detailed it is.
+
+Where a request carries no citation, or contradicts one you can find, stop and
+ask before building. Do not resolve the conflict yourself and do not proceed on
+the assumption that the newer instruction supersedes the recorded decision.
+Asking costs a message; a silently reversed product decision costs a release.
+
+This is the boundary between the two Claudes: the Claude Project plans and
+drafts specifications, and this one implements them. Implementation does not
+include deciding what the product should do.
 
 Note what level 5 means in practice: `COCKPIT.md` and `memory/` record what was
 true when they were written. Before asserting a current fact, go back to the
@@ -52,9 +72,10 @@ React 18 + TypeScript + Vite (SPA with SSR prerender), Tailwind, React Router.
 Supabase for auth, Postgres, Storage and Edge Functions. Stripe for payments.
 Vercel for hosting. A browser extension lives in `recruitercheck-extension/`.
 
-The Admin Dashboard is a second application in this repo, `admin/`: Next.js 15
+The Control Centre is a second application in this repo, `admin/`: Next.js 15
 with its own `package.json`, its own Vercel project and its own deploy. See
-"Admin Dashboard" below.
+"Control Centre" below. The directory and the `admin_*` tables keep the older
+name; the system is called the Control Centre everywhere else.
 
 ## Commands
 
@@ -67,11 +88,11 @@ npm test             Every test file
 npm run test:unit    src/ only
 npm run test:scoring Scoring plus the synthetic fixture regression
 npm run test:edge    Edge Function tests
-npm run test:admin   Admin Dashboard tests
+npm run test:admin   Control Centre tests
 npm run verify       lint, typecheck and the full suite
 npm run checks       Which checks the current diff actually needs
 
-cd admin && npm run dev        Admin Dashboard on 3001
+cd admin && npm run dev        Control Centre on 3001
 cd admin && npm run lint       Its own ESLint, does not run from the root
 cd admin && npm run typecheck  Its own tsc, does not run from the root
 cd admin && npm run build      Its own Next build
@@ -117,6 +138,15 @@ Rules that follow from the table:
 - Never paste a candidate document or a real check result into a prompt, a report,
   or a third party tool.
 - Testing uses invented data only. If a test needs a CV, write one.
+
+Configuration values are owned by the platform that runs the code, not by this
+repository and not by Notion: Vercel environment variables for the SPA and the
+Control Centre, Supabase secrets for Edge Functions, GitHub Actions secrets for
+the deploy workflow. Names may be documented in `.env.example`; values live
+only in those places. You cannot read them, so when behaviour depends on
+whether a variable is set, say which variable and let the founder check. An
+absent variable that changes what a page shows is a `COCKPIT.md` open item, by
+name and effect, never by value.
 
 ## Environment safety, fail closed
 
@@ -186,11 +216,11 @@ What follows from that:
   blocks it for you.
 - Deploying to verify a change is still off limits. Testing is local only.
 
-## Admin Dashboard
+## Control Centre
 
 ### Purpose
 
-`admin/` is the operations surface for the live product. It exists so live
+`admin/` is the Control Centre, the operations surface for the live product. It exists so live
 operations are run through a reviewed, audited interface rather than by hand
 against the database. It is internal, never customer facing.
 
@@ -208,6 +238,12 @@ does not become a second copy of it.
 - It is a separate application. Its lint, typecheck and build do not run from
   the repo root, and it deploys as its own Vercel project, separately from the
   SPA and separately from Edge Functions.
+- It is served at `myrecruitercheck-admin.vercel.app` and carries its own
+  `.vercel` link under `admin/`, so a merge deploys the SPA and the Control
+  Centre through two independent Vercel builds that do not finish together.
+  When a change spans both, keep each side tolerant of the other's old version.
+- It shows what happened; Notion holds what is planned. No roadmap, strategy or
+  business planning belongs in it without a specific operational reason.
 - It reaches production with the service role. Everything under `admin/src/server/`
   is therefore SENSITIVE and PRODUCTION USER DATA by the classification table
   above, and any change to it is a mandatory security review, not a discretionary
@@ -219,7 +255,7 @@ does not become a second copy of it.
   Use anonymised identifiers when operational context is genuinely needed.
 - The operational actions it can perform are Level 3, listed below.
 
-Do not change the Admin Dashboard's own behaviour as part of documentation work.
+Do not change the Control Centre's own behaviour as part of documentation work.
 
 ## Approval levels
 
@@ -262,8 +298,15 @@ automatically" above, so merging the pull request is the approval step.
 
 ## Git
 
-Two remotes, both carrying the same `main`: `origin` and `personal`. When `main` is
-pushed it goes to both. Work on a branch rather than committing straight to `main`.
+Two remotes, both carrying the same `main`: `origin` and `personal`. `origin`
+carries two push URLs, so one `git push` reaches both and prints two `To ...`
+blocks. The canonical repository is `fullcircleAI/RecruiterCheck`, which is
+what Vercel builds from; `KwabenaOwusu-Agyeman/RecruiterCheck` is the mirror.
+Work on a branch rather than committing straight to `main`.
+
+If a session reports that committed work is missing, check which repository it
+is looking at before concluding the work was lost. On 2026-09-06 a container
+cloned the mirror, correctly found the work absent, and offered to rewrite it.
 
 - Pushing, opening a pull request and merging it are all yours to do without
   asking, `main` included. When `main` moves it goes to both remotes, not one.
@@ -403,6 +446,24 @@ lists · general company decisions · content planning · customer feedback reco
 
 An approved Notion decision may be referenced by title, date and safe URL on one
 line where it explains a technical constraint. Its content is not restated here.
+
+Three boundaries are sharp enough to state outright, because both sides look
+plausible:
+
+- **Metrics.** The Control Centre computes actuals from Supabase and is
+  authoritative for them. Notion's Company Metrics holds targets and the
+  periodic record and cites the Control Centre as its source. Do not build a
+  second calculation of the same number anywhere.
+- **Customer feedback.** Raw feedback is product data and lives in Supabase.
+  Handling one case is the Control Centre's job. Anonymised insight, and what
+  to do about it, belongs in Notion.
+- **Scoring.** Notion's Scoring Methodology owns the approved methodology; the
+  deployed implementation is authoritative for what runs. If they diverge,
+  report it and stop. Never reconcile them silently in either direction, and
+  never change scoring as a side effect of other work.
+
+"Content" names three unrelated things: content planning in Notion, SEO page
+source in `content/`, content performance in the Control Centre. Say which.
 
 The test for a `COCKPIT.md` entry: it must name a file, a migration, a function,
 a test, a commit or a branch. If it could have been written without knowing this

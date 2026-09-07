@@ -1,7 +1,7 @@
 # Cockpit
 
 Current technical status of the MyRecruiterCheck application, the Supabase
-backend and the Admin Dashboard. Newest entry first.
+backend and the Control Centre. Newest entry first.
 
 This is a status record, not a transcript. It records what is true of the code
 and its verification, and nothing about company strategy, marketing, business
