@@ -28,12 +28,6 @@ doing it.
 - **Founder action.** Verify a real Google sign-in end to end after the move
   to the `myrecruitercheck` Cloud project, then delete the old `RecruiterCheck`
   OAuth client in `theorycoach-ai`. Recorded 2026-09-07.
-- **Founder action, urgent.** An OpenAI API key and a Supabase webhook secret
-  were exposed in a screenshot on 2026-09-07 and must be rotated. Revoke the
-  OpenAI key at platform.openai.com and update `OPENAI_API_KEY` in Supabase Edge
-  Function secrets in the same sitting, or the weekly newsletter job fails and
-  nothing sends. Regenerate the Brevo webhook secret and update `WEBHOOK_SECRET`
-  and Brevo's webhook configuration. Recorded 2026-09-07.
 - **Founder action.** Review the first newsletter issue in Brevo before it sends
   at 09:00 Europe/Amsterdam. The model leg has never been exercised, so this is
   the first generated copy anyone will have read. Recorded 2026-09-07.
@@ -84,12 +78,16 @@ Werkstudent listings surviving. The model leg remains unexercised locally.
 
 **Blockers.** None technical.
 
-**Founder action required.** An OpenAI API key and a Supabase webhook secret
-were exposed in a screenshot during this session and must be rotated. When the
-OpenAI key is revoked, `OPENAI_API_KEY` in Supabase Edge Function secrets must
-be updated in the same sitting, or the weekly job fails and no issue is sent.
+**Founder action required.** Review the first issue in Brevo before it sends at
+09:00 Europe/Amsterdam.
 
-Review the first issue in Brevo before it sends at 09:00 Europe/Amsterdam.
+**Accepted risk.** An OpenAI API key and a Supabase webhook secret were visible
+in a screenshot during this session. Rotation was proposed twice and declined by
+the founder on 2026-09-07. Recorded here as a decision rather than an open item,
+because it is not outstanding work. The exposure means the OpenAI key could be
+used to spend against the account and the webhook secret could be used to forge
+unsubscribe events. A spend cap on the OpenAI key bounds the first of those
+without rotating. No key value appears in this repository.
 
 **Next technical step.** Confirm the catch up poller ran once and removed
 itself, and that `newsletter_issues` holds one row with a `campaign_id`. Until
