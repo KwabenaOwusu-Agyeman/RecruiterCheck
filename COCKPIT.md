@@ -28,6 +28,15 @@ doing it.
 - **Founder action.** Verify a real Google sign-in end to end after the move
   to the `myrecruitercheck` Cloud project, then delete the old `RecruiterCheck`
   OAuth client in `theorycoach-ai`. Recorded 2026-09-07.
+- **Founder action.** Run the newsletter dry run with a key and read the
+  result before the weekly job is ever scheduled:
+  `OPENAI_API_KEY=<key> npx tsx scripts/newsletter/dry-run.ts`. Nothing else
+  exercises the model. Recorded 2026-09-07.
+- **Founder action.** Approve `supabase db push` for
+  `20260907190000_newsletter_issues.sql` and
+  `20260907190100_publish_weekly_newsletter_cron.sql`, then regenerate both
+  `database.ts` files. Until pushed, publish-weekly-newsletter cannot run.
+  Recorded 2026-09-07.
 - **Founder action.** Do not send the week 37 newsletter until a frontend
   deploy has published `public/newsletter/`. Until then every image in the
   email 404s. Merging PR #52 triggers that deploy. Recorded 2026-09-07.
@@ -52,6 +61,61 @@ statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
 
 ---
+
+## 2026-09-07 — The weekly newsletter builds and schedules itself
+
+**Objective.** Remove the human from the weekly newsletter: source five roles,
+write the copy, render the issue and schedule the send, unattended.
+
+**Completed.** `supabase/functions/publish-weekly-newsletter/` (index plus a
+pure `logic.ts`), invoked by the `publish-weekly-newsletter` pg_cron job every
+Sunday 08:00 UTC via `pg_net` with the Vault `service_role_key`, the same
+pattern as `purge-expired-uploads` and `instagram-refresh-token`. It reads two
+public keyless feeds (remotive.com, arbeitnow.com), selects five AI and tech
+roles no recent issue used, generates all copy in one `gpt-4o-mini` call, and
+creates a Brevo campaign scheduled for 09:00 Europe/Amsterdam the next Monday.
+`{"dryRun": true}` builds everything and creates nothing.
+
+The renderer moved from `scripts/newsletter/` to
+`supabase/functions/_shared/newsletter/`. `scripts/newsletter/build.ts` remains
+as the manual paste route. New `scripts/newsletter/dry-run.ts` runs the whole
+pipeline locally. Two migrations: `20260907190000_newsletter_issues.sql` and
+`20260907190100_publish_weekly_newsletter_cron.sql`. `loadAlerts` in
+`admin/src/server/metrics/alerts.ts` gained a Newsletter alert.
+
+**Verified.** lint 0 errors (5 pre-existing react-refresh warnings in `src/`),
+typecheck clean in both apps, `test:edge` 22/22 files and 378 assertions,
+`test:admin` 9/9 and 113, `npm run build` clean with all 52 CSP hashes
+unchanged, and the offline dry run assembling a valid 182 word issue. Live
+feeds parsed correctly: 17 items from Remotive and 237 from Arbeitnow, five
+clean roles selected.
+
+Three findings worth keeping. Real job titles are full of dashes and
+`validateIssue` enforces the no dash rule on `postings[i].role`, so without
+`normaliseText` every week would have failed to render; this was invisible to
+invented fixtures and only appeared against the live feeds. Feed titles reach
+the model prompt and are attacker influenceable, so generated copy is refused
+if it contains a link, which is the one payload that survives escaping and
+validation. And the rejection angle is fixed in `REJECTION_ANGLES` rather than
+chosen by the model, because section two is deliberately painful copy sent
+unattended.
+
+**Blockers.** The two migrations are unapplied, so the function cannot run.
+They were not verified against a local stack: there is no Docker on this
+machine, the same deviation recorded on 2026-09-05. The OpenAI leg of the
+pipeline is unverified locally because it needs a key this session cannot read.
+
+**Founder action required.** Run `OPENAI_API_KEY=<key> npx tsx
+scripts/newsletter/dry-run.ts` and read the issue it writes to
+`.scratch/newsletter-dry-run.html`. That is the only check that exercises the
+model. Then approve `supabase db push` for the two migrations, after which
+`src/types/database.ts` and `admin/src/types/database.ts` must be regenerated:
+the `newsletter_issues` entry in both was hand written to match, not generated.
+
+**Next technical step.** Merge PR #53 once the dry run reads acceptably. That
+deploys every edge function, because `_shared/` changed.
+
+**Commit or PR.** `b4d77a4` on `newsletter-three-section`, PR #53.
 
 ## 2026-09-07 — Newsletter template: five roles, one budget for the whole issue
 
