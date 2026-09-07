@@ -110,7 +110,7 @@ const RULES = [
              'npx tsx supabase/functions/_shared/newsletter/piece.test.ts',
              'npx tsx supabase/functions/publish-weekly-newsletter/logic.test.ts',
              'npx tsx scripts/newsletter/dry-run.ts --offline',
-             'npx tsx scripts/newsletter/build.ts scripts/newsletter/week37.json',
+             'npx tsx scripts/newsletter/build.ts scripts/newsletter/example-issue.json',
              'git diff review'],
     notes: ['The dry run is the check that matters: it assembles a whole issue through the',
             'same code the weekly job uses and enforces the one minute budget on the total.',
