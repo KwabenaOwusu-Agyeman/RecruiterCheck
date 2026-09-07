@@ -93,10 +93,13 @@ deploy has published `public/newsletter/`, or every image 404s in the inbox.
 Merging PR #52 triggers that deploy. Sending itself is manual in Brevo.
 
 **Next technical step.** Fill the five `REPLACE ME` posting slots in
-`week37.json` and rebuild. `content/newsletter/` still holds four drafts from
-the abandoned article digest direction (`01-strong-cv-wrong-job.md` through
-`04-contact-recruiter.md`); nothing references them and they are tracked, so
-they were left in place rather than deleted.
+`week37.json` and rebuild. `content/newsletter/` also holds four drafts,
+`01-strong-cv-wrong-job.md` through `04-contact-recruiter.md`, retained on the
+founder's instruction as a bank for future issues. They are deliberately
+unreferenced and are not dead files. They predate the current format and are not
+loadable as they stand: each opens with a `#` heading, which `piece.ts` refuses,
+and none carries frontmatter. `content/newsletter/README.md` records what
+converting one requires.
 
 **Commit or PR.** `ac7d82a` on `newsletter-three-section`, PR #52. Not merged.
 
