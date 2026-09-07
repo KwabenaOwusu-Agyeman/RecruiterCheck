@@ -40,6 +40,9 @@ async function countOrAlert(
   return { count: count ?? 0 }
 }
 
+/** A Sunday job plus a day of slack, so a late run is not an alert. */
+const NEWSLETTER_SILENT_DAYS = 9
+
 export interface SystemAlert {
   id: string
   severity: AlertSeverity
@@ -181,6 +184,50 @@ export async function loadAlerts(db: Db, now: Date): Promise<SystemAlert[]> {
       detail: 'Open the check to see its recorded error before contacting the customer.',
       count: recentFailures.count,
       href: '/checks?status=failed',
+    })
+  }
+
+  // 5. The weekly newsletter. publish-weekly-newsletter runs unattended every
+  //    Sunday and fails closed, so a week that produced nothing is silent by
+  //    design: no campaign, no email, no error anywhere a person would look.
+  //    This is the only place that silence becomes visible. Two conditions,
+  //    reported separately because they need different responses: a recorded
+  //    failure says the run happened and refused to send, while nothing at all
+  //    in nine days says the cron job itself is not firing.
+  const { data: lastIssue, error: issueError } = await db
+    .from('newsletter_issues')
+    .select('status, year, week, error, created_at')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (issueError) {
+    alerts.push({
+      id: 'check-failed-newsletter',
+      severity: 'warning',
+      service: 'Newsletter',
+      title: 'This check could not run',
+      detail: `The dashboard could not query for this condition, so it is unknown rather than clear: ${issueError.message}`,
+      count: 0,
+    })
+  } else if (!lastIssue || new Date(lastIssue.created_at).getTime() < now.getTime() - NEWSLETTER_SILENT_DAYS * 86_400_000) {
+    alerts.push({
+      id: 'newsletter-silent',
+      severity: 'warning',
+      service: 'Newsletter',
+      title: lastIssue ? 'No newsletter issue in over a week' : 'No newsletter issue has ever been built',
+      detail:
+        'The weekly job schedules a campaign every Sunday. Nothing recorded means it is not running at all, rather than running and declining to send. Check the publish-weekly-newsletter cron job and the function logs.',
+      count: 0,
+    })
+  } else if (lastIssue.status === 'failed') {
+    alerts.push({
+      id: 'newsletter-failed',
+      severity: 'warning',
+      service: 'Newsletter',
+      title: `Week ${lastIssue.week} of ${lastIssue.year} did not go out`,
+      detail: `The run aborted and created no campaign, which is the intended behaviour rather than a half sent issue: ${lastIssue.error ?? 'no reason recorded'}`,
+      count: 1,
     })
   }
 

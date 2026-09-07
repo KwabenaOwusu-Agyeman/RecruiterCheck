@@ -28,6 +28,18 @@ doing it.
 - **Founder action.** Verify a real Google sign-in end to end after the move
   to the `myrecruitercheck` Cloud project, then delete the old `RecruiterCheck`
   OAuth client in `theorycoach-ai`. Recorded 2026-09-07.
+- **Founder action.** Run the newsletter dry run with a key and read the
+  result before the weekly job is ever scheduled:
+  `OPENAI_API_KEY=<key> npx tsx scripts/newsletter/dry-run.ts`. Nothing else
+  exercises the model. Recorded 2026-09-07.
+- **Founder action.** Approve `supabase db push` for
+  `20260907190000_newsletter_issues.sql` and
+  `20260907190100_publish_weekly_newsletter_cron.sql`, then regenerate both
+  `database.ts` files. Until pushed, publish-weekly-newsletter cannot run.
+  Recorded 2026-09-07.
+- **Founder action.** Do not send the week 37 newsletter until a frontend
+  deploy has published `public/newsletter/`. Until then every image in the
+  email 404s. Merging PR #52 triggers that deploy. Recorded 2026-09-07.
 - **Known limit.** Acquisition data begins 2026-09-05. Accounts created before
   that date cannot be attributed. Recorded 2026-09-06.
 
@@ -49,6 +61,112 @@ statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
 
 ---
+
+## 2026-09-07 — The weekly newsletter builds and schedules itself
+
+**Objective.** Remove the human from the weekly newsletter: source five roles,
+write the copy, render the issue and schedule the send, unattended.
+
+**Completed.** `supabase/functions/publish-weekly-newsletter/` (index plus a
+pure `logic.ts`), invoked by the `publish-weekly-newsletter` pg_cron job every
+Sunday 08:00 UTC via `pg_net` with the Vault `service_role_key`, the same
+pattern as `purge-expired-uploads` and `instagram-refresh-token`. It reads two
+public keyless feeds (remotive.com, arbeitnow.com), selects five AI and tech
+roles no recent issue used, generates all copy in one `gpt-4o-mini` call, and
+creates a Brevo campaign scheduled for 09:00 Europe/Amsterdam the next Monday.
+`{"dryRun": true}` builds everything and creates nothing.
+
+The renderer moved from `scripts/newsletter/` to
+`supabase/functions/_shared/newsletter/`. `scripts/newsletter/build.ts` remains
+as the manual paste route. New `scripts/newsletter/dry-run.ts` runs the whole
+pipeline locally. Two migrations: `20260907190000_newsletter_issues.sql` and
+`20260907190100_publish_weekly_newsletter_cron.sql`. `loadAlerts` in
+`admin/src/server/metrics/alerts.ts` gained a Newsletter alert.
+
+**Verified.** lint 0 errors (5 pre-existing react-refresh warnings in `src/`),
+typecheck clean in both apps, `test:edge` 22/22 files and 378 assertions,
+`test:admin` 9/9 and 113, `npm run build` clean with all 52 CSP hashes
+unchanged, and the offline dry run assembling a valid 182 word issue. Live
+feeds parsed correctly: 17 items from Remotive and 237 from Arbeitnow, five
+clean roles selected.
+
+Three findings worth keeping. Real job titles are full of dashes and
+`validateIssue` enforces the no dash rule on `postings[i].role`, so without
+`normaliseText` every week would have failed to render; this was invisible to
+invented fixtures and only appeared against the live feeds. Feed titles reach
+the model prompt and are attacker influenceable, so generated copy is refused
+if it contains a link, which is the one payload that survives escaping and
+validation. And the rejection angle is fixed in `REJECTION_ANGLES` rather than
+chosen by the model, because section two is deliberately painful copy sent
+unattended.
+
+**Blockers.** The two migrations are unapplied, so the function cannot run.
+They were not verified against a local stack: there is no Docker on this
+machine, the same deviation recorded on 2026-09-05. The OpenAI leg of the
+pipeline is unverified locally because it needs a key this session cannot read.
+
+**Founder action required.** Run `OPENAI_API_KEY=<key> npx tsx
+scripts/newsletter/dry-run.ts` and read the issue it writes to
+`.scratch/newsletter-dry-run.html`. That is the only check that exercises the
+model. Then approve `supabase db push` for the two migrations, after which
+`src/types/database.ts` and `admin/src/types/database.ts` must be regenerated:
+the `newsletter_issues` entry in both was hand written to match, not generated.
+
+**Next technical step.** Merge PR #52 once the dry run reads acceptably. That
+deploys every edge function, because `_shared/` changed.
+
+**Commit or PR.** `b4d77a4` on `newsletter-three-section`, PR #52, which now
+carries the whole newsletter branch rather than only the template work.
+
+## 2026-09-07 — Newsletter template: five roles, one budget for the whole issue
+
+**Objective.** Fix the weekly Brevo newsletter at three sections and make the
+whole issue a one minute read.
+
+**Completed.** `scripts/newsletter/issue.ts` renders the fixed format: up to
+`MAX_POSTINGS` job postings, one rejection piece, hiring trends.
+`scripts/newsletter/piece.ts` loads each prose section from markdown under
+`content/newsletter/pieces/`, escaping before producing markup so raw HTML in a
+piece is inert rather than sanitised. `scripts/newsletter/build.ts` assembles an
+issue from a weekly JSON frame and writes pasteable HTML. Week 37 is committed
+as `week37.json` and `week37.html`. Four images under `public/newsletter/` with
+`CREDITS.md`; week 37 uses two of them.
+
+**Verified.** `npm run checks` selected lint, typecheck, both newsletter tests
+and the build. Lint 0 errors (5 pre-existing react-refresh warnings in `src/`),
+typecheck clean, `issue.test.ts` 18 passed, `piece.test.ts` 13 passed, build
+renders at 225 words. Full suite run because exported symbols changed: 35/35
+files, 526 assertions.
+
+Two findings worth keeping. Ten postings and a one minute read are not
+compatible: a note per role came to 190 words against a 200 word budget, which
+is why `MAX_POSTINGS` is 5. And a per section word target does not bound an
+issue, because two sections can each pass one and still total three minutes, so
+the budget is counted by `countIssueWords` over everything a reader reads and
+`piece.ts` now reports its count without judging it. Its `warnings` channel was
+removed rather than left unused.
+
+`scripts/which-checks.mjs` had no rule for `scripts/newsletter/**`, so a change
+to the renderer selected no test at all, and `content/newsletter/` matched the
+SEO rule, selecting a build and a sitemap check for email copy nothing
+prerenders. Both fixed in the same commit.
+
+**Blockers.** None.
+
+**Founder action required.** The email must not be sent before a frontend
+deploy has published `public/newsletter/`, or every image 404s in the inbox.
+Merging PR #52 triggers that deploy. Sending itself is manual in Brevo.
+
+**Next technical step.** Fill the five `REPLACE ME` posting slots in
+`week37.json` and rebuild. Section three has no weekly source: the four older
+drafts were assessed against the format and deleted, since one duplicated the
+week 37 rejection piece, two were general advice the rejection section exists to
+withhold, and none contained an observation a trends section needs. They are
+recoverable from `a962a1b` under `content/newsletter/` if that judgement was
+wrong.
+
+**Commit or PR.** `ac7d82a` on `newsletter-three-section`, PR #52. Not merged.
+
 
 ## 2026-09-07 — Google sign-in moved to its own Cloud project and published
 

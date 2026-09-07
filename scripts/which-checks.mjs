@@ -87,13 +87,37 @@ const RULES = [
   },
   {
     id: 'seo',
-    when: () => has(/^src\/pages\//) || has(/^content\//) || has(/^index\.html$/) ||
+    // content/ is SEO page source EXCEPT content/newsletter/, which is email
+    // copy: it is never prerendered and no build step reads it. Matching it here
+    // selected a build and a sitemap check for an email, and selected no test at
+    // all for the renderer, which is the newsletter rule below.
+    when: () => has(/^src\/pages\//) || has(/^content\/(?!newsletter\/)/) || has(/^index\.html$/) ||
                 has(/^public\/(sitemap|robots)/) || has(/^scripts\/prerender\.mjs$/),
     label: 'SEO or prerendered content change',
     checks: ['npm run build (build validation, includes prerender)',
              'sitemap and metadata check against dist/', 'git diff review'],
     notes: ['MANUAL CHECK REQUIRED: no structured data validator exists in this repo.',
             'Validate JSON-LD by hand or in an external validator. Do not install a tool for it.'],
+  },
+  {
+    id: 'newsletter',
+    when: () => has(/^scripts\/newsletter\//) || has(/^content\/newsletter\//) ||
+                has(/^supabase\/functions\/_shared\/newsletter\//) ||
+                has(/^supabase\/functions\/publish-weekly-newsletter\//),
+    label: 'Newsletter template, copy or weekly job change',
+    checks: ['npm run lint', 'npm run typecheck',
+             'npx tsx supabase/functions/_shared/newsletter/issue.test.ts',
+             'npx tsx supabase/functions/_shared/newsletter/piece.test.ts',
+             'npx tsx supabase/functions/publish-weekly-newsletter/logic.test.ts',
+             'npx tsx scripts/newsletter/dry-run.ts --offline',
+             'npx tsx scripts/newsletter/build.ts scripts/newsletter/week37.json',
+             'git diff review'],
+    notes: ['The dry run is the check that matters: it assembles a whole issue through the',
+            'same code the weekly job uses and enforces the one minute budget on the total.',
+            'Add OPENAI_API_KEY and drop --offline to exercise the live feeds and the model.',
+            'MANUAL CHECK REQUIRED: no email client rendering tool exists in this repo.',
+            'Preview the HTML in Brevo before sending. Gmail and Outlook are not tested here.',
+            'A change under _shared/ redeploys EVERY edge function on merge, not just this one.'],
   },
   {
     id: 'config',
