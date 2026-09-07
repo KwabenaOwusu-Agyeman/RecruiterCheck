@@ -32,9 +32,10 @@ doing it.
   result before the weekly job is ever scheduled:
   `OPENAI_API_KEY=<key> npx tsx scripts/newsletter/dry-run.ts`. Nothing else
   exercises the model. Recorded 2026-09-07.
-- **Founder action.** Run `supabase db push` yourself for
-  `20260907190000_newsletter_issues.sql` and
-  `20260907190100_publish_weekly_newsletter_cron.sql`, then regenerate both
+- **Founder action.** Run `supabase db push` yourself for the three pending
+  migrations, `20260907190000_newsletter_issues.sql`,
+  `20260907190100_publish_weekly_newsletter_cron.sql` and
+  `20260907200000_publish_weekly_newsletter_first_run.sql`, then regenerate both
   `database.ts` files. This environment's classifier refused the command, so it
   did not run. The function is deployed but nothing invokes it and the
   Control Centre shows a Newsletter warning until the table exists.
@@ -60,6 +61,47 @@ statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
 
 ---
+
+## 2026-09-07 — First newsletter issue brought forward to tomorrow
+
+**Objective.** Not wait until Monday 14 September for the first issue.
+
+**Completed.** `supabase/migrations/20260907200000_publish_weekly_newsletter_first_run.sql`
+schedules `publish-weekly-newsletter-first-run`, a poller that runs every ten
+minutes, invokes the function once with `{"firstRun": true}`, and unschedules
+itself once an issue exists or after 15 September. It polls rather than firing
+at a fixed time because `supabase db push` is run by hand: the first tick after
+the schema lands does the work, whenever that is.
+
+`nextNineAm(now, minLeadHours)` in `logic.ts` gives the next 09:00
+Europe/Amsterdam at least three hours away; `FIRST_RUN_MIN_LEAD_HOURS = 3` in
+`index.ts`. Below the threshold it rolls to the following morning rather than
+scheduling into a window too short to react in, and Brevo rejects a past
+`scheduledAt`, so there is no path from here to an immediate unattended send.
+The weekly Sunday to Monday cadence is unchanged: this schedules one issue, not
+a second series.
+
+**Verified.** lint 0 errors, typecheck clean, `test:edge` 22/22 files and 381
+assertions, `logic.test.ts` 36 including the first run taking tomorrow rather
+than next Monday, refusing to schedule inside the notice window, and holding
+that window across the October clock change. PR #54 merged as `6d3fc23`, deploy
+run 34149831177 succeeded and deployed `publish-weekly-newsletter` alone, which
+is correct: `_shared/` did not change this time.
+
+**Blockers.** All three migrations are still unapplied; `supabase db push`
+remains refused by this environment's command classifier. Nothing runs until
+the founder applies them.
+
+**Founder action required.** Run `supabase db push`. The first issue then
+schedules within about ten minutes for 09:00 Amsterdam, tomorrow if pushed
+before roughly 06:00. Push after 15 September and the catch-up job removes
+itself on its first tick and the normal Sunday cadence takes over.
+
+**Next technical step.** After the push, confirm a `newsletter_issues` row with
+status `scheduled`, then check `cron.job` no longer lists
+`publish-weekly-newsletter-first-run`. Regenerate both `database.ts` files.
+
+**Commit or PR.** `6d3fc23` on `main`, PR #54. Deploy run 34149831177.
 
 ## 2026-09-07 — Newsletter automation merged and deployed, migrations blocked
 
