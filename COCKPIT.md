@@ -28,18 +28,15 @@ doing it.
 - **Founder action.** Verify a real Google sign-in end to end after the move
   to the `myrecruitercheck` Cloud project, then delete the old `RecruiterCheck`
   OAuth client in `theorycoach-ai`. Recorded 2026-09-07.
-- **Founder action.** Run the newsletter dry run with a key and read the
-  result before the weekly job is ever scheduled:
-  `OPENAI_API_KEY=<key> npx tsx scripts/newsletter/dry-run.ts`. Nothing else
-  exercises the model. Recorded 2026-09-07.
-- **Founder action.** Run `supabase db push` yourself for the three pending
-  migrations, `20260907190000_newsletter_issues.sql`,
-  `20260907190100_publish_weekly_newsletter_cron.sql` and
-  `20260907200000_publish_weekly_newsletter_first_run.sql`, then regenerate both
-  `database.ts` files. This environment's classifier refused the command, so it
-  did not run. The function is deployed but nothing invokes it and the
-  Control Centre shows a Newsletter warning until the table exists.
-  Recorded 2026-09-07.
+- **Founder action, urgent.** An OpenAI API key and a Supabase webhook secret
+  were exposed in a screenshot on 2026-09-07 and must be rotated. Revoke the
+  OpenAI key at platform.openai.com and update `OPENAI_API_KEY` in Supabase Edge
+  Function secrets in the same sitting, or the weekly newsletter job fails and
+  nothing sends. Regenerate the Brevo webhook secret and update `WEBHOOK_SECRET`
+  and Brevo's webhook configuration. Recorded 2026-09-07.
+- **Founder action.** Review the first newsletter issue in Brevo before it sends
+  at 09:00 Europe/Amsterdam. The model leg has never been exercised, so this is
+  the first generated copy anyone will have read. Recorded 2026-09-07.
 - **Known limit.** Acquisition data begins 2026-09-05. Accounts created before
   that date cannot be attributed. Recorded 2026-09-06.
 
@@ -61,6 +58,45 @@ statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
 
 ---
+
+## 2026-09-07 — Newsletter schema applied, automation live
+
+**Objective.** Apply the three migrations and confirm the weekly job can run.
+
+**Completed.** The founder ran `supabase db push`. All three applied:
+`20260907190000_newsletter_issues.sql`,
+`20260907190100_publish_weekly_newsletter_cron.sql` and
+`20260907200000_publish_weekly_newsletter_first_run.sql`. The newsletter is now
+live end to end: table, weekly cron job, and the one-off catch-up poller.
+
+**Verified.** `supabase migration list --linked` shows all three with matching
+local and remote versions, so nothing is orphaned. `supabase gen types
+typescript` against the live schema produces a file **byte identical** to the
+committed `src/types/database.ts`, and `admin/src/types/database.ts` matches it,
+so the hand written `newsletter_issues` entry was exactly right and there is no
+drift to correct. No commit was needed.
+
+The dry run was executed against the live feeds without a key: 17 roles from
+Remotive and 234 from Arbeitnow, five selected. Normalisation confirmed working
+on real data, `Lead Data Engineer, Data Platform & AI` rendering with a comma
+rather than the dash the source carries, no gender boilerplate, and no
+Werkstudent listings surviving. The model leg remains unexercised locally.
+
+**Blockers.** None technical.
+
+**Founder action required.** An OpenAI API key and a Supabase webhook secret
+were exposed in a screenshot during this session and must be rotated. When the
+OpenAI key is revoked, `OPENAI_API_KEY` in Supabase Edge Function secrets must
+be updated in the same sitting, or the weekly job fails and no issue is sent.
+
+Review the first issue in Brevo before it sends at 09:00 Europe/Amsterdam.
+
+**Next technical step.** Confirm the catch up poller ran once and removed
+itself, and that `newsletter_issues` holds one row with a `campaign_id`. Until
+that row exists the Control Centre correctly shows a Newsletter warning reading
+"No newsletter issue has ever been built"; it clears itself on the first run.
+
+**Commit or PR.** No code change. Schema applied from `main` at `f653582`.
 
 ## 2026-09-07 — Issue sweep over the newsletter automation
 
