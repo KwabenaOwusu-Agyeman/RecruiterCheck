@@ -25,6 +25,9 @@ doing it.
 
 - **Founder action.** `STRIPE_SECRET_KEY` is unset, so the Admin Dashboard
   Payments page shows "Not reconciled against Stripe". Recorded 2026-09-06.
+- **Founder action.** Verify a real Google sign-in end to end after the move
+  to the `myrecruitercheck` Cloud project, then delete the old `RecruiterCheck`
+  OAuth client in `theorycoach-ai`. Recorded 2026-09-07.
 - **Known limit.** Acquisition data begins 2026-09-05. Accounts created before
   that date cannot be attributed. Recorded 2026-09-06.
 
@@ -44,6 +47,41 @@ It is carried by
 and the live `supabase/functions/keyword-scan/`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-07 — Google sign-in moved to its own Cloud project and published
+
+**Objective.** Make the Google consent screen show MyRecruiterCheck instead of
+the raw Supabase host.
+
+**Completed.** The OAuth client behind Google sign-in turned out to live in the
+unrelated `theorycoach-ai` Google Cloud project, whose consent branding was
+named for that product and whose OAuth config was incomplete. Since branding is
+per project and that project is shared, MyRecruiterCheck was given its own
+Cloud project `myrecruitercheck`: Auth Platform configured (app name
+MyRecruiterCheck, External, home page, `/privacy`, `/terms`, authorised domain
+`myrecruitercheck.com`), a new web OAuth client created with JavaScript origins
+for the live site and `localhost:5173` and the Supabase `/auth/v1/callback`
+redirect URI, and publishing status pushed from Testing to In production. The
+founder copied the new client ID and secret into the Supabase Google provider.
+No repository file changed.
+
+**Verified.** Console shows Publishing status "In production", branding saved,
+and the client listed. Not yet verified by a real sign-in.
+
+**Blockers.** None.
+
+**Founder action required.** Confirm a real Google sign-in completes for an
+account that has never used the app, then delete the now unused `RecruiterCheck`
+client in the `theorycoach-ai` project. The consent screen currently shows
+`fullcircle.ai@gmail.com` as the support email, since Google offers only the
+account address or a Google Group; a support@ Group would replace it. No app
+logo is set, which is deliberate, as uploading one starts Google verification.
+
+**Next technical step.** None in this repository.
+
+**Commit or PR.** None. Console configuration only.
 
 ---
 
