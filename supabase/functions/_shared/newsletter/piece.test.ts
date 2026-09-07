@@ -1,4 +1,4 @@
-// Run with: npx tsx scripts/newsletter/piece.test.ts
+// Run with: npx tsx supabase/functions/_shared/newsletter/piece.test.ts
 import assert from 'node:assert/strict'
 import {
   countWords,

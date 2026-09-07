@@ -26,7 +26,7 @@
 // anyone to remember them at 8am on a Monday. An issue that breaks them does
 // not render.
 
-import { EMAIL_TOKENS } from '../../supabase/functions/_shared/email/tokens.ts'
+import { EMAIL_TOKENS } from '../email/tokens.ts'
 
 const { color, font, radius, spacing, maxWidth } = EMAIL_TOKENS
 

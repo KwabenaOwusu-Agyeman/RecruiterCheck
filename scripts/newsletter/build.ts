@@ -10,7 +10,7 @@
 // words inside a JSON string.
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { loadPiece } from './piece.ts'
+import { loadPiece } from '../../supabase/functions/_shared/newsletter/piece.ts'
 import {
   WORDS_PER_MINUTE,
   WORD_BUDGET,
@@ -19,7 +19,7 @@ import {
   validateIssue,
   type Issue,
   type JobPosting,
-} from './issue.ts'
+} from '../../supabase/functions/_shared/newsletter/issue.ts'
 
 /** Where /newsletter/ images are served from, so an inbox can load them. */
 const SITE_URL = 'https://myrecruitercheck.com'

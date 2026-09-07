@@ -850,6 +850,54 @@ export type Database = {
           },
         ]
       }
+      newsletter_issues: {
+        Row: {
+          campaign_id: number | null
+          created_at: string
+          error: string | null
+          html: string | null
+          id: string
+          postings: Json
+          rejection_heading: string | null
+          scheduled_at: string | null
+          status: string
+          subject: string | null
+          updated_at: string
+          week: number
+          year: number
+        }
+        Insert: {
+          campaign_id?: number | null
+          created_at?: string
+          error?: string | null
+          html?: string | null
+          id?: string
+          postings?: Json
+          rejection_heading?: string | null
+          scheduled_at?: string | null
+          status: string
+          subject?: string | null
+          updated_at?: string
+          week: number
+          year: number
+        }
+        Update: {
+          campaign_id?: number | null
+          created_at?: string
+          error?: string | null
+          html?: string | null
+          id?: string
+          postings?: Json
+          rejection_heading?: string | null
+          scheduled_at?: string | null
+          status?: string
+          subject?: string | null
+          updated_at?: string
+          week?: number
+          year?: number
+        }
+        Relationships: []
+      }
       newsletter_subscribers: {
         Row: {
           consent_at: string

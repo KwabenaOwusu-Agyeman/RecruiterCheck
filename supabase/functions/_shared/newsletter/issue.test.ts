@@ -1,4 +1,4 @@
-// Run with: npx tsx scripts/newsletter/issue.test.ts
+// Run with: npx tsx supabase/functions/_shared/newsletter/issue.test.ts
 import assert from 'node:assert/strict'
 import {
   MAX_POSTINGS,
