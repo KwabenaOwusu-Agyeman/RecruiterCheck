@@ -26,11 +26,16 @@
 -- run once via the Supabase SQL editor. The key value itself is never
 -- committed here.
 --
--- The timeout is generous because one run makes four external calls: two job
--- feeds, OpenAI, and Brevo. pg_net's default would abandon the request while
--- the function was still working, and the function would go on to create the
--- campaign anyway, so a short timeout here would report a failure that did not
--- happen.
+-- The timeout covers the worst case rather than the typical one. A run makes
+-- four external calls and can retry the model once: 15s of feeds in parallel,
+-- then up to two generation attempts at 45s, then 20s for Brevo, which is 125s.
+-- A 120s timeout would abandon the request while the function was still
+-- working, and the function would go on to create the campaign anyway, so
+-- pg_net would record a failure that did not happen. 180s leaves headroom.
+--
+-- Abandoning is no longer dangerous, since the week is reserved before Brevo is
+-- called and a second run finds the reservation, but a log that lies about
+-- whether an email went out is worth avoiding on its own.
 select cron.schedule(
   'publish-weekly-newsletter',
   '0 8 * * 0',
@@ -43,7 +48,7 @@ select cron.schedule(
         'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'service_role_key' limit 1)
       ),
       body := '{}'::jsonb,
-      timeout_milliseconds := 120000
+      timeout_milliseconds := 180000
     ) as request_id;
   $$
 );
