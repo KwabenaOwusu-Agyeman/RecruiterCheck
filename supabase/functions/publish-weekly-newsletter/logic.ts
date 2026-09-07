@@ -298,13 +298,25 @@ function zoneDateParts(zone: string, at: Date): { year: number; month: number; d
 }
 
 /**
- * The instant of 09:00 Amsterdam on the first Monday strictly after `now`.
+ * The instant of 09:00 Amsterdam on a given calendar date there.
  *
  * Amsterdam is UTC+1 or UTC+2 depending on the date, so the offset is derived
- * rather than assumed. Two passes: guess the instant using the offset in force
- * at the naive time, then re derive at that instant and correct. 09:00 never
- * falls inside a transition (they happen at 02:00 and 03:00 local), so this
- * converges rather than oscillating.
+ * rather than assumed. Two passes: guess using the offset in force at the naive
+ * time, then re derive at that instant and correct. 09:00 never falls inside a
+ * transition (they happen at 02:00 and 03:00 local), so this converges rather
+ * than oscillating.
+ *
+ * Day overflow is intentional and safe: Date.UTC normalises day 31 + 5 into the
+ * following month, so callers can add days without calendar arithmetic.
+ */
+function nineAmAmsterdam(year: number, month: number, day: number): Date {
+  const naive = new Date(Date.UTC(year, month - 1, day, 9, 0, 0))
+  const firstGuess = naive.getTime() - zoneOffsetMinutes(ZONE, naive) * 60000
+  return new Date(naive.getTime() - zoneOffsetMinutes(ZONE, new Date(firstGuess)) * 60000)
+}
+
+/**
+ * The normal weekly slot: 09:00 Amsterdam on the first Monday after `now`.
  *
  * Returned as a UTC instant. Brevo accepts an offset form too, but a Z string
  * cannot be misread by whichever timezone the account is configured in.
@@ -312,11 +324,28 @@ function zoneDateParts(zone: string, at: Date): { year: number; month: number; d
 export function nextMondayNineAm(now: Date): Date {
   const today = zoneDateParts(ZONE, now)
   const daysAhead = ((1 - today.weekday + 7) % 7) || 7
+  return nineAmAmsterdam(today.year, today.month, today.day + daysAhead)
+}
 
-  const target = new Date(Date.UTC(today.year, today.month - 1, today.day + daysAhead, 9, 0, 0))
-  const firstGuess = target.getTime() - zoneOffsetMinutes(ZONE, target) * 60000
-  const corrected = target.getTime() - zoneOffsetMinutes(ZONE, new Date(firstGuess)) * 60000
-  return new Date(corrected)
+/**
+ * The next 09:00 Amsterdam that is still at least `minLeadHours` away.
+ *
+ * Only the first ever issue uses this. The weekly job schedules about a day
+ * ahead so a bad week can be cancelled; a first run asked for as soon as
+ * possible cannot have that much lead, so the lead is stated as a number here
+ * rather than being silently nil. Below the threshold it rolls to the next
+ * morning instead of scheduling into a window too short to react in, and Brevo
+ * rejects a past scheduledAt outright, so it can never degrade into an
+ * immediate send.
+ */
+export function nextNineAm(now: Date, minLeadHours: number): Date {
+  const today = zoneDateParts(ZONE, now)
+  const earliest = now.getTime() + minLeadHours * 3_600_000
+  for (let ahead = 0; ahead <= 2; ahead += 1) {
+    const candidate = nineAmAmsterdam(today.year, today.month, today.day + ahead)
+    if (candidate.getTime() >= earliest) return candidate
+  }
+  return nineAmAmsterdam(today.year, today.month, today.day + 2)
 }
 
 /** ISO 8601 week number and its week-numbering year. */
