@@ -18,7 +18,7 @@ import { spawnSync } from 'node:child_process'
 import { join, relative } from 'node:path'
 
 const ROOT = process.cwd()
-const SEARCH_ROOTS = ['src', 'supabase/functions', 'admin/src']
+const SEARCH_ROOTS = ['src', 'supabase/functions', 'admin/src', 'scripts']
 // review/ holds archived audit artifacts whose *.test.ts files are Deno
 // tests (remote URL imports, Deno.test); they are not run by this runner.
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'dist-ssr', '.next', '.agents', '.scratch', 'review'])
