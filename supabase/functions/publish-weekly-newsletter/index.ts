@@ -152,23 +152,28 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Idempotence FIRST, before anything that can call fail().
+    //
+    // fail() writes status 'failed' for this year and week. If that ran while a
+    // campaign was already scheduled, it would overwrite the live row and lose
+    // its campaign_id, leaving a record saying the week failed while the email
+    // went out regardless. Checking here means fail() can only ever touch a row
+    // this run created.
+    const { data: existing } = await admin
+      .from('newsletter_issues')
+      .select('id, campaign_id, status')
+      .eq('year', year).eq('week', week).eq('status', 'scheduled')
+      .maybeSingle()
+    if (existing && !dryRun) {
+      return jsonResponse({ skipped: 'already scheduled', year, week, campaignId: existing.campaign_id })
+    }
+
     const openaiKey = Deno.env.get('OPENAI_API_KEY')
     const brevoKey = Deno.env.get('BREVO_API_KEY')
     const listId = Number(Deno.env.get('BREVO_NEWSLETTER_LIST_ID') ?? '0')
     if (!openaiKey) return await fail('OPENAI_API_KEY is not set', 503)
     if (!brevoKey) return await fail('BREVO_API_KEY is not set', 503)
     if (!dryRun && listId <= 0) return await fail('BREVO_NEWSLETTER_LIST_ID is not set', 503)
-
-    // Idempotence. cron.schedule fires once, but a retry or a manual invoke
-    // must not produce a second campaign for the same week.
-    const { data: existing } = await admin
-      .from('newsletter_issues')
-      .select('id, campaign_id')
-      .eq('year', year).eq('week', week).eq('status', 'scheduled')
-      .maybeSingle()
-    if (existing && !dryRun) {
-      return jsonResponse({ skipped: 'already scheduled', year, week, campaignId: existing.campaign_id })
-    }
 
     const { data: recent, error: recentError } = await admin
       .from('newsletter_issues')
@@ -291,6 +296,31 @@ Deno.serve(async (req) => {
       })
     }
 
+    // Reserve the week BEFORE creating the campaign.
+    //
+    // The dangerous order is create-then-record: if the campaign is created and
+    // the row write then fails, nothing records that the week is done, and the
+    // next invocation builds and sends a SECOND campaign. The first run poller
+    // fires every ten minutes, so that is not a remote possibility, it is a
+    // loop. Reserving first means a lost write leaves a row that blocks the
+    // retry. campaign_id stays null until Brevo answers, so a reserved row with
+    // no campaign_id is the detectable signature of exactly that crash.
+    const { error: reserveError } = await admin
+      .from('newsletter_issues')
+      .insert({
+        year, week, status: 'scheduled', subject, html,
+        postings: issue.postings, rejection_heading: rejectionHeading,
+        scheduled_at: scheduledAt.toISOString(),
+      })
+    if (reserveError) {
+      // The unique constraint on (year, week) is the lock. Losing the race is
+      // a success for the other run, not a failure of this one.
+      console.warn('publish-weekly-newsletter: week already reserved', {
+        year, week, message: reserveError.message,
+      })
+      return jsonResponse({ skipped: 'already reserved', year, week })
+    }
+
     const campaignResponse = await fetchWithTimeout(
       BREVO_CAMPAIGN_ENDPOINT,
       {
@@ -312,21 +342,15 @@ Deno.serve(async (req) => {
     }
     const campaign = await campaignResponse.json() as { id?: number }
 
-    const { error: writeError } = await admin.from('newsletter_issues').upsert({
-      year, week,
-      status: 'scheduled',
-      subject,
-      html,
-      postings: issue.postings,
-      rejection_heading: rejectionHeading,
-      campaign_id: campaign.id ?? null,
-      scheduled_at: scheduledAt.toISOString(),
-      error: null,
-    }, { onConflict: 'year,week' })
+    const { error: writeError } = await admin
+      .from('newsletter_issues')
+      .update({ campaign_id: campaign.id ?? null, error: null })
+      .eq('year', year).eq('week', week)
     if (writeError) {
-      // The campaign exists and will send. Say so loudly rather than reporting
-      // a failure that would be read as "nothing went out".
-      console.error('publish-weekly-newsletter: campaign scheduled but not recorded', {
+      // The reservation already blocks a second campaign, so the only thing
+      // lost here is the id. Say so loudly: without it, cancelling this issue
+      // in Brevo means finding it by hand.
+      console.error('publish-weekly-newsletter: campaign scheduled but id not recorded', {
         year, week, campaignId: campaign.id, message: writeError.message,
       })
     }

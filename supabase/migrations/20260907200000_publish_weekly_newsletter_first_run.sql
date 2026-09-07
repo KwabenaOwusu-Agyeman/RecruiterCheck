@@ -14,9 +14,12 @@
 --
 -- It removes itself on either condition:
 --
---   1. An issue exists. publish-weekly-newsletter is idempotent per ISO week
---      anyway (unique (year, week), and it returns early on an existing
---      scheduled row), so this is belt and braces rather than the only guard.
+--   1. Any row exists in newsletter_issues, whatever its status. Deliberately
+--      "any" and not "scheduled": a run that reserved the week and then failed
+--      at Brevo leaves a failed row, and retrying that automatically every ten
+--      minutes would hammer the feeds and a paid model API without a human ever
+--      seeing why it failed. One attempt, then stop and let the Control Centre
+--      alert say so. The weekly job picks it up on Sunday regardless.
 --   2. The deadline has passed. Without this, a job that never succeeded would
 --      poll forever, calling two job feeds and a paid model API every ten
 --      minutes. The deadline is after the first weekly run on 13 September, so
@@ -37,7 +40,7 @@ select cron.schedule(
   $job$
   do $inner$
   begin
-    if exists (select 1 from public.newsletter_issues where status = 'scheduled')
+    if exists (select 1 from public.newsletter_issues)
        or now() > timestamptz '2026-09-15 00:00:00+00' then
       perform cron.unschedule('publish-weekly-newsletter-first-run');
     else
