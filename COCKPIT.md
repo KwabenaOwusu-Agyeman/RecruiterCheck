@@ -62,6 +62,63 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-07 — Issue sweep over the newsletter automation
+
+**Objective.** Fix everything outstanding that does not require the founder.
+
+**Completed.** Five PRs, #56 through #59 plus the alert.
+
+Two ordering bugs in `publish-weekly-newsletter/index.ts`, both found by
+reviewing already merged code (#57). A **double send** was possible: the order
+was create the campaign then record it, so a failed write left nothing
+recording the week as done and the next invocation sent a second campaign to
+the whole list. With the first run poller firing every ten minutes that was a
+loop, not an edge case. The week is now reserved before Brevo is called. And
+`fail()` ran before the existing-issue check, so a missing key could overwrite a
+scheduled row and lose its `campaign_id` while the email sent anyway; the check
+now runs first.
+
+`index.test.ts` guards both orderings at source level, `index.ts` being
+unimportable under tsx. The guards were checked against a deliberately reordered
+copy to confirm they fail when the order is wrong.
+
+The first run poller now stops after any row exists rather than any scheduled
+row, so a failed week is attempted once rather than retried every ten minutes
+against two feeds and a paid API (#57). `loadAlerts` gained a critical alert for
+a reservation whose `campaign_id` never came back, which is the one state the
+reserve-first ordering introduces and nothing was watching (#58). Both cron
+timeouts raised from 120s to 180s, the worst case run being 125s (#59).
+
+Stale references from before automation cleared (#56): `CREDITS.md` described a
+blog and pointed at a deleted `scripts/newsletter/cover.ts`; `week37.json` read
+as a pending manual issue and is now `example-issue.json`; `GEMINI_API_KEY` was
+documented in `.env.example` and referenced by no code anywhere.
+
+**Verified.** Full suite 37/37 files and 567 assertions. lint 0 errors,
+typecheck clean in both apps, `npm run build` clean with all 52 CSP hashes
+unchanged, admin build clean. Deploy runs 34150865305 and the run for #59 both
+succeeded, deploying `publish-weekly-newsletter` alone, correctly, since
+`_shared/` did not change.
+
+A repo wide dangling reference sweep found nothing real: every apparent miss is
+either a path relative to `recruitercheck-extension/`, a reference inside the
+`PART_A_*` and `review/` material that `CLAUDE.md` records as unmaintained
+history, or a `COCKPIT.md` entry describing what was true when written.
+
+**Blockers.** All three migrations still unapplied. `supabase db push` remains
+refused by this environment's command classifier.
+
+**Founder action required.** Unchanged: run `supabase db push`, having run the
+dry run with a key first.
+
+**Next technical step.** The five `react-refresh` lint warnings are the only
+known unfixed defect. Two are in `src/hooks/useAuth.tsx` and
+`src/features/auth/context/AuthModalContext.tsx`, so fixing them means editing
+auth code, which is a mandatory security review, to silence a cosmetic warning
+in files unrelated to any current work. Left deliberately.
+
+**Commit or PR.** PRs #56, #57, #58, #59 on `main`.
+
 ## 2026-09-07 — First newsletter issue brought forward to tomorrow
 
 **Objective.** Not wait until Monday 14 September for the first issue.
