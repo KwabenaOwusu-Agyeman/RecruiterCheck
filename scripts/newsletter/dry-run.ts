@@ -1,4 +1,5 @@
 // Run with: OPENAI_API_KEY=<key> npx tsx scripts/newsletter/dry-run.ts
+//           npx tsx scripts/newsletter/dry-run.ts --no-model
 //           npx tsx scripts/newsletter/dry-run.ts --offline
 //
 // Runs the whole weekly newsletter pipeline the way publish-weekly-newsletter
@@ -15,9 +16,13 @@
 // nothing else: no Supabase, no database, no storage, no Brevo, no candidate
 // data, and no email reaches anybody. The job feeds are public and keyless.
 // The API key is read from this process's environment and is never printed.
+// --no-model fetches the real feeds but skips the model, so you can see the
+// week's actual roles and the real layout without a key and without spending
+// anything. The prose is placeholder; everything else is what would be sent.
+//
 // --offline skips both the feeds and OpenAI, using invented postings and
 // invented copy, so the assembly and rendering can be exercised with no key
-// and no network at all.
+// and no network at all. That is the form the repo's checks run.
 
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { countIssueWords, renderIssue, validateIssue, type Issue } from '../../supabase/functions/_shared/newsletter/issue.ts'
@@ -43,6 +48,8 @@ import {
 } from '../../supabase/functions/publish-weekly-newsletter/logic.ts'
 
 const offline = process.argv.includes('--offline')
+/** Real feeds, placeholder prose. A preview that costs nothing. */
+const noModel = process.argv.includes('--no-model')
 // .scratch/ is already gitignored, so a preview never becomes an accidental
 // commit and no .gitignore change is needed to keep it out.
 const OUT = '.scratch/newsletter-dry-run.html'
@@ -119,8 +126,13 @@ async function main() {
   let lastProblem: string | null = null
 
   for (let attempt = 0; attempt < 2 && !issue; attempt += 1) {
-    if (offline) {
-      generated = OFFLINE_COPY
+    if (offline || noModel) {
+      // Placeholder prose, but the postings below are this week's real ones,
+      // so the layout, the length and the roles are exactly what would send.
+      generated = {
+        ...OFFLINE_COPY,
+        postingNotes: postings.map((_, i) => OFFLINE_COPY.postingNotes[i] ?? 'Worth a look'),
+      }
     } else {
       const apiKey = process.env.OPENAI_API_KEY
       if (!apiKey) {
@@ -191,6 +203,9 @@ async function main() {
   console.log(`\nSubject: ${generated.subject}`)
   console.log(`Would schedule for: ${nextMondayNineAm(now).toISOString()}`)
   console.log(`Length: ${words} words, about ${(words / 200).toFixed(1)} min`)
+  if (offline || noModel) {
+    console.log('\nProse is placeholder. The roles, layout and length are real.')
+  }
   console.log(`\nWrote ${OUT}. Nothing was sent and no campaign was created.`)
 }
 
