@@ -47,6 +47,56 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-07 — Sign-in verified end to end, newsletter consent at signup
+
+**Objective.** Get the Control Centre login actually working, and give the
+newsletter a way to gain subscribers.
+
+**Completed.** `4084088` (#49): an unticked newsletter consent checkbox on the
+signup form in `src/features/auth/components/AuthModal.tsx`, calling the
+existing `newsletter-subscribe` function with `consent_source: 'signup'`. The
+function had been written and deployed with zero callers. `CONSENT_TEXT`
+updated to describe what will actually be sent; existing subscribers keep the
+wording they saw.
+
+**Verified.** All three sign-in methods work against production: Google
+(round trip completed to the Control Centre, signed in), magic link, and
+password. `test:unit` 14/14 files 181 assertions, `test:edge` 19/19 314, 52
+CSP hashes unchanged. Consent copy and checkbox confirmed present in the
+deployed bundle.
+
+**Root cause found.** Google sign-in and the emailed magic link were both
+broken by one missing entry in Supabase Authentication > URL Configuration.
+Diagnosed with `auth.admin.generateLink`, which returns the redirect Supabase
+actually resolved: every admin URL was being substituted with `site_url`,
+identically to a deliberately bogus control URL. Fixed by adding
+`https://myrecruitercheck-admin.vercel.app/**`. The same probe now reports
+both admin paths allowlisted and still substitutes the control.
+
+**Correction.** An earlier reading of the Google authorize URL was taken as
+proof the allowlist was in place. It was not: that URL only carries what the
+app requested, and Supabase validates at the callback. `generateLink` is the
+probe that settles it.
+
+**Incident, self inflicted.** `myrecruitercheck.com` returned 403 "Vercel
+Security Checkpoint" on every path for roughly ten minutes while
+`www.myrecruitercheck.com` stayed 200. Caused by polling the apex every 15
+seconds in a loop waiting for a bundle hash to change. It cleared on its own,
+confirming an IP scoped bot challenge rather than a project setting.
+Deployment protection was checked and is correct: SSO is
+`all_except_custom_domains`, so it does not apply to the custom domain. Watch
+the Vercel deployment status, not the live site, when waiting for a deploy.
+
+**Blockers.** None.
+
+**Founder action required.** `STRIPE_SECRET_KEY` is still unset for the admin
+project, so Payments shows "Not reconciled against Stripe".
+
+**Next technical step.** Newsletter template in Brevo; then the sign-in event
+log, which blocks historical active users and retention cohorts.
+
+---
+
 ## 2026-09-07 — Google sign-in and magic link on the Control Centre
 
 **Objective.** Make the Control Centre login usable. `admin/src/app/actions.ts`
