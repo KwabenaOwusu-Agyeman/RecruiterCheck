@@ -1,4 +1,5 @@
 import { cn } from '@/utils/cn'
+import { TIER_LABEL, getScoreTier, type ScoreTier } from '@/components/feedback/scoreTier'
 
 /**
  * The Interview Score lockup: the one way a score is presented anywhere it
@@ -24,20 +25,6 @@ import { cn } from '@/utils/cn'
  * under this CSP); fold it onto this component when that page is next
  * touched, not before.
  */
-
-export type ScoreTier = 'likely' | 'improve' | 'not-a-fit'
-
-export function getScoreTier(score: number): ScoreTier {
-  if (score >= 85) return 'likely'
-  if (score >= 61) return 'improve'
-  return 'not-a-fit'
-}
-
-export const TIER_LABEL: Record<ScoreTier, string> = {
-  likely: 'Likely Interview Candidate',
-  improve: 'Needs Improvement',
-  'not-a-fit': 'Not a Fit',
-}
 
 /**
  * The three dimensions of the real scoring model. The relative weighting
