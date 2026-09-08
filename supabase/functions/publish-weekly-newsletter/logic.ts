@@ -11,6 +11,7 @@
 // this touches the SENSITIVE or PRODUCTION USER DATA classes.
 
 import { MAX_POSTINGS, type JobPosting } from '../_shared/newsletter/issue.ts'
+import { REGIONS, resolveRegion, type Board, type Region } from './boards.ts'
 
 /** Absolute origin for images. An inbox has no origin to resolve against. */
 export const SITE_URL = 'https://myrecruitercheck.com'
@@ -33,6 +34,13 @@ export interface FeedItem {
   company: string
   location: string
   url: string
+  /**
+   * Which of the five regions this role is in, or null when its location names
+   * none of them. Read from the posting's own location, never from the source
+   * it arrived on. Optional so the two open feeds and existing tests can build
+   * an item without one; an item with no region can still fill a leftover slot.
+   */
+  region?: Region | null
 }
 
 /**
@@ -96,7 +104,11 @@ const WRONG_ROLE_TYPES = /\b(werkstudent|praktikum|praktikant|ausbildung|azubi|i
  * board changing its shape should cost us one posting, not produce an issue
  * with the word "undefined" in it.
  */
-function toItem(raw: unknown, fields: { role: string; company: string; location: string; url: string }): FeedItem | null {
+function toItem(
+  raw: unknown,
+  fields: { role: string; company: string; location: string; url: string },
+  boardRegion: Region | null = null,
+): FeedItem | null {
   if (typeof raw !== 'object' || raw === null) return null
   const record = raw as Record<string, unknown>
 
@@ -120,6 +132,10 @@ function toItem(raw: unknown, fields: { role: string; company: string; location:
     company: cleanCompany,
     location: normaliseText(location, 40) || 'Remote',
     url,
+    // From the RAW location, before normaliseText truncates it to 40 characters.
+    // "Cupertino, California, United States; San Francisco, ..." loses its
+    // country to that cap, and a region read afterwards would be wrong.
+    region: resolveRegion(location, boardRegion),
   }
 }
 
@@ -136,6 +152,38 @@ export function parseArbeitnow(payload: unknown): FeedItem[] {
   if (!Array.isArray(data)) return []
   return data
     .map((j) => toItem(j, { role: 'title', company: 'company_name', location: 'location', url: 'url' }))
+    .filter((i): i is FeedItem => i !== null)
+}
+
+/**
+ * One company board, from Greenhouse, Lever or Ashby.
+ *
+ * Three different field names for the same four facts. Only Greenhouse returns
+ * the employer, so the other two take it from the board entry. Everything then
+ * goes through toItem, so third party text gets the same hygiene as the open
+ * feeds rather than a second, looser path.
+ */
+export function parseBoard(board: Board, region: Region, payload: unknown): FeedItem[] {
+  const rows = board.platform === 'lever'
+    ? (Array.isArray(payload) ? payload : [])
+    : (Array.isArray((payload as { jobs?: unknown })?.jobs) ? (payload as { jobs: unknown[] }).jobs : [])
+
+  return rows
+    .map((raw) => {
+      if (typeof raw !== 'object' || raw === null) return null
+      const job = raw as Record<string, unknown>
+      const text = (v: unknown): string => (typeof v === 'string' ? v : '')
+      const within = (v: unknown, key: string): string =>
+        v && typeof v === 'object' ? text((v as Record<string, unknown>)[key]) : ''
+
+      const flat = board.platform === 'greenhouse'
+        ? { role: text(job.title), company: board.name, location: within(job.location, 'name'), url: text(job.absolute_url) }
+        : board.platform === 'lever'
+          ? { role: text(job.text), company: board.name, location: within(job.categories, 'location'), url: text(job.hostedUrl) }
+          : { role: text(job.title), company: board.name, location: text(job.location), url: text(job.jobUrl) }
+
+      return toItem(flat, { role: 'role', company: 'company', location: 'location', url: 'url' }, region)
+    })
     .filter((i): i is FeedItem => i !== null)
 }
 
@@ -158,8 +206,20 @@ const BROAD_TERMS = [
   'platform engineer', 'devops', 'infrastructure', 'cloud', 'python',
 ]
 
+/**
+ * Functions that are not the job even when the title says AI.
+ *
+ * A dry run picked "Senior AI Governance Counsel" as one of the week's five.
+ * That is a lawyer's job, and it ranked top because ' ai ' is a strong term.
+ * Every one of these describes work around the technology rather than the
+ * engineering, sales and legal included, and the newsletter goes to people
+ * looking for the engineering.
+ */
+const NOT_THE_JOB = /\b(counsel|legal|attorney|paralegal|compliance officer|account executive|sales|business development|partnerships|customer success|recruiter|recruiting|talent acquisition|marketing|brand|copywriter|finance|accountant|accounting|payroll|tax|auditor|field engineering|solutions engineer|sales engineer|pre ?sales)\b/i
+
 /** Padded so ' ai ' cannot match inside "detail" or "chair". */
 function tier(role: string): 0 | 1 | 2 {
+  if (NOT_THE_JOB.test(role)) return 2
   const haystack = ` ${role.toLowerCase()} `
   if (STRONG_TERMS.some((t) => haystack.includes(t))) return 0
   if (BROAD_TERMS.some((t) => haystack.includes(t))) return 1
@@ -189,14 +249,30 @@ export function selectPostings(items: FeedItem[], alreadySent: Iterable<string>)
     // the same issue and a test is not at the mercy of sort implementation.
     .sort((a, b) => a.rank - b.rank || a.index - b.index)
 
-  for (const { item } of eligible) {
-    if (chosen.length >= REQUIRED_POSTINGS) break
+  const take = (item: FeedItem): void => {
+    if (chosen.length >= REQUIRED_POSTINGS) return
     const company = item.company.toLowerCase()
-    if (seenUrls.has(item.url) || seenCompanies.has(company)) continue
+    if (seenUrls.has(item.url) || seenCompanies.has(company)) return
     seenUrls.add(item.url)
     seenCompanies.add(company)
     chosen.push(item)
   }
+
+  // Five postings, five regions, so the first pass takes the best eligible role
+  // from each in turn. This is the whole reason the regional boards exist: the
+  // open feeds return nothing at all for Africa or India, so without a pass
+  // that reserves a slot per region those two would never appear however many
+  // postings were gathered.
+  for (const region of REGIONS) {
+    const best = eligible.find(({ item }) => item.region === region)
+    if (best) take(best.item)
+  }
+
+  // Then fill whatever is left from anywhere, best ranked first. A region with
+  // nothing new this week costs its slot to another region rather than costing
+  // the issue: five roles from four regions is a weaker issue, an issue that
+  // failed to send is no issue.
+  for (const { item } of eligible) take(item)
 
   return chosen
 }
