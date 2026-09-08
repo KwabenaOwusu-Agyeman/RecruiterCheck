@@ -95,7 +95,16 @@ and why `relatedLinks` is the only internal linking lever on them. Recorded so
 a later session does not read the thin link graph as a bug and reinstate the
 footer.
 
-**Commit or PR.** Branch `seo-week2-tool-cluster`, commit `c801804`.
+**Verified in production.** After the merge, all seven tool pages serve the
+complete cluster live: each reaches its six siblings plus `/pricing`, no
+duplicates, no self links. Regression sweep clean against production: PR #67's
+role and comparison clusters intact, `/pricing` still carries `Product` with
+the OG image and the 10/20/40 offers plus `BreadcrumbList`, PR #68's
+`SoftwareApplication` free offer present, `/app-shell.html` still
+`X-Robots-Tag: noindex`, www still 301, robots still disallows `/sign-in`.
+
+**Commit or PR.** PR #69, merged as `84f49eb`. Branch
+`seo-week2-tool-cluster`, commit `c801804`.
 
 ---
 
