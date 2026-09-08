@@ -38,6 +38,7 @@ import { NewCheckPage } from '@/pages/NewCheckPage'
 import { NewsletterUnsubscribePage } from '@/pages/NewsletterUnsubscribePage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { PricingPage } from '@/pages/PricingPage'
+import { NewsletterIssuePage, ResourceArticlePage } from '@/pages/EditorialPage'
 import { PrivacyPage } from '@/pages/PrivacyPage'
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage'
 import { RecruiterEvaluationPage } from '@/pages/RecruiterEvaluationPage'
@@ -92,6 +93,9 @@ export function AppRoutes() {
         <Route path="myrecruitercheck-vs-kickresume" element={<MyRecruiterCheckVsKickresumePage />} />
         <Route path="myrecruitercheck-vs-chatgpt" element={<MyRecruiterCheckVsChatGptPage />} />
         <Route path="pricing" element={<PricingPage />} />
+        {/* Editorial content. One route per namespace, resolved by slug from
+            the publishing index, so a new published file needs no route here. */}
+        <Route path="resources/:slug" element={<ResourceArticlePage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
 
@@ -108,7 +112,10 @@ export function AppRoutes() {
           ProtectedRoute: the destination is public, so a signed-out visitor
           should reach the prices rather than be bounced to sign-in. */}
       <Route path="account/billing" element={<BillingRedirect />} />
+      {/* unsubscribe is declared before the slug route and is a reserved slug in
+          the publishing schema, so a content file can never shadow it. */}
       <Route path="newsletter/unsubscribe" element={<NewsletterUnsubscribePage />} />
+      <Route path="newsletter/:slug" element={<NewsletterIssuePage />} />
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>

@@ -11,43 +11,46 @@ const rootDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
 const clientDir = path.join(rootDir, 'dist')
 const serverEntry = path.join(rootDir, 'dist-ssr', 'entry-server.js')
 
-const ROUTES = [
-  '/',
-  '/about',
-  '/faq',
-  '/terms',
-  '/privacy',
-  '/cookies',
-  '/disclaimer',
-  '/application-checker',
-  '/free-cv-checker',
-  '/ats-resume-checker',
-  '/tailor-cv-to-job-description',
-  '/cv-keyword-checker',
-  '/cover-letter-generator',
-  '/recruiter-message-generator',
-  '/resume-strengths-and-weaknesses',
-  '/job-application-feedback',
-  '/how-recruiters-evaluate-a-cv',
-  '/resume-job-description-match',
-  '/interview-probability-score',
-  '/how-interview-score-works',
-  '/software-engineer-resume-checker',
-  '/data-analyst-cv-checker',
-  '/data-scientist-cv-checker',
-  '/machine-learning-engineer-cv-checker',
-  '/ai-engineer-cv-checker',
-  '/myrecruitercheck-vs-jobscan',
-  '/myrecruitercheck-vs-resume-worded',
-  '/myrecruitercheck-vs-teal',
-  '/myrecruitercheck-vs-rezi',
-  '/myrecruitercheck-vs-kickresume',
-  '/myrecruitercheck-vs-chatgpt',
-  '/pricing',
-]
+// The route set has two halves and no hand maintained third copy.
+//
+//   Hand built pages ARE code, so nothing can discover them from a directory.
+//   They live in src/routes/static-routes.ts, which the sitemap reads too.
+//
+//   Editorial content discovers itself. Adding a published markdown file under
+//   content/ adds a route here, a prerendered page and a sitemap entry, with no
+//   list to edit. A draft is absent from the index, so it has no route at all
+//   and cannot be accidentally prerendered or indexed.
+//
+// Both come from the server bundle, because this file is plain .mjs and cannot
+// import TypeScript.
 
 const template = fs.readFileSync(path.join(clientDir, 'index.html'), 'utf-8')
-const { render } = await import(serverEntry)
+const { render, contentIndex, publishedRoutes, staticRoutePaths } = await import(serverEntry)
+
+const content = contentIndex()
+if (content.problems.length > 0) {
+  console.error('\nBuild failed: content cannot be published:\n')
+  for (const problem of content.problems) console.error(`  ${problem}`)
+  console.error('')
+  process.exit(1)
+}
+
+const ROUTES = [...staticRoutePaths(), ...publishedRoutes()]
+
+// Each published item is written where a client side navigation can fetch it,
+// for a page this build prerendered but the visitor reached without a reload.
+const dataDir = path.join(clientDir, 'content-data')
+for (const item of content.items) {
+  const route = `${item.type === 'newsletter' ? '/newsletter' : '/resources'}/${item.slug}`
+  const file = path.join(dataDir, `${route}.json`)
+  fs.mkdirSync(path.dirname(file), { recursive: true })
+  fs.writeFileSync(file, JSON.stringify(item))
+}
+
+console.log(
+  `content: ${content.items.length} published, ${content.unpublished} not published, ` +
+    `${staticRoutePaths().length} hand built routes`,
+)
 
 // vercel.json's catch-all rewrite sends every path with no matching static
 // file (all authenticated app routes: /account/billing, /checks/:id, /my-checks,

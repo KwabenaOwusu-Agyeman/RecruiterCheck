@@ -76,6 +76,21 @@ test('a dash anywhere a reader sees is refused', () => {
   )
 })
 
+test('markdown syntax is not a dash a reader sees', () => {
+  // The format documents lists and links as supported. Before this, every list
+  // marker and every hyphenated link target tripped the dash rule. Neither had
+  // been exercised by a piece, so both were latent.
+  assert.deepEqual(loadPiece('p', source('- One item\n- Another item')).problems, [])
+  assert.deepEqual(loadPiece('p', source('Read the [free CV checker](/free-cv-checker) page.')).problems, [])
+  // The prose around them is still governed.
+  assert.ok(loadPiece('p', source('- Takes 2-3 minutes.')).problems.some((p) => p.includes('dash')))
+  assert.ok(
+    loadPiece('p', source('Read the [well-known guide](/free-cv-checker) page.')).problems.some((p) =>
+      p.includes('dash'),
+    ),
+  )
+})
+
 test('a missing heading or empty body is refused', () => {
   assert.ok(loadPiece('p', source(words(200), 'image: /newsletter/a.jpg')).problems.some((x) => x.includes('heading')))
   assert.ok(loadPiece('p', source('   ')).problems.some((x) => x.includes('no body')))
