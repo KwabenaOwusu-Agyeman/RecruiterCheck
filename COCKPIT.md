@@ -31,6 +31,18 @@ doing it.
   the first generated copy anyone will have read. Recorded 2026-09-07.
 - **Known limit.** Acquisition data begins 2026-09-05. Accounts created before
   that date cannot be attributed. Recorded 2026-09-06.
+- **Engineering task 1, blocks publishing any article.** `scripts/which-checks.mjs`
+  classifies every `.md` file as `DOCS_ONLY` and exits before any rule runs, so an
+  article PR reports "no code checks needed" while producing an indexable page.
+  Content markdown is now a build input. Recorded 2026-09-08.
+- **Engineering task 2, investigation only.** React hydration errors #418 and #423
+  fire site wide, on `/pricing` and `/ats-resume-checker` as well as on a content
+  page. Pre existing, not caused by the publishing system. Root cause and impact
+  unknown. **Do not fix without a separate decision.** Recorded 2026-09-08.
+- **Engineering task 3, sequenced.** Article 1 stays `status: draft` until task 1
+  is fixed and passing. Only then prepare the separate `draft` to `published`
+  change, with full local browser verification and production verification after
+  merge. Recorded 2026-09-08.
 
 ## Historical review material
 
@@ -48,6 +60,61 @@ It is carried by
 and the live `supabase/functions/keyword-scan/`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-08 — Article 1 merged as a draft
+
+**Objective.** Implement the founder approved Phase 2 Article 1 exactly as supplied,
+verify it, and merge it **without publishing it**.
+
+**Completed.** `content/resources/why-a-cv-passes-ats-and-is-still-rejected.md`, one
+new file, 972 words. The only edit to the supplied package was `published`, set to
+the actual implementation date rather than a backdated or inferred one.
+`status: draft`, so the article has no route, no prerendered page and no sitemap
+entry. PR #72 merged as `b413152`.
+
+**Verified.** All 14 requested checks were performed, not assumed. A draft has no
+page, so verification required temporarily setting `status: published` locally,
+checking, then restoring `draft`; the temporary state was never committed, and the
+CSP ledger returned from 58 hashes to 56, confirming a clean restore. Direct load
+200 and 71,177 bytes; client side navigation confirmed by a `window` marker
+surviving a link click, so no reload; navigating back fetched
+`/content-data/...json`, exercising the fallback; 972 words, six `h2`, one `h3`,
+four list items; title, description, Open Graph, self canonical, `Article` with
+`datePublished` and `publisher` and `isPartOf` resolving, `BreadcrumbList`; exactly
+the three approved internal links and **no** `/cv-keyword-checker`; sitemap entry
+present when published and absent as a draft; `index, follow`; no FAQ markup.
+Production confirmed unchanged after merge: the URL 404s, the sitemap is still 32
+URLs.
+
+**Two findings, both recorded as open items rather than fixed here.**
+
+Browser verification surfaced React **#418 and #423** on the article. The article
+does **not** cause them: `/ats-resume-checker` and `/pricing`, untouched by that PR,
+throw three `#418` and one `#423` each, against the article's two and one. Site wide
+and pre existing. Prerendered HTML is unaffected, so crawlers see the full page, but
+every page currently discards its server rendered DOM and re renders on the client.
+
+`npm run checks` selects **nothing** for an article. `scripts/which-checks.mjs` has
+`DOCS_ONLY = /(\.md$|...)/` and exits before evaluating any rule, so every future
+article PR will report "no code checks needed" despite producing an indexable page.
+The correct checks were run by hand for this one.
+
+**Blockers.** None for this work.
+
+**Founder action required.** None.
+
+**Next technical step.** Engineering task 1, the `which-checks.mjs` fix, then task 3,
+the `draft` to `published` change for Article 1. Task 2, the hydration
+investigation, is independent and is investigation only.
+
+**Not implemented, deliberately.** Google Preferred Sources. It is a strategic search
+visibility and user preference opportunity, not a website feature. No button, schema
+property or code exists, and none should be added. Source quality is built through
+the editorial strategy in Notion, not through a technical feature.
+
+**Commit or PR.** PR #72, merged as `b413152`.
 
 ---
 
