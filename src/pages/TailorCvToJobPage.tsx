@@ -22,7 +22,17 @@ export function TailorCvToJobPage() {
         { question: 'Can I use the same CV for similar jobs?', answer: 'You can keep a strong base CV, but review each vacancy because priorities, tools and responsibilities can differ between employers.' },
         { question: 'Should I add experience I do not have?', answer: 'No. Tailoring should improve the presentation of your real experience, not create unsupported claims.' },
       ]}
-      relatedLinks={[{ label: 'CV Job Match', to: '/resume-job-description-match' }, { label: 'CV Keyword Checker', to: '/cv-keyword-checker' }, { label: 'Free CV Checker', to: '/free-cv-checker' }]}
+      relatedLinks={[
+        { label: 'CV Job Match', to: '/resume-job-description-match' },
+        { label: 'CV Keyword Checker', to: '/cv-keyword-checker' },
+        { label: 'Free CV Checker', to: '/free-cv-checker' },
+        { label: 'Cover Letter Generator', to: '/cover-letter-generator' },
+        { label: 'Recruiter Message Generator', to: '/recruiter-message-generator' },
+        { label: 'Resume Strengths and Weaknesses', to: '/resume-strengths-and-weaknesses' },
+        { label: 'Job Application Feedback', to: '/job-application-feedback' },
+        { label: 'How Recruiters Evaluate a CV', to: '/how-recruiters-evaluate-a-cv' },
+        { label: 'Pricing', to: '/pricing' },
+      ]}
     />
   )
 }

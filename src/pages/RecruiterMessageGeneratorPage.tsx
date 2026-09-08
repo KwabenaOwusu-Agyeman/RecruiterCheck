@@ -22,7 +22,17 @@ export function RecruiterMessageGeneratorPage() {
         { question: 'Can I use the message on LinkedIn?', answer: 'Yes. Review the wording and shorten it further if the platform limits the number of characters.' },
         { question: 'Should I send the same message to every recruiter?', answer: 'No. Personalise the role, company and strongest relevant point for each person you contact.' },
       ]}
-      relatedLinks={[{ label: 'Cover Letter Generator', to: '/cover-letter-generator' }, { label: 'Application Checker', to: '/application-checker' }, { label: 'Free CV Checker', to: '/free-cv-checker' }]}
+      relatedLinks={[
+        { label: 'Cover Letter Generator', to: '/cover-letter-generator' },
+        { label: 'Application Checker', to: '/application-checker' },
+        { label: 'Free CV Checker', to: '/free-cv-checker' },
+        { label: 'Tailor CV to Job', to: '/tailor-cv-to-job-description' },
+        { label: 'CV Keyword Checker', to: '/cv-keyword-checker' },
+        { label: 'Resume Strengths and Weaknesses', to: '/resume-strengths-and-weaknesses' },
+        { label: 'Job Application Feedback', to: '/job-application-feedback' },
+        { label: 'How Recruiters Evaluate a CV', to: '/how-recruiters-evaluate-a-cv' },
+        { label: 'Pricing', to: '/pricing' },
+      ]}
     />
   )
 }

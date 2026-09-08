@@ -44,6 +44,12 @@ export function RecruiterEvaluationPage() {
         { label: 'How Interview Score Works', to: '/how-interview-score-works' },
         { label: 'Resume Strengths and Weaknesses', to: '/resume-strengths-and-weaknesses' },
         { label: 'CV Job Match', to: '/resume-job-description-match' },
+        { label: 'Tailor CV to Job', to: '/tailor-cv-to-job-description' },
+        { label: 'CV Keyword Checker', to: '/cv-keyword-checker' },
+        { label: 'Cover Letter Generator', to: '/cover-letter-generator' },
+        { label: 'Recruiter Message Generator', to: '/recruiter-message-generator' },
+        { label: 'Job Application Feedback', to: '/job-application-feedback' },
+        { label: 'Pricing', to: '/pricing' },
       ]}
     />
   )

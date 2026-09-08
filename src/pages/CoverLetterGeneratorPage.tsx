@@ -22,7 +22,15 @@ export function CoverLetterGeneratorPage() {
         { question: 'How long should a cover letter be?', answer: 'Keep it concise enough to scan quickly. Focus on a small number of strong, relevant points rather than repeating your entire CV.' },
         { question: 'Should I review an AI generated letter?', answer: 'Yes. Confirm every claim, adjust the tone and add any personal motivation that is not present in your CV.' },
       ]}
-      relatedLinks={[{ label: 'Recruiter Message Generator', to: '/recruiter-message-generator' }, { label: 'Tailor CV to Job', to: '/tailor-cv-to-job-description' }, { label: 'Job Application Feedback', to: '/job-application-feedback' }]}
+      relatedLinks={[
+        { label: 'Recruiter Message Generator', to: '/recruiter-message-generator' },
+        { label: 'Tailor CV to Job', to: '/tailor-cv-to-job-description' },
+        { label: 'Job Application Feedback', to: '/job-application-feedback' },
+        { label: 'CV Keyword Checker', to: '/cv-keyword-checker' },
+        { label: 'Resume Strengths and Weaknesses', to: '/resume-strengths-and-weaknesses' },
+        { label: 'How Recruiters Evaluate a CV', to: '/how-recruiters-evaluate-a-cv' },
+        { label: 'Pricing', to: '/pricing' },
+      ]}
     />
   )
 }
