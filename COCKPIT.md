@@ -35,10 +35,18 @@ doing it.
   classifies every `.md` file as `DOCS_ONLY` and exits before any rule runs, so an
   article PR reports "no code checks needed" while producing an indexable page.
   Content markdown is now a build input. Recorded 2026-09-08.
-- **Engineering task 2, investigation only.** React hydration errors #418 and #423
-  fire site wide, on `/pricing` and `/ats-resume-checker` as well as on a content
-  page. Pre existing, not caused by the publishing system. Root cause and impact
-  unknown. **Do not fix without a separate decision.** Recorded 2026-09-08.
+- **Known limit, browser verification.** Hydration and console behaviour on the
+  live site cannot be observed: `CLAUDE.md` restricts the Chrome connector to
+  localhost. A local pass is representative, since the served bytes match
+  `dist/`, but production browser behaviour is **UNVERIFIED** and must be
+  reported as such rather than inferred. Recorded 2026-09-08.
+- **Finding, not scheduled.** `<main>` is nested: `PublicLayout` renders
+  `<main className="flex-1">` and `SeoLandingPage`, `PricingPage` and
+  `EditorialPage` each return their own `<main>` inside it. Invalid HTML, since
+  the spec allows one `<main>` and forbids nesting. No hydration error and
+  nothing visibly broken; it is a semantics and accessibility issue. **Needs its
+  own decision. Not to be folded into Article 1 or the publication work.**
+  Recorded 2026-09-08.
 - **Engineering task 3, sequenced.** Article 1 stays `status: draft` until task 1
   is fixed and passing. Only then prepare the separate `draft` to `published`
   change, with full local browser verification and production verification after
@@ -60,6 +68,60 @@ It is carried by
 and the live `supabase/functions/keyword-scan/`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-08 — Hydration investigation closed, not a bug
+
+**Objective.** Find the root cause of React #418 and #423, reported as firing
+site wide. Investigation only.
+
+**Outcome. There is no hydration bug.** The errors were an artifact of the
+reproduction method, and the earlier report of a site wide defect, including its
+per page error counts, was wrong.
+
+**Root cause of the false positive.** `npx vite preview` applies an SPA fallback
+and serves `dist/index.html`, the prerendered **landing page**, for every route.
+React therefore hydrated the landing page's markup against a different page's
+component tree. Measured: `/pricing` and `/ats-resume-checker` were both served a
+71,177 byte landing page instead of their own 30,221 and 23,537 byte files. A non
+minified React build named it exactly, `Expected server HTML to contain a
+matching <div> in <main>`, that div being the BackLink `Container` that
+`PublicLayout` renders on every route except `/`.
+
+**Verified.** Serving `dist/` with directory index behaviour, `cd dist &&
+python3 -m http.server 5173`, which is what Vercel does, the same build with the
+same non minified React produced **zero** hydration errors on `/`, `/pricing/`
+and `/ats-resume-checker/`. Production serves the prerendered file: production
+`/pricing` returns `<title>Pricing | MyRecruiterCheck</title>`, not the landing
+page. `usePageMeta`, `useAuth`, `AuthModalContext`, `PublicLayout` and the
+viewport helpers were each checked and are not responsible.
+
+**Impact on users.** None. No mismatch occurs in production, so no page discards
+its server rendered DOM. Prerendered HTML was always correct, so search and AI
+crawlers were never affected.
+
+**Method adopted.** Browser verification uses a static server over `dist/`, never
+`vite preview`. Recorded durably in
+`memory/2026-09-08-vite-preview-is-not-production-routing.md`, with the
+development React build recipe needed to get a component name out of a minified
+hydration error.
+
+**Correction carried forward.** Article 1's browser verification items for direct
+load, client side navigation and hydration were measured through `vite preview`
+and are **void**. They must be redone against a static server once the article is
+published. The checks made directly against the prerendered files, metadata,
+canonical, structured data, links, sitemap and indexability, remain valid.
+
+**Blockers.** None.
+
+**Founder action required.** None.
+
+**Next technical step.** Merge PR #73, the check selection fix, then the separate
+Article 1 `draft` to `published` change. Publication is not blocked by either
+finding here.
+
+**Commit or PR.** No application change. Investigation only.
 
 ---
 
