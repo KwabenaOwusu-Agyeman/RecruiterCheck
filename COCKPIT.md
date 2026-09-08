@@ -85,12 +85,12 @@ three non critical issues are all optional address fields, `streetAddress`,
 
 **Blockers.** None.
 
-**Founder action required.** Four facts absent from the repo, left out rather
-than guessed. Confirm any and they can be added: founder's full name (only the
-first name "Kwabena" exists, at
-`supabase/functions/publish-weekly-newsletter/index.ts:330`), `foundingDate`,
-the registered entity name and KvK number, and the optional address detail
-above.
+**Founder action required.** None. Of the four facts the repo could not
+supply, the founder confirmed `foundingDate` as 2026, which is now on the
+`Organization` and is consistent with the first commit, 2026-08-08. The other
+three were declined and are deliberately absent, not outstanding: no founder
+`Person` node, no registered entity name or KvK number, and no street level
+address. Do not add them in a later session without a fresh decision.
 
 **Next technical step.** A1, the newsletter archive, is blocked on a content
 path, not on code. `content/newsletter/pieces/` holds two prose sections of a
