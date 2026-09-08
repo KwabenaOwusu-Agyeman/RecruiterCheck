@@ -108,14 +108,24 @@ ledger from 58 hashes to 56, so the reclaim works.
 
 **Blockers.** None.
 
-**Founder action required.** Review and approve PR #71. Nothing is published by
-it.
+**Founder action required.** None.
+
+**Verified in production.** The generated sitemap serves 32 URLs, valid XML,
+every one with a `lastmod`, none future dated, and all eight corrected dates
+live. All 32 URLs return 200. `/resources/<slug>` and `/newsletter/<slug>`
+return 404, correctly, since nothing is published. The Vercel build generated
+the sitemap from the committed `static-lastmod.json` snapshot, so the shallow
+clone risk is closed rather than merely mitigated. Regression across all five
+merged PRs is clean: #67's `Product` image and 10/20/40 offers, #68's free offer
+plus `X-Robots-Tag: noindex` and the www 301, #69's tool cluster, #70's entity
+graph with `publisher` references resolving and no `founder` node.
 
 **Next technical step.** Phase 2 publishes the first approved articles. Phase 3
 brings newsletter issues in through a scheduled GitHub Action that reads a
 completed `newsletter_issues` row and opens a pull request, which is Level 3.
 
-**Commit or PR.** Branch `content-publishing-phase1`, commit `f9082ad`.
+**Commit or PR.** PR #71, merged as `298c91c`. Branch
+`content-publishing-phase1`, commit `f9082ad`.
 
 ---
 
