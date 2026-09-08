@@ -4,7 +4,7 @@ slug: why-a-cv-passes-ats-and-is-still-rejected
 title: Why a CV passes the ATS and is still rejected
 description: Passing an applicant tracking system and convincing a recruiter are two different tests. Here is what each one measures, and how to tell which is rejecting you.
 published: 2026-09-08
-status: draft
+status: published
 cluster: recruiter-evaluation
 supports: /how-recruiters-evaluate-a-cv, /ats-resume-checker, /how-interview-score-works
 noindex: false
