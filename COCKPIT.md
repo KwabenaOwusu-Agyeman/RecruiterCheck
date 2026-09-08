@@ -51,6 +51,50 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-08 — Pricing schema, sitemap lastmod, SEO cross-links
+
+**Objective.** Close the two gaps an SEO and AI search visibility audit left
+open: the pricing page carried no offer structured data, and `public/sitemap.xml`
+carried no `lastmod`. Plus link the role checker and comparison pages to their
+siblings.
+
+**Completed.** `src/pages/PricingPage.tsx` now emits `Product`/`Offer` and
+`BreadcrumbList` JSON-LD, mapped from `CHECK_PACKS` so prices and entitlements
+cannot drift from the cards. `scripts/prerender.mjs` reconciled the two new CSP
+hashes itself; the `vercel.json` and `scripts/csp-managed-hashes.json` diffs are
+its output. All 32 `public/sitemap.xml` URLs gained a git derived `<lastmod>`.
+The five role checker pages and six comparison pages cross link their siblings
+through the existing `relatedLinks` prop on `SeoLandingPage`.
+
+**Verified.** `npm run checks` selected lint, typecheck, `test:unit`, `npm run
+build` and a sitemap and metadata check. Lint clean bar two pre existing
+`react-refresh` warnings in `AuthModalContext.tsx` and `useAuth.tsx`; typecheck
+clean; 14/14 unit test files, 181 assertions; build and prerender succeeded. All
+153 `application/ld+json` blocks in `dist/` parse. Both clusters confirmed
+complete in the prerendered HTML: each role page reaches its 4 siblings, each
+comparison page its 5, no duplicates and no self links. All 32 sitemap URLs
+prerender with a matching canonical, title and description, and no `lastmod` is
+future dated.
+
+**Blockers.** None.
+
+**Founder action required.** Two MANUAL CHECK REQUIRED items the repo has no
+tooling for: validate the new pricing JSON-LD in an external structured data
+validator, and a browser and console pass against `localhost:5173`. Also decide
+whether the `Offer` description should keep its repeated check count, described
+below.
+
+**Next technical step.** Each `Offer` description renders as "5 Recruiter
+Checks. 5 Recruiter Checks, Interview Score, ..." because `features[0]` in
+`CHECK_PACKS` already states the count that the template prefixes. It is
+correct but reads twice. Implemented as specified rather than silently
+altered; a one line change to the template in `PricingPage.tsx` drops the
+stutter if wanted.
+
+**Commit or PR.** Branch `seo-schema-and-cross-links`, commit `a972215`.
+
+---
+
 ## 2026-09-08 — Payments reconciles against Stripe, Control Centre config documented
 
 **Objective.** Close the STRIPE_SECRET_KEY open item and write down what it
