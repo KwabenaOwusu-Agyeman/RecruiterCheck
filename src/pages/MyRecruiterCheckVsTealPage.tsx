@@ -37,6 +37,11 @@ export function MyRecruiterCheckVsTealPage() {
         { label: 'Free CV Checker', to: '/free-cv-checker' },
         { label: 'Resume Job Match', to: '/resume-job-description-match' },
         { label: 'Interview Score', to: '/interview-probability-score' },
+        { label: 'vs ChatGPT', to: '/myrecruitercheck-vs-chatgpt' },
+        { label: 'vs Jobscan', to: '/myrecruitercheck-vs-jobscan' },
+        { label: 'vs Resume Worded', to: '/myrecruitercheck-vs-resume-worded' },
+        { label: 'vs Rezi', to: '/myrecruitercheck-vs-rezi' },
+        { label: 'vs Kickresume', to: '/myrecruitercheck-vs-kickresume' },
       ]}
     />
   )

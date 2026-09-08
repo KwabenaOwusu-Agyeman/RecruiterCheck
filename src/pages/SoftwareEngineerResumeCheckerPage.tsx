@@ -41,6 +41,10 @@ export function SoftwareEngineerResumeCheckerPage() {
         { label: 'ATS Resume Checker', to: '/ats-resume-checker' },
         { label: 'CV Job Match', to: '/resume-job-description-match' },
         { label: 'Interview Score', to: '/interview-probability-score' },
+        { label: 'Data Analyst CV Checker', to: '/data-analyst-cv-checker' },
+        { label: 'Data Scientist CV Checker', to: '/data-scientist-cv-checker' },
+        { label: 'Machine Learning Engineer CV Checker', to: '/machine-learning-engineer-cv-checker' },
+        { label: 'AI Engineer CV Checker', to: '/ai-engineer-cv-checker' },
       ]}
     />
   )

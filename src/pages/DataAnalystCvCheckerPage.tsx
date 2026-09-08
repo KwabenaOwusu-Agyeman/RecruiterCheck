@@ -49,6 +49,9 @@ export function DataAnalystCvCheckerPage() {
         { label: 'How the Interview Score works', to: '/how-interview-score-works' },
         { label: 'ATS Resume Checker', to: '/ats-resume-checker' },
         { label: 'CV Job Match', to: '/resume-job-description-match' },
+        { label: 'Software Engineer Resume Checker', to: '/software-engineer-resume-checker' },
+        { label: 'Machine Learning Engineer CV Checker', to: '/machine-learning-engineer-cv-checker' },
+        { label: 'AI Engineer CV Checker', to: '/ai-engineer-cv-checker' },
       ]}
     />
   )
