@@ -62,6 +62,50 @@ function renderInline(escaped: string): string {
  */
 const DASHES = /[-‐‑‒–—―]/
 
+/**
+ * The part of a source a reader actually reads, which is what the dash rule
+ * governs. Two things are markdown syntax rather than prose:
+ *
+ *   A leading list marker. countWords already strips it for the same reason.
+ *   Without this the format documents unordered lists as supported while the
+ *   dash rule rejects every one of them.
+ *
+ *   A link target. Every internal URL on this site is hyphenated, so checking
+ *   the raw source makes [any link](/free-cv-checker) impossible while the
+ *   renderer happily supports it. The label is kept and still checked.
+ *
+ * Both were latent: no piece had yet used a list or a link.
+ */
+function prose(markdown: string): string {
+  return markdown
+    .replace(/^[ \t]*[-*][ \t]+/gm, '')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+}
+
+/**
+ * Exported so other user facing copy, such as a resource article, is checked
+ * against the same character class rather than a second copy of it that could
+ * drift. The rule is CLAUDE.md's: no dashes in user facing copy, ranges
+ * spelled out instead.
+ */
+export function containsDash(value: string): boolean {
+  return DASHES.test(prose(value))
+}
+
+/**
+ * Opt in extensions to the piece format.
+ *
+ * A newsletter piece is one section of an issue and deliberately forbids
+ * headings, because the section already carries one. A resource article is a
+ * whole page and needs its own structure. Rather than fork the renderer and
+ * duplicate the escaping, the extra syntax is a flag that defaults to off, so
+ * every existing caller behaves exactly as it did before this existed.
+ */
+export interface RenderOptions {
+  /** Allow `##` and `###`. A single `#` stays unsupported: the page has an h1. */
+  headings?: boolean
+}
+
 /** Syntax a piece does not support, reported rather than silently mangled. */
 const UNSUPPORTED: { pattern: RegExp; name: string }[] = [
   { pattern: /^\s*#/m, name: 'headings, since the section already has one' },
@@ -71,8 +115,15 @@ const UNSUPPORTED: { pattern: RegExp; name: string }[] = [
   { pattern: /^\s*!\[/m, name: 'inline images, use the frontmatter image' },
 ]
 
-export function findUnsupported(markdown: string): string[] {
-  return UNSUPPORTED.filter(({ pattern }) => pattern.test(markdown)).map(({ name }) => name)
+/** Same list, but `##` and `###` are allowed and a lone `#` still is not. */
+const UNSUPPORTED_WITH_HEADINGS: { pattern: RegExp; name: string }[] = [
+  { pattern: /^\s*#(?!#)/m, name: 'a top level heading, since the page already has one' },
+  ...UNSUPPORTED.slice(1),
+]
+
+export function findUnsupported(markdown: string, options: RenderOptions = {}): string[] {
+  const rules = options.headings ? UNSUPPORTED_WITH_HEADINGS : UNSUPPORTED
+  return rules.filter(({ pattern }) => pattern.test(markdown)).map(({ name }) => name)
 }
 
 export function countWords(markdown: string): number {
@@ -86,8 +137,8 @@ export function readMinutes(markdown: string): number {
   return Math.max(1, Math.round(countWords(markdown) / WORDS_PER_MINUTE))
 }
 
-/** Paragraphs, and unordered lists where present. */
-export function renderBody(markdown: string): string {
+/** Paragraphs, unordered lists, and headings when they are enabled. */
+export function renderBody(markdown: string, options: RenderOptions = {}): string {
   const blocks: string[] = []
   let items: string[] = []
 
@@ -104,6 +155,16 @@ export function renderBody(markdown: string): string {
       continue
     }
     const escaped = escapeHtml(line)
+    if (options.headings) {
+      // Escaped first, so a heading cannot smuggle markup in through its text.
+      const heading = /^(#{2,3})\s+(.*)$/.exec(escaped)
+      if (heading) {
+        flush()
+        const level = heading[1].length
+        blocks.push(`<h${level}>${renderInline(heading[2])}</h${level}>`)
+        continue
+      }
+    }
     const list = /^[-*]\s+(.*)$/.exec(escaped)
     if (list) {
       items.push(renderInline(list[1]))
@@ -168,7 +229,7 @@ export function loadPiece(
   }
 
   for (const [field, value] of [['heading', values.heading ?? ''], ['body', split.body]]) {
-    if (DASHES.test(value)) {
+    if (containsDash(value)) {
       problems.push(
         `${name}: ${field} contains a dash. Copy conventions forbid dashes in user facing copy, ranges spelled out instead.`,
       )
