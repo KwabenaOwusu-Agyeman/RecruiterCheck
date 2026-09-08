@@ -51,6 +51,47 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-08 — SEO week 1: schema validity, crawl hygiene, www redirect
+
+**Objective.** Week 1 of the Google and AI search visibility work: the P0/P1
+correctness and plumbing items from the audit. No content or product change.
+
+**Completed.** `index.html`'s sitewide `SoftwareApplication` gained the free
+offer at price 0, verified against Google's Software App requirements
+(`name` + `offers.price` + a rating or review). `vercel.json` gained an
+`X-Robots-Tag: noindex` rule scoped to `/app-shell.html` and a www to apex
+redirect at `statusCode` 301. `public/robots.txt` now disallows `/sign-in`
+and `/sign-up`.
+
+**Verified.** `npm run checks` selected `npm run build`, a sitemap and
+metadata check against `dist/`, and the CSP hash check. Build succeeded and
+reconciled the `SoftwareApplication` hash (+1/-1, 54 total). All 153
+`application/ld+json` blocks in `dist/` parse; all 34 `SoftwareApplication`
+blocks carry the price 0 offer and neither `aggregateRating` nor `review`.
+All 32 sitemap URLs prerender with matching canonical, title and
+description; no sitemap URL is blocked by the new robots rules;
+`/app-shell.html` is deliberately absent from robots.txt. CSP hashes needed
+by `dist/` (54), allowed in `vercel.json` (54) and the managed ledger (54)
+all agree.
+
+**Blockers.** None.
+
+**Founder action required.** Two post deploy checks that cannot run locally:
+`X-Robots-Tag` on `https://myrecruitercheck.com/app-shell.html`, and the www
+to apex 301. Vercel's documentation states `has` host matching does not work
+locally, so the redirect is unverified until it ships.
+
+**Next technical step.** `/newsletter/unsubscribe` returns 404 in production.
+The route exists at `src/App.tsx:111` but is neither prerendered nor covered
+by a `vercel.json` rewrite, so Vercel serves the 404 page. Out of scope for
+this branch and not an SEO issue, but it means the unsubscribe link does not
+resolve. Needs a decision before the next newsletter send. Week 2 of the
+audit is the tool page internal linking cluster.
+
+**Commit or PR.** Branch `seo-week1-correctness`, commit `249f9c3`.
+
+---
+
 ## 2026-09-08 — Pricing schema, sitemap lastmod, SEO cross-links
 
 **Objective.** Close the two gaps an SEO and AI search visibility audit left
