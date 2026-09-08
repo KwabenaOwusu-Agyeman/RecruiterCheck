@@ -90,8 +90,12 @@ count and loses the repeat. That changed the block's CSP hash, so
 `prerender.mjs` swapped it in `vercel.json` and
 `scripts/csp-managed-hashes.json`.
 
-**Commit or PR.** Branch `seo-schema-and-cross-links`, commits `a972215` and
-`fc5b5a0`, PR #67.
+**Commit or PR.** PR #67, merged as `7f4add7`. Five commits on
+`seo-schema-and-cross-links`: `a972215` the schema, sitemap and cross links,
+`fc5b5a0` the `Offer` description fix, `618d9b5` the `Product` `image` field
+that cleared the one critical Rich Results issue, plus two Cockpit entries.
+No Edge Functions in the diff, so the merge deployed none; the frontend went
+out through Vercel.
 
 ---
 
