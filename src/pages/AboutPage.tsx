@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { LegalLayout, Section } from '@/components/legal/LegalLayout'
 import { usePageMeta } from '@/hooks/usePageMeta'
+import { BRAND } from '@/lib/constants'
 
 export function AboutPage() {
   usePageMeta({
@@ -81,6 +82,42 @@ export function AboutPage() {
           .
         </p>
       </Section>
+
+      {/* Page level entities for /about. The sitewide Organization, WebSite and
+          SoftwareApplication blocks live in index.html and carry stable @id
+          values; these two reference those nodes rather than restating them, so
+          the page joins the existing graph instead of creating a second, rival
+          copy of the organisation. dateModified mirrors the "Last updated" date
+          rendered above it. scripts/prerender.mjs reconciles the CSP hashes. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'AboutPage',
+            '@id': `${BRAND.canonicalUrl}/about#webpage`,
+            url: `${BRAND.canonicalUrl}/about`,
+            name: 'About MyRecruiterCheck',
+            dateModified: '2026-08-22',
+            isPartOf: { '@id': `${BRAND.canonicalUrl}/#website` },
+            mainEntity: { '@id': `${BRAND.canonicalUrl}/#organization` },
+          }),
+        }}
+      />
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: BRAND.canonicalUrl },
+              { '@type': 'ListItem', position: 2, name: 'About', item: `${BRAND.canonicalUrl}/about` },
+            ],
+          }),
+        }}
+      />
     </LegalLayout>
   )
 }
