@@ -80,18 +80,18 @@ future dated.
 
 **Founder action required.** Two MANUAL CHECK REQUIRED items the repo has no
 tooling for: validate the new pricing JSON-LD in an external structured data
-validator, and a browser and console pass against `localhost:5173`. Also decide
-whether the `Offer` description should keep its repeated check count, described
-below.
+validator, and a browser and console pass against `localhost:5173`.
 
-**Next technical step.** Each `Offer` description renders as "5 Recruiter
-Checks. 5 Recruiter Checks, Interview Score, ..." because `features[0]` in
-`CHECK_PACKS` already states the count that the template prefixes. It is
-correct but reads twice. Implemented as specified rather than silently
-altered; a one line change to the template in `PricingPage.tsx` drops the
-stutter if wanted.
+**Next technical step.** None. The `Offer` description initially read "5
+Recruiter Checks. 5 Recruiter Checks, Interview Score, ..." because
+`features[0]` in `CHECK_PACKS` already states the count the template
+prefixed. Fixed in `fc5b5a0` by joining `features` alone, which keeps the
+count and loses the repeat. That changed the block's CSP hash, so
+`prerender.mjs` swapped it in `vercel.json` and
+`scripts/csp-managed-hashes.json`.
 
-**Commit or PR.** Branch `seo-schema-and-cross-links`, commit `a972215`.
+**Commit or PR.** Branch `seo-schema-and-cross-links`, commits `a972215` and
+`fc5b5a0`, PR #67.
 
 ---
 
