@@ -104,7 +104,18 @@ cannot write to the repo, so the table replaced the committed issue file. A
 prerendered archive therefore has no repo source to read, and giving it one is
 a Level 3 design decision.
 
-**Commit or PR.** Branch `seo-a3-entity-graph`, commit `3f71f5b`.
+**Verified in production.** After the merge, `/about` serves all five nodes
+with the references resolving: `AboutPage` to `#website` and `#organization`,
+`WebSite` and `SoftwareApplication` to `#organization`. `foundingDate` 2026,
+`addressCountry` NL and the support `contactPoint` are live; no `founder` or
+`Person` node anywhere. No unresolved `@id` reference across `/`, `/about`,
+`/pricing`, `/cv-keyword-checker` or `/myrecruitercheck-vs-chatgpt`. Regression
+across all four merged PRs is clean: #67's `Product` image, 10/20/40 offers and
+`BreadcrumbList`, #68's free offer plus `X-Robots-Tag: noindex` on
+`/app-shell.html` and the www 301, and #69's tool cluster.
+
+**Commit or PR.** PR #70, merged as `7bbbdf2`. Branch `seo-a3-entity-graph`,
+commit `3f71f5b`.
 
 ---
 
