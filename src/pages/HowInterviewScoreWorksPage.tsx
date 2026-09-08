@@ -74,7 +74,7 @@ export function HowInterviewScoreWorksPage() {
   })
 
   return (
-    <main>
+    <>
       <section className="border-b border-border-soft bg-background py-[48px] sm:py-[64px] lg:py-[88px]">
         <Container>
           <div className="mx-auto max-w-3xl text-center">
@@ -339,6 +339,6 @@ export function HowInterviewScoreWorksPage() {
           </div>
         </Container>
       </section>
-    </main>
+    </>
   )
 }

@@ -15,7 +15,7 @@ export function NotFoundPage() {
   const handleCheckCta = useCheckCta()
 
   return (
-    <main>
+    <>
       <section className="py-16 sm:py-24 lg:py-32">
         <Container>
           <div className="mx-auto max-w-xl text-center">
@@ -38,6 +38,6 @@ export function NotFoundPage() {
           </div>
         </Container>
       </section>
-    </main>
+    </>
   )
 }
