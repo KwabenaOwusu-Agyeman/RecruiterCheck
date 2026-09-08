@@ -22,7 +22,17 @@ export function CvKeywordCheckerPage() {
         { question: 'Where should keywords appear?', answer: 'Relevant terms can appear naturally in your summary, skills and work experience when they accurately describe what you have done.' },
         { question: 'Will keywords alone get me an interview?', answer: 'No. Recruiters also look for credible experience, results and clear evidence that you can perform the role.' },
       ]}
-      relatedLinks={[{ label: 'ATS Resume Checker', to: '/ats-resume-checker' }, { label: 'Tailor CV to Job', to: '/tailor-cv-to-job-description' }, { label: 'Application Checker', to: '/application-checker' }]}
+      relatedLinks={[
+        { label: 'ATS Resume Checker', to: '/ats-resume-checker' },
+        { label: 'Tailor CV to Job', to: '/tailor-cv-to-job-description' },
+        { label: 'Application Checker', to: '/application-checker' },
+        { label: 'Cover Letter Generator', to: '/cover-letter-generator' },
+        { label: 'Recruiter Message Generator', to: '/recruiter-message-generator' },
+        { label: 'Resume Strengths and Weaknesses', to: '/resume-strengths-and-weaknesses' },
+        { label: 'Job Application Feedback', to: '/job-application-feedback' },
+        { label: 'How Recruiters Evaluate a CV', to: '/how-recruiters-evaluate-a-cv' },
+        { label: 'Pricing', to: '/pricing' },
+      ]}
     />
   )
 }

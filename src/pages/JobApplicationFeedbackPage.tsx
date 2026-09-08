@@ -22,7 +22,16 @@ export function JobApplicationFeedbackPage() {
         { question: 'Can feedback improve my interview chances?', answer: 'It can help you present relevant evidence more clearly, but no tool can guarantee an interview or hiring decision.' },
         { question: 'Should I check every application?', answer: 'Checking is most useful when roles have different priorities or when you have tailored your documents for a specific employer.' },
       ]}
-      relatedLinks={[{ label: 'Resume Strengths and Weaknesses', to: '/resume-strengths-and-weaknesses' }, { label: 'Application Checker', to: '/application-checker' }, { label: 'Cover Letter Generator', to: '/cover-letter-generator' }]}
+      relatedLinks={[
+        { label: 'Resume Strengths and Weaknesses', to: '/resume-strengths-and-weaknesses' },
+        { label: 'Application Checker', to: '/application-checker' },
+        { label: 'Cover Letter Generator', to: '/cover-letter-generator' },
+        { label: 'Tailor CV to Job', to: '/tailor-cv-to-job-description' },
+        { label: 'CV Keyword Checker', to: '/cv-keyword-checker' },
+        { label: 'Recruiter Message Generator', to: '/recruiter-message-generator' },
+        { label: 'How Recruiters Evaluate a CV', to: '/how-recruiters-evaluate-a-cv' },
+        { label: 'Pricing', to: '/pricing' },
+      ]}
     />
   )
 }

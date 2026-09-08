@@ -22,7 +22,17 @@ export function ResumeStrengthsWeaknessesPage() {
         { question: 'Can the same resume have different strengths for different jobs?', answer: 'Yes. A detail that is highly relevant to one role may matter less for another, which is why the job description is necessary.' },
         { question: 'How many weaknesses should I fix first?', answer: 'Start with the issues most closely connected to essential job requirements and the clarity of your strongest evidence.' },
       ]}
-      relatedLinks={[{ label: 'Job Application Feedback', to: '/job-application-feedback' }, { label: 'Free CV Checker', to: '/free-cv-checker' }, { label: 'Interview Score', to: '/interview-probability-score' }]}
+      relatedLinks={[
+        { label: 'Job Application Feedback', to: '/job-application-feedback' },
+        { label: 'Free CV Checker', to: '/free-cv-checker' },
+        { label: 'Interview Score', to: '/interview-probability-score' },
+        { label: 'Tailor CV to Job', to: '/tailor-cv-to-job-description' },
+        { label: 'CV Keyword Checker', to: '/cv-keyword-checker' },
+        { label: 'Cover Letter Generator', to: '/cover-letter-generator' },
+        { label: 'Recruiter Message Generator', to: '/recruiter-message-generator' },
+        { label: 'How Recruiters Evaluate a CV', to: '/how-recruiters-evaluate-a-cv' },
+        { label: 'Pricing', to: '/pricing' },
+      ]}
     />
   )
 }
