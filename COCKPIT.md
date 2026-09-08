@@ -76,19 +76,35 @@ all agree.
 
 **Blockers.** None.
 
-**Founder action required.** Two post deploy checks that cannot run locally:
-`X-Robots-Tag` on `https://myrecruitercheck.com/app-shell.html`, and the www
-to apex 301. Vercel's documentation states `has` host matching does not work
-locally, so the redirect is unverified until it ships.
+**Founder action required.** None. Both post deploy checks passed against
+production after the merge: `/app-shell.html` returns `X-Robots-Tag: noindex`,
+and `https://www.myrecruitercheck.com/<path>` returns 301 to the apex with the
+path preserved. The `vercel.json` `has` host redirect fired correctly, so no
+Vercel dashboard domain change was needed.
 
-**Next technical step.** `/newsletter/unsubscribe` returns 404 in production.
-The route exists at `src/App.tsx:111` but is neither prerendered nor covered
-by a `vercel.json` rewrite, so Vercel serves the 404 page. Out of scope for
-this branch and not an SEO issue, but it means the unsubscribe link does not
-resolve. Needs a decision before the next newsletter send. Week 2 of the
-audit is the tool page internal linking cluster.
+**Verified in production.** 7/7 post deploy assertions passed (F1, F4, F5,
+F12). Regression sweep clean: apex, `/pricing`, `/sitemap.xml` and
+`/robots.txt` all 200, an unknown path still 404s, and PR #67's `Product`
+image plus the 10/20/40 offers and `BreadcrumbList` are intact on `/pricing`.
+Google's Rich Results Test on the new `SoftwareApplication` block reports
+**1 valid item detected**, with `aggregateRating` flagged only as a
+non-critical optional field. That contradicts the Software App reference
+documentation, which lists a rating or review among the required properties:
+the tool treats `offers.price` alone as sufficient for eligibility. Recorded
+because it lowers the priority of adding a rating.
 
-**Commit or PR.** Branch `seo-week1-correctness`, commit `249f9c3`.
+**Next technical step.** Week 2 of the audit: the tool page internal linking
+cluster. `/cv-keyword-checker` and `/recruiter-message-generator` currently
+have one inbound internal link each and `/pricing` has two.
+
+**Resolved.** `/newsletter/unsubscribe` returning 404 is not a live broken
+link. The production newsletter footer links to Brevo's hosted unsubscribe on
+the `mail.` subdomain, not to this route, confirmed against a real send on
+2026-09-08. The route at `src/App.tsx:111` is vestigial; removing it is
+optional cleanup, not a fix.
+
+**Commit or PR.** PR #68, merged as `632d479`. Branch
+`seo-week1-correctness`, commit `249f9c3`.
 
 ---
 
