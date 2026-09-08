@@ -4,5 +4,7 @@ Disallow: /checks
 Disallow: /account
 Disallow: /extension
 Disallow: /auth
+Disallow: /sign-in
+Disallow: /sign-up
 
 Sitemap: https://myrecruitercheck.com/sitemap.xml
