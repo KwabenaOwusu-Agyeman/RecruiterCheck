@@ -212,6 +212,7 @@ export function PricingPage() {
             '@type': 'Product',
             name: 'MyRecruiterCheck Recruiter Check Packs',
             description: 'One time credit packs for MyRecruiterCheck Recruiter Checks. No subscription.',
+            image: `${BRAND.canonicalUrl}/social/og-image.png`,
             brand: { '@type': 'Brand', name: BRAND.name },
             offers: CHECK_PACKS.map((pack) => ({
               '@type': 'Offer',
