@@ -51,6 +51,63 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-08 — SEO A3: entity graph connected, Organization enriched
+
+**Objective.** Audit item A3. The sitewide `Organization`, `WebSite` and
+`SoftwareApplication` blocks were three unconnected nodes with no `@id` and no
+relationships. Week 3 (A1, the newsletter archive) was deferred: see the
+blocker recorded below.
+
+**Completed.** `index.html`'s three blocks gained stable `@id` values and
+reference each other; `Organization` gained `address.addressCountry` and a
+support `contactPoint`; `WebSite` gained `inLanguage` and `publisher`;
+`SoftwareApplication` gained `publisher`. `src/pages/AboutPage.tsx` gained an
+`AboutPage` node (`isPartOf` the website, `mainEntity` the organisation) and a
+`BreadcrumbList`. Kept as separate blocks rather than one `@graph`: Google
+resolves `@id` across blocks on a page, and merging would have rewritten the
+`SoftwareApplication` verified in PR #68.
+
+**Facts and their sources.** Country from "operates from the Netherlands"
+(`AboutPage`, `PrivacyPage:16`, `TermsPage:17`, `llms.txt`); support address
+from `TermsPage:105` and `PrivacyPage:105`; `inLanguage` from
+`<html lang="en">`; `dateModified` from the "Last updated" date already
+rendered on the About page. Nothing inferred.
+
+**Verified.** Lint 0 errors (two pre existing `react-refresh` warnings),
+typecheck clean, `test:unit` 14/14 and 181 assertions, build succeeded with the
+CSP reconciled +5/-3 to 56 hashes. 155 `application/ld+json` blocks parse; no
+conflicting `@id` definition and no unresolved `@id` reference anywhere in
+`dist/`; 34 pages each carry the three sitewide entities with stable ids; 32
+sitemap URLs clean. Google's Rich Results Test on the enriched pair returns
+**2 valid items detected**, `Organization` and `Software Apps`. Organization's
+three non critical issues are all optional address fields, `streetAddress`,
+`addressLocality` and `postalCode`, which the repo has no facts for.
+
+**Blockers.** None.
+
+**Founder action required.** None. Of the four facts the repo could not
+supply, the founder confirmed `foundingDate` as 2026, which is now on the
+`Organization` and is consistent with the first commit, 2026-08-08. The other
+three were declined and are deliberately absent, not outstanding: no founder
+`Person` node, no registered entity name or KvK number, and no street level
+address. Do not add them in a later session without a fresh decision.
+
+**Next technical step.** A1, the newsletter archive, is blocked on a content
+path, not on code. `content/newsletter/pieces/` holds two prose sections of a
+single week 37 issue, not issues, and is vestigial: the live job calls
+`loadPiece()` on model generated text at
+`publish-weekly-newsletter/index.ts:309`, not on those files. The only issue
+frame in the repo, `scripts/newsletter/example-issue.json`, carries fabricated
+postings. Real issues live in `public.newsletter_issues`, service role only, in
+production. The table's own migration comment records why: an edge function
+cannot write to the repo, so the table replaced the committed issue file. A
+prerendered archive therefore has no repo source to read, and giving it one is
+a Level 3 design decision.
+
+**Commit or PR.** Branch `seo-a3-entity-graph`, commit `3f71f5b`.
+
+---
+
 ## 2026-09-08 — SEO week 2: tool page cluster, pricing inbound links
 
 **Objective.** Week 2 of the Google and AI search visibility audit: F2 and F3,

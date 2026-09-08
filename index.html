@@ -60,6 +60,7 @@
       {
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
+        "@id": "https://myrecruitercheck.com/#software",
         "name": "MyRecruiterCheck",
         "url": "https://myrecruitercheck.com/",
         "description": "MyRecruiterCheck compares your CV with a specific tech, AI, machine learning or data job and gives you recruiter style feedback before you apply.",
@@ -69,17 +70,29 @@
           "@type": "Offer",
           "price": "0",
           "priceCurrency": "EUR"
-        }
+        },
+        "publisher": { "@id": "https://myrecruitercheck.com/#organization" }
       }
     </script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "Organization",
+        "@id": "https://myrecruitercheck.com/#organization",
         "name": "MyRecruiterCheck",
         "url": "https://myrecruitercheck.com/",
         "logo": "https://myrecruitercheck.com/icons/pwa-512x512.png",
         "description": "MyRecruiterCheck compares your CV with a specific tech, AI, machine learning or data job and gives you recruiter style feedback before you apply.",
+        "foundingDate": "2026",
+        "address": {
+          "@type": "PostalAddress",
+          "addressCountry": "NL"
+        },
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "customer support",
+          "email": "support@myrecruitercheck.com"
+        },
         "sameAs": [
           "https://www.linkedin.com/company/myrecruitercheck/?viewAsMember=true",
           "https://www.instagram.com/myrecruitercheck/",
@@ -91,8 +104,11 @@
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
+        "@id": "https://myrecruitercheck.com/#website",
         "name": "MyRecruiterCheck",
-        "url": "https://myrecruitercheck.com/"
+        "url": "https://myrecruitercheck.com/",
+        "inLanguage": "en",
+        "publisher": { "@id": "https://myrecruitercheck.com/#organization" }
       }
     </script>
   </head>
