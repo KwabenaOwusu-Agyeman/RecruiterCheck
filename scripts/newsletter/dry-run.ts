@@ -41,11 +41,13 @@ import {
   parseGeneration,
   parseRemotive,
   periodLabel,
+  parseBoard,
   selectPostings,
   toPostings,
   type FeedItem,
   type Generated,
 } from '../../supabase/functions/publish-weekly-newsletter/logic.ts'
+import { BOARDS, boardUrl, type Region } from '../../supabase/functions/publish-weekly-newsletter/boards.ts'
 
 const offline = process.argv.includes('--offline')
 /** Real feeds, placeholder prose. A preview that costs nothing. */
@@ -108,8 +110,28 @@ async function main() {
         return [] as FeedItem[]
       }),
     ])
-    console.log(`\nFeeds: ${remotive.length} from Remotive, ${arbeitnow.length} from Arbeitnow.`)
-    items = [...remotive, ...arbeitnow]
+    // The company boards, in small batches. The open feeds return nothing for
+    // Africa or India, so without these two of the five regions stay empty.
+    const entries = Object.entries(BOARDS).flatMap(([region, boards]) =>
+      boards.map((board) => ({ board, region: region as Region })),
+    )
+    const boardItems: FeedItem[] = []
+    for (let i = 0; i < entries.length; i += 6) {
+      const batch = await Promise.all(
+        entries.slice(i, i + 6).map(({ board, region }) =>
+          getJson(boardUrl(board))
+            .then((payload) => parseBoard(board, region, payload))
+            .catch(() => [] as FeedItem[]),
+        ),
+      )
+      boardItems.push(...batch.flat())
+    }
+
+    console.log(
+      `\nFeeds: ${remotive.length} from Remotive, ${arbeitnow.length} from Arbeitnow, ` +
+        `${boardItems.length} from ${entries.length} company boards.`,
+    )
+    items = [...remotive, ...arbeitnow, ...boardItems]
   }
 
   const postings = selectPostings(items, [])
@@ -117,6 +139,7 @@ async function main() {
     console.error(`\nFAIL: only ${postings.length} usable postings, need ${REQUIRED_POSTINGS}.`)
     process.exit(1)
   }
+  console.log(`\nRegions covered: ${postings.map((p) => p.region ?? 'unplaced').join(', ')}`)
   console.log('\nSelected:')
   for (const p of postings) console.log(`  ${p.role} at ${p.company}, ${p.location}`)
 

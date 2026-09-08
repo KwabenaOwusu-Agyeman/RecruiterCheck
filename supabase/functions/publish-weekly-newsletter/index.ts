@@ -4,6 +4,7 @@ import { loadPiece } from '../_shared/newsletter/piece.ts'
 import {
   BREVO_CAMPAIGN_ENDPOINT,
   FEEDS,
+  parseBoard,
   REQUIRED_POSTINGS,
   absolutise,
   angleForWeek,
@@ -22,6 +23,7 @@ import {
   toPostings,
   type FeedItem,
 } from './logic.ts'
+import { BOARDS, boardUrl, type Region } from './boards.ts'
 
 // Builds and schedules one weekly newsletter issue.
 //
@@ -48,6 +50,15 @@ import {
 // issue in twenty thousand inboxes cannot be undone.
 
 const FEED_TIMEOUT_MS = 15000
+
+/**
+ * Shorter than a feed's, because there are 47 boards rather than two and they
+ * are additive: a slow board must cost its own postings, never the run.
+ */
+const BOARD_TIMEOUT_MS = 8000
+
+/** Polite, and small enough not to arrive at one API as a burst. */
+const BOARD_CONCURRENCY = 6
 const OPENAI_TIMEOUT_MS = 45000
 const BREVO_TIMEOUT_MS = 20000
 
@@ -95,6 +106,51 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: numbe
   } finally {
     clearTimeout(timer)
   }
+}
+
+/**
+ * Every company board, in small batches.
+ *
+ * These exist because the two open feeds cannot fill the format: measured on
+ * 2026-09-08 they returned nothing at all for Africa and nothing for India, so
+ * a section promising five regions could never have delivered two of them.
+ *
+ * Failures are swallowed per board for the same reason a feed's are. A slug
+ * that stops resolving costs that employer's roles and nothing else.
+ */
+async function loadBoards(): Promise<FeedItem[]> {
+  const entries = Object.entries(BOARDS).flatMap(([region, boards]) =>
+    boards.map((board) => ({ board, region: region as Region })),
+  )
+
+  const collected: FeedItem[] = []
+  for (let i = 0; i < entries.length; i += BOARD_CONCURRENCY) {
+    const batch = entries.slice(i, i + BOARD_CONCURRENCY)
+    const results = await Promise.all(
+      batch.map(async ({ board, region }) => {
+        try {
+          const response = await fetchWithTimeout(
+            boardUrl(board),
+            { headers: { Accept: 'application/json' } },
+            BOARD_TIMEOUT_MS,
+          )
+          if (!response.ok) {
+            console.warn('publish-weekly-newsletter: board non-ok', { slug: board.slug, status: response.status })
+            return []
+          }
+          return parseBoard(board, region, await response.json())
+        } catch (error) {
+          console.warn('publish-weekly-newsletter: board unavailable', {
+            slug: board.slug,
+            message: error instanceof Error ? error.message : String(error),
+          })
+          return []
+        }
+      }),
+    )
+    collected.push(...results.flat())
+  }
+  return collected
 }
 
 /** One feed's failure costs its own postings, never the issue. */
@@ -190,11 +246,15 @@ Deno.serve(async (req) => {
       .map((row) => row.rejection_heading)
       .filter((h): h is string => typeof h === 'string' && h.length > 0)
 
-    const [remotive, arbeitnow] = await Promise.all([
+    const [remotive, arbeitnow, boards] = await Promise.all([
       loadFeed(FEEDS.remotive, parseRemotive),
       loadFeed(FEEDS.arbeitnow, parseArbeitnow),
+      loadBoards(),
     ])
-    const postings = selectPostings([...remotive, ...arbeitnow], alreadySent)
+    const postings = selectPostings([...remotive, ...arbeitnow, ...boards], alreadySent)
+    console.log('publish-weekly-newsletter: regions covered', {
+      regions: postings.map((p) => p.region ?? 'unplaced'),
+    })
     if (postings.length < REQUIRED_POSTINGS) {
       return await fail(
         `Only ${postings.length} usable postings after dedupe, need ${REQUIRED_POSTINGS}`,

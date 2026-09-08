@@ -57,6 +57,9 @@ test('a Remotive payload becomes items', () => {
   assert.deepEqual(items, [{
     role: 'Machine Learning Engineer', company: 'An employer',
     location: 'Europe', url: 'https://remotive.com/x',
+    // The open feeds carry a region too, read from their own location text.
+    // Only the boards need a fallback, and only for a location naming nowhere.
+    region: 'EU',
   }])
 })
 
@@ -66,6 +69,7 @@ test('an Arbeitnow payload becomes items', () => {
   })
   assert.equal(items.length, 1)
   assert.equal(items[0].role, 'Data Engineer')
+  assert.equal(items[0].region, 'EU')
 })
 
 test('a feed that changes shape yields nothing rather than throwing', () => {
