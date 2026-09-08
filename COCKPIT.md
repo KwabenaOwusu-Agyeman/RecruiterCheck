@@ -53,6 +53,56 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-08 — Newsletter postings cover five regions
+
+**Objective.** Make the weekly issue's five postings cover EU, UK, USA, Africa
+and India, one role each.
+
+**Completed.** `supabase/functions/publish-weekly-newsletter/boards.ts` holds 47
+company boards on Greenhouse, Lever and Ashby, grouped into the five regions,
+plus `regionFor`, `isUnplaceable` and `resolveRegion`. `logic.ts` gains
+`parseBoard`, which routes board postings through the existing `toItem` so they
+get the same dash removal and apprenticeship filter as feed postings, and
+`selectPostings` now takes one role per region before filling the rest from
+anywhere. `index.ts` fetches the boards in batches of six with an eight second
+per board timeout. `dry-run.ts` loads them too, so the local preview and the
+weekly job read the same sources. Tests in `boards.test.ts`, offline by design.
+
+**Verified.** `npm run checks` selected lint, typecheck and `test:edge`. Lint 0
+errors (5 pre-existing react-refresh warnings in `src/`), typecheck clean,
+`test:edge` 24/24 files and 400 assertions, `boards.test.ts` 14 passed. Dry run
+against the live boards: 5704 postings from 47 boards, all five regions covered,
+191 words.
+
+The measurement that justified the work: on 2026-09-08 the two open feeds
+carried 267 postings between them, split EU 117, UK 64, USA 3, Africa 0,
+India 0. Africa and India were unreachable from Remotive and Arbeitnow, so no
+amount of gathering would have filled those slots.
+
+Three defects found and fixed while building it. Region taken from the source
+list rather than the posting filed a Moniepoint role in Poland under Africa and
+an OpenAI role in Tokyo under USA; region now comes from the posting's location,
+and a location outside the five is dropped rather than mislabelled. Region had
+to be read from the raw location, because `normaliseText` truncates to 40
+characters and a Californian posting loses its country to that cap. And a dry
+run selected "Senior AI Governance Counsel" for the week's five, a legal role
+ranked top because `' ai '` is a strong term, so `tier()` now excludes the
+functions around the technology rather than in it.
+
+**Blockers.** None.
+
+**Founder action required.** PR #64 is not merged. Merging deploys
+`publish-weekly-newsletter`, which sends a live scheduled campaign to real
+subscribers, so the deploy is a decision rather than a formality.
+
+**Next technical step.** Nothing outstanding. A slug that stops resolving costs
+its own board and is visible in the function logs as `board non-ok`; the board
+list is the thing to revisit if a region starts coming up empty.
+
+**Commit or PR.** `8d79676`, `0d2a88e` and `ecf749e` on
+`newsletter-regional-sources`, PR #64. Not merged, not deployed.
+
+
 ## 2026-09-07 — Newsletter schema applied, automation live
 
 **Objective.** Apply the three migrations and confirm the weekly job can run.
