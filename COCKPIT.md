@@ -51,6 +51,54 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-08 — SEO week 2: tool page cluster, pricing inbound links
+
+**Objective.** Week 2 of the Google and AI search visibility audit: F2 and F3,
+the internal linking items. No schema, content or product change.
+
+**Completed.** The seven tool pages (`TailorCvToJobPage`,
+`CvKeywordCheckerPage`, `CoverLetterGeneratorPage`,
+`RecruiterMessageGeneratorPage`, `ResumeStrengthsWeaknessesPage`,
+`JobApplicationFeedbackPage`, `RecruiterEvaluationPage`) now cross link their
+six siblings through the existing `relatedLinks` prop on `SeoLandingPage`, and
+each links `/pricing`. Six single line arrays were normalised to the multi line
+form already used elsewhere.
+
+**Verified.** `npm run checks` selected lint, typecheck, `test:unit`, build and
+the sitemap and metadata check. Lint clean bar the two pre existing
+`react-refresh` warnings; typecheck clean; 14/14 test files, 181 assertions;
+build succeeded and needed no CSP change, since `relatedLinks` are not inline
+scripts. Measured from the prerendered HTML: every tool page reaches all six
+siblings plus `/pricing`, no duplicates, no self links. Inbound internal links
+`/cv-keyword-checker` 1 to 6, `/recruiter-message-generator` 1 to 6,
+`/how-recruiters-evaluate-a-cv` 2 to 8, `/pricing` 2 to 9. PR #67's role and
+comparison clusters confirmed intact; 153 `application/ld+json` blocks still
+parse; 32 sitemap URLs still clean.
+
+**Blockers.** None.
+
+**Founder action required.** None.
+
+**Next technical step.** The remaining weak pages are `/about`, `/terms`,
+`/privacy`, `/cookies` and `/disclaimer` at one inbound link each, and `/faq`
+at three. They were reachable through the footer, which
+`src/layouts/PublicLayout.tsx` renders on the landing page only by explicit
+design. `/about` at one inbound is the one with search value; it is audit item
+A3, entity enrichment, not a linking fix. Week 3 is the newsletter archive
+(A1).
+
+**Note on the footer.** `PublicLayout` renders `PublicFooter` only when
+`pathname === '/'`, documented in place as deliberate: every other public page
+ends on its own call to action and a second full sitemap competed with it.
+This is why 31 of 32 public pages carry only a header link plus `relatedLinks`,
+and why `relatedLinks` is the only internal linking lever on them. Recorded so
+a later session does not read the thin link graph as a bug and reinstate the
+footer.
+
+**Commit or PR.** Branch `seo-week2-tool-cluster`, commit `c801804`.
+
+---
+
 ## 2026-09-08 — SEO week 1: schema validity, crawl hygiene, www redirect
 
 **Objective.** Week 1 of the Google and AI search visibility work: the P0/P1
