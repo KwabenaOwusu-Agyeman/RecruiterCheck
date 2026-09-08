@@ -26,7 +26,25 @@ const has = (re) => changed.some((f) => re.test(f))
 // A change touching only prose or agent config needs no code checks. Kept
 // deliberately narrow: anything with an executable extension falls through.
 const DOCS_ONLY = /(\.md$|^docs\/|^\.claude\/|^CLAUDE\.md$|^\.gitignore$|^brand-concepts\/)/
-const docsOnly = changed.length > 0 && changed.every((f) => DOCS_ONLY.test(f))
+
+// Markdown under content/ is NOT documentation, it is a build input.
+//
+// Since the Phase 1 publishing architecture, content/resources/ and
+// content/issues/ produce prerendered, indexable pages with their own route,
+// sitemap entry, canonical and JSON-LD, and content/newsletter/ holds the copy
+// the weekly job renders. Rules exist below for both. Neither was ever reached:
+// every one of these files ends in .md, so the docs only exit fired first and
+// an article, or a newsletter piece, reported "no code checks needed" while
+// changing what the site publishes.
+//
+// This deliberately covers ALL of content/, rather than listing the
+// subdirectories that happen to exist today. A README under content/ will now
+// select a check it does not need, which is noise. A new content directory
+// silently selecting NO check would ship an unchecked indexable page, which is
+// the failure this exists to prevent. Fail toward the noisy side.
+const CONTENT = /^content\//
+const docsOnly =
+  changed.length > 0 && changed.every((f) => DOCS_ONLY.test(f) && !CONTENT.test(f))
 
 // Order matters only for readability; every matching rule contributes.
 const RULES = [
