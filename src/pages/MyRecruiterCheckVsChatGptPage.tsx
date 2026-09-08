@@ -37,6 +37,11 @@ export function MyRecruiterCheckVsChatGptPage() {
         { label: 'Application Checker', to: '/application-checker' },
         { label: 'Interview Score', to: '/interview-probability-score' },
         { label: 'Pricing', to: '/pricing' },
+        { label: 'vs Jobscan', to: '/myrecruitercheck-vs-jobscan' },
+        { label: 'vs Resume Worded', to: '/myrecruitercheck-vs-resume-worded' },
+        { label: 'vs Teal', to: '/myrecruitercheck-vs-teal' },
+        { label: 'vs Rezi', to: '/myrecruitercheck-vs-rezi' },
+        { label: 'vs Kickresume', to: '/myrecruitercheck-vs-kickresume' },
       ]}
     />
   )

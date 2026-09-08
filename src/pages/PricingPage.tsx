@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useAuthModal } from '@/features/auth/context/AuthModalContext'
 import { usePageMeta } from '@/hooks/usePageMeta'
 import { TestimonialsSection } from '@/features/landing/components/TestimonialsSection'
-import { CHECK_PACKS, type RefundReason } from '@/lib/constants'
+import { BRAND, CHECK_PACKS, type RefundReason } from '@/lib/constants'
 import { RefundReasonPicker } from '@/components/checks/RefundReasonPicker'
 import { trackEvent } from '@/lib/analytics'
 import { createCheckoutSession, hasRefundablePurchase, requestRefund } from '@/services/checkService'
@@ -198,6 +198,48 @@ export function PricingPage() {
           </div>
         </Container>
       </section>
+
+      {/* Offer and breadcrumb structured data, built from CHECK_PACKS itself so
+          the prices and entitlements search engines read can never drift from
+          the ones the cards render. Same inline script pattern as the JSON-LD
+          on HowInterviewScoreWorksPage; scripts/prerender.mjs reconciles the
+          CSP hashes at build time. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            name: 'MyRecruiterCheck Recruiter Check Packs',
+            description: 'One time credit packs for MyRecruiterCheck Recruiter Checks. No subscription.',
+            image: `${BRAND.canonicalUrl}/social/og-image.png`,
+            brand: { '@type': 'Brand', name: BRAND.name },
+            offers: CHECK_PACKS.map((pack) => ({
+              '@type': 'Offer',
+              name: pack.name,
+              price: pack.price.replace('€', ''),
+              priceCurrency: 'EUR',
+              url: `${BRAND.canonicalUrl}/pricing`,
+              availability: 'https://schema.org/InStock',
+              description: pack.features.join(', '),
+            })),
+          }),
+        }}
+      />
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: BRAND.canonicalUrl },
+              { '@type': 'ListItem', position: 2, name: 'Pricing', item: `${BRAND.canonicalUrl}/pricing` },
+            ],
+          }),
+        }}
+      />
 
       {/* Same reviews component the landing page uses. Placed directly below
           the packs so anyone arriving from a "Get checks" CTA sees the proof

@@ -49,6 +49,8 @@ export function AiEngineerCvCheckerPage() {
         { label: 'Data Scientist CV Checker', to: '/data-scientist-cv-checker' },
         { label: 'How the Interview Score works', to: '/how-interview-score-works' },
         { label: 'ATS Resume Checker', to: '/ats-resume-checker' },
+        { label: 'Software Engineer Resume Checker', to: '/software-engineer-resume-checker' },
+        { label: 'Data Analyst CV Checker', to: '/data-analyst-cv-checker' },
       ]}
     />
   )
