@@ -23,8 +23,6 @@ technical and founder-blocking; everything else goes in a dated entry or in
 Notion. If this list keeps growing, Claude is handing work back instead of
 doing it.
 
-- **Founder action.** `STRIPE_SECRET_KEY` is unset, so the Admin Dashboard
-  Payments page shows "Not reconciled against Stripe". Recorded 2026-09-06.
 - **Founder action.** Verify a real Google sign-in end to end after the move
   to the `myrecruitercheck` Cloud project, then delete the old `RecruiterCheck`
   OAuth client in `theorycoach-ai`. Recorded 2026-09-07.
@@ -52,6 +50,50 @@ statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
 
 ---
+
+## 2026-09-08 — Payments reconciles against Stripe, Control Centre config documented
+
+**Objective.** Close the STRIPE_SECRET_KEY open item and write down what it
+depended on, since the Control Centre's configuration was documented nowhere.
+
+**Completed.** The founder created a Stripe restricted key and set it on the
+`myrecruitercheck-admin` Vercel project, Production scope, then redeployed.
+`admin/.env.example` added, names only. `CLAUDE.md` corrected on how the Control
+Centre deploys.
+
+**Verified.** The Payments page no longer shows "Not reconciled against Stripe"
+and its single purchase row reads **Matches Stripe**. That row is a refunded
+purchase, so `reconcileRefund` and the payment intent retrieve were both
+exercised, which covers every Stripe call `admin/src/server/stripe.ts` makes.
+
+Three things worth keeping. The key is a restricted read only key, and in the
+Dashboard's grid that is TWO rows rather than the three API resources the code
+implies: **Payment Intents** (Read) and **Charges and Refunds** (Read), Stripe
+grouping the latter two. The charge half is needed only for the
+`expand: ['latest_charge']` and is easy to omit, in which case the expand fails
+while everything else appears to work.
+
+Second, this was set on the wrong Vercel project first. There are two, and
+`STRIPE_SECRET_KEY` had been live in Supabase secrets for the Edge Functions
+while unset for the Control Centre since 2026-09-06 for exactly this reason.
+
+Third, `CLAUDE.md` claimed a merge deploys the SPA and the Control Centre
+"through two independent Vercel builds". It does not: that Vercel project is not
+connected to GitHub, so merging deploys only the SPA and any changed Edge
+Functions. Verified in the project overview, which offers Connect Git, has
+"Connect Git Repository" unticked on the production checklist, and shows
+`vercel deploy` as every deployment's Source. Its production deployment was 22
+hours old and marked Stale.
+
+**Blockers.** None.
+
+**Founder action required.** None for this. Note that the Control Centre now
+needs a manual `cd admin && vercel --prod` whenever an `admin/` change should go
+live; merging does not do it.
+
+**Next technical step.** None outstanding.
+
+**Commit or PR.** PR #66 on `admin-env-example`.
 
 ## 2026-09-08 — Newsletter postings cover five regions
 
@@ -101,6 +143,7 @@ list is the thing to revisit if a region starts coming up empty.
 
 **Commit or PR.** `8d79676`, `0d2a88e` and `ecf749e` on
 `newsletter-regional-sources`, PR #64. Not merged, not deployed.
+
 
 
 ## 2026-09-07 — Newsletter schema applied, automation live
