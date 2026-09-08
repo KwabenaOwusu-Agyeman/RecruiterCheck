@@ -220,7 +220,7 @@ export function PricingPage() {
               priceCurrency: 'EUR',
               url: `${BRAND.canonicalUrl}/pricing`,
               availability: 'https://schema.org/InStock',
-              description: `${pack.checks} Recruiter Checks. ${pack.features.join(', ')}.`,
+              description: pack.features.join(', '),
             })),
           }),
         }}
