@@ -239,9 +239,22 @@ does not become a second copy of it.
   the repo root, and it deploys as its own Vercel project, separately from the
   SPA and separately from Edge Functions.
 - It is served at `myrecruitercheck-admin.vercel.app` and carries its own
-  `.vercel` link under `admin/`, so a merge deploys the SPA and the Control
-  Centre through two independent Vercel builds that do not finish together.
-  When a change spans both, keep each side tolerant of the other's old version.
+  `.vercel` link under `admin/`. **Its Vercel project is not connected to
+  GitHub.** Merging deploys the SPA and, through the Actions workflow, any
+  changed Edge Functions. It does NOT deploy the Control Centre, which stays on
+  whatever was last pushed by hand until someone runs `cd admin && vercel --prod`
+  or redeploys it from the Vercel dashboard.
+
+  Verified 2026-09-08 in the `myrecruitercheck-admin` project: the overview
+  offers **Connect Git**, the production checklist has "Connect Git Repository"
+  unticked, and every deployment's Source reads `vercel deploy` rather than a
+  commit. The production deployment was 22 hours old and marked Stale.
+
+  Two things follow. A Control Centre change is not shipped when its pull
+  request merges, so say so in the report rather than implying it went out. And
+  when a change spans the SPA and the Control Centre, keep each side tolerant of
+  the other's old version, because the gap here is open ended rather than the
+  few minutes between two builds.
 - It shows what happened; Notion holds what is planned. No roadmap, strategy or
   business planning belongs in it without a specific operational reason.
 - It reaches production with the service role. Everything under `admin/src/server/`
@@ -484,7 +497,10 @@ MANUAL CHECKS     What the user still needs to verify
 PUSHED            Branch and remotes, or "no"
 MERGED            Pull request merged, or "no"
 DEPLOYED          Edge Functions this merge deployed, or "none". Say when the
-                  frontend went out from the same merge through Vercel.
+                  frontend went out from the same merge through Vercel. A
+                  Control Centre change did NOT go out: its Vercel project is
+                  not connected to GitHub, so say it is awaiting a manual
+                  `cd admin && vercel --prod` rather than leaving it implied.
 ```
 
 Keep it proportionate. A one-line fix does not need paragraphs under every
