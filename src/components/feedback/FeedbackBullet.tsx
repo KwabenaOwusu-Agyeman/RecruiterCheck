@@ -1,15 +1,6 @@
 import { cn } from '@/utils/cn'
 import { SAMPLE_WORDING_LABEL, splitFinding } from '@/lib/feedbackText'
 
-// On light grounds the base success/warning fills measure 3.4:1 and 2.2:1
-// as text, below AA — the deep partners hold the same hue at 5+:1. Dark
-// grounds keep the brighter values, which already clear AA on navy and ink.
-export function getVerdictColor(score: number, tone: 'light' | 'dark' = 'light'): string {
-  if (score >= 85) return tone === 'dark' ? 'text-success' : 'text-success-deep'
-  if (score >= 61) return tone === 'dark' ? 'text-warning' : 'text-warning-deep'
-  return tone === 'dark' ? 'text-error-light' : 'text-error'
-}
-
 /**
  * One strength or area to improve. The stored string is split (see
  * src/lib/feedbackText.ts) into a bold finding, plain evidence, and an

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Container } from '@/components/ui/Container'
-import { TIER_LABEL } from '@/components/feedback/ScoreLockup'
+import { TIER_LABEL } from '@/components/feedback/scoreTier'
 import { cn } from '@/utils/cn'
 
 /**
