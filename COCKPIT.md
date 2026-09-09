@@ -33,15 +33,9 @@ doing it.
   that date cannot be attributed. Recorded 2026-09-06.
 - **Known limit, browser verification.** Hydration and console behaviour on the
   live site cannot be observed: `CLAUDE.md` restricts the Chrome connector to
-  localhost. A local pass is representative, since the served bytes match
-  `dist/`, but production browser behaviour is **UNVERIFIED** and must be
-  reported as such rather than inferred. Recorded 2026-09-08.
-- **Open decision, accessibility.** `/faq`, `/privacy`, `/terms`, `/cookies` and
-  `/disclaimer` have **no `main` landmark and no skip link**: they sit outside
-  `PublicLayout` and use `LegalLayout`, which renders a `div`, so their `h1` is
-  in no landmark. Giving `LegalLayout` a `main` would re nest `/about`, which
-  uses it from inside `PublicLayout`, so this is a design fork rather than a
-  mechanical fix. Recorded 2026-09-10.
+  localhost. A local pass over `dist/` is representative, since the served bytes
+  match, but production browser behaviour is **UNVERIFIED** and must be reported
+  as such rather than inferred. Recorded 2026-09-10.
 
 ## Historical review material
 
@@ -59,6 +53,52 @@ It is carried by
 and the live `supabase/functions/keyword-scan/`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-10 — Every page now has exactly one main and one header
+
+**Objective.** Close the two remaining landmark gaps: the five legal pages with
+no `main`, and `/about`'s duplicated chrome. PRs #77 `8ca08a5` and #78 `afe6ca2`.
+
+**Completed.** `/faq`, `/privacy`, `/terms`, `/cookies` and `/disclaimer` route
+outside `PublicLayout` and use `LegalLayout`, which rendered a plain `div`, so
+their `h1` and whole body sat in **no landmark at all**. `LegalLayout` now
+renders the landmark itself, around the content and never around the header
+above it, plus the skip link.
+
+`/about` is the one `LegalLayout` page routed INSIDE `PublicLayout`, so both
+layouts supplied the same chrome and it rendered **two** headers, **two** Back
+controls and **two** logos, meaning two `banner` landmarks. The `standalone`
+prop, which already meant "provide my own page chrome", now governs the header
+and back link as well as the skip link and landmark. `/about` keeps
+`PublicHeader`, the better of the two, and loses the redundant logo bar.
+
+`src/components/ui/SkipLink.tsx` is shared by both layouts, carrying
+`MAIN_LANDMARK_ID` with it so the link and the landmark cannot disagree.
+
+**Verified in production.** Ten pages sampled across every layout: `/about`, the
+five legal pages, `/`, `/pricing`, `/ats-resume-checker` and the article. All
+report exactly one `main`, one `header` and one skip link. Nothing has a
+duplicate of either. The homepage correctly has no back link. Regression clean:
+article schema, canonical, robots, body styling and its three links; #67 offers,
+#68 free offer, #69 tool cluster, #70 entity graph, `X-Robots-Tag: noindex`, the
+www 301, and a 33 URL sitemap.
+
+Locally, across the whole prerendered build, 34 of 35 pages are `(1 main, 1
+header)`; the remaining one is `app-shell.html`, a rewrite target rather than a
+page and already `noindex`.
+
+**Blockers.** None.
+
+**Founder action required.** None.
+
+**Rejected, and why.** Moving `/about` out of `PublicLayout` to match its five
+siblings would have swapped the full navigation header for the logo only one and
+dropped the sticky call to action. That is a UX downgrade on a marketing page and
+a founder decision, not a mechanical fix.
+
+**Commit or PR.** PRs #77 and #78, merged as `8ca08a5` and `afe6ca2`.
 
 ---
 
