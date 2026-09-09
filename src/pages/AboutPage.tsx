@@ -12,7 +12,9 @@ export function AboutPage() {
   })
 
   return (
-    <LegalLayout title="About MyRecruiterCheck" updated="22 August 2026">
+    // standalone={false}: /about is the one LegalLayout page routed inside
+    // PublicLayout, which already provides the main landmark and skip link.
+    <LegalLayout title="About MyRecruiterCheck" updated="22 August 2026" standalone={false}>
       <Section title="What MyRecruiterCheck does">
         <p>
           MyRecruiterCheck compares your CV with a specific job description and gives you
