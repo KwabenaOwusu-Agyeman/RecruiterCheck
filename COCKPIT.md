@@ -36,13 +36,12 @@ doing it.
   localhost. A local pass is representative, since the served bytes match
   `dist/`, but production browser behaviour is **UNVERIFIED** and must be
   reported as such rather than inferred. Recorded 2026-09-08.
-- **Finding, not scheduled.** `<main>` is nested: `PublicLayout` renders
-  `<main className="flex-1">` and `SeoLandingPage`, `PricingPage` and
-  `EditorialPage` each return their own `<main>` inside it. Invalid HTML, since
-  the spec allows one `<main>` and forbids nesting. No hydration error and
-  nothing visibly broken; it is a semantics and accessibility issue. **Needs its
-  own decision. Not to be folded into Article 1 or the publication work.**
-  Recorded 2026-09-08.
+- **Open decision, accessibility.** `/faq`, `/privacy`, `/terms`, `/cookies` and
+  `/disclaimer` have **no `main` landmark and no skip link**: they sit outside
+  `PublicLayout` and use `LegalLayout`, which renders a `div`, so their `h1` is
+  in no landmark. Giving `LegalLayout` a `main` would re nest `/about`, which
+  uses it from inside `PublicLayout`, so this is a design fork rather than a
+  mechanical fix. Recorded 2026-09-10.
 
 ## Historical review material
 
@@ -60,6 +59,44 @@ It is carried by
 and the live `supabase/functions/keyword-scan/`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-10 — One main landmark per page, and a skip link
+
+**Objective.** Audit item from the nested `<main>` finding. PR #74, merged as
+`91b8d84`.
+
+**Completed.** Twenty six pages served two `<main>` elements, one nested inside
+the other, and Chrome exposed BOTH as landmarks, so a landmark list showed two
+entries and rotor navigation cycled through both. The outer one's only distinct
+content was the Back button. `SeoLandingPage`, `PricingPage`, `EditorialPage`,
+`HowInterviewScoreWorksPage` and `NotFoundPage` now return a fragment and
+`PublicLayout` owns the single landmark. No SEO page file was touched: the 23 SEO
+pages never rendered a `main` themselves, the shared component did. Every `main`
+removed was bare with no className, so there was no visual change.
+
+Also adds a skip link, which the site had none of. First focusable element,
+hidden until focused, jumping to `#main-content`, whose `tabIndex={-1}` is what
+makes Safari move focus rather than only scroll.
+
+**Verified in production.** 1 `main` and a skip link on the article, `/`,
+`/pricing`, `/ats-resume-checker`, `/how-interview-score-works` and `/about`.
+The article page's count had never been checked before, since #74 was verified
+while the article was still a draft and had no page. Regression clean: article
+canonical, robots, five schema blocks, 6 `h2`, 1 `h3`, 4 list items, the styling
+child selectors and the three approved links all intact; #67 offers, #68 free
+offer, #69 tool cluster, #70 entity graph, `X-Robots-Tag: noindex` and the www
+301 all unchanged; sitemap 33 URLs with the article present.
+
+**Blockers.** None.
+
+**Founder action required.** None.
+
+**Not addressed, by decision.** The five legal pages with no landmark, now the
+open item above.
+
+**Commit or PR.** PR #74, merged as `91b8d84`.
 
 ---
 
