@@ -31,10 +31,6 @@ doing it.
   the first generated copy anyone will have read. Recorded 2026-09-07.
 - **Known limit.** Acquisition data begins 2026-09-05. Accounts created before
   that date cannot be attributed. Recorded 2026-09-06.
-- **Engineering task 1, blocks publishing any article.** `scripts/which-checks.mjs`
-  classifies every `.md` file as `DOCS_ONLY` and exits before any rule runs, so an
-  article PR reports "no code checks needed" while producing an indexable page.
-  Content markdown is now a build input. Recorded 2026-09-08.
 - **Known limit, browser verification.** Hydration and console behaviour on the
   live site cannot be observed: `CLAUDE.md` restricts the Chrome connector to
   localhost. A local pass is representative, since the served bytes match
@@ -47,10 +43,6 @@ doing it.
   nothing visibly broken; it is a semantics and accessibility issue. **Needs its
   own decision. Not to be folded into Article 1 or the publication work.**
   Recorded 2026-09-08.
-- **Engineering task 3, sequenced.** Article 1 stays `status: draft` until task 1
-  is fixed and passing. Only then prepare the separate `draft` to `published`
-  change, with full local browser verification and production verification after
-  merge. Recorded 2026-09-08.
 
 ## Historical review material
 
@@ -68,6 +60,61 @@ It is carried by
 and the live `supabase/functions/keyword-scan/`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-10 — Article 1 published
+
+**Objective.** Ship the first Phase 2 resource article, with the check selection
+fix and the editorial body styling that had to land first.
+
+**Completed.** Three merges in sequence. PR #73 `a874890` fixed
+`scripts/which-checks.mjs`, which classified every `.md` as documentation and
+exited before any rule ran, so an article PR reported "no code checks needed"
+while producing an indexable page; two rules were dead, the SEO one and the
+newsletter one. PR #76 `74a1760` styled the editorial body. PR #75 `10ce42d`
+flipped `status: draft` to `status: published`, one line, the body byte
+identical to the approved package.
+
+**Live.** `https://myrecruitercheck.com/resources/why-a-cv-passes-ats-and-is-still-rejected`
+returns 200 and 26,439 bytes of prerendered HTML: self canonical, `index,
+follow`, `Article` with `datePublished` 2026-09-08 and `publisher` and
+`isPartOf` resolving to `#organization` and `#website`, `BreadcrumbList` of
+Home, Resources, article, one `h1`, six `h2`, one `h3`, four list items, exactly
+the three approved internal links and no `/cv-keyword-checker`, no FAQ markup.
+Sitemap is 33 URLs with the article at `lastmod` 2026-09-08. The styling child
+selectors are present in the served markup.
+
+**The styling fix was necessary, not cosmetic.** Browser verification measured
+the body as unstyled: `h2` and `h3` rendered at 16px weight 500, identical to a
+paragraph, in body links rendered in the body text colour with no underline, and
+lists had no markers and no indent. Tailwind's Preflight resets those and the
+parser emits bare tags. After: `h2` 30px Fraunces, `h3` 18px weight 600, links
+`rgb(25,74,159)` underlined, lists disc with indent.
+
+**Verified.** Hydration confirmed by comparing served `#root` against the live
+DOM, 20,424 characters both sides, so React reused the server markup rather than
+replacing it. Zero console messages, with tracking proven live by a probe first
+rather than assumed from an empty result. Client side navigation works, and
+returning to the article fetches `/content-data/...json`, exercising the
+fallback. Regression across every shipped PR is clean: #67 offers, #68 free
+offer, #69 tool cluster, #70 entity graph, plus `X-Robots-Tag: noindex` on
+`/app-shell.html` and the www 301.
+
+**Blockers.** None.
+
+**Founder action required.** None.
+
+**UNVERIFIED, and unavoidable.** Production browser and hydration behaviour.
+`CLAUDE.md` restricts the Chrome connector to localhost, so the live page has
+never been observed in a browser. The local result is representative, since the
+served bytes match `dist/`, but it is not the same claim.
+
+**Next technical step.** PR #74, the single `main` landmark and skip link, is
+open and independent. Article 3 has an approved brief and is not drafted.
+
+**Commit or PR.** PRs #73, #76 and #75, merged as `a874890`, `74a1760` and
+`10ce42d`.
 
 ---
 
