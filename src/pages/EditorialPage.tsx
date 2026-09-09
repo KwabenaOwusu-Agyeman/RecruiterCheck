@@ -107,7 +107,7 @@ function EditorialArticle({
   const url = `${BRAND.canonicalUrl}${path}`
 
   return (
-    <main>
+    <>
       <article className="border-b border-border-soft bg-background py-[40px] sm:py-[56px] lg:py-[64px]">
         <Container>
           <div className="mx-auto flex max-w-3xl flex-col gap-4">
@@ -184,7 +184,7 @@ function EditorialArticle({
         id={EMBEDDED_ID}
         dangerouslySetInnerHTML={{ __html: JSON.stringify(item).replace(/</g, '\\u003c') }}
       />
-    </main>
+    </>
   )
 }
 

@@ -136,7 +136,7 @@ export function PricingPage() {
   }
 
   return (
-    <main>
+    <>
       <section className="border-b border-border-soft bg-background py-[40px] sm:py-12">
         <Container>
           <div className="mx-auto max-w-3xl text-center">
@@ -308,6 +308,6 @@ export function PricingPage() {
           </span>
         </div>
       </Container>
-    </main>
+    </>
   )
 }
