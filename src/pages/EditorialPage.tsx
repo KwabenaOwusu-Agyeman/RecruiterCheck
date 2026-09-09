@@ -18,6 +18,35 @@ import type { ContentItem, ContentType } from '@/content/schema'
  * before it produces any markup, so raw HTML in a content file is inert text.
  * Nothing user submitted ever reaches this component.
  */
+/**
+ * Typography for the markdown body.
+ *
+ * The generated HTML carries no classes, because the parser produces bare
+ * tags, and Tailwind's Preflight resets heading size, link colour and list
+ * markers. Without this a h2 renders at 16px weight 500, identical to a
+ * paragraph, and a link is the same colour as the prose around it with no
+ * underline: measurably indistinguishable, not merely subtle.
+ *
+ * Child selectors rather than classes on the markup, because the markup comes
+ * from the parser and cannot carry any.
+ *
+ * Values are the site's existing tokens. Section headings elsewhere use
+ * `font-display text-2xl sm:text-3xl`, sub headings `text-lg font-semibold`,
+ * and links `text-blue`. Body links additionally carry a permanent underline
+ * rather than the `hover:underline` used for navigation: in a wall of prose,
+ * colour is the one distinguisher a colour blind reader may not have.
+ *
+ * Headings take a top margin on top of the container's `gap-4`, so the space
+ * above a section is larger than the space between its paragraphs.
+ */
+const editorialBodyClassName = [
+  'editorial-body mt-4 flex flex-col gap-4 text-text-primary lg:leading-[1.7]',
+  '[&_h2]:mt-4 [&_h2]:font-display [&_h2]:text-2xl [&_h2]:text-text-primary sm:[&_h2]:text-3xl',
+  '[&_h3]:mt-2 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-text-primary',
+  '[&_a]:font-medium [&_a]:text-blue [&_a]:underline [&_a]:underline-offset-2',
+  '[&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-5',
+].join(' ')
+
 interface EditorialPageProps {
   base: '/resources' | '/newsletter'
   /** Breadcrumb label for the section. */
@@ -90,7 +119,7 @@ function EditorialArticle({
             </h1>
             <p className="text-lg text-text-secondary">{item.description}</p>
             <div
-              className="editorial-body mt-4 flex flex-col gap-4 text-text-primary lg:leading-[1.7]"
+              className={editorialBodyClassName}
               dangerouslySetInnerHTML={{ __html: item.html }}
             />
           </div>
