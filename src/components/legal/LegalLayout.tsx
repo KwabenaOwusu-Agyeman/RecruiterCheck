@@ -8,15 +8,17 @@ interface LegalLayoutProps {
   title: string
   updated: string
   /**
-   * Whether this page owns its own `main` landmark and skip link.
+   * Whether this page provides its own page chrome: the skip link, the header
+   * and the back link, plus the `main` landmark that wraps its content.
    *
-   * True for the five routed outside PublicLayout, which is every legal page:
-   * without this their heading and body sat in no landmark at all, so a screen
+   * True for the five routed outside PublicLayout, which is every legal page.
+   * Without it their heading and body sat in no landmark at all, so a screen
    * reader user had no way to skip the header.
    *
-   * /about is the one exception. It renders inside PublicLayout, which already
-   * provides both, and a second `main` would nest exactly as 26 pages did
-   * before PR #74.
+   * /about is the one exception. It renders INSIDE PublicLayout, which already
+   * supplies every one of those. Rendering them again gave it two banner
+   * landmarks, two logos and two Back controls, and a second `main` would nest
+   * exactly as 26 pages did before PR #74.
    */
   standalone?: boolean
   children: ReactNode
@@ -25,7 +27,7 @@ interface LegalLayoutProps {
 export function LegalLayout({ title, updated, standalone = true, children }: LegalLayoutProps) {
   const content = (
     <Container className="max-w-3xl pb-12 pt-4 sm:pb-[56px] sm:pt-8 lg:max-w-[760px]">
-      <BackLink />
+      {standalone ? <BackLink /> : null}
       <h1 className="font-display mt-3 text-2xl font-semibold tracking-tight text-text-primary sm:mt-6 sm:text-[32px]">
         {title}
       </h1>
@@ -35,9 +37,13 @@ export function LegalLayout({ title, updated, standalone = true, children }: Leg
     </Container>
   )
 
+  // Wrapped, not bare, so the page keeps the background and spacing it has
+  // today. The surrounding layout supplies the chrome.
+  if (!standalone) return <div className="min-h-screen bg-background">{content}</div>
+
   return (
     <div className="min-h-screen bg-background">
-      {standalone ? <SkipLink /> : null}
+      <SkipLink />
       <header className="border-b border-border">
         <Container>
           <div className="flex h-16 items-center">
@@ -47,13 +53,9 @@ export function LegalLayout({ title, updated, standalone = true, children }: Leg
       </header>
 
       {/* The landmark wraps the content only, never the header above it. */}
-      {standalone ? (
-        <main id={MAIN_LANDMARK_ID} tabIndex={-1} className="focus:outline-none">
-          {content}
-        </main>
-      ) : (
-        content
-      )}
+      <main id={MAIN_LANDMARK_ID} tabIndex={-1} className="focus:outline-none">
+        {content}
+      </main>
     </div>
   )
 }

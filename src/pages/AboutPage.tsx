@@ -13,7 +13,8 @@ export function AboutPage() {
 
   return (
     // standalone={false}: /about is the one LegalLayout page routed inside
-    // PublicLayout, which already provides the main landmark and skip link.
+    // PublicLayout, which already supplies the skip link, header, back link and
+    // main landmark. Rendering them again gave this page two of each.
     <LegalLayout title="About MyRecruiterCheck" updated="22 August 2026" standalone={false}>
       <Section title="What MyRecruiterCheck does">
         <p>
