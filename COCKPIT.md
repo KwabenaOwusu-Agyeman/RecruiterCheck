@@ -56,6 +56,54 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-10 — Article 4 merged as a draft
+
+**Objective.** Draft and land "Which job requirements are genuinely mandatory",
+the third Phase 2 resource article, without publishing it. PR #81 merged as
+`a3260a6`.
+
+**Completed.** `content/resources/which-job-requirements-are-mandatory.md`, one
+new file, 1283 words, seven `h2` and one `h3`, `status: draft`. The piece sorts a
+requirements list into genuine gates, requirements describing the system the team
+runs, and the aspirational long tail, then gives a four step sort a reader can
+run on a real list.
+
+**Written here rather than supplied.** Articles 1 and 3 were founder drafts that
+this session implemented. Article 4 was drafted against the approved brief, so
+the prose is Claude Code's and deserves closer editorial review than an
+implementation would.
+
+**Verified against Brief 4's definition of done.** Thirteen checks, all passing:
+all seven sections, the primary question answered in the first two paragraphs,
+the statement that a gap is never closed by inventing experience, the link back
+to Article 3 instead of re teaching it, the invented list labelled as invented,
+the three product links, no `/cv-keyword-checker`, exactly one product mention
+and it is last, no men and women application statistic, no percentage or ratio
+claim, no real employer named, a real ISO `published` date, and the parser clean
+so no dashes and no unsupported markdown.
+
+Where the argument needed a claim about employer behaviour it is framed as
+reasoning with the counter case stated, that some teams do want the exact tool.
+
+**The publish order paid off.** Brief 3 required Article 3 to ship first so this
+one could link back rather than re teach the reading method. That is what it
+does.
+
+**Blockers.** None.
+
+**Founder action required.** None, though the sorted example places "three years
+of experience" under the aspirational category, on the reasoning that years are a
+proxy for judgement rather than a measure of it. That is the most contestable
+call in the piece and the paragraph to change if the founder disagrees.
+
+**Next technical step.** Publication is a separate `draft` to `published` change,
+with local browser verification and production verification after merge, as for
+Articles 1 and 3.
+
+**Commit or PR.** PR #81, merged as `a3260a6`.
+
+---
+
 ## 2026-09-10 — Article 3 published
 
 **Objective.** Publish "How to read a job description before you apply", the
