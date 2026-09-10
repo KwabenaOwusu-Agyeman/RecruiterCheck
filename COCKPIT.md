@@ -81,7 +81,7 @@ method rather than re teaching it.
 
 **Verified.** Live at
 `https://myrecruitercheck.com/resources/which-job-requirements-are-mandatory`,
-200 and 30,927 bytes: self canonical, `index, follow`, `Article` with
+200 and 30,928 bytes, byte identical to the built file: self canonical, `index, follow`, `Article` with
 `datePublished` 2026-09-10 and `publisher` and `isPartOf` resolving,
 `BreadcrumbList`, one `h1`, seven `h2`, one `h3`, the four approved internal
 links, no `/cv-keyword-checker`, no FAQ markup. One `main`, one `header`, one
