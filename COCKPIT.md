@@ -36,6 +36,16 @@ doing it.
   localhost. A local pass over `dist/` is representative, since the served bytes
   match, but production browser behaviour is **UNVERIFIED** and must be reported
   as such rather than inferred. Recorded 2026-09-10.
+- **Founder decision, www root does not redirect.** `https://www.myrecruitercheck.com/`
+  returns 200 and serves the homepage rather than redirecting. Every other path
+  does redirect: the `vercel.json` rule `"/:path*"` with a `www` host condition
+  returns 301 for `/about`, `/pricing`, `/index.html`, `/sitemap.xml`,
+  `/robots.txt` and the article routes, but not for the bare root. The homepage
+  is therefore reachable on two hostnames. Mitigated, not fixed, by the served
+  page carrying `<link rel="canonical" href="https://myrecruitercheck.com/">`.
+  The fix is a second redirect entry with `"source": "/"` alongside the existing
+  one; it ships through a normal merge and needs no DNS change. Measured
+  2026-09-10.
 
 ## Historical review material
 
@@ -53,6 +63,59 @@ It is carried by
 and the live `supabase/functions/keyword-scan/`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-10 — Article 4 published
+
+**Objective.** Publish "Which job requirements are genuinely mandatory", the
+third Phase 2 resource article and the first that depended on another article
+shipping first: Brief 3 required Article 3 live so this one links back to the
+method rather than re teaching it.
+
+**Completed.** One line in
+`content/resources/which-job-requirements-are-mandatory.md`, `status: draft` to
+`status: published`, the body byte identical to the draft merged in PR #81.
+`vercel.json` and `scripts/csp-managed-hashes.json` are `prerender.mjs` output,
+60 hashes to 62, since the route now renders `Article` and `BreadcrumbList`.
+
+**Verified.** Live at
+`https://myrecruitercheck.com/resources/which-job-requirements-are-mandatory`,
+200 and 30,927 bytes: self canonical, `index, follow`, `Article` with
+`datePublished` 2026-09-10 and `publisher` and `isPartOf` resolving,
+`BreadcrumbList`, one `h1`, seven `h2`, one `h3`, the four approved internal
+links, no `/cv-keyword-checker`, no FAQ markup. One `main`, one `header`, one
+skip link. Sitemap is 35 URLs with all three articles.
+
+Locally before merge, over `dist/` served by `python3 -m http.server` rather
+than `vite preview`: hydration exact, served `#root` 24,921 characters against a
+live DOM of 24,921. Zero console output, with capture proven live by a probe
+rather than inferred from an empty result. Client side navigation away and back
+both worked, and returning fetched the `content-data` JSON, exercising the
+fallback. CSP: every executable inline script across the 37 built pages is
+covered and the ledger and policy agree at 62. The three uncovered blocks are
+the `type="application/json"` embedded content items, which the browser never
+executes, and that is unchanged from the two articles already live.
+
+Regression clean: Articles 1 and 3 intact with all five schema blocks and one
+landmark of each kind, `X-Robots-Tag: noindex` on `/app-shell.html`, and
+one `main`, one `header` and one `h1` on `/`, `/about`, `/faq` and `/pricing`.
+
+Not verified: production browser and hydration behaviour, since `CLAUDE.md`
+restricts the Chrome connector to localhost.
+
+**Blockers.** None for this work. Articles 2 and 10 remain blocked on the frozen
+consolidation decisions, and A1 on the newsletter content path.
+
+**Founder action required.** Decide whether to fix the www root redirect, which
+this run's regression sweep measured for the first time at the bare root. See
+Open items.
+
+**Next technical step.** The `vercel.json` root redirect, one entry, if
+approved. Otherwise Articles 5 to 9, which have approved pipeline entries in the
+Content Authority Map but no briefs yet.
+
+**Commit or PR.** PR #82, merged as `fc58911`.
 
 ---
 
