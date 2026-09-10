@@ -4,7 +4,7 @@ slug: which-job-requirements-are-mandatory
 title: Which job requirements are genuinely mandatory
 description: A requirements list mixes genuine gates with an aspirational wish list. Here is how to tell them apart, and what to do about a gap you cannot close.
 published: 2026-09-10
-status: draft
+status: published
 cluster: job-descriptions
 supports: /tailor-cv-to-job-description, /resume-job-description-match, /how-recruiters-evaluate-a-cv
 noindex: false
