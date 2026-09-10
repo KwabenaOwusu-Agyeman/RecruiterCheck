@@ -56,6 +56,45 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-10 — Article 3 merged as a draft
+
+**Objective.** Land the second Phase 2 resource article, "How to read a job
+description before you apply", without publishing it.
+
+**Completed.** `content/resources/how-to-read-a-job-description.md`, one new
+file, 1026 words, seven `h2` and one `h3`. The founder supplied the draft; the
+only edit was `published`, set to 2026-09-10, the actual implementation date
+rather than the placeholder. `status: draft`, so it has no route, no prerendered
+page and no sitemap entry. PR #79 merged as `36679f2`.
+
+**Verified against Brief 3's definition of done.** All seven sections, the
+primary question answered in the first two paragraphs, the invented posting
+example labelled as invented, exactly one product mention and it is the last
+line, the three approved internal links, no link to `/cv-keyword-checker`, no
+real employer or posting, no invented statistic, and the parser clean so no
+dashes in copy and no unsupported markdown. It also holds the boundary the brief
+drew against Article 4: the piece says outright that whether a given requirement
+is a genuine gate is its own question and does not answer it.
+
+`npm run checks` selected the SEO checks for this file, which it would not have
+done before PR #73. Build succeeded with 58 CSP hashes and no change needed,
+since a draft renders no page and adds no JSON LD. Production confirmed
+unaffected: the URL 404s, the sitemap is still 33 URLs, and Article 1 still
+serves 200.
+
+**Blockers.** None.
+
+**Founder action required.** None.
+
+**Next technical step.** Publication is a separate `draft` to `published`
+change, with local browser verification and production verification after merge,
+exactly as Article 1. Brief 3 says publish this before Article 4, since Article
+4 links back to it rather than re teaching it.
+
+**Commit or PR.** PR #79, merged as `36679f2`.
+
+---
+
 ## 2026-09-10 — Every page now has exactly one main and one header
 
 **Objective.** Close the two remaining landmark gaps: the five legal pages with
