@@ -56,6 +56,56 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-10 — Article 3 published
+
+**Objective.** Publish "How to read a job description before you apply", the
+second Phase 2 resource article. PR #80 merged as `d22955d`.
+
+**Completed.** One line, `status: draft` to `status: published`, the body byte
+identical to the draft merged in PR #79. `vercel.json` and the CSP ledger are
+`prerender.mjs` output, 58 hashes to 60, since the page now renders `Article`
+and `BreadcrumbList`.
+
+**Live.** `https://myrecruitercheck.com/resources/how-to-read-a-job-description`
+returns 200 and 27,420 bytes of prerendered HTML: self canonical, `index,
+follow`, `Article` with `datePublished` 2026-09-10 and `publisher` and
+`isPartOf` resolving, `BreadcrumbList`, one `h1`, seven `h2`, one `h3`, the
+three approved internal links, no `/cv-keyword-checker`, no FAQ markup, and the
+editorial body styling applied. One `main`, one `header`, one skip link. Sitemap
+is 34 URLs with both articles present.
+
+**First article to inherit the platform rather than retrofit it.** Article 1
+needed the body styling and the landmark work added after publication. Article 3
+shipped with both already in place, which is the point of doing them as
+platform changes rather than per article fixes.
+
+**Verified locally before merge.** Hydration exact, served `#root` 21,451
+characters against a live DOM of 21,451. Zero console output from the page load,
+with tracking proven live by a probe rather than inferred from an empty result.
+Client side navigation away and back both worked, and returning fetched the
+`content-data` JSON, exercising the fallback.
+
+**Regression clean in production.** Article 1 intact with all five schema
+blocks and one landmark of each kind; #67 offers, #68 free offer, #69 tool
+cluster, #70 entity graph, `X-Robots-Tag: noindex` on `/app-shell.html`, the www
+301, and `(1 main, 1 header)` on `/`, `/about`, `/faq` and `/pricing`.
+
+**Blockers.** None.
+
+**Founder action required.** None.
+
+**UNVERIFIED.** Production browser and hydration behaviour, as always:
+`CLAUDE.md` restricts the Chrome connector to localhost, so the live page has
+never been observed in a browser.
+
+**Next technical step.** Article 4, "Which job requirements are genuinely
+mandatory", whose brief is approved. Brief 3 required Article 3 to publish
+first so Article 4 can link back to it rather than re teaching the method.
+
+**Commit or PR.** PR #80, merged as `d22955d`.
+
+---
+
 ## 2026-09-10 — Article 3 merged as a draft
 
 **Objective.** Land the second Phase 2 resource article, "How to read a job
