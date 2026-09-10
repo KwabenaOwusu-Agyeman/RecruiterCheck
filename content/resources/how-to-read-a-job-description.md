@@ -4,7 +4,7 @@ slug: how-to-read-a-job-description
 title: How to read a job description before you apply
 description: A job description describes a system that already exists and a problem someone needs solved. Here is how to read one for what it is actually asking.
 published: 2026-09-10
-status: draft
+status: published
 cluster: job-descriptions
 supports: /resume-job-description-match, /tailor-cv-to-job-description, /how-recruiters-evaluate-a-cv
 noindex: false
