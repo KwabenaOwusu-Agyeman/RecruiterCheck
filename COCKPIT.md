@@ -66,6 +66,51 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-15 — Search Console structured data warnings closed, no code change
+
+**Objective.** Decide what to do about four Search Console structured data
+warnings on the site: `shippingDetails` and `hasMerchantReturnPolicy` under
+Merchant listings, `review` and `aggregateRating` under Product snippets.
+
+**Completed.** No code change. Founder decision on 2026-09-15 was to leave the
+markup as it is and unsubscribe from the two message types in Search Console.
+Recorded in `memory/2026-09-15-search-console-product-warnings-are-permanent.md`
+so a later session does not read the warnings as a defect and add the fields.
+
+**Verified.** All four fields confirmed absent from the live markup, which is
+the intended state, not an oversight: `/pricing` `Product` carries `@context`,
+`@type`, `brand`, `description`, `image`, `name`, `offers` and nothing else, and
+the sitewide `SoftwareApplication` carries no rating or review. Traced each
+warning to its source across the 37 built pages: the Merchant listings pair
+comes from the single `Product` on `/pricing`, the Product snippets pair from
+the `SoftwareApplication` present on every page plus that same `Product`.
+
+Neither pair is fixable in code. Nothing ships, so `shippingDetails` has no
+honest value, and there is no review corpus, so `review` and `aggregateRating`
+can only be fabricated. `hasMerchantReturnPolicy` alone could have been
+transcribed truthfully from the refund terms in `src/pages/TermsPage.tsx`, but
+that reverses the founder's PR #67 instruction and was declined.
+
+Google calls all four non critical in the notification body. The duplicate
+emails are explained by two Search Console properties, a Domain property and a
+URL prefix property, which are notified separately about the same finding.
+
+**Blockers.** None.
+
+**Founder action required.** Unsubscribe from the two message types at
+`https://search.google.com/search-console/user-settings/email-preferences`,
+leaving "Enable notification by email" checked so manual action and security
+alerts still arrive. The setting is account wide, so it covers both properties
+at once. The Merchant listings type is `WNC-10030322`, printed at the foot of
+that email; the Product snippets type is printed at the foot of its own.
+
+**Next technical step.** None from this. PR #83, the www root redirect, is still
+open and unmerged.
+
+**Commit or PR.** No PR. Documentation only, direct to `main`.
+
+---
+
 ## 2026-09-10 — Article 4 published
 
 **Objective.** Publish "Which job requirements are genuinely mandatory", the
