@@ -36,17 +36,6 @@ doing it.
   localhost. A local pass over `dist/` is representative, since the served bytes
   match, but production browser behaviour is **UNVERIFIED** and must be reported
   as such rather than inferred. Recorded 2026-09-10.
-- **Founder decision, www root does not redirect.** `https://www.myrecruitercheck.com/`
-  returns 200 and serves the homepage rather than redirecting. Every other path
-  does redirect: the `vercel.json` rule `"/:path*"` with a `www` host condition
-  returns 301 for `/about`, `/pricing`, `/index.html`, `/sitemap.xml`,
-  `/robots.txt` and the article routes, but not for the bare root. The homepage
-  is therefore reachable on two hostnames. Mitigated, not fixed, by the served
-  page carrying `<link rel="canonical" href="https://myrecruitercheck.com/">`.
-  The fix is a second redirect entry with `"source": "/"` alongside the existing
-  one; it ships through a normal merge and needs no DNS change. Measured
-  2026-09-10.
-
 ## Historical review material
 
 `PART_A_KEYWORD_SCAN_REVIEW.md`, `PART_A_KEYWORD_SCAN_CORRECTED_REVIEW.md`,
@@ -63,6 +52,43 @@ It is carried by
 and the live `supabase/functions/keyword-scan/`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-15 — The www root redirects to the apex
+
+**Objective.** Close the gap found by the Article 4 regression sweep: the
+`vercel.json` www rule redirected every path except the bare root, leaving the
+homepage reachable on two hostnames. PR #83 merged as `c3899e7`.
+
+**Completed.** One entry added to `redirects`, `"source": "/"` with the same
+`www` host condition and a 301 to the apex, listed first as the more specific of
+the two. The existing `"/:path*"` rule is untouched, so the behaviour that
+already worked was never at risk.
+
+**Verified in production**, about 40 seconds after merge. `www/` now returns 301
+to `https://myrecruitercheck.com/`, and so do `/pricing`, `/about`,
+`/sitemap.xml`, `/robots.txt` and the article routes. Following the chain from
+the www root gives exactly one redirect ending in a 200, so there is no loop.
+The apex is unaffected: `/`, `/pricing` and the Article 4 route all still return
+200, and the homepage is unchanged at 71,530 bytes with its self canonical and
+one `main`, one `header`, one `h1`.
+
+Worth recording for the next time this pattern appears: Vercel's `"/:path*"`
+does not match the bare root, despite `*` meaning zero or more segments. A
+host based redirect therefore needs an explicit `"/"` entry alongside it, and a
+check that tests only a deep path will report the redirect as working when the
+most important URL on the site is not covered.
+
+**Blockers.** None.
+
+**Founder action required.** Unsubscribe from the two Search Console message
+types, still outstanding from the 2026-09-15 entry below.
+
+**Next technical step.** Articles 5 to 9, which have approved pipeline entries
+in the Content Authority Map but no briefs yet.
+
+**Commit or PR.** PR #83, merged as `c3899e7`.
 
 ---
 
