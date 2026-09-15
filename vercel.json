@@ -1,6 +1,17 @@
 {
   "redirects": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.myrecruitercheck.com"
+        }
+      ],
+      "destination": "https://myrecruitercheck.com/",
+      "statusCode": 301
+    },
+    {
       "source": "/:path*",
       "has": [
         {
