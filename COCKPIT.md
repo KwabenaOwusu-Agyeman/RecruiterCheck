@@ -74,11 +74,12 @@ typecheck and build clean.
 
 **Blockers.** None.
 
-**Founder action required.** Approve the Control Centre deploy.
+**Founder action required.** None.
 
-**Next technical step.** `cd admin && vercel --prod` once approved.
+**Next technical step.** None. Deployed to production with `vercel --prod`
+on 2026-09-16 after approval.
 
-**Commit or PR.** Branch `control-centre-remove-check-report-button`.
+**Commit or PR.** PR #88, merged as `b06fcce`.
 
 ---
 
