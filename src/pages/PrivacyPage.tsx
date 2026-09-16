@@ -10,7 +10,7 @@ export function PrivacyPage() {
   })
 
   return (
-    <LegalLayout title="Privacy Policy" updated="7 August 2026">
+    <LegalLayout title="Privacy Policy" updated="16 September 2026">
       <Section title="1. Who We Are">
         <p>
           MyRecruiterCheck ("we", "us") operates from the Netherlands and is the data controller for
@@ -36,7 +36,7 @@ export function PrivacyPage() {
           <li>Provide the Service, including generating your interview score, feedback, and tailored documents;</li>
           <li>Process payments for check pack purchases;</li>
           <li>Maintain the security and integrity of the Service;</li>
-          <li>Use voluntary product feedback to improve the Service. We will not publish your comment without your permission;</li>
+          <li>Review check results, including your feedback and the job description, and use voluntary product feedback, to maintain and improve the quality of the Service. We will not publish your comment without your permission;</li>
           <li>Communicate with you about your account or the Service.</li>
         </ul>
         <p>
