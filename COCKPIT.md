@@ -59,6 +59,29 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-16 — View report button removed from the check page
+
+**Objective.** Founder request: reach reports only from Reports and the user
+page.
+
+**Completed.** The owner only View report button is removed from
+`admin/src/app/(dashboard)/checks/[id]/page.tsx`, with its now unused
+`canViewReports` import. `/checks/[id]/report` is unchanged and still reached
+from the Reports page and the user page.
+
+**Verified.** `npm run test:admin` 10/10 files, 119 assertions. Admin lint,
+typecheck and build clean.
+
+**Blockers.** None.
+
+**Founder action required.** Approve the Control Centre deploy.
+
+**Next technical step.** `cd admin && vercel --prod` once approved.
+
+**Commit or PR.** Branch `control-centre-remove-check-report-button`.
+
+---
+
 ## 2026-09-16 — Reports menu item and user page report links
 
 **Objective.** Make check reports easier to reach than the button on the check
