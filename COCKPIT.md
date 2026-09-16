@@ -80,9 +80,10 @@ report page as PR #84; the list itself reads identifiers, score and rating only.
 
 **Founder action required.** None beyond the Open items.
 
-**Next technical step.** Deploy the Control Centre once approved.
+**Next technical step.** None. Deployed to production with `vercel --prod`
+on 2026-09-16 after approval.
 
-**Commit or PR.** Branch `control-centre-reports-menu`.
+**Commit or PR.** PR #86, merged as `3abbfc1`.
 
 ---
 
