@@ -36,10 +36,6 @@ doing it.
   localhost. A local pass over `dist/` is representative, since the served bytes
   match, but production browser behaviour is **UNVERIFIED** and must be reported
   as such rather than inferred. Recorded 2026-09-10.
-- **Founder action.** Open one report in the Control Centre and confirm a
-  `check.report_viewed` row appears in the Audit log. The report view (PR #84)
-  was deployed by `vercel --prod` on 2026-09-16 and has not been exercised
-  against real data. Recorded 2026-09-16.
 ## Historical review material
 
 `PART_A_KEYWORD_SCAN_REVIEW.md`, `PART_A_KEYWORD_SCAN_CORRECTED_REVIEW.md`,
@@ -131,8 +127,9 @@ covers reviewing check results, updated date 16 September 2026.
 **Verified.** `npm run test:admin` 10/10 files, 119 assertions, including the
 new `admin/src/lib/report.test.ts`. Admin lint, typecheck and build clean. Root
 lint (two existing warnings), typecheck, `test:unit` 16/16 and `npm run build`
-clean, CSP hashes unchanged. Security review done. Rendering against real data
-is **UNVERIFIED**: no local Control Centre run with seeded checks was done.
+clean, CSP hashes unchanged. Security review done. Confirmed in production by
+the founder on 2026-09-16: opening reports wrote `check.report_viewed` rows
+with result success and reason "quality review" to the Audit log.
 
 **Blockers.** None.
 
