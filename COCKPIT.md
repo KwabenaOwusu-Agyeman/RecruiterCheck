@@ -36,6 +36,15 @@ doing it.
   localhost. A local pass over `dist/` is representative, since the served bytes
   match, but production browser behaviour is **UNVERIFIED** and must be reported
   as such rather than inferred. Recorded 2026-09-10.
+- **Founder action, before PR merge.** Apply
+  `supabase/migrations/20260916200000_application_outcomes.sql` with
+  `supabase db push`. The results page and both new Edge Functions depend on
+  the table, so the PR must not merge first. After the push, types are
+  regenerated from the real schema and the PR merges. Recorded 2026-09-16.
+- **Founder action, when ready to go live.** Set the Supabase secret
+  `OUTCOME_FOLLOWUP_TEST_MODE` to `false`. Until then (including unset) only
+  `TEST_ACCOUNT_EMAILS` addresses receive the follow up; others are held, not
+  dropped. Recorded 2026-09-16.
 ## Historical review material
 
 `PART_A_KEYWORD_SCAN_REVIEW.md`, `PART_A_KEYWORD_SCAN_CORRECTED_REVIEW.md`,
@@ -52,6 +61,57 @@ It is carried by
 and the live `supabase/functions/keyword-scan/`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-16 — Application outcome follow up (build item 1 of the data strategy)
+
+**Objective.** Implement the opt in outcome follow up from the Decision Log
+entry "Data strategy: what we collect, for product value and exit readiness"
+(approved 16 September 2026), with the founder's defaults: email after 21
+days, no reminder, salary optional.
+
+**Completed.**
+- Migration `20260916200000_application_outcomes.sql`: table
+  `application_outcomes` (consent time and version, link token, due, sent and
+  answer fields, check constraints), RLS allowing a user to insert only for
+  their own completed check and read back non secret columns, column grants,
+  `claim_application_outcome_followups` and
+  `release_application_outcome_followup` (service role only), and a daily
+  09:00 UTC pg_cron job.
+- Edge Functions `send-outcome-followups` (service role only, claims before
+  sending, test mode fails closed on `OUTCOME_FOLLOWUP_TEST_MODE`) and
+  `submit-application-outcome` (public, token scoped, lookup, answer,
+  withdraw). `supabase/config.toml` sets `verify_jwt` false and true
+  respectively; the guard in `stripe-webhook/index.test.ts` lists both.
+- SPA: `OutcomeOptIn` on the results page, public `/outcome` page
+  (`src/pages/OutcomePage.tsx`, noindex, not prerendered),
+  `src/services/outcomeService.ts`, `src/lib/outcomeForm.ts`.
+- Privacy policy: application outcomes added to sections 2, 3 and 7, and the
+  job description added to what a check retains (section 7).
+- Control Centre: `/outcomes` page under Customers with aggregate figures
+  only; interview rate by score band and salary groups hidden below 5.
+- Types added by hand to `src/types/database.ts` and its admin copy.
+
+**Verified.** Root lint (two existing warnings), typecheck, `test:unit` 18/18,
+`test:edge` 26/26, `npm run build` (CSP hashes unchanged, `/outcome` absent
+from the sitemap). `test:admin` 11/11; admin lint, typecheck, build clean.
+Migration SQL parsed with libpg-query (22 statements, both function bodies,
+the cron command). `supabase migration list --linked` shows no drift besides
+this migration. Security and RLS review done. **UNVERIFIED**: the migration
+has not run against any database (no Docker on this machine, so no local
+`supabase db reset`), and no browser check was done.
+
+**Blockers.** Migration push, see Open items.
+
+**Founder action required.** `supabase db push`; later, test mode off.
+
+**Next technical step.** After the push, regenerate `src/types/database.ts`
+from the real schema, copy to admin, merge, deploy the Control Centre with
+approval. The merge deploys every Edge Function, because
+`supabase/config.toml` changed.
+
+**Commit or PR.** Branch `outcome-followup`.
 
 ---
 

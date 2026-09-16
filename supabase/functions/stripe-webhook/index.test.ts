@@ -161,6 +161,12 @@ test('no other function had its verify_jwt setting changed', () => {
     // pg_cron target authenticated by its own x-cron-secret check, which
     // fails closed when the secret is unset. See its index.ts header.
     'reconcile-ambiguous-refunds': 'false',
+    // Public form behind the application outcome email. The link token is the
+    // credential and is checked in the function, as with newsletter-unsubscribe.
+    'submit-application-outcome': 'false',
+    // pg_cron target. Like brevo-stats, its role check decodes the claim
+    // without verifying the signature, so the gateway check must stay on.
+    'send-outcome-followups': 'true',
   }
   const found: Record<string, string> = {}
   for (const m of config.matchAll(/\[functions\.([a-z-]+)\]\s*\nverify_jwt\s*=\s*(true|false)/g)) {
