@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { requireAdmin } from '@/server/auth'
+import { canViewReports } from '@/lib/report'
 import { serviceClient } from '@/server/supabase'
 import { formatDateTime, formatDuration } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -11,13 +12,14 @@ import { PageHeader } from '@/components/dashboard/PageHeader'
 export const dynamic = 'force-dynamic'
 
 export default async function CheckDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { timezone } = await requireAdmin()
+  const { admin, timezone } = await requireAdmin()
   const { id } = await params
   const db = serviceClient()
 
   // job_description, cv_storage_path and cv_file_name are deliberately absent
   // from this select. Diagnosing a check needs its status, timings and error,
-  // never the candidate's document.
+  // never the candidate's document. The report and job description are read
+  // only on the audited /checks/[id]/report page.
   const { data: check } = await db
     .from('checks')
     .select(
@@ -59,7 +61,19 @@ export default async function CheckDetailPage({ params }: { params: Promise<{ id
       <PageHeader
         title={check.job_title ?? 'Untitled check'}
         description={check.company_name ?? undefined}
-        actions={<Badge tone={checkStatusTone(check.status)}>{check.status}</Badge>}
+        actions={
+          <div className="flex items-center gap-3">
+            <Badge tone={checkStatusTone(check.status)}>{check.status}</Badge>
+            {canViewReports(admin.role) ? (
+              <Link
+                href={`/checks/${check.id}/report`}
+                className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:bg-surface"
+              >
+                View report
+              </Link>
+            ) : null}
+          </div>
+        }
       />
 
       {check.status === 'failed' && check.error_message ? (
@@ -90,7 +104,8 @@ export default async function CheckDetailPage({ params }: { params: Promise<{ id
           <CardTitle>Result</CardTitle>
           <p className="text-xs text-text-caption">
             The score only. Scoring weights, sub-criteria and prompts are confidential and are not
-            read by this dashboard.
+            read by this dashboard. Open View report to read what the candidate was shown; each view
+            is audited.
           </p>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-8">

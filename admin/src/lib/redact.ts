@@ -1,6 +1,11 @@
 // Redaction applied to everything that reaches the audit log, an error
 // message, a CSV export or the screen.
 //
+// One screen is an approved exception: /checks/[id]/report shows the report
+// sections and the job description, read only and audited (Decision Log,
+// 16 September 2026). The deny list below is unchanged by it, so none of that
+// content can reach a log or an export.
+//
 // The dashboard reads a database holding candidate CVs, job descriptions and
 // payment records. Operating the business needs identifiers, statuses, amounts
 // and timestamps; it never needs the document contents, and it never needs a
