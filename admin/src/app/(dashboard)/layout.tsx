@@ -2,6 +2,7 @@ import { requireAdmin } from '@/server/auth'
 import { env } from '@/server/env'
 import { signOutAction } from '../actions'
 import { Nav } from './nav'
+import { canViewReports } from '@/lib/report'
 import { Button } from '@/components/ui/Button'
 
 // Every page under this layout is gated here AND again in its own body.
@@ -22,7 +23,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <p className="text-xs text-text-caption">Control Centre</p>
           </div>
         </div>
-        <Nav publicSiteUrl={env.publicSiteUrl} />
+        <Nav publicSiteUrl={env.publicSiteUrl} showReports={canViewReports(admin.role)} />
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
