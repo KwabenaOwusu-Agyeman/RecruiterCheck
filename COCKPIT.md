@@ -36,10 +36,10 @@ doing it.
   localhost. A local pass over `dist/` is representative, since the served bytes
   match, but production browser behaviour is **UNVERIFIED** and must be reported
   as such rather than inferred. Recorded 2026-09-10.
-- **Founder action.** Deploy the Control Centre so the report view goes live:
-  `cd admin && vercel --prod`. PR #84 merged but its Vercel project is not
-  connected to GitHub. Then open one report and confirm a
-  `check.report_viewed` row appears in the Audit log. Recorded 2026-09-16.
+- **Founder action.** Open one report in the Control Centre and confirm a
+  `check.report_viewed` row appears in the Audit log. The report view (PR #84)
+  was deployed by `vercel --prod` on 2026-09-16 and has not been exercised
+  against real data. Recorded 2026-09-16.
 ## Historical review material
 
 `PART_A_KEYWORD_SCAN_REVIEW.md`, `PART_A_KEYWORD_SCAN_CORRECTED_REVIEW.md`,
@@ -84,7 +84,8 @@ is **UNVERIFIED**: no local Control Centre run with seeded checks was done.
 
 **Blockers.** None.
 
-**Founder action required.** Manual Control Centre deploy, see Open items.
+**Founder action required.** Confirm the audit row, see Open items. The
+Control Centre was deployed to production the same day with `vercel --prod`.
 
 **Next technical step.** None planned.
 
