@@ -36,6 +36,10 @@ doing it.
   localhost. A local pass over `dist/` is representative, since the served bytes
   match, but production browser behaviour is **UNVERIFIED** and must be reported
   as such rather than inferred. Recorded 2026-09-10.
+- **Founder action.** Deploy the Control Centre so the report view goes live:
+  `cd admin && vercel --prod`. PR #84 merged but its Vercel project is not
+  connected to GitHub. Then open one report and confirm a
+  `check.report_viewed` row appears in the Audit log. Recorded 2026-09-16.
 ## Historical review material
 
 `PART_A_KEYWORD_SCAN_REVIEW.md`, `PART_A_KEYWORD_SCAN_CORRECTED_REVIEW.md`,
@@ -52,6 +56,39 @@ It is carried by
 and the live `supabase/functions/keyword-scan/`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-16 — Control Centre report view for quality review
+
+**Objective.** Let the owner read the report a candidate received, for quality
+control, per the Decision Log entry "Control Centre: read-only access to check
+reports for quality review" (16 September 2026).
+
+**Completed.** New page `admin/src/app/(dashboard)/checks/[id]/report/page.tsx`
+backed by `admin/src/server/queries/report.ts`: strengths, improvements and
+prospects from `feedback`, the score, `checks.job_description`, and the user's
+rating and comment from `product_feedback` (no email or display name). Pure
+helpers in `admin/src/lib/report.ts`. Owner role only; every load, refused or
+not, writes `check.report_viewed` to `admin_audit_log` with the check id and
+no content. The CV, generated documents and `check_score_audits` internals stay
+excluded, and the `redact()` deny list is unchanged. The check page gains a
+View report button for the owner. `src/pages/PrivacyPage.tsx` section 3 now
+covers reviewing check results, updated date 16 September 2026.
+
+**Verified.** `npm run test:admin` 10/10 files, 119 assertions, including the
+new `admin/src/lib/report.test.ts`. Admin lint, typecheck and build clean. Root
+lint (two existing warnings), typecheck, `test:unit` 16/16 and `npm run build`
+clean, CSP hashes unchanged. Security review done. Rendering against real data
+is **UNVERIFIED**: no local Control Centre run with seeded checks was done.
+
+**Blockers.** None.
+
+**Founder action required.** Manual Control Centre deploy, see Open items.
+
+**Next technical step.** None planned.
+
+**Commit or PR.** PR #84.
 
 ---
 
