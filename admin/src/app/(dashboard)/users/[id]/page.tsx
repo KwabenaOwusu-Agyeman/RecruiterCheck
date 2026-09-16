@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { requireAdmin } from '@/server/auth'
+import { canViewReports } from '@/lib/report'
 import { serviceClient } from '@/server/supabase'
 import { getUserDetail } from '@/server/queries/users'
 import { formatDateTime, formatMoney, formatRelative } from '@/lib/format'
@@ -17,7 +18,8 @@ export default async function UserDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  const { timezone } = await requireAdmin()
+  const { admin, timezone } = await requireAdmin()
+  const showReports = canViewReports(admin.role)
   const { id } = await params
   const now = new Date()
 
@@ -79,6 +81,14 @@ export default async function UserDetailPage({
                       ? `File deleted ${check.uploads_purged_at ? formatDateTime(check.uploads_purged_at, timezone) : ''}`
                       : 'File retained'}
                   </Badge>
+                  {showReports && check.status === 'completed' ? (
+                    <Link
+                      href={`/checks/${check.id}/report`}
+                      className="rounded-full border border-border px-3 py-1 text-xs font-medium text-blue hover:bg-border-soft"
+                    >
+                      View report
+                    </Link>
+                  ) : null}
                 </li>
               ))}
             </ul>

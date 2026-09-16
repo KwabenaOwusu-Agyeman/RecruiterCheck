@@ -59,6 +59,33 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-16 — Reports menu item and user page report links
+
+**Objective.** Make check reports easier to reach than the button on the check
+page.
+
+**Completed.** New owner only page `admin/src/app/(dashboard)/reports/page.tsx`
+listing completed checks with score and user rating, searchable and paginated,
+each linking to `/checks/[id]/report`. It selects no report text and no job
+description. `nav.tsx` gains Reports under Customers, hidden unless
+`canViewReports()`, and highlights it on report pages. Each completed check on
+`users/[id]/page.tsx` gets a View report link for the owner. The button on the
+check page stays.
+
+**Verified.** `npm run test:admin` 10/10 files, 119 assertions. Admin lint,
+typecheck and build clean. Security review done: same owner gate and audited
+report page as PR #84; the list itself reads identifiers, score and rating only.
+
+**Blockers.** None.
+
+**Founder action required.** None beyond the Open items.
+
+**Next technical step.** Deploy the Control Centre once approved.
+
+**Commit or PR.** Branch `control-centre-reports-menu`.
+
+---
+
 ## 2026-09-16 — Control Centre report view for quality review
 
 **Objective.** Let the owner read the report a candidate received, for quality
