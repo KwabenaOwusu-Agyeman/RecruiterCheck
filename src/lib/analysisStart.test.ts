@@ -197,6 +197,40 @@ async function run() {
   })
 
   // -------------------------------------------------------------------------
+  // Retry from a failed check: 'failed' is the starting point, not a start.
+  // -------------------------------------------------------------------------
+
+  await test('a retry does not count the failed status it started from as accepted', async () => {
+    // The request never answers and the row stays failed: before startedFrom
+    // this returned on the first poll, because 'failed' is not 'draft'.
+    await rejectsWith(
+      startAnalysis(deps({ startedFrom: 'failed', getStatus: immediately<string | null>('failed') })),
+      CONNECTION_DROPPED_MESSAGE,
+    )
+  })
+
+  await test('a retry resolves once the row moves to processing', async () => {
+    await startAnalysis(deps({ startedFrom: 'failed', getStatus: immediately<string | null>('processing') }))
+  })
+
+  await test('a retry surfaces a server rejection instead of swallowing it', async () => {
+    await rejectsWith(
+      startAnalysis(
+        deps({
+          startedFrom: 'failed',
+          invoke: immediately<AnalysisInvokeOutcome>({ kind: 'rejected', error: new Error('Too many analysis requests. Please try again later.') }),
+          getStatus: immediately<string | null>('failed'),
+        }),
+      ),
+      'Too many analysis requests. Please try again later.',
+    )
+  })
+
+  await test('a new check still treats any move off draft as accepted', async () => {
+    await startAnalysis(deps({ getStatus: immediately<string | null>('failed') }))
+  })
+
+  // -------------------------------------------------------------------------
   // Copy and defaults.
   // -------------------------------------------------------------------------
 

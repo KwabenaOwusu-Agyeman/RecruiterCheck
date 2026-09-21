@@ -140,12 +140,17 @@ export function FeedbackPage() {
     if (!id || check?.status !== 'processing' || pollExpired) return
 
     let cancelled = false
+    // One poll at a time: on a slow connection overlapping polls could
+    // answer out of order and put a completed check back to processing.
+    let inFlight = false
     const startedAt = Date.now()
     const timer = setInterval(() => {
       if (Date.now() - startedAt > RESULT_POLL_MAX_MS) {
         setPollExpired(true)
         return
       }
+      if (inFlight) return
+      inFlight = true
       getCheckWithFeedback(id)
         .then((data) => {
           if (!cancelled && data) setCheck(data)
@@ -153,6 +158,9 @@ export function FeedbackPage() {
         .catch(() => {
           // A single failed poll (a flaky signal, most likely) is not worth
           // an error banner; the next tick simply tries again.
+        })
+        .finally(() => {
+          inFlight = false
         })
     }, RESULT_POLL_MS)
 
@@ -168,8 +176,9 @@ export function FeedbackPage() {
     setError(null)
 
     try {
-      await analyzeCheck(id)
+      await analyzeCheck(id, 'failed')
       const data = await getCheckWithFeedback(id)
+      setPollExpired(false)
       setCheck(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not retry this check')

@@ -133,6 +133,16 @@ function formatLetterDate(): string {
   return new Intl.DateTimeFormat('en', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())
 }
 
+// Today's date differs between the prerender (build day) and every later
+// visit, and a text mismatch made React discard the whole prerendered
+// landing page and render it again from scratch. Rendering the date after
+// mount keeps the server and first client render identical.
+function useTodayLabel(): string | null {
+  const [label, setLabel] = useState<string | null>(null)
+  useEffect(() => setLabel(formatLetterDate()), [])
+  return label
+}
+
 /**
  * Mirrors the real one-page cover letter layout (layoutCoverLetter/
  * renderCoverLetterPdf): letterhead, right-aligned date, company/location
@@ -142,6 +152,7 @@ function formatLetterDate(): string {
  */
 function CoverLetterCard() {
   const { coverLetter, candidateName, cvDraft } = EXAMPLE_DOCUMENTS
+  const today = useTodayLabel()
   return (
     <GlowCard className={DOC_CARD_WIDTH}>
       <Card tone="light" className="flex h-full flex-col overflow-hidden">
@@ -160,7 +171,7 @@ function CoverLetterCard() {
 
           <div className="mt-6 flex items-start justify-between gap-4 text-sm text-text-secondary">
             <p>{coverLetter.companyLocation}</p>
-            <p className="shrink-0">{formatLetterDate()}</p>
+            <p className="shrink-0">{today}</p>
           </div>
 
           <p className="mt-4 text-sm font-semibold text-text-primary">{coverLetter.salutation}</p>
