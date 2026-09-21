@@ -1080,7 +1080,7 @@ export type Database = {
       refund_events: {
         Row: {
           attempt_number: number
-          batch_id: string
+          batch_id: string | null
           created_at: string
           finalized_at: string | null
           id: string
@@ -1092,7 +1092,7 @@ export type Database = {
         }
         Insert: {
           attempt_number?: number
-          batch_id: string
+          batch_id?: string | null
           created_at?: string
           finalized_at?: string | null
           id?: string
@@ -1104,7 +1104,7 @@ export type Database = {
         }
         Update: {
           attempt_number?: number
-          batch_id?: string
+          batch_id?: string | null
           created_at?: string
           finalized_at?: string | null
           id?: string
@@ -1244,20 +1244,6 @@ export type Database = {
           display_name: string | null
           rating: number | null
           target_role: string | null
-        }
-        Insert: {
-          comment?: string | null
-          created_at?: string | null
-          display_name?: string | null
-          rating?: number | null
-          target_role?: string | null
-        }
-        Update: {
-          comment?: string | null
-          created_at?: string | null
-          display_name?: string | null
-          rating?: number | null
-          target_role?: string | null
         }
         Relationships: []
       }
