@@ -95,6 +95,34 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-22 — Article 6 published
+
+**Objective.** Founder approved publishing Article 6.
+
+**Completed.** `content/resources/machine-learning-engineer-or-data-scientist.md`
+moved from draft to published with `published: 2026-09-22`, the real
+publication date. Body unchanged from the draft in PR 111. CSP ledger and
+`vercel.json` are prerender output, 70 to 72 hashes. Not done:
+`src/pages/MachineLearningEngineerCvCheckerPage.tsx` and
+`src/pages/DataScientistCvCheckerPage.tsx` do not link to the article yet.
+The page title with the site name runs long, about 93 characters, as Brief 6
+noted, and may be cut in search results. The founder kept the map's title.
+
+**Verified.** lint (no new warnings), typecheck, `npm run test:unit` 17/17,
+`npm run build`. Built page checked for canonical, robots `index, follow`,
+Article and BreadcrumbList schema with `datePublished`, resolving internal
+links and a sitemap entry. Live verification is recorded in the PR.
+
+**Blockers.** None.
+
+**Founder action required.** None.
+
+**Next technical step.** Link both role pages to the article, if approved.
+
+**Commit or PR.** Branch `content/publish-article-6`.
+
+---
+
 ## 2026-09-22 — Article 6 drafted
 
 **Objective.** Founder approved Brief 6 and asked for the draft.

@@ -4,7 +4,7 @@ slug: machine-learning-engineer-or-data-scientist
 title: Machine learning engineer or data scientist: which role fits your evidence
 description: Both roles start with a model, but they ask for different proof. Here is how to tell which one your own evidence supports.
 published: 2026-09-22
-status: draft
+status: published
 cluster: ai-jobs
 supports: /machine-learning-engineer-cv-checker, /data-scientist-cv-checker
 noindex: false
