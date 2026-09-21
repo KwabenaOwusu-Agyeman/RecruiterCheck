@@ -1,9 +1,10 @@
 # MyRecruiterCheck
 
-> MyRecruiterCheck is a CV/resume checker for early career professionals and career changers (0 to 5 years of experience) applying to tech, AI, machine learning and data roles. It compares a CV with one specific job description and gives recruiter style feedback on Experience (40%), Skills (35%) and Candidate Value (25%), going beyond basic ATS keyword matching. It produces an Interview Score, Strengths, Areas to Improve and Prospects, so a candidate can see how their application may look to a recruiter before they apply. It does not guarantee an interview or hiring decision, and it never invents experience, skills or achievements.
+> MyRecruiterCheck is a recruiter style CV and job description match checker for early career AI, data and technology candidates. It evaluates a candidate's evidence, skills and experience against a specific job description and provides a recruiter style assessment before they apply. Candidates have 0 to 5 years of experience, including career changers. Each check scores Experience (40%), Skills (35%) and Candidate Value (25%) and returns an Interview Score, Strengths, Areas to Improve and Prospects, going beyond basic ATS keyword matching. It does not guarantee an interview or hiring decision, and it never invents experience, skills or achievements.
 
 ## Product
 
+- [About MyRecruiterCheck](https://myrecruitercheck.com/about): canonical description of the product, who it is for and not for, pricing, privacy and official profiles
 - [Homepage](https://myrecruitercheck.com/): what MyRecruiterCheck does and who it's for
 - [How Interview Score Works](https://myrecruitercheck.com/how-interview-score-works): the full methodology behind the 40/35/25 weighting, what counts as evidence, and what the score does not measure
 - [Application Checker](https://myrecruitercheck.com/application-checker): recruiter style check of a CV against a specific job description
@@ -27,6 +28,13 @@
 - [Data Scientist CV Checker](https://myrecruitercheck.com/data-scientist-cv-checker)
 - [Machine Learning Engineer CV Checker](https://myrecruitercheck.com/machine-learning-engineer-cv-checker)
 - [AI Engineer CV Checker](https://myrecruitercheck.com/ai-engineer-cv-checker)
+
+## Recruiter knowledge
+
+- [Why a CV passes the ATS and is still rejected](https://myrecruitercheck.com/resources/why-a-cv-passes-ats-and-is-still-rejected): what an ATS measures against what a recruiter judges
+- [How to read a job description before you apply](https://myrecruitercheck.com/resources/how-to-read-a-job-description)
+- [Which job requirements are genuinely mandatory](https://myrecruitercheck.com/resources/which-job-requirements-are-mandatory)
+- [What recruiters look for on an AI engineer CV](https://myrecruitercheck.com/resources/what-recruiters-look-for-on-an-ai-engineer-cv)
 
 ## Comparisons
 

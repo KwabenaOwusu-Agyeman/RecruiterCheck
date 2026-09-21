@@ -29,6 +29,10 @@ doing it.
 - **Founder action.** Review the first newsletter issue in Brevo before it sends
   at 09:00 Europe/Amsterdam. The model leg has never been exercised, so this is
   the first generated copy anyone will have read. Recorded 2026-09-07.
+- **Founder action.** Provide the live Capterra and AlternativeTo listing URLs.
+  Search found neither, and `Organization.sameAs` in `index.html` lists only
+  LinkedIn, Instagram and Trustpilot. Adding them changes an inline script, so
+  the build will regenerate the CSP hash. Recorded 2026-09-21.
 - **Known limit.** Acquisition data begins 2026-09-05. Accounts created before
   that date cannot be attributed. Recorded 2026-09-06.
 - **Known limit, browser verification.** Hydration and console behaviour on the
@@ -81,6 +85,41 @@ It is carried by
 and the live `supabase/functions/keyword-scan/`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-21 — GEO entity description on /about, llms files refreshed
+
+**Objective.** Make the product definition consistent and extractable for LLM
+search, within the Content Authority Map (Notion, edited 2026-09-21). Founder
+chose the uncontested scope, `/about` as the entity page, and Notion for the
+query map, testing log and external platform checklist.
+
+**Completed.** `src/pages/AboutPage.tsx` carries the core entity sentence, who
+it is for and not for, pricing and official profiles, and links the role pages.
+`public/llms.txt` and `public/llms-full.txt` use the same sentence and list the
+four `/resources` articles and `/about`. `llms-full.txt` wrongly said Starter
+only includes the most recent check; `src/lib/constants.ts` and Product and
+Pricing say all packs include Check History, so it is corrected.
+`src/pages/RecruiterEvaluationPage.tsx` now links four role pages, the AI
+engineer article and `/about`. Not touched: pages under Decisions A and B, the
+comparison cluster, redirects, canonicals. No new duplicate commercial pages.
+
+**Verified.** lint (no new warnings), typecheck, `npm run test:unit` 16/16,
+`npm run build`. Built `/about` checked for canonical, description, no
+noindex, five valid JSON-LD blocks and resolving internal links. CSP hash
+reconciled by the build. Structured data validator and browser checks are
+**MANUAL CHECK REQUIRED**. ChatGPT visibility is **UNTESTED**.
+
+**Blockers.** Capterra and AlternativeTo URLs unknown, see Open items.
+
+**Founder action required.** Supply those two URLs. Approve or amend Decisions
+A and B in the Content Authority Map, which still gate further page work.
+
+**Next technical step.** After deploy, run the first query round in the Notion
+GEO testing log and record results.
+
+**Commit or PR.** Branch `geo/entity-discoverability`.
 
 ---
 

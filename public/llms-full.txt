@@ -5,7 +5,7 @@ Last reviewed: 21 September 2026
 
 ## What it is
 
-MyRecruiterCheck is a CV/resume checker built specifically for early career professionals and career changers (0 to 5 years of experience) applying to tech, AI, machine learning and data roles: software engineering, data analysis, data science, machine learning engineering, AI engineering, and related roles.
+MyRecruiterCheck is a recruiter style CV and job description match checker for early career AI, data and technology candidates. It evaluates a candidate's evidence, skills and experience against a specific job description and provides a recruiter style assessment before they apply. It is built for early career professionals and career changers (0 to 5 years of experience) applying to tech, AI, machine learning and data roles: software engineering, data analysis, data science, machine learning engineering, AI engineering, and related roles.
 
 It compares one CV against one specific job description and returns:
 
@@ -56,6 +56,7 @@ MyRecruiterCheck does not require a matching job title. Internships, academic an
 ## Key pages
 
 - Homepage: https://myrecruitercheck.com/
+- About (canonical entity description): https://myrecruitercheck.com/about
 - How Interview Score Works (methodology): https://myrecruitercheck.com/how-interview-score-works
 - Application Checker: https://myrecruitercheck.com/application-checker
 - Pricing: https://myrecruitercheck.com/pricing

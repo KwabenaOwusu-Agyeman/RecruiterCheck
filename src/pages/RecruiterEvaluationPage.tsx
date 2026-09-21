@@ -49,6 +49,12 @@ export function RecruiterEvaluationPage() {
         { label: 'Cover Letter Generator', to: '/cover-letter-generator' },
         { label: 'Recruiter Message Generator', to: '/recruiter-message-generator' },
         { label: 'Job Application Feedback', to: '/job-application-feedback' },
+        { label: 'AI Engineer CV Checker', to: '/ai-engineer-cv-checker' },
+        { label: 'Machine Learning Engineer CV Checker', to: '/machine-learning-engineer-cv-checker' },
+        { label: 'Data Analyst CV Checker', to: '/data-analyst-cv-checker' },
+        { label: 'Data Scientist CV Checker', to: '/data-scientist-cv-checker' },
+        { label: 'What Recruiters Look for on an AI Engineer CV', to: '/resources/what-recruiters-look-for-on-an-ai-engineer-cv' },
+        { label: 'About MyRecruiterCheck', to: '/about' },
         { label: 'Pricing', to: '/pricing' },
       ]}
     />
