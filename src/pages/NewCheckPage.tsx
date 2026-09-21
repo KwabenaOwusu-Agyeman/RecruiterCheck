@@ -60,9 +60,10 @@ type JobInputMode = 'paste' | 'url' | 'upload'
  * /checks/new and /checks/:id/edit render the same component in the same
  * place, so React Router reuses one instance between them. That is needed
  * when a CV upload moves a new check from /checks/new to its edit URL, but
- * going the other way ("New Check" while editing a draft) kept the old
- * draft's id and fields, and the next autosave or Check acted on the draft
- * the user meant to leave. A new key on that transition starts clean.
+ * going the other way ("New Check" while editing a draft, or Back from one
+ * draft to another) kept the old draft's id and fields, and the next
+ * autosave or Check acted on the wrong draft. A new key on those
+ * transitions starts clean.
  */
 export function NewCheckPage() {
   const { id } = useParams<{ id?: string }>()
@@ -70,7 +71,10 @@ export function NewCheckPage() {
   const [generation, setGeneration] = useState(0)
   if (id !== previousId) {
     setPreviousId(id)
-    if (previousId && !id) setGeneration((value) => value + 1)
+    // Only the first save of a new check (no id, then its id) keeps the
+    // instance; any move away from a draft, to /checks/new or to another
+    // draft (Back after starting a new one), starts clean.
+    if (previousId) setGeneration((value) => value + 1)
   }
   return <NewCheckForm key={generation} />
 }
@@ -458,7 +462,21 @@ function NewCheckForm() {
       pendingCvTextRef.current = null
       void saveCvFile(textToCvFile(pending)).catch(() => {})
     }
-    await cvSaveChainRef.current.catch(() => {})
+    try {
+      await cvSaveChainRef.current
+      setSaveState((state) => (state === 'saving' ? 'saved' : state))
+    } catch (err) {
+      // Running the check now would analyse the previously saved CV, not
+      // the text on screen.
+      if (err instanceof CheckNotEditableError && checkIdRef.current) {
+        navigate(`/checks/${checkIdRef.current}`, { replace: true })
+        return
+      }
+      setSaveState('error')
+      setError('Your CV could not be saved. Check your connection and try again.')
+      setAnalyzing(false)
+      return
+    }
 
     const checkId = checkIdRef.current
     if (!checkId) {

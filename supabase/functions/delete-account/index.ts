@@ -37,6 +37,28 @@ Deno.serve(async (req) => {
     const adminClient = createClient(supabaseUrl, serviceRoleKey)
     const bucket = (name: string) => adminClient.storage.from(name) as unknown as StorageBucketApi
 
+    // A refund still in flight needs this account to settle: deleting it
+    // detaches the refund record from the user and the pack, and a pending
+    // refund can then never be reconciled. Checked before anything is removed.
+    const { count: pendingRefunds, error: refundCheckError } = await adminClient
+      .from('refund_events')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('status', 'pending')
+    if (refundCheckError) {
+      console.error('delete-account: pending refund check failed', { userId: user.id, code: refundCheckError.code })
+      return jsonResponse({ error: 'Could not delete your account. Please try again in a moment.' }, 500)
+    }
+    if ((pendingRefunds ?? 0) > 0) {
+      return jsonResponse(
+        {
+          error:
+            'A refund on your account is still being processed. Please try again in a few minutes, or email support@myrecruitercheck.com.',
+        },
+        409,
+      )
+    }
+
     // Files first, and the whole of the user's folder in both buckets rather
     // than the paths on their rows: replaced CV versions and files no row
     // points at are removed too. A failure stops here, before the account is

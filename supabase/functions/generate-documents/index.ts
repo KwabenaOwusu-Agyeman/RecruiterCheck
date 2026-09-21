@@ -218,6 +218,19 @@ Deno.serve(async (req) => {
     // The standard PDF font can only draw Windows-1252 text; see toPdfSafeText.
     const docs = toPdfSafe(generated)
     const companyNameForPdf = check.company_name ? toPdfSafeText(check.company_name) : check.company_name
+    // A name written entirely in a script the standard font cannot draw
+    // (Cyrillic, Greek, Chinese...) comes out empty, and a CV or letter with
+    // a blank name is worse than a clear refusal.
+    if (!docs.tailored_cv.full_name.trim()) {
+      console.error('generate-documents: name has no characters the PDF font can draw', { checkId })
+      return jsonResponse(
+        {
+          error:
+            'We cannot create documents for a name written in this alphabet yet. Please contact support@myrecruitercheck.com and we will help.',
+        },
+        422,
+      )
+    }
 
     // The OpenAI call above always produces all three documents in one shot
     // (the prompt/schema aren't split by tier — cheaper to keep one call than

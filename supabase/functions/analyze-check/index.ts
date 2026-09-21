@@ -20,10 +20,6 @@ const corsHeaders = {
 }
 
 const MAX_CV_CHARS = 15000
-// Pasted job descriptions had no upper bound; the URL, file and extension
-// paths already stop at 15,000 characters, so a pasted one does too.
-const MAX_JOB_DESCRIPTION_CHARS = 15000
-const MAX_JOB_FIELD_CHARS = 300
 // Exactly two attempts total: validate the first AI response, retry once if
 // it's invalid, and fail the check safely (no saved score, no consumed
 // credit — see the catch block around generateFeedback below) if the
@@ -202,9 +198,9 @@ Deno.serve(async (req) => {
     const startedAt = Date.now()
     let result: { analysis: AnalysisResult; metrics: GenerateFeedbackMetrics }
     try {
-      result = await generateFeedback(openaiApiKey, cvText, check.job_description.slice(0, MAX_JOB_DESCRIPTION_CHARS), {
-        jobTitle: check.job_title?.slice(0, MAX_JOB_FIELD_CHARS) ?? null,
-        companyName: check.company_name?.slice(0, MAX_JOB_FIELD_CHARS) ?? null,
+      result = await generateFeedback(openaiApiKey, cvText, check.job_description, {
+        jobTitle: check.job_title,
+        companyName: check.company_name,
       })
     } catch (error) {
       // Both attempts produced invalid/unusable output (or the model call
@@ -296,24 +292,24 @@ Deno.serve(async (req) => {
         checkId,
         message: completeError.message,
       })
-      // complete_check_analysis is one plpgsql call: if it raised partway
-      // through, Postgres rolls back everything it did (status, score
-      // columns, credit consumption, ledger insert) as a unit — so no credit
-      // was consumed here either. The check's row is still 'processing'
-      // (feedback was saved above, but the check itself was never marked
-      // completed), which would otherwise sit there until the 10 minute
-      // staleness window in reserve_check_analysis lets a retry through.
-      // Marking it failed now makes that immediate instead of a silent wait.
-      //
-      // The feedback saved above is removed first: the results page shows
-      // any feedback row, so leaving it would hand over the analysis
-      // without the check completing or a credit being used.
-      const { error: feedbackCleanupError } = await adminClient.from('feedback').delete().eq('check_id', checkId)
-      if (feedbackCleanupError) {
-        console.error('analyze-check: could not remove feedback after a failed completion', { checkId })
+      // The call can report an error after its transaction committed (the
+      // connection dropped on the way back). Read the row before undoing
+      // anything: a completed, paid check must keep its feedback.
+      const { data: afterError } = await adminClient.from('checks').select('status').eq('id', checkId).maybeSingle()
+      if (afterError?.status !== 'completed') {
+        // complete_check_analysis is one plpgsql call: if it raised partway
+        // through, Postgres rolled back everything it did (status, scores,
+        // credit, ledger), so no credit was consumed. The feedback saved above
+        // is removed, because the results page shows any feedback row and
+        // leaving it would hand over the analysis without a credit being used.
+        const { error: feedbackCleanupError } = await adminClient.from('feedback').delete().eq('check_id', checkId)
+        if (feedbackCleanupError) {
+          console.error('analyze-check: could not remove feedback after a failed completion', { checkId })
+        }
+        await markFailed(adminClient, checkId, 'Could not save analysis result')
+        return jsonResponse({ error: 'Could not save analysis result' }, 500)
       }
-      await markFailed(adminClient, checkId, 'Could not save analysis result')
-      return jsonResponse({ error: 'Could not save analysis result' }, 500)
+      console.error('analyze-check: completion reported an error but the check is completed', { checkId })
     }
 
     logMonitoringEvent({
@@ -487,10 +483,13 @@ async function markFailed(
   checkId: string,
   message: string,
 ) {
+  // Only a check that is still running: never turn a completed (and paid)
+  // check into a failed one, which would let a Retry charge it again.
   await client
     .from('checks')
     .update({ status: 'failed', error_message: message })
     .eq('id', checkId)
+    .eq('status', 'processing')
 }
 
 /**

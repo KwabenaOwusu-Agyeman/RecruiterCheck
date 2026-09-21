@@ -69,8 +69,11 @@ export function PricingPage() {
   const balanceRef = useRef<number | null>(null)
   balanceRef.current = profile?.checks_balance ?? null
   const userId = user?.id ?? null
+  // The baseline is the balance loaded before polling starts; without it
+  // there is nothing to compare against and the poll never stops early.
+  const profileLoaded = profile !== null
   useEffect(() => {
-    if (checkoutStatus !== 'success' || !userId) return
+    if (checkoutStatus !== 'success' || !userId || !profileLoaded) return
 
     let cancelled = false
     let attempts = 0
@@ -92,7 +95,7 @@ export function PricingPage() {
       if (timer) clearTimeout(timer)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [checkoutStatus, userId])
+  }, [checkoutStatus, userId, profileLoaded])
 
   // Back from Stripe can restore this page from the browser's back/forward
   // cache with the Buy button still saying "Redirecting...". Reset it.
