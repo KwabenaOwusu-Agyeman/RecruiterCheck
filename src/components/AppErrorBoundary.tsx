@@ -53,13 +53,13 @@ class Boundary extends Component<BoundaryProps, BoundaryState> {
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="inline-flex h-12 items-center justify-center rounded-[10px] border border-navy bg-navy px-6 text-base font-medium text-white transition-colors duration-150 hover:bg-navy/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2"
+              className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-[10px] border border-navy bg-navy px-6 text-base font-medium text-white transition-colors duration-150 hover:bg-navy/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2"
             >
               Reload page
             </button>
             <a
               href="/"
-              className="inline-flex h-12 items-center justify-center rounded-[10px] border border-border-strong bg-surface px-6 text-base font-medium text-text-primary transition-colors duration-150 hover:border-navy/40 hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2"
+              className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-[10px] border border-border-strong bg-surface px-6 text-base font-medium text-text-primary transition-colors duration-150 hover:border-navy/40 hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2"
             >
               Back to homepage
             </a>
