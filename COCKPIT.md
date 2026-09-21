@@ -36,20 +36,25 @@ doing it.
   localhost. A local pass over `dist/` is representative, since the served bytes
   match, but production browser behaviour is **UNVERIFIED** and must be reported
   as such rather than inferred. Recorded 2026-09-10.
-- **Founder action, Level 3.** `20260921120000` (checks lockdown,
-  testimonial authors, cron sweep) was pushed to production on 2026-09-21
-  after approval; its post-conditions passed. Still NOT in production:
-  `20260921121000` (deletion foreign keys, refund reasons, indexes) and
-  `20260921122000` (credit races). The role graph query recorded in
-  `20260828064337` was not run (production SQL is off limits to Claude); run
-  it once. After the remaining pushes, regenerate `src/types/database.ts`
-  and `admin/src/types/database.ts` from production (the branch copies were
-  edited by hand). Confirm the landing page testimonials still load, and
-  that an anon read of `product_feedback` is refused. Recorded 2026-09-21.
-- **Founder decision.** `20260921121000` keeps refund records detached
-  (`ON DELETE SET NULL`) when an account is deleted. If they should be
-  deleted instead, change both `refund_events` foreign keys to `CASCADE`
-  before the push. Recorded 2026-09-21.
+- **Founder action.** All three audit migrations are in production
+  (`20260921120000`, `121000`, `122000`, pushed 2026-09-21 after approval)
+  and the types were regenerated from production. Still open: run the role
+  graph query recorded in `20260828064337` once (production SQL is off limits
+  to Claude); confirm the landing page testimonials still load and an anon
+  read of `product_feedback` is refused; merge PR #96 to deploy the matching
+  Edge Functions and frontend, then `cd admin && vercel --prod`. Recorded
+  2026-09-21.
+- **Founder decision.** `20260921121000` (now in production) keeps refund
+  records detached (`ON DELETE SET NULL`) when an account is deleted, but
+  the refund amount lives on `credit_batches`, which is deleted with the
+  account, and the Control Centre refunds page inner joins both, so detached
+  rows are not shown. Either snapshot amount, currency and pack onto
+  `refund_events` and use left joins (keep the trail), or switch both keys to
+  `CASCADE` (delete it). Needs a follow up migration either way. Also
+  proposed for that migration: a separate retention timestamp instead of
+  resetting `checks.created_at` when a draft gets a new CV, and rejecting
+  `..` or empty segments in `cv_storage_path` in the trigger (Edge Functions
+  already do). Recorded 2026-09-21.
 - **Founder decision.** Found by the 2026-09-21 audit and left unchanged
   because each is a product, legal or auth flow call: the Cookie Policy says
   nothing is kept in browser storage (attribution is, `mrc_attribution_v1`);
@@ -129,7 +134,7 @@ reaches their checks; older than 24 hours they need a one-off cleanup.
 **Next technical step.** After the push: regenerate types from production,
 then confirm an anon read of `product_feedback` is refused.
 
-**Commit or PR.** Branch `audit/production-hardening`, not pushed.
+**Commit or PR.** PR #96, branch `audit/production-hardening`, not merged. Migrations applied to production on 2026-09-21.
 
 ---
 
