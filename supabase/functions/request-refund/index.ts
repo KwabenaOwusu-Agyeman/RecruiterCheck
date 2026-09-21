@@ -146,6 +146,13 @@ Deno.serve(async (req) => {
           { error: 'A Keyword Scan is still running on this pack. Please try again shortly.' },
           409,
         )
+      case 'check_in_progress':
+        // Migration 20260921122000: a running check may still be paid for
+        // from this pack, so the refund waits until it has finished.
+        return jsonResponse(
+          { error: 'A check is still running. Please try again once it has finished.' },
+          409,
+        )
       default:
         console.error('request-refund: unexpected reserve_refund outcome', reserved?.outcome)
         return jsonResponse({ error: 'Could not start the refund. Please try again.' }, 500)

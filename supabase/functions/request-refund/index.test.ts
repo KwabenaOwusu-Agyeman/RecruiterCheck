@@ -66,6 +66,7 @@ test('every reservation outcome maps to a response', () => {
     'already_used',
     'window_expired',
     'active_reservation_exists',
+    'check_in_progress',
   ]) {
     assert.ok(sw.includes(`case '${outcome}'`), `unhandled reservation outcome: ${outcome}`)
   }
