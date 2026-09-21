@@ -1,6 +1,16 @@
 import { supabase } from '@/lib/supabase'
 import { CONNECTION_DROPPED_MESSAGE, startAnalysis, type AnalysisInvokeOutcome } from '@/lib/analysisStart'
-import type { Check, CheckLedgerEntry, CheckWithFeedback, Feedback, KeywordScanResult, PackId, Profile } from '@/types'
+import { resolveFollowUpOutcome } from '@/lib/evidenceFollowUp'
+import type {
+  Check,
+  CheckLedgerEntry,
+  CheckWithFeedback,
+  EvidenceFollowUp,
+  Feedback,
+  KeywordScanResult,
+  PackId,
+  Profile,
+} from '@/types'
 
 /**
  * Storage path extensions are derived from the browser-reported MIME type,
@@ -160,6 +170,73 @@ export async function getCheckWithFeedback(checkId: string): Promise<CheckWithFe
     ...mapCheck(row),
     feedback: feedback ? mapFeedback(feedback) : null,
   }
+}
+
+/**
+ * The Evidence Follow Up for a check, or null when the analysis found no gap
+ * worth asking about (or the check predates the feature). Read through the
+ * owner's RLS policy; the row is written only by analyze-check and
+ * assess-evidence-follow-up. checks(uploads_purged) rides along because an
+ * unanswered question can only be answered while the original CV still exists.
+ */
+export async function getEvidenceFollowUp(checkId: string): Promise<EvidenceFollowUp | null> {
+  const { data, error } = await supabase
+    .from('evidence_follow_ups')
+    .select('*, checks(uploads_purged)')
+    .eq('check_id', checkId)
+    .maybeSingle()
+
+  if (error) throw error
+  if (!data) return null
+
+  const { checks, ...row } = data
+  const purged = Array.isArray(checks) ? checks[0]?.uploads_purged : checks?.uploads_purged
+  return {
+    id: row.id,
+    check_id: row.check_id,
+    gap_requirement: row.gap_requirement,
+    gap_summary: row.gap_summary,
+    question: row.question,
+    status: row.status as EvidenceFollowUp['status'],
+    candidate_answer: row.candidate_answer,
+    final_score: row.final_score,
+    final_strengths: row.final_strengths ?? [],
+    final_improvements: row.final_improvements ?? [],
+    final_prospects: row.final_prospects ?? [],
+    what_changed: row.what_changed ?? [],
+    assessed_at: row.assessed_at,
+    canAnswer: row.status === 'pending' && purged === false,
+  }
+}
+
+/**
+ * Submits the candidate's answer and resolves with the assessed follow up.
+ *
+ * Exactly one request is made per call; the caller disables the form while
+ * it is in flight. If the connection drops after the server accepted the
+ * answer (a phone on a weak signal, a suspended tab) the server still
+ * finishes, so this waits for the row to report the outcome rather than
+ * surfacing a raw transport error or, worse, inviting a second submission.
+ * A 409 ("already being assessed") is treated the same way. Any other
+ * failure throws with the server's own message, and the initial result is
+ * untouched: the row goes back to pending and the answer can be resubmitted.
+ */
+export async function submitEvidenceFollowUp(checkId: string, answer: string): Promise<EvidenceFollowUp> {
+  const { data, error } = await supabase.functions.invoke('assess-evidence-follow-up', {
+    body: { checkId, answer },
+  })
+
+  if (error && !isTransportFailure(error) && httpStatus(error) !== 409) {
+    throw await resolveFunctionError(error)
+  }
+  if (!error && data?.error) throw new Error(String(data.error))
+
+  return resolveFollowUpOutcome({
+    accepted: !error,
+    getFollowUp: async () => getEvidenceFollowUp(checkId),
+    sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+    now: () => Date.now(),
+  }) as Promise<EvidenceFollowUp>
 }
 
 export const FREE_TIER_LIFETIME_LIMIT = 1

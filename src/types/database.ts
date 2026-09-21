@@ -572,6 +572,68 @@ export type Database = {
           },
         ]
       }
+      evidence_follow_ups: {
+        Row: {
+          answered_at: string | null
+          assessed_at: string | null
+          candidate_answer: string | null
+          check_id: string
+          created_at: string
+          final_improvements: string[] | null
+          final_prospects: string[] | null
+          final_score: number | null
+          final_strengths: string[] | null
+          gap_requirement: string
+          gap_summary: string
+          id: string
+          question: string
+          status: string
+          what_changed: string[] | null
+        }
+        Insert: {
+          answered_at?: string | null
+          assessed_at?: string | null
+          candidate_answer?: string | null
+          check_id: string
+          created_at?: string
+          final_improvements?: string[] | null
+          final_prospects?: string[] | null
+          final_score?: number | null
+          final_strengths?: string[] | null
+          gap_requirement: string
+          gap_summary: string
+          id?: string
+          question: string
+          status?: string
+          what_changed?: string[] | null
+        }
+        Update: {
+          answered_at?: string | null
+          assessed_at?: string | null
+          candidate_answer?: string | null
+          check_id?: string
+          created_at?: string
+          final_improvements?: string[] | null
+          final_prospects?: string[] | null
+          final_score?: number | null
+          final_strengths?: string[] | null
+          gap_requirement?: string
+          gap_summary?: string
+          id?: string
+          question?: string
+          status?: string
+          what_changed?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_follow_ups_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: true
+            referencedRelation: "checks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       extension_connect_codes: {
         Row: {
           code: string

@@ -132,6 +132,14 @@ jobs:
             fi
           fi
 
+          # assess-evidence-follow-up imports analyze-check's logic, prompt and
+          # runtime, so a final score is calculated by exactly the rules that
+          # produced the initial one. It must go out with analyze-check, never
+          # behind it, or the two scores could come from different rubrics.
+          if printf '%s\n' "$selected" | grep -qx 'analyze-check' && ! printf '%s\n' "$selected" | grep -qx 'assess-evidence-follow-up'; then
+            selected=$(printf '%s\nassess-evidence-follow-up\n' "$selected")
+          fi
+
           echo "Functions to deploy:"
           printf '%s\n' "$selected" | sed '/^$/d; s/^/  /'
           echo "functions=$(printf '%s\n' "$selected" | sed '/^$/d' | tr '\n' ' ' | sed 's/ *$//')" >> "$GITHUB_OUTPUT"

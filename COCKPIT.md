@@ -33,6 +33,13 @@ doing it.
   purchase "from $100"; real packs are EUR 10, 20 and 40. Only the listing owner
   can edit it. Capterra listing (pricing correct) and AlternativeTo are both in
   `Organization.sameAs`. Recorded 2026-09-21.
+- **Founder decision, Evidence Follow Up.** No Decision Log entry cites this
+  feature, and it changes what Notion Scoring Methodology says ("Judge only
+  evidence present in the CV and job description"): a self reported answer can
+  now move the Final score, through the same deterministic scoring. Record the
+  decision or amend the methodology. Also: `RATE_LIMIT_MAX` in
+  `analyze-check/runtime.ts` is 10 per hour, not the 5 in the brief. Both
+  Analyze calls of one flow draw from it. Recorded 2026-09-22.
 - **Known limit.** Acquisition data begins 2026-09-05. Accounts created before
   that date cannot be attributed. Recorded 2026-09-06.
 - **Known limit, browser verification.** Hydration and console behaviour on the
@@ -85,6 +92,58 @@ It is carried by
 and the live `supabase/functions/keyword-scan/`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-22 — Evidence Follow Up: one question, one reassessment
+
+**Objective.** Founder request: CV plus job description, initial score, one
+follow up question about the most important evidence gap, one reassessment,
+final score shown beside the initial one. Plus evidence based copy.
+
+**Completed.** Migration `20260921210000_evidence_follow_ups.sql` (table,
+unique `check_id`, FK cascade, owner select only). `analyze-check` writes the
+gap and question via `selectEvidenceGap` in `evidence-follow-up.ts`, derived
+from the requirement matrix with no extra model call. New function
+`assess-evidence-follow-up` appends the answer to the CV text as a labelled,
+self reported section and runs the same prompt, grounding and weighted scoring
+once (prompt addendum `FOLLOW_UP_ADDENDUM`, applied only when `followUp` is
+set, so normal checks are byte for byte unchanged). CV parsing and the OpenAI
+call moved unchanged from `analyze-check/index.ts` into `runtime.ts`. The
+answer is refused under 40 characters or 8 words before any call. The row is
+claimed atomically, so a double submit cannot make a second Analyze call, and
+any failure releases it and leaves the initial result untouched. Only offered
+while the original CV exists: uploads purge at 24 hours. UI:
+`EvidenceFollowUpCard`, `src/lib/evidenceFollowUp.ts`. Deploy workflow now also
+deploys the follow up function whenever `analyze-check` deploys, so the two
+scores cannot come from different rubrics. Copy: Keyword Scan results, FAQ, and
+the evidence versus keyword answer on `/how-interview-score-works`, which also
+gains a follow up answer.
+
+**Verified.** lint, typecheck, `npm test` 44/44, scoring mutation check
+14/14 caught, root and admin build, admin lint, typecheck and `test:admin`.
+`scripts/local-db/replay.sh` applied all 64 migrations, and role probes
+confirmed: duplicate, status, score and assessed-needs-result constraints
+reject; an owner sees only their row and cannot insert, update or delete;
+`anon` is denied; deleting a check cascades. `deno check` on both functions
+shows only the six existing `SupabaseClient` generic errors in
+`analyze-check/index.ts`. **UNVERIFIED:** the model leg (no live OpenAI call was
+made, by rule), the deployed function, the browser flow (**MANUAL CHECK
+REQUIRED**), structured data (**MANUAL CHECK REQUIRED**), and the PostgREST
+embed `checks(uploads_purged)` in `getEvidenceFollowUp` (the table now exists,
+the embed has not been exercised).
+
+**Blockers.** none. `20260921210000` was applied to production on 2026-09-22
+after approval (`supabase db push`, only that migration pending per dry run)
+and `src/types/database.ts` regenerated from production: identical columns.
+
+**Founder action required.** Record the scoring decision, see Open items.
+Merging deploys `analyze-check` and `assess-evidence-follow-up`, and the SPA.
+
+**Next technical step.** Run one invented check on a test account and confirm
+the card, one submission, and the final score.
+
+**Commit or PR.** Branch `feature/evidence-follow-up`.
 
 ---
 

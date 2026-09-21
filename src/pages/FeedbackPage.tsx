@@ -9,12 +9,14 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { FeedbackBullet } from '@/components/feedback/FeedbackBullet'
 import { getVerdictColor } from '@/components/feedback/verdictColor'
 import { FICTIONAL_SAMPLE_NOTICE, hasSampleWording, splitFinding } from '@/lib/feedbackText'
+import { EvidenceFollowUpCard } from '@/components/feedback/EvidenceFollowUpCard'
 import { SentimentPrompt } from '@/components/feedback/SentimentPrompt'
 import { TrustpilotResultsLink } from '@/components/feedback/TrustpilotResultsLink'
 import { useAuth } from '@/hooks/useAuth'
 import { usePageMeta } from '@/hooks/usePageMeta'
 import { getResultTone, getScoreLabel, sanitizeScore } from '@/lib/scoring'
 import { trackEvent } from '@/lib/analytics'
+import { INITIAL_SCORE_LABEL } from '@/lib/evidenceFollowUp'
 import {
   getDocumentEntitlement,
   LIKELY_INTERVIEW_CANDIDATE_MIN_SCORE,
@@ -24,9 +26,10 @@ import {
   analyzeCheck,
   generateDocuments,
   getCheckWithFeedback,
+  getEvidenceFollowUp,
   type GeneratedDocuments,
 } from '@/services/checkService'
-import type { CheckWithFeedback } from '@/types'
+import type { CheckWithFeedback, EvidenceFollowUp } from '@/types'
 import { cn } from '@/utils/cn'
 
 // A check now arrives here while the server is still working on it: the New
@@ -105,6 +108,7 @@ export function FeedbackPage() {
   const [generatingDocs, setGeneratingDocs] = useState(false)
   const [documentsError, setDocumentsError] = useState<string | null>(null)
   const [pollExpired, setPollExpired] = useState(false)
+  const [followUp, setFollowUp] = useState<EvidenceFollowUp | null>(null)
   const feedbackViewedRef = useRef(false)
 
   useEffect(() => {
@@ -135,6 +139,33 @@ export function FeedbackPage() {
     feedbackViewedRef.current = true
     trackEvent('feedback_viewed')
   }, [check?.feedback])
+
+  // The optional Evidence Follow Up, once the check has completed. A failed
+  // read simply means no card: the result page never depends on it.
+  useEffect(() => {
+    if (!id || check?.status !== 'completed') return
+    let cancelled = false
+    getEvidenceFollowUp(id)
+      .then((row) => {
+        if (!cancelled) setFollowUp(row)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [id, check?.status])
+
+  // An answer submitted from another tab (or before a reload) may still be
+  // being assessed. Read only, until it lands; never a second analysis.
+  useEffect(() => {
+    if (!id || followUp?.status !== 'processing') return
+    const timer = setInterval(() => {
+      getEvidenceFollowUp(id)
+        .then((row) => setFollowUp(row))
+        .catch(() => {})
+    }, RESULT_POLL_MS)
+    return () => clearInterval(timer)
+  }, [id, followUp?.status])
 
   useEffect(() => {
     if (!id || check?.status !== 'processing' || pollExpired) return
@@ -307,7 +338,7 @@ export function FeedbackPage() {
               <p className={cn('text-[2.125rem] font-semibold tracking-[-0.02em] sm:text-[2.625rem]', t.heading)}>
                 <span>{score}%</span>{' '}
                 <span className={cn('text-base font-semibold sm:text-lg', t.subtle)}>
-                  Interview Score
+                  {followUp ? INITIAL_SCORE_LABEL : 'Interview Score'}
                 </span>
               </p>
               <p className={cn('mt-2 text-base font-semibold sm:text-lg', getVerdictColor(score, textTone))}>
@@ -445,6 +476,15 @@ export function FeedbackPage() {
                 </ul>
               </CardContent>
             </Card> : null}
+
+            {followUp ? (
+              <EvidenceFollowUpCard
+                followUp={followUp}
+                initialScore={score}
+                dark={isDark}
+                onAssessed={setFollowUp}
+              />
+            ) : null}
 
             <Card>
               <CardHeader className="px-5 py-3">

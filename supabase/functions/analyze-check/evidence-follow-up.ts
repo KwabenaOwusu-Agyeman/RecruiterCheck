@@ -1,0 +1,167 @@
+// Evidence Follow Up: the pure, testable parts.
+//
+// After a check completes, the initial analysis names the single most
+// important evidence gap and the candidate is offered ONE question about it.
+// Their answer is added to the CV text as a clearly labelled, self reported
+// section and the same analysis and scoring pipeline runs once more (see
+// assess-evidence-follow-up). Nothing here scores anything: the score always
+// comes from normalizeAnalysis, exactly as for the initial check.
+//
+// Pure module: no Deno, no network, no environment access. It has no runtime
+// import from logic.ts (logic.ts imports this file), so the two cannot form
+// an import cycle.
+
+import type { RawRequirement } from './logic.ts'
+
+export interface EvidenceGap {
+  // The requirement the gap was raised on, cleaned for display.
+  requirement: string
+  // One sentence for the candidate: what the recruiter is missing.
+  summary: string
+  // The single follow up question. Asks only about something that may
+  // already be true; never suggests what a good answer would contain.
+  question: string
+}
+
+const MAX_REQUIREMENT_CHARS = 120
+
+const IMPORTANCE_ORDER = { must_have: 0, important: 1, nice_to_have: 2 } as const
+// Within one importance tier a partial match ranks first: the CV already
+// gestures at it, so evidence that exists but was not shown is most likely.
+const STRENGTH_ORDER = { partial: 0, none: 1, strong: 2 } as const
+
+function displayName(requirement: string, clean: (text: string) => string): string {
+  const trimmed = clean(requirement.trim().replace(/[.!?]+$/, ''))
+  return trimmed.length > MAX_REQUIREMENT_CHARS ? `${trimmed.slice(0, MAX_REQUIREMENT_CHARS).trimEnd()}` : trimmed
+}
+
+/**
+ * Picks the one gap worth asking about, or null when nothing clears the bar.
+ *
+ * `requirements` must already be the deduplicated, grounding checked matrix
+ * with application stage and post hire items removed (availability, work
+ * authorisation and private identifiers are confirmed in an application
+ * form, not evidenced by a CV, so a follow up about them would be wrong).
+ * A requirement only qualifies when the CV did not fully evidence it and it
+ * is at least "important": a missing nice to have is never worth the
+ * candidate's one question.
+ *
+ * Ranking: critical gaps first, then must have before important, then a
+ * partial match before no match, then the order the model listed them.
+ */
+export function selectEvidenceGap(
+  requirements: RawRequirement[],
+  clean: (text: string) => string = (text) => text,
+): EvidenceGap | null {
+  const candidates = requirements
+    .map((requirement, index) => ({ requirement, index }))
+    .filter(
+      ({ requirement }) =>
+        requirement.match_strength !== 'strong' &&
+        requirement.importance !== 'nice_to_have' &&
+        displayName(requirement.requirement, clean).length > 0,
+    )
+    .sort(
+      (a, b) =>
+        Number(b.requirement.critical) - Number(a.requirement.critical) ||
+        IMPORTANCE_ORDER[a.requirement.importance] - IMPORTANCE_ORDER[b.requirement.importance] ||
+        STRENGTH_ORDER[a.requirement.match_strength] - STRENGTH_ORDER[b.requirement.match_strength] ||
+        a.index - b.index,
+    )
+
+  const top = candidates[0]?.requirement
+  if (!top) return null
+
+  const name = displayName(top.requirement, clean)
+  const summary =
+    top.match_strength === 'partial'
+      ? `Your CV shows some related evidence for ${name}, but not enough for a recruiter to see how you have applied it.`
+      : `The job asks for ${name}, and your CV does not yet show evidence of it.`
+  const question =
+    top.category === 'skills'
+      ? `Have you used ${name} in a project, internship, course, freelance work or personal project that your CV does not clearly show, and if so, what did you do with it?`
+      : `Do you have experience of ${name} from a job, internship, project, course, volunteering or freelance work that your CV does not clearly show, and if so, what was it and what did you do?`
+
+  return { requirement: name, summary, question }
+}
+
+export const MIN_ANSWER_CHARS = 40
+export const MIN_ANSWER_WORDS = 8
+export const MAX_ANSWER_CHARS = 1500
+
+export type AnswerValidation = { ok: true; answer: string } | { ok: false; message: string }
+
+/**
+ * Cleans and bounds the candidate's answer before it goes anywhere near a
+ * model. Control characters and the section marker used by
+ * buildFollowUpCvText are removed so an answer cannot close the labelled
+ * section early and pass off its own text as CV content.
+ *
+ * A one line reply cannot contain evidence, so it is refused here, before
+ * any API call is made and before the candidate's one opportunity is used.
+ * The frontend applies the same rule so the message appears without a
+ * round trip; this is the authoritative copy.
+ */
+export function validateFollowUpAnswer(raw: unknown): AnswerValidation {
+  if (typeof raw !== 'string') return { ok: false, message: 'Write a short answer first.' }
+  const answer = raw
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, ' ')
+    .replace(/={3,}/g, ' ')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+  if (answer.length > MAX_ANSWER_CHARS) {
+    return { ok: false, message: `Keep your answer under ${MAX_ANSWER_CHARS} characters.` }
+  }
+  const words = answer.split(/\s+/).filter(Boolean).length
+  if (answer.length < MIN_ANSWER_CHARS || words < MIN_ANSWER_WORDS) {
+    return {
+      ok: false,
+      message: 'Add a little more detail about what you did, so the recruiter has something specific to assess.',
+    }
+  }
+  return { ok: true, answer }
+}
+
+export const CANDIDATE_REPORTED_HEADER = '=== CANDIDATE-REPORTED ADDITIONAL EVIDENCE ==='
+export const CANDIDATE_REPORTED_FOOTER = '=== END CANDIDATE-REPORTED ADDITIONAL EVIDENCE ==='
+
+/**
+ * The text the second analysis reads in place of the CV: the original CV
+ * text, untouched, followed by the candidate's answer in a labelled section.
+ * The same string is the grounding source for normalizeAnalysis, so a
+ * classification can only cite what the CV or the answer actually says.
+ * The follow up addendum in prompt.ts tells the model how to treat the
+ * section; the labels here are what it keys on.
+ */
+export function buildFollowUpCvText(cvText: string, question: string, answer: string): string {
+  return [
+    cvText,
+    '',
+    CANDIDATE_REPORTED_HEADER,
+    'This section is not part of the CV document. It is the candidate\'s self reported, unverified answer to one follow up question.',
+    `Follow up question: ${question}`,
+    `Candidate answer: ${answer}`,
+    CANDIDATE_REPORTED_FOOTER,
+  ].join('\n')
+}
+
+/**
+ * The "what changed" lines shown under the final score. Built from the two
+ * scores alone, so it states only what is true: it never claims the answer
+ * caused a movement it cannot prove, and never implies a score is owed.
+ * At most three lines.
+ */
+export function buildWhatChanged(initialScore: number, finalScore: number): string[] {
+  const movement =
+    finalScore > initialScore
+      ? `After reassessing your application with your answer, your score moved from ${initialScore} to ${finalScore}.`
+      : finalScore < initialScore
+        ? `After reassessing your application with your answer, your score moved from ${initialScore} to ${finalScore}. Weighing the answer alongside your CV changed how some evidence was assessed.`
+        : `After reassessing your application with your answer, your score stayed at ${initialScore}. The new detail did not materially change the recruiter's assessment.`
+  return [
+    movement,
+    'Your answer is self reported and was not on your CV, so it is weighed with more caution than evidence your CV shows.',
+  ]
+}

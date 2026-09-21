@@ -64,7 +64,7 @@ function MatchRing({ percent }: { percent: number }) {
       </svg>
       <div className="absolute flex flex-col items-center">
         <span className="text-3xl font-semibold tracking-[-0.02em] text-white sm:text-4xl">{percent}%</span>
-        <span className="mt-0.5 text-xs text-white/50">match</span>
+        <span className="mt-0.5 text-xs text-white/50">term overlap</span>
       </div>
     </div>
   )
@@ -100,7 +100,7 @@ function TermRow({
 export function KeywordScanPage() {
   usePageMeta({
     title: 'Free Keyword Scan | MyRecruiterCheck',
-    description: 'Check which keywords from a job description your CV is missing, free.',
+    description: 'See which terms from a job description appear in your CV, free. A Recruiter Check then assesses whether you have evidence for them.',
     path: '/checks/keyword-scan',
     noindex: true,
   })
@@ -224,7 +224,7 @@ export function KeywordScanPage() {
             hasPurchased === null
               ? 'Nothing here is saved.'
               : hasPurchased
-                ? 'Check keyword overlap before spending a Recruiter Check. Free, unlimited.'
+                ? 'See which job terms appear in your CV before spending a Recruiter Check. Free, unlimited.'
                 : `Free, ${scansLeft} of ${FREE_SCAN_LIMIT} left. Nothing here is saved.`
           }
         />
@@ -375,10 +375,14 @@ export function KeywordScanPage() {
           <Card tone="dark" className="flex flex-col items-center gap-4 p-5 sm:flex-row sm:items-center sm:gap-6 sm:p-6">
             <MatchRing percent={result.matchPercent} />
             <div className="w-full">
-              <TermRow label="Matched" terms={result.matched} moreCount={Math.max(result.matchedTotal - result.matched.length, 0)} dotColor="matched" />
-              <TermRow label="Missing" terms={result.missing} moreCount={Math.max(result.missingTotal - result.missing.length, 0)} dotColor="missing" />
+              <TermRow label="Found in your CV" terms={result.matched} moreCount={Math.max(result.matchedTotal - result.matched.length, 0)} dotColor="matched" />
+              <TermRow label="Not found in your CV" terms={result.missing} moreCount={Math.max(result.missingTotal - result.missing.length, 0)} dotColor="missing" />
             </div>
           </Card>
+          <p className="mt-3 text-center text-xs text-text-secondary">
+            A term appearing in your CV shows a word is present, not that a recruiter sees evidence you used it. A
+            Recruiter Check assesses that.
+          </p>
           <div className="mt-4 flex flex-col items-center gap-2 text-center">
             <Link to={!hasBalance && scansLeft <= 0 ? '/pricing' : '/checks/new'}>
               <Button size="sm">Get check</Button>

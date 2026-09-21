@@ -54,6 +54,33 @@ export interface Feedback {
   created_at: string
 }
 
+// The one optional question offered on a completed check, and the final
+// assessment it can produce. Lives in its own table (evidence_follow_ups) so
+// the completed check and its initial score are never modified. The candidate's
+// answer is self reported and unverified; final_* fields are set only once
+// status is 'assessed'.
+export type EvidenceFollowUpStatus = 'pending' | 'processing' | 'assessed'
+
+export interface EvidenceFollowUp {
+  id: string
+  check_id: string
+  gap_requirement: string
+  gap_summary: string
+  question: string
+  status: EvidenceFollowUpStatus
+  candidate_answer: string | null
+  final_score: number | null
+  final_strengths: string[]
+  final_improvements: string[]
+  final_prospects: string[]
+  what_changed: string[]
+  assessed_at: string | null
+  // False once the original CV and job description have been auto deleted
+  // (within 24 hours): the follow up needs them, so an unanswered question
+  // can no longer be offered. An assessed result is still shown.
+  canAnswer: boolean
+}
+
 export interface CheckWithFeedback extends Check {
   feedback: Feedback | null
 }

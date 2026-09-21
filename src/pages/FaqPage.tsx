@@ -51,7 +51,7 @@ const FAQ_ITEMS = [
   {
     question: 'Is there a free keyword scan too?',
     answer:
-      'Yes. Before you spend a check, run a free keyword scan to see how well your CV matches a job description. You get 3 free scans, and unlimited scans once you have bought any check pack.',
+      'Yes. Before you spend a check, run a free keyword scan to see which terms from a job description appear in your CV. It shows whether a word is present, not whether you have evidence of it, which is what a Recruiter Check assesses. You get 3 free scans, and unlimited scans once you have bought any check pack.',
   },
   {
     question: 'Do checks expire?',

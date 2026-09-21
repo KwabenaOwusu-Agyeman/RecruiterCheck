@@ -14,6 +14,8 @@ export type AnalyticsEventType =
   | 'new_check_opened'
   | 'check_submitted'
   | 'feedback_viewed'
+  | 'evidence_follow_up_submitted'
+  | 'evidence_follow_up_assessed'
   | 'referral_shared'
   | 'recruiter_recommendation_accessed'
   | 'checkout_started'

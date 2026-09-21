@@ -1,6 +1,8 @@
 // Pure, network-free logic split out of index.ts so it can be unit tested
 // (via `npx tsx`/Deno test) without needing the OpenAI call or Deno runtime.
 
+import { selectEvidenceGap, type EvidenceGap } from './evidence-follow-up.ts'
+
 // A material change to what the rubric measures or how it weights evidence
 // must bump this to a new version string, never silently redefine what an
 // existing version means — old stored breakdowns stay interpretable against
@@ -294,6 +296,11 @@ export interface AnalysisResult {
   // reviewing check_score_audits can see why a rating was granted without
   // ever storing a full CV quotation.
   evidence_references: Record<string, EvidenceReference | null>
+  // The single most important evidence gap in this analysis, for the
+  // optional Evidence Follow Up, or null when nothing clears the bar. Derived
+  // from the same requirement matrix the score uses; it never feeds back
+  // into the score.
+  evidence_gap: EvidenceGap | null
 }
 
 // This app is English only — every check must produce English output
@@ -1086,9 +1093,9 @@ const WORK_AUTH_PATTERN = /\b(?:work permit|work authori[sz]ation|authori[sz]ed 
 const AVAILABILITY_PATTERN = /\b(?:availability|available|shift|shifts|weekend|weekends|evening|evenings|night|nights|daytime)\b/i
 const EXPLICIT_MANDATORY_PATTERN = /\b(?:mandatory|required|must|essential)\b/i
 
-type VerificationStage = 'cv' | 'application' | 'post_hire'
+export type VerificationStage = 'cv' | 'application' | 'post_hire'
 
-function verificationStage(requirement: RawRequirement): VerificationStage {
+export function verificationStage(requirement: RawRequirement): VerificationStage {
   if (PRIVATE_IDENTIFIER_PATTERN.test(requirement.requirement)) return 'post_hire'
   if (WORK_AUTH_PATTERN.test(requirement.requirement) || AVAILABILITY_PATTERN.test(requirement.requirement)) {
     return 'application'
@@ -1851,5 +1858,9 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string, meta: { mode
     company_name: typeof raw.company_name === 'string' && raw.company_name.trim() ? raw.company_name.trim() : null,
     score_breakdown: scoreBreakdown,
     evidence_references: evidenceReferences,
+    evidence_gap: selectEvidenceGap(
+      dedupedRequirements.filter((requirement) => verificationStage(requirement) === 'cv'),
+      stripDashes,
+    ),
   }
 }

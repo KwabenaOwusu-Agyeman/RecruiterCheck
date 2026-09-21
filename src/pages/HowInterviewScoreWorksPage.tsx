@@ -45,7 +45,12 @@ const faqs = [
   {
     question: 'What counts as "evidence" versus a keyword?',
     answer:
-      'A keyword is a skill or tool named once, often in a list. Evidence is that same skill shown in context, a project it was used on, a result it produced, a scale it operated at. Interview Score is built from evidence, so two CVs that list the same keywords can still receive different scores based on what actually backs them up.',
+      'A keyword is a word that appears in your CV. A skill is you claiming it. Experience is saying you used it. Evidence is showing where and how you used it: a project it was used on, a result it produced, a scale it operated at. Interview Score is built from evidence, so two CVs that list the same keywords can still receive different scores based on what actually backs them up.',
+  },
+  {
+    question: 'What is the follow up question after my check?',
+    answer:
+      'When your check finds one important evidence gap, you can answer a single optional question about it. If your answer is specific and relevant, MyRecruiterCheck reassesses your application once and shows a Final Recruiter Score beside your initial one. What you write is self reported, so it is weighed with more caution than evidence in your CV, and a general claim such as "I am good at Python" does not raise your score. It is available while your uploaded CV still exists, because uploads are deleted within 24 hours.',
   },
   {
     question: 'How do projects, internships or a career change count if I don\'t have direct job experience?',
