@@ -4,10 +4,16 @@ import { zipSync } from 'npm:fflate@0.8.2'
 import mammoth from 'npm:mammoth@1.8.0'
 import { PDFDocument, PDFFont, PDFPage, StandardFonts, degrees, rgb } from 'npm:pdf-lib@1.17.1'
 import { extractText as extractPdfText, getDocumentProxy } from 'npm:unpdf@0.12.1'
+import { fileExtensionForLog, isOwnStoragePath } from '../_shared/storage-path.ts'
 import {
+  classifyGenerationError,
   getDocumentEntitlement,
+  isRetryableGenerationError,
   stripExampleClause,
+  toPdfSafe,
+  toPdfSafeText,
   validateDocuments,
+  type ValidationScope,
   type FundingPackId,
   type RawDocuments,
   type TailoredCv,
@@ -22,6 +28,12 @@ const corsHeaders = {
 
 const MAX_CV_CHARS = 15000
 const MAX_ATTEMPTS = 3
+// No new model attempt starts after this, so the whole request (CV parsing,
+// attempts, rendering, uploads) stays inside the platform's 150 second
+// request limit. Three attempts of up to 45 seconds each did not.
+const GENERATION_DEADLINE_MS = 80000
+const MAX_JOB_DESCRIPTION_CHARS = 15000
+const MAX_JOB_FIELD_CHARS = 300
 const SIGNED_URL_TTL_SECONDS = 300
 const OPENAI_TIMEOUT_MS = 45000
 const PARSE_TIMEOUT_MS = 15000
@@ -116,15 +128,44 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'This check has not completed analysis yet' }, 400)
     }
 
+    if (!isOwnStoragePath(check.cv_storage_path, user.id)) {
+      console.error('generate-documents: CV path outside the owner folder', { checkId })
+      return jsonResponse({ error: 'Could not read CV file' }, 400)
+    }
+
     // Document entitlement is keyed on which pack's credit batch funded this
-    // specific check (set once, at completion, by complete_check_analysis)
-    // AND the check's score group (Not a Fit / Needs Improvement / Likely
-    // Interview Candidate — see getScoreLabel in src/lib/scoring.ts) — a
-    // document is only ever generated when BOTH permit it. See
-    // getDocumentEntitlement in logic.ts for the exact rules; this is the
-    // actual server side enforcement point, so a direct API call cannot
-    // bypass it regardless of what the frontend shows.
-    const fundingPackId = check.funding_pack_id as FundingPackId
+    // specific check AND the check's score group (Not a Fit / Needs
+    // Improvement / Likely Interview Candidate — see getScoreLabel in
+    // src/lib/scoring.ts) — a document is only ever generated when BOTH
+    // permit it. See getDocumentEntitlement in logic.ts for the exact rules;
+    // this is the actual server side enforcement point, so a direct API call
+    // cannot bypass it regardless of what the frontend shows.
+    //
+    // The funding pack is read from the ledger entry complete_check_analysis
+    // wrote when it spent the credit, not from checks.funding_pack_id: that
+    // column was client-writable until migration 20260921120000, and the
+    // ledger never was. No 'used' entry means the free check.
+    const { data: ledgerEntry, error: ledgerError } = await adminClient
+      .from('check_ledger')
+      .select('credit_batches(pack_id)')
+      .eq('related_check_id', checkId)
+      .eq('user_id', user.id)
+      .eq('entry_type', 'used')
+      .limit(1)
+      .maybeSingle()
+
+    if (ledgerError) {
+      console.error('generate-documents: ledger lookup failed', { checkId, code: ledgerError.code })
+      return jsonResponse({ error: 'Could not prepare your documents. Please try again.' }, 500)
+    }
+
+    const batch = (ledgerEntry as { credit_batches?: { pack_id?: string } | Array<{ pack_id?: string }> } | null)
+      ?.credit_batches
+    const ledgerPackId = (Array.isArray(batch) ? batch[0]?.pack_id : batch?.pack_id) ?? null
+    if ((check.funding_pack_id ?? null) !== ledgerPackId) {
+      console.error('generate-documents: funding pack on the check does not match the ledger', { checkId })
+    }
+    const fundingPackId = ledgerPackId as FundingPackId
     if (typeof check.interview_probability_score !== 'number') {
       return jsonResponse({ error: 'This check has no score yet' }, 400)
     }
@@ -154,15 +195,15 @@ Deno.serve(async (req) => {
     } catch (error) {
       console.error('generate-documents: CV parsing failed', {
         checkId,
-        fileName: check.cv_file_name,
+        fileType: fileExtensionForLog(check.cv_file_name),
         message: error instanceof Error ? error.message : String(error),
       })
       return jsonResponse({ error: 'Could not read text from this CV file' }, 400)
     }
 
-    const docs = await generateDocuments(openaiApiKey, cvText, check.job_description, {
-      jobTitle: check.job_title,
-      companyName: check.company_name,
+    const generated = await generateDocuments(openaiApiKey, cvText, check.job_description.slice(0, MAX_JOB_DESCRIPTION_CHARS), {
+      jobTitle: check.job_title?.slice(0, MAX_JOB_FIELD_CHARS) ?? null,
+      companyName: check.company_name?.slice(0, MAX_JOB_FIELD_CHARS) ?? null,
       strengths: feedbackRow.strengths as string[],
       // The trailing clause ("Sample wording: ..." on current checks, a
       // placeholder style "Example: ..." on historical ones) exists to show
@@ -172,7 +213,11 @@ Deno.serve(async (req) => {
       // document: strip the clause before this reaches the generator.
       improvements: (feedbackRow.improvements as string[]).map(stripExampleClause),
       prospects: feedbackRow.prospects as string[],
-    })
+    }, { coverLetter: entitlement.coverLetter, recruiterMessage: entitlement.recruiterMessage })
+
+    // The standard PDF font can only draw Windows-1252 text; see toPdfSafeText.
+    const docs = toPdfSafe(generated)
+    const companyNameForPdf = check.company_name ? toPdfSafeText(check.company_name) : check.company_name
 
     // The OpenAI call above always produces all three documents in one shot
     // (the prompt/schema aren't split by tier — cheaper to keep one call than
@@ -194,7 +239,7 @@ Deno.serve(async (req) => {
     let emailForRecruiterPdf: Uint8Array | null = null
 
     if (entitlement.coverLetter) {
-      coverLetterPdf = await renderCoverLetterPdf(docs.cover_letter, docs.tailored_cv, check.company_name)
+      coverLetterPdf = await renderCoverLetterPdf(docs.cover_letter, docs.tailored_cv, companyNameForPdf)
       files['Cover Letter.pdf'] = coverLetterPdf
       await uploadFile(adminClient, `${basePath}/Cover Letter.pdf`, coverLetterPdf, 'application/pdf')
     }
@@ -233,8 +278,13 @@ Deno.serve(async (req) => {
       zip: zipUrl,
     })
   } catch (error) {
-    console.error('generate-documents error:', error)
-    return jsonResponse({ error: 'Internal server error' }, 500)
+    // Never the raw error: generation failures can carry the candidate's
+    // details (see classifyGenerationError).
+    const message = error instanceof Error ? error.message : String(error)
+    console.error('generate-documents error', {
+      reason: message.startsWith('All attempts failed') ? message : classifyGenerationError(message),
+    })
+    return jsonResponse({ error: 'Could not generate your documents. Please try again in a moment.' }, 500)
   }
 })
 
@@ -345,19 +395,26 @@ async function generateDocuments(
     improvements: string[]
     prospects: string[]
   },
+  scope: ValidationScope,
 ): Promise<RawDocuments> {
-  const attemptErrors: string[] = []
+  // Reason codes only, so the final error is safe to log.
+  const attemptReasons: string[] = []
+  const startedAt = Date.now()
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
+    if (attempt > 0 && Date.now() - startedAt > GENERATION_DEADLINE_MS) break
     try {
       const raw = await callOpenAI(apiKey, cvText, jobDescription, context)
-      return validateDocuments(raw)
+      return validateDocuments(raw, scope)
     } catch (error) {
-      attemptErrors.push(error instanceof Error ? error.message : String(error))
+      const reason = classifyGenerationError(error instanceof Error ? error.message : String(error))
+      attemptReasons.push(reason)
+      // A rejected key or a malformed request fails the same way every time.
+      if (!isRetryableGenerationError(reason)) break
     }
   }
 
-  throw new Error(`All attempts failed: ${JSON.stringify(attemptErrors)}`)
+  throw new Error(`All attempts failed: ${attemptReasons.join(', ')}`)
 }
 
 async function callOpenAI(
@@ -595,8 +652,9 @@ ${cvText}`
   })
 
   if (!response.ok) {
-    const body = await response.text()
-    throw new Error(`OpenAI API error: ${response.status} ${body}`)
+    // The body is drained but not kept: it can quote the request.
+    await response.text().catch(() => '')
+    throw new Error(`OpenAI API error: ${response.status}`)
   }
 
   const payload = (await response.json()) as {
@@ -755,7 +813,7 @@ function layoutCv(
 // unverified content the candidate must fill in with real numbers — so the
 // document must never look submission-ready before that's done.
 function drawDraftWatermark(page: PDFPage, font: PDFFont, pageWidth: number, pageHeight: number) {
-  const watermarkText = 'DRAFT — NOT FOR SUBMISSION'
+  const watermarkText = 'DRAFT, NOT FOR SUBMISSION'
   const watermarkSize = 40
   const watermarkColor = rgb(0.55, 0.55, 0.55)
   const watermarkWidth = font.widthOfTextAtSize(watermarkText, watermarkSize)

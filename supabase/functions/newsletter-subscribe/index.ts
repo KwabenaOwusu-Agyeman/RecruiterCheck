@@ -37,6 +37,16 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
+    // Whether this address was already an active subscriber, so a repeat
+    // signup does not send another welcome email. The endpoint is public, so
+    // without this it could be used to send that email to anyone, repeatedly.
+    const { data: existing } = await adminClient
+      .from('newsletter_subscribers')
+      .select('status')
+      .eq('email', email)
+      .maybeSingle()
+    const wasActive = existing?.status === 'active'
+
     // This row is the durable consent record: the exact wording agreed to,
     // when, and from which page. Brevo holds the sending list, but the
     // evidence of consent stays in our own database.
@@ -72,7 +82,9 @@ Deno.serve(async (req) => {
       console.warn('newsletter-subscribe: BREVO_NEWSLETTER_LIST_ID not set, skipping Brevo contact')
     }
 
-    await sendWelcomeEmail(email, subscriber?.unsubscribe_token ?? null)
+    if (!wasActive) {
+      await sendWelcomeEmail(email, subscriber?.unsubscribe_token ?? null)
+    }
 
     return jsonResponse({ subscribed: true })
   } catch {

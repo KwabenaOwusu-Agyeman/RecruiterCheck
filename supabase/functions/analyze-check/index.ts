@@ -10,6 +10,7 @@ import {
   type AnalysisResult,
   type RawAnalysis,
 } from './logic.ts'
+import { fileExtensionForLog, isOwnStoragePath } from '../_shared/storage-path.ts'
 import { buildAnalysisRequestBody } from './prompt.ts'
 import { buildBrevoPayload, isTestAccountEmail, resolveSendDecision } from './trustpilot-email.ts'
 
@@ -19,6 +20,10 @@ const corsHeaders = {
 }
 
 const MAX_CV_CHARS = 15000
+// Pasted job descriptions had no upper bound; the URL, file and extension
+// paths already stop at 15,000 characters, so a pasted one does too.
+const MAX_JOB_DESCRIPTION_CHARS = 15000
+const MAX_JOB_FIELD_CHARS = 300
 // Exactly two attempts total: validate the first AI response, retry once if
 // it's invalid, and fail the check safely (no saved score, no consumed
 // credit — see the catch block around generateFeedback below) if the
@@ -119,6 +124,14 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Check not found' }, 404)
     }
 
+    // The service role downloads this path below, bypassing Storage policies,
+    // so it must be inside the caller's own folder. Refused before anything
+    // is reserved, so nothing changes state.
+    if (!isOwnStoragePath(check.cv_storage_path, user.id)) {
+      console.error('analyze-check: CV path outside the owner folder', { checkId })
+      return jsonResponse({ error: 'Could not read CV file' }, 400)
+    }
+
     if (check.job_description.trim().length < 50) {
       return jsonResponse({ error: 'Job description is too short to analyze' }, 400)
     }
@@ -176,7 +189,7 @@ Deno.serve(async (req) => {
     } catch (error) {
       console.error('analyze-check: CV parsing failed', {
         checkId,
-        fileName: check.cv_file_name,
+        fileType: fileExtensionForLog(check.cv_file_name),
         message: error instanceof Error ? error.message : String(error),
       })
       await markFailed(adminClient, checkId, 'Could not read text from this CV file')
@@ -189,9 +202,9 @@ Deno.serve(async (req) => {
     const startedAt = Date.now()
     let result: { analysis: AnalysisResult; metrics: GenerateFeedbackMetrics }
     try {
-      result = await generateFeedback(openaiApiKey, cvText, check.job_description, {
-        jobTitle: check.job_title,
-        companyName: check.company_name,
+      result = await generateFeedback(openaiApiKey, cvText, check.job_description.slice(0, MAX_JOB_DESCRIPTION_CHARS), {
+        jobTitle: check.job_title?.slice(0, MAX_JOB_FIELD_CHARS) ?? null,
+        companyName: check.company_name?.slice(0, MAX_JOB_FIELD_CHARS) ?? null,
       })
     } catch (error) {
       // Both attempts produced invalid/unusable output (or the model call
@@ -291,6 +304,14 @@ Deno.serve(async (req) => {
       // completed), which would otherwise sit there until the 10 minute
       // staleness window in reserve_check_analysis lets a retry through.
       // Marking it failed now makes that immediate instead of a silent wait.
+      //
+      // The feedback saved above is removed first: the results page shows
+      // any feedback row, so leaving it would hand over the analysis
+      // without the check completing or a credit being used.
+      const { error: feedbackCleanupError } = await adminClient.from('feedback').delete().eq('check_id', checkId)
+      if (feedbackCleanupError) {
+        console.error('analyze-check: could not remove feedback after a failed completion', { checkId })
+      }
       await markFailed(adminClient, checkId, 'Could not save analysis result')
       return jsonResponse({ error: 'Could not save analysis result' }, 500)
     }

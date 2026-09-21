@@ -55,7 +55,7 @@ function CardFooter({ children }: { children: ReactNode }) {
  * supabase/functions/generate-documents/index.ts): centered blue name,
  * a single bullet-separated contact line, bold black section headings,
  * blue job/degree titles, bulleted experience, and the same diagonal
- * "DRAFT — NOT FOR SUBMISSION" watermark every real CV draft ships with.
+ * "DRAFT, NOT FOR SUBMISSION" watermark every real CV draft ships with.
  * Capped to a preview height with a fade-out, since the real document runs
  * a full page and this is a glance at it, not the whole thing.
  */

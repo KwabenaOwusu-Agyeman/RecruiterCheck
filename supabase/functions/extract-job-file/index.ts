@@ -68,7 +68,6 @@ Deno.serve(async (req) => {
       text = await extractText(file, file.type)
     } catch (error) {
       console.error('extract-job-file: parsing failed', {
-        fileName: file.name,
         fileType: file.type,
         message: error instanceof Error ? error.message : String(error),
       })

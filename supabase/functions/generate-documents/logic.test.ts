@@ -1,6 +1,6 @@
 // Run with: npx tsx supabase/functions/generate-documents/logic.test.ts
 import assert from 'node:assert/strict'
-import { containsName, containsPlaceholder, getDocumentEntitlement, PACK_DISPLAY_NAMES, looksLikeEnglish, splitSentences, stripDashes, stripExampleClause, validateDocuments, type RawDocuments } from './logic.ts'
+import { classifyGenerationError, containsName, containsPlaceholder, getDocumentEntitlement, isRetryableGenerationError, PACK_DISPLAY_NAMES, looksLikeEnglish, splitSentences, stripDashes, stripExampleClause, toPdfSafe, toPdfSafeText, validateDocuments, type RawDocuments } from './logic.ts'
 
 let passed = 0
 function test(name: string, fn: () => void) {
@@ -372,6 +372,96 @@ test('stripExampleClause still drops the historical Example clause', () => {
 
 test('stripExampleClause leaves an item with no clause untouched', () => {
   assert.equal(stripExampleClause('Strong sales performance. Your record supports the role.'), 'Strong sales performance. Your record supports the role.')
+})
+
+// ---------------------------------------------------------------------------
+// Validation scope: only delivered documents can fail a generation
+// ---------------------------------------------------------------------------
+
+test('SCOPE: a CV only request is not failed by a broken cover letter or recruiter message', () => {
+  const raw = baseRaw({
+    cover_letter: { ...baseRaw().cover_letter, body_paragraphs: baseRaw().cover_letter.body_paragraphs.slice(0, 2) },
+    recruiter_message: { ...baseRaw().recruiter_message, body: 'Jamie Rivera scored 90 percent on 3 projects.' },
+  })
+  assert.throws(() => validateDocuments(raw), /exactly 3 body paragraphs/)
+  const result = validateDocuments(raw, { coverLetter: false, recruiterMessage: false })
+  assert.equal(result.tailored_cv.full_name, 'Jamie Rivera')
+})
+
+test('SCOPE: the recruiter message is still checked when it will be delivered', () => {
+  const raw = baseRaw({ recruiter_message: { ...baseRaw().recruiter_message, body: 'I improved latency by 40 percent across our payment services last year.' } })
+  assert.throws(() => validateDocuments(raw, { coverLetter: true, recruiterMessage: true }), /statistic/)
+  assert.doesNotThrow(() => validateDocuments(raw, { coverLetter: true, recruiterMessage: false }))
+})
+
+test('SCOPE: the CV itself and invented claims are always checked, whatever the scope', () => {
+  const noScope = { coverLetter: false, recruiterMessage: false }
+  assert.throws(() => validateDocuments(baseRaw({ new_claims_introduced: ['Led a team of 40'] }), noScope), /unverified claims/)
+  const raw = baseRaw()
+  assert.throws(() => validateDocuments({ ...raw, tailored_cv: { ...raw.tailored_cv, full_name: '' } }, noScope), /missing a name/)
+})
+
+// ---------------------------------------------------------------------------
+// PDF text safety: the standard font only encodes Windows-1252
+// ---------------------------------------------------------------------------
+
+function assertWinAnsi(text: string) {
+  for (const char of text) {
+    const code = char.codePointAt(0) ?? 0
+    const ok = char === '\n' || (code >= 0x20 && code <= 0x7e) || (code >= 0xa1 && code <= 0xff) || '€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ'.includes(char)
+    assert.ok(ok, `not encodable: ${JSON.stringify(char)} in ${JSON.stringify(text)}`)
+  }
+}
+
+test('PDF: names outside Windows-1252 keep their letters without their accents', () => {
+  assert.equal(toPdfSafeText('Łukasz Wąsik'), 'Lukasz Wasik')
+  assert.equal(toPdfSafeText('Şebnem Yıldız'), 'Sebnem Yildiz')
+  assert.equal(toPdfSafeText('Tomáš Dvořák'), 'Tomáš Dvorák')
+  assert.equal(toPdfSafeText('Nguyễn Thị Hương'), 'Nguyen Thi Huong')
+})
+
+test('PDF: text Windows-1252 already covers is unchanged', () => {
+  const text = 'José Müller, Zoë Brontë, Œuvre “quoted” – €40 • ß'
+  assert.equal(toPdfSafeText(text), text)
+})
+
+test('PDF: symbols get plain equivalents and undrawable characters are dropped', () => {
+  assert.equal(toPdfSafeText('Python → Spark ≥ 3 years'), 'Python -> Spark >= 3 years')
+  assert.equal(toPdfSafeText('Great team 🚀 player 数据'), 'Great team  player ')
+  assertWinAnsi(toPdfSafeText('Łódź → Kraków, 日本 😀 İstanbul ǅ'))
+})
+
+test('PDF: toPdfSafe cleans every string in the documents and keeps their shape', () => {
+  const raw = baseRaw()
+  const docs = toPdfSafe({ ...raw, tailored_cv: { ...raw.tailored_cv, full_name: 'Łukasz Nowak', languages: ['Polski → native'] } })
+  assert.equal(docs.tailored_cv.full_name, 'Lukasz Nowak')
+  assert.deepEqual(docs.tailored_cv.languages, ['Polski -> native'])
+  assert.equal(docs.tailored_cv.experience[0].bullets[0].is_placeholder, false)
+  assert.equal(docs.cover_letter.body_paragraphs.length, 3)
+})
+
+// ---------------------------------------------------------------------------
+// Failure reasons: logs never carry model or CV text
+// ---------------------------------------------------------------------------
+
+test('LOGS: failure reasons are fixed codes and never echo the message', () => {
+  const claims = 'Model reported unverified claims not present in the original CV: ["Led Jamie Rivera\'s team at Acme"]'
+  assert.equal(classifyGenerationError(claims), 'unverified_claims')
+  assert.equal(classifyGenerationError('OpenAI API error: 401'), 'openai_http_401')
+  assert.equal(classifyGenerationError('OpenAI request timed out after 45000ms'), 'timeout')
+  assert.equal(classifyGenerationError('Unexpected token < in JSON at position 0'), 'invalid_json')
+  assert.equal(classifyGenerationError('Cover letter is written in third person instead of first person'), 'cover_letter_invalid')
+  assert.equal(classifyGenerationError('WinAnsi cannot encode "Ł" (0x0141)'), 'pdf_encoding')
+  assert.equal(classifyGenerationError('something about Jamie Rivera'), 'other')
+})
+
+test('RETRY: only failures that can succeed on a second attempt are retried', () => {
+  for (const reason of ['timeout', 'invalid_json', 'unverified_claims', 'openai_http_429', 'openai_http_500', 'openai_http_503']) {
+    assert.equal(isRetryableGenerationError(reason), true, reason)
+  }
+  for (const reason of ['openai_http_400', 'openai_http_401', 'openai_http_403', 'openai_http_404']) {
+    assert.equal(isRetryableGenerationError(reason), false, reason)
+  }
 })
 
 console.log(`\n${passed} tests passed`)

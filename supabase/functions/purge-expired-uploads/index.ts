@@ -1,4 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
+import { listCheckCvPaths, removeFolder, removePaths, type StorageBucketApi } from '../_shared/storage-cleanup.ts'
+import { isOwnStoragePath } from '../_shared/storage-path.ts'
 
 // Invoked exclusively by the purge-expired-uploads pg_cron job (see
 // migration upload_auto_purge) over HTTP via pg_net, authorized with the
@@ -131,7 +133,7 @@ interface ExpiredCheck {
 async function purgeOne(adminClient: ReturnType<typeof createClient>, check: ExpiredCheck): Promise<boolean> {
   let uploadsOk = check.uploads_purged
   if (!uploadsOk) {
-    uploadsOk = await purgeUpload(adminClient, check.id, check.cv_storage_path)
+    uploadsOk = await purgeUpload(adminClient, check)
   }
 
   let documentsOk = check.documents_purged
@@ -170,16 +172,31 @@ async function purgeOne(adminClient: ReturnType<typeof createClient>, check: Exp
   return uploadsOk && documentsOk
 }
 
-async function purgeUpload(
-  adminClient: ReturnType<typeof createClient>,
-  checkId: string,
-  cvStoragePath: string | null,
-): Promise<boolean> {
-  if (!cvStoragePath) return true
+/**
+ * Removes every CV version stored for the check, not only the path on the
+ * row: a draft's CV was re-uploaded to a new path on each replacement and
+ * each pasted-text autosave, and the earlier versions were never purged. A
+ * row whose path points outside its owner's folder is never followed.
+ */
+async function purgeUpload(adminClient: ReturnType<typeof createClient>, check: ExpiredCheck): Promise<boolean> {
+  const cvs = adminClient.storage.from('cvs') as unknown as StorageBucketApi
+  const { paths, error: listError } = await listCheckCvPaths(cvs, check.user_id, check.id)
+  if (listError) {
+    console.error('purge-expired-uploads: cv listing failed', { checkId: check.id, message: listError })
+    return false
+  }
+  if (check.cv_storage_path && !paths.includes(check.cv_storage_path)) {
+    if (isOwnStoragePath(check.cv_storage_path, check.user_id)) {
+      paths.push(check.cv_storage_path)
+    } else {
+      console.error('purge-expired-uploads: cv path outside the owner folder, not followed', { checkId: check.id })
+    }
+  }
+  if (paths.length === 0) return true
 
-  const { error } = await adminClient.storage.from('cvs').remove([cvStoragePath])
-  if (error) {
-    console.error('purge-expired-uploads: cv storage removal failed', { checkId, message: error.message })
+  const removeError = await removePaths(cvs, paths)
+  if (removeError) {
+    console.error('purge-expired-uploads: cv storage removal failed', { checkId: check.id, message: removeError })
     return false
   }
   return true
@@ -190,25 +207,12 @@ async function purgeDocuments(
   checkId: string,
   userId: string,
 ): Promise<boolean> {
-  const prefix = `${userId}/${checkId}`
-
-  const { data: files, error: listError } = await adminClient.storage.from('documents').list(prefix)
-  if (listError) {
-    console.error('purge-expired-uploads: documents list failed', { checkId, message: listError.message })
-    return false
-  }
-
-  if (!files || files.length === 0) return true
-
-  const { error: removeError } = await adminClient.storage
-    .from('documents')
-    .remove(files.map((file) => `${prefix}/${file.name}`))
-
+  const documents = adminClient.storage.from('documents') as unknown as StorageBucketApi
+  const removeError = await removeFolder(documents, `${userId}/${checkId}`)
   if (removeError) {
-    console.error('purge-expired-uploads: documents removal failed', { checkId, message: removeError.message })
+    console.error('purge-expired-uploads: documents removal failed', { checkId, message: removeError })
     return false
   }
-
   return true
 }
 
