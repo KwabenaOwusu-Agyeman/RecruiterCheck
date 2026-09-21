@@ -167,7 +167,7 @@ export function SentimentPrompt({ checkId, jobTitle }: { checkId: string; jobTit
               />
               {profile?.full_name ? (
                 <p className="mt-1 text-xs text-text-secondary">
-                  Taken from your account — edit it if you'd rather show a shortened version.
+                  Taken from your account. Edit it if you'd rather show a shortened version.
                 </p>
               ) : null}
               {testimonialStage === 'error' ? (

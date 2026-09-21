@@ -92,12 +92,12 @@ export function buildResultsEmailHtml(params: {
 
   return buildEmailShell({
     documentTitle: 'Your Recruiter Check is ready',
-    previewText: `Your Interview Probability score is ${params.score}%.`,
+    previewText: `Your Interview Score is ${params.score}%.`,
     heading: 'Your Recruiter Check is ready',
     bodyHtml:
       `${greeting}<br /><br />` +
       `Your Recruiter Check ${roleLine}is complete. ` +
-      `Your Interview Probability score is <strong style="color: ${navy};">${params.score}%</strong>.`,
+      `Your Interview Score is <strong style="color: ${navy};">${params.score}%</strong>.`,
     cta: { label: 'View my results', url: params.resultsUrl },
   })
 }

@@ -182,7 +182,7 @@ export const EXAMPLE_DOCUMENTS = {
       {
         title: 'Software Engineer',
         companyLocation: 'Beacon Systems · Austin, TX',
-        dates: 'Aug 2023 – Present',
+        dates: 'Aug 2023 to Present',
         bullets: [
           'Owned the payments microservice end to end, cutting checkout API latency from 800ms to 210ms by introducing request batching and connection pooling.',
           'Led the migration from a monolith to a service oriented architecture, coordinating across three teams with zero downtime.',
@@ -192,7 +192,7 @@ export const EXAMPLE_DOCUMENTS = {
       {
         title: 'Software Engineer',
         companyLocation: 'Northline Systems · Austin, TX',
-        dates: 'Jun 2022 – Jul 2023',
+        dates: 'Jun 2022 to Jul 2023',
         bullets: [
           'Built and shipped two internal tools adopted by a 15 person engineering team, cutting manual deployment steps from 6 to 1.',
           'Fixed high priority bugs across the checkout and authentication services, contributing to a 30% drop in weekly incident tickets.',
@@ -204,7 +204,7 @@ export const EXAMPLE_DOCUMENTS = {
       {
         degree: 'B.S. in Computer Science',
         institution: 'University of Texas at Austin',
-        dates: '2018 – 2022',
+        dates: '2018 to 2022',
       },
     ],
   },

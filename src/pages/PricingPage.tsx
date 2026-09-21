@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Alert } from '@/components/ui/Alert'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -40,6 +40,7 @@ export function PricingPage() {
   const [loadingPack, setLoadingPack] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [refundDialogOpen, setRefundDialogOpen] = useState(false)
+  const [refundError, setRefundError] = useState<string | null>(null)
   const [refundLoading, setRefundLoading] = useState(false)
   const [refundSuccess, setRefundSuccess] = useState(false)
   const [refundReason, setRefundReason] = useState<RefundReason | null>(null)
@@ -56,16 +57,55 @@ export function PricingPage() {
   }, [])
 
   useEffect(() => {
-    // A brand new purchase lands back here after the Stripe Checkout redirect
-    // (see create-checkout-session's success_url) — the webhook grants the
-    // credits, but this tab's `profile` was loaded before that happened, so
-    // it must be re-fetched or the balance keeps showing stale numbers.
-    if (checkoutStatus === 'success') {
-      trackEvent('purchase_completed')
-      void refreshProfile()
+    if (checkoutStatus === 'success') trackEvent('purchase_completed')
+  }, [checkoutStatus])
+
+  // A brand new purchase lands back here after the Stripe Checkout redirect
+  // (see create-checkout-session's success_url). The webhook grants the
+  // credits, often a few seconds later, and this tab's profile was loaded
+  // before that. A single refresh on mount ran before the session had even
+  // loaded, so it did nothing, and a paying user could be told they were out
+  // of checks. Refresh until the balance moves, for up to 30 seconds.
+  const balanceRef = useRef<number | null>(null)
+  balanceRef.current = profile?.checks_balance ?? null
+  const userId = user?.id ?? null
+  // The baseline is the balance loaded before polling starts; without it
+  // there is nothing to compare against and the poll never stops early.
+  const profileLoaded = profile !== null
+  useEffect(() => {
+    if (checkoutStatus !== 'success' || !userId || !profileLoaded) return
+
+    let cancelled = false
+    let attempts = 0
+    const startingBalance = balanceRef.current
+
+    async function tick() {
+      if (cancelled) return
+      attempts += 1
+      await refreshProfile()
+      if (cancelled) return
+      const moved = startingBalance !== null && balanceRef.current !== null && balanceRef.current > startingBalance
+      if (!moved && attempts < 10) timer = setTimeout(() => void tick(), 3000)
+    }
+
+    let timer: ReturnType<typeof setTimeout> | undefined
+    void tick()
+    return () => {
+      cancelled = true
+      if (timer) clearTimeout(timer)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [checkoutStatus])
+  }, [checkoutStatus, userId, profileLoaded])
+
+  // Back from Stripe can restore this page from the browser's back/forward
+  // cache with the Buy button still saying "Redirecting...". Reset it.
+  useEffect(() => {
+    function onPageShow(event: PageTransitionEvent) {
+      if (event.persisted) setLoadingPack(null)
+    }
+    window.addEventListener('pageshow', onPageShow)
+    return () => window.removeEventListener('pageshow', onPageShow)
+  }, [])
 
   useEffect(() => {
     if (!user) {
@@ -113,6 +153,7 @@ export function PricingPage() {
   async function confirmRequestRefund() {
     setRefundLoading(true)
     setError(null)
+    setRefundError(null)
 
     try {
       await requestRefund({
@@ -129,7 +170,9 @@ export function PricingPage() {
       trackEvent('refund_requested')
       await refreshProfile()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not process your refund')
+      // Shown inside the dialog: the page level alert sits under the
+      // dialog's overlay, so a refused refund looked like nothing happened.
+      setRefundError(err instanceof Error ? err.message : 'Could not process your refund')
     } finally {
       setRefundLoading(false)
     }
@@ -260,8 +303,14 @@ export function PricingPage() {
           setRefundDialogOpen(false)
           setRefundReason(null)
           setRefundDetail('')
+          setRefundError(null)
         }}
       >
+        {refundError ? (
+          <Alert variant="error" className="mb-4">
+            {refundError}
+          </Alert>
+        ) : null}
         <RefundReasonPicker
           reason={refundReason}
           detail={refundDetail}

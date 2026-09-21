@@ -1,4 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
+import { listCheckCvPaths, removeFolder, removePaths, type StorageBucketApi } from '../_shared/storage-cleanup.ts'
+import { isOwnStoragePath } from '../_shared/storage-path.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': 'https://myrecruitercheck.com',
@@ -55,23 +57,26 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Check not found' }, 404)
     }
 
-    // Nothing retained per the GDPR delete cascade: CV, generated documents,
-    // feedback (via FK cascade), then the check row itself.
-    if (check.cv_storage_path) {
-      await adminClient.storage.from('cvs').remove([check.cv_storage_path])
+    const bucket = (name: string) => adminClient.storage.from(name) as unknown as StorageBucketApi
+
+    // Files first, so a failure leaves the row in place and trying again can
+    // find them. Every CV version stored for this check is removed, not only
+    // the path on the row (pasted CVs autosave a new object on each pause),
+    // and nothing outside the caller's own folder is ever touched.
+    const cvs = bucket('cvs')
+    const { paths: cvPaths, error: cvListError } = await listCheckCvPaths(cvs, user.id, checkId)
+    if (isOwnStoragePath(check.cv_storage_path, user.id) && !cvPaths.includes(check.cv_storage_path)) {
+      cvPaths.push(check.cv_storage_path)
+    }
+    const cvError = cvListError ?? (await removePaths(cvs, cvPaths))
+    const documentsError = cvError ? null : await removeFolder(bucket('documents'), `${user.id}/${checkId}`)
+    if (cvError || documentsError) {
+      console.error('delete-check: storage removal failed', { checkId })
+      return jsonResponse({ error: 'Could not delete this check. Please try again in a moment.' }, 500)
     }
 
-    const documentsPrefix = `${user.id}/${checkId}`
-    const { data: documentFiles } = await adminClient.storage
-      .from('documents')
-      .list(documentsPrefix)
-
-    if (documentFiles && documentFiles.length > 0) {
-      await adminClient.storage
-        .from('documents')
-        .remove(documentFiles.map((file) => `${documentsPrefix}/${file.name}`))
-    }
-
+    // Feedback, sentiment and the score audit go with the row (ON DELETE
+    // CASCADE); ledger entries keep their amount and lose the link.
     const { error: deleteError } = await adminClient
       .from('checks')
       .delete()
@@ -79,7 +84,8 @@ Deno.serve(async (req) => {
       .eq('user_id', user.id)
 
     if (deleteError) {
-      return jsonResponse({ error: 'Could not delete check' }, 500)
+      console.error('delete-check: row delete failed', { checkId, code: deleteError.code })
+      return jsonResponse({ error: 'Could not delete this check. Please try again in a moment.' }, 500)
     }
 
     return jsonResponse({ success: true })

@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic'
 interface Row {
   id: string
   user_id: string
-  batch_id: string
+  batch_id: string | null
   status: string
   stripe_refund_id: string | null
   reason: string | null

@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 import { Buffer } from 'node:buffer'
 import mammoth from 'npm:mammoth@1.8.0'
 import { extractText as extractPdfText, getDocumentProxy } from 'npm:unpdf@0.12.1'
+import { fileExtensionForLog } from '../_shared/storage-path.ts'
 
 // Standalone free "keyword scan" feature (Bizzy deck's "LIMITED — a few free
 // tasks" habit-building step). Deliberately has NO shared code path with
@@ -141,7 +142,7 @@ Deno.serve(async (req) => {
       )
     } catch (error) {
       console.error('keyword-scan: CV parsing failed', {
-        fileName: body.cvFileName,
+        fileType: fileExtensionForLog(body.cvFileName),
         message: error instanceof Error ? error.message : String(error),
       })
       return jsonResponse({ error: 'Could not read text from this CV file' }, 400)

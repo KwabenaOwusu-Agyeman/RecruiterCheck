@@ -36,6 +36,35 @@ doing it.
   localhost. A local pass over `dist/` is representative, since the served bytes
   match, but production browser behaviour is **UNVERIFIED** and must be reported
   as such rather than inferred. Recorded 2026-09-10.
+- **Founder action.** All three audit migrations are in production
+  (`20260921120000`, `121000`, `122000`, pushed 2026-09-21 after approval)
+  and the types were regenerated from production. Still open: run the role
+  graph query recorded in `20260828064337` once (production SQL is off limits
+  to Claude); confirm the landing page testimonials still load and an anon
+  read of `product_feedback` is refused; merge PR #96 to deploy the matching
+  Edge Functions and frontend, then `cd admin && vercel --prod`. Recorded
+  2026-09-21.
+- **Founder decision.** `20260921121000` (now in production) keeps refund
+  records detached (`ON DELETE SET NULL`) when an account is deleted, but
+  the refund amount lives on `credit_batches`, which is deleted with the
+  account, and the Control Centre refunds page inner joins both, so detached
+  rows are not shown. Either snapshot amount, currency and pack onto
+  `refund_events` and use left joins (keep the trail), or switch both keys to
+  `CASCADE` (delete it). Needs a follow up migration either way. Also
+  proposed for that migration: a separate retention timestamp instead of
+  resetting `checks.created_at` when a draft gets a new CV, and rejecting
+  `..` or empty segments in `cv_storage_path` in the trigger (Edge Functions
+  already do). Recorded 2026-09-21.
+- **Founder decision.** Found by the 2026-09-21 audit and left unchanged
+  because each is a product, legal or auth flow call: the Cookie Policy says
+  nothing is kept in browser storage (attribution is, `mrc_attribution_v1`);
+  the Privacy Policy does not name Brevo or Trustpilot; the Terms still say
+  refunds come from the billing page; the extension connect page accepts any
+  `*.chromiumapp.org` redirect (pin the extension id); the implicit auth flow
+  allows login CSRF (PKCE); newsletter signup has no double opt in; disputes
+  do not claw back credits; `keyword-scan` still uses the pre Part A counter;
+  CLAUDE.md says the primary CTA reads "Check" while the site uses "Check My
+  Application". Recorded 2026-09-21.
 ## Historical review material
 
 `PART_A_KEYWORD_SCAN_REVIEW.md`, `PART_A_KEYWORD_SCAN_CORRECTED_REVIEW.md`,
@@ -52,6 +81,60 @@ It is carried by
 and the live `supabase/functions/keyword-scan/`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-21 — Production audit: security, privacy, credits, reliability
+
+**Objective.** Founder request: full production maintenance and hardening
+audit, fixes included, nothing deployed.
+
+**Completed.** Branch `audit/production-hardening` (from `origin/main`
+c917890). Security: migration `20260921120000` stops anon reading
+`product_feedback` emails and ids (testimonials now come from definer
+function `get_public_testimonials()` behind the unchanged view) and limits
+client writes on `checks` to draft fields inside the caller's own folder
+(`funding_pack_id`, `cv_storage_path`, a submitted check's job text and the
+purge flags were client writable). Edge Functions refuse CV paths outside the
+owner's folder, and `generate-documents` reads the funding pack from
+`check_ledger`. Reliability: the stale check sweep had been silently reverted
+by the checks trigger (see `memory/2026-09-21-protect-triggers-must-exempt-cron.md`).
+Privacy: every CV version a draft wrote is now purged and deleted (only the
+current path was); `delete-account` sweeps both buckets and no longer reads
+the dropped `subscriptions` table; candidate file names and generation
+failure text are out of the logs; unsubscribing reaches the Brevo list.
+Deletion: `20260921121000` unblocks deleting paid checks and refunded
+accounts and makes refund reasons saveable (`record_refund_reason`).
+Credits: `20260921122000` refuses a refund while a check runs and reserves
+only spendable credit. Documents no longer fail on names outside
+Windows-1252. Frontend: signed-in pages lazy load (public JS 249 to 195 kB
+gzip), error boundary, Back, Retry, New Check and post-payment balance
+fixes, the landing page keeps its prerendered HTML, `/newsletter/unsubscribe`
+is served, per page Twitter tags, history copy corrected. Control Centre
+exports are audited. `scripts/local-db/replay.sh` replays migrations
+without Docker.
+
+**Verified.** Every database finding reproduced, and every fix checked, on a
+local replay of all 63 migrations. `npm run lint` (0 errors, 2 existing
+warnings), `npm run typecheck`, `npm test` 42/42 files, 631 assertions,
+`npm run build` (CSP reconciled, 170 JSON-LD blocks hashed), admin lint,
+typecheck and build, `npm run test:admin`. `deno check` on the nine changed
+functions: no new diagnostics against origin/main. Browser pass on a local
+`dist/` server. Production not touched.
+
+**Blockers.** None in code. Deployment is the founder's: see Open items.
+
+**Founder action required.** Approve and run the three migrations; both
+sides tolerate the other's old version, so the push may come before or after
+the merge. Merging deploys every Edge Function (`_shared/` changed). The
+Control Centre needs `cd admin && vercel --prod`. CV objects orphaned before
+this change (replaced versions) remain in the `cvs` bucket until the purge
+reaches their checks; older than 24 hours they need a one-off cleanup.
+
+**Next technical step.** After the push: regenerate types from production,
+then confirm an anon read of `product_feedback` is refused.
+
+**Commit or PR.** PR #96, branch `audit/production-hardening`, not merged. Migrations applied to production on 2026-09-21.
 
 ---
 

@@ -35,6 +35,13 @@ export interface StartAnalysisDeps {
   /** Current `checks.status` for the row, or null if it cannot be read. */
   getStatus: () => Promise<string | null>
   sleep: (ms: number) => Promise<void>
+  /**
+   * The row's status before this start. A new check starts from 'draft'; a
+   * Retry starts from 'failed'. Only a move away from it means the server
+   * accepted the request: treating any status other than 'draft' as
+   * accepted made a Retry return at once, before the server had started.
+   */
+  startedFrom?: string
   pollIntervalMs?: number
   maxWaitMs?: number
 }
@@ -76,7 +83,7 @@ export async function startAnalysis(deps: StartAnalysisDeps): Promise<void> {
       if (outcome.kind === 'rejected') throw outcome.error
       // Transport failure. The request may well have reached the server
       // before the connection died, so ask the database rather than assume.
-      if (await hasLeftDraft(deps)) return
+      if (await hasStarted(deps)) return
       throw new Error(CONNECTION_DROPPED_MESSAGE)
     }
 
@@ -87,14 +94,15 @@ export async function startAnalysis(deps: StartAnalysisDeps): Promise<void> {
     // A settled request is a more precise answer than a status poll, and a
     // rejection must not be masked by a status read that happens to succeed.
     if (state.outcome) continue
-    if (await hasLeftDraft(deps)) return
+    if (await hasStarted(deps)) return
   }
 }
 
-async function hasLeftDraft(deps: StartAnalysisDeps): Promise<boolean> {
+async function hasStarted(deps: StartAnalysisDeps): Promise<boolean> {
+  const startedFrom = deps.startedFrom ?? 'draft'
   try {
     const status = await deps.getStatus()
-    return status !== null && status !== 'draft'
+    return status !== null && status !== startedFrom
   } catch {
     // An unreadable status is not evidence either way; keep waiting.
     return false

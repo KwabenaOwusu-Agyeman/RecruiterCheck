@@ -277,7 +277,7 @@ async function revenueByCurrency(
   // Subtract refunds finalised in the same window, matched back to the batch
   // they reverse so the currency is the batch's own.
   const refunded = await readRows<{
-    batch_id: string
+    batch_id: string | null
     credit_batches: { amount_paid: number | null; currency: string | null } | null
   }>(
     db

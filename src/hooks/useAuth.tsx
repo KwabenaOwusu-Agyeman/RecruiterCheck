@@ -19,6 +19,9 @@ interface AuthContextValue {
   session: Session | null
   user: User | null
   profile: Profile | null
+  // The last profile load failed. Pages that cannot work without the
+  // profile show a retry instead of waiting for it forever.
+  profileError: boolean
   loading: boolean
   refreshProfile: () => Promise<void>
   setSessionImmediate: (session: Session) => void
@@ -29,7 +32,12 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [profileError, setProfileError] = useState(false)
   const [loading, setLoading] = useState(true)
+  // Who is signed in right now. A profile request still running when the
+  // user signs out (or another account signs in) must not write its result
+  // back: /pricing showed the previous user's balance after sign-out.
+  const currentUserId = useRef<string | null>(null)
 
   // Two callers race on every single page load: init() below, and the
   // INITIAL_SESSION event that onAuthStateChange fires immediately after.
@@ -47,7 +55,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const promise = (async () => {
       try {
         const nextProfile = await getProfile(userId)
+        if (currentUserId.current !== userId) return
         setProfile(nextProfile)
+        setProfileError(false)
+      } catch (error) {
+        if (currentUserId.current === userId) setProfileError(true)
+        console.error('Could not load profile', error instanceof Error ? error.message : error)
       } finally {
         if (inFlightProfile.current?.userId === userId) inFlightProfile.current = null
       }
@@ -69,6 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // user back to /sign-in before their session had "arrived" in context.
   const setSessionImmediate = useCallback(
     (nextSession: Session) => {
+      currentUserId.current = nextSession.user.id
       setSession(nextSession)
       setLoading(false)
       void loadProfile(nextSession.user.id)
@@ -85,6 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data } = await supabase.auth.getSession()
       if (!mounted) return
 
+      currentUserId.current = data.session?.user.id ?? null
       setSession(data.session)
 
       if (data.session?.user.id) {
@@ -115,7 +130,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // has its own listener to pick this session up for that one purpose.
       if (event === 'PASSWORD_RECOVERY') return
 
-      setSession(nextSession)
+      currentUserId.current = nextSession?.user.id ?? null
+      // The auth client emits SIGNED_IN with a new session object every time
+      // the tab becomes visible. Keeping the current object while the token
+      // and user are unchanged stops every effect keyed on the user from
+      // re-running on each tab switch. USER_UPDATED always takes the new one.
+      setSession((previous) =>
+        event !== 'USER_UPDATED' &&
+        previous &&
+        nextSession &&
+        previous.access_token === nextSession.access_token &&
+        previous.user.id === nextSession.user.id
+          ? previous
+          : nextSession,
+      )
 
       if (nextSession?.user.id) {
         // Not awaited, for the same reason as init() above.
@@ -124,6 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         recordAcquisitionOnce(nextSession.user.id)
       } else {
         setProfile(null)
+        setProfileError(false)
       }
 
       setLoading(false)
@@ -140,11 +169,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       user: session?.user ?? null,
       profile,
+      profileError,
       loading,
       refreshProfile,
       setSessionImmediate,
     }),
-    [session, profile, loading, refreshProfile, setSessionImmediate],
+    [session, profile, profileError, loading, refreshProfile, setSessionImmediate],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -1080,7 +1080,7 @@ export type Database = {
       refund_events: {
         Row: {
           attempt_number: number
-          batch_id: string
+          batch_id: string | null
           created_at: string
           finalized_at: string | null
           id: string
@@ -1088,11 +1088,11 @@ export type Database = {
           reason_detail: string | null
           status: string
           stripe_refund_id: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           attempt_number?: number
-          batch_id: string
+          batch_id?: string | null
           created_at?: string
           finalized_at?: string | null
           id?: string
@@ -1100,11 +1100,11 @@ export type Database = {
           reason_detail?: string | null
           status?: string
           stripe_refund_id?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           attempt_number?: number
-          batch_id?: string
+          batch_id?: string | null
           created_at?: string
           finalized_at?: string | null
           id?: string
@@ -1112,7 +1112,7 @@ export type Database = {
           reason_detail?: string | null
           status?: string
           stripe_refund_id?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -1245,20 +1245,6 @@ export type Database = {
           rating: number | null
           target_role: string | null
         }
-        Insert: {
-          comment?: string | null
-          created_at?: string | null
-          display_name?: string | null
-          rating?: number | null
-          target_role?: string | null
-        }
-        Update: {
-          comment?: string | null
-          created_at?: string | null
-          display_name?: string | null
-          rating?: number | null
-          target_role?: string | null
-        }
         Relationships: []
       }
     }
@@ -1370,6 +1356,16 @@ export type Database = {
           total_keyword_scans_available: number
         }[]
       }
+      get_public_testimonials: {
+        Args: never
+        Returns: {
+          comment: string
+          created_at: string
+          display_name: string
+          rating: number
+          target_role: string
+        }[]
+      }
       grant_check_credits: {
         Args: {
           p_amount: number
@@ -1431,6 +1427,14 @@ export type Database = {
         Returns: {
           reconciled_count: number
         }[]
+      }
+      record_refund_reason: {
+        Args: {
+          p_reason: string
+          p_reason_detail: string
+          p_refund_event_id: string
+        }
+        Returns: undefined
       }
       recover_external_refund: {
         Args: { p_stripe_payment_intent_id: string; p_stripe_refund_id: string }

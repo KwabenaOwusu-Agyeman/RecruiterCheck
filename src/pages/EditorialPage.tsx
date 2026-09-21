@@ -168,10 +168,11 @@ function EditorialArticle({
           __html: JSON.stringify({
             '@context': 'https://schema.org',
             '@type': 'BreadcrumbList',
+            // No section crumb: there is no /resources or /newsletter index
+            // page, and a breadcrumb item must resolve. Add it back with one.
             itemListElement: [
               { '@type': 'ListItem', position: 1, name: 'Home', item: BRAND.canonicalUrl },
-              { '@type': 'ListItem', position: 2, name: sectionName, item: `${BRAND.canonicalUrl}${base}` },
-              { '@type': 'ListItem', position: 3, name: item.title, item: url },
+              { '@type': 'ListItem', position: 2, name: item.title, item: url },
             ],
           }),
         }}

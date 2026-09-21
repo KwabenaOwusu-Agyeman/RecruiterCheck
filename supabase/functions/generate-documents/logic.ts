@@ -277,7 +277,20 @@ export function stripExampleClause(text: string): string {
   return text.replace(/\s*(?:Sample wording|Example):\s*[\s\S]*$/i, '').trim()
 }
 
-export function validateDocuments(raw: RawDocuments): RawDocuments {
+/**
+ * Which documents the caller will actually deliver. A document that will not
+ * be rendered is still normalised and returned, but its own content checks
+ * are skipped: a Starter or Active CV request should not fail, or burn a
+ * retry, because of a cover letter nobody will receive.
+ */
+export interface ValidationScope {
+  coverLetter: boolean
+  recruiterMessage: boolean
+}
+
+const VALIDATE_EVERYTHING: ValidationScope = { coverLetter: true, recruiterMessage: true }
+
+export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VALIDATE_EVERYTHING): RawDocuments {
   const cv = raw.tailored_cv
   const letter = raw.cover_letter
   const message = raw.recruiter_message
@@ -330,37 +343,51 @@ export function validateDocuments(raw: RawDocuments): RawDocuments {
   if (!fullName) throw new Error('Tailored CV is missing a name')
   if (!professionalSummary) throw new Error('Tailored CV is missing a professional summary')
   if (experience.length === 0) throw new Error('Tailored CV is missing experience')
-  if (!salutation) throw new Error('Cover letter is missing a salutation')
-  if (!introParagraph) throw new Error('Cover letter is missing an introduction')
-  if (bodyParagraphs.length !== REQUIRED_BODY_PARAGRAPHS) {
-    throw new Error('Cover letter must have exactly 3 body paragraphs')
+  if (scope.coverLetter) {
+    if (!salutation) throw new Error('Cover letter is missing a salutation')
+    if (!introParagraph) throw new Error('Cover letter is missing an introduction')
+    if (bodyParagraphs.length !== REQUIRED_BODY_PARAGRAPHS) {
+      throw new Error('Cover letter must have exactly 3 body paragraphs')
+    }
+    if (!conclusionParagraph) throw new Error('Cover letter is missing a conclusion')
+    if (!thankYouLine) throw new Error('Cover letter is missing a thank you line')
   }
-  if (!conclusionParagraph) throw new Error('Cover letter is missing a conclusion')
-  if (!thankYouLine) throw new Error('Cover letter is missing a thank you line')
-  if (!greeting) throw new Error('Recruiter message is missing a greeting')
-  if (messageBody.length < 20) throw new Error('Recruiter message output is too short')
-  if (!closingLine) throw new Error('Recruiter message is missing a closing line')
+  if (scope.recruiterMessage) {
+    if (!greeting) throw new Error('Recruiter message is missing a greeting')
+    if (messageBody.length < 20) throw new Error('Recruiter message output is too short')
+    if (!closingLine) throw new Error('Recruiter message is missing a closing line')
+  }
 
   // The letter must be written in the candidate's own first-person voice, not
   // a third-person recommendation about them — reject and retry if the model
   // slipped into naming the candidate anywhere in the letter body.
   const letterBody = `${introParagraph} ${bodyParagraphs.join(' ')} ${conclusionParagraph}`
-  if (containsName(letterBody, fullName)) {
+  if (scope.coverLetter && containsName(letterBody, fullName)) {
     throw new Error('Cover letter is written in third person instead of first person')
   }
-  if (containsName(messageBody, fullName)) {
+  if (scope.recruiterMessage && containsName(messageBody, fullName)) {
     throw new Error('Recruiter message is written in third person instead of first person')
   }
 
   // The recruiter message must stay qualitative, not cite statistics (the
   // prompt asks for this, but the model can still slip in a number).
-  if (/\d/.test(messageBody)) {
+  if (scope.recruiterMessage && /\d/.test(messageBody)) {
     throw new Error('Recruiter message contains a statistic instead of a qualitative reason')
   }
+
+  // Only the documents that will be delivered are checked below.
+  const deliveredText = [
+    professionalSummary,
+    ...(scope.coverLetter ? [introParagraph, ...bodyParagraphs, conclusionParagraph] : []),
+    ...(scope.recruiterMessage ? [messageBody] : []),
+  ].join(' ')
 
   // This app is English only — a job description or CV in another language
   // can still pull the model's output toward that language, so verify the
   // model actually complied rather than trusting the prompt instruction alone.
+  // Language is a property of the whole response, so this reads every
+  // document whatever the scope: a CV summary alone is too short for the
+  // heuristic, and narrowing it would fail CV only requests more often.
   const combinedDocContent = [professionalSummary, introParagraph, ...bodyParagraphs, conclusionParagraph, messageBody].join(' ')
   if (!looksLikeEnglish(combinedDocContent)) {
     throw new Error('Document content did not look like English')
@@ -416,7 +443,7 @@ export function validateDocuments(raw: RawDocuments): RawDocuments {
     )
   }
 
-  const placeholderCheckText = [professionalSummary, introParagraph, ...bodyParagraphs, conclusionParagraph, messageBody].join(' ')
+  const placeholderCheckText = deliveredText
   if (containsPlaceholder(placeholderCheckText)) {
     throw new Error('Document contains an unfilled example placeholder (e.g. "X%") instead of real or omitted content')
   }
@@ -466,4 +493,97 @@ export function validateDocuments(raw: RawDocuments): RawDocuments {
       sign_off: signOff,
     },
   }
+}
+
+// ---------------------------------------------------------------------------
+// PDF text safety
+// ---------------------------------------------------------------------------
+
+// pdf-lib's standard fonts (Helvetica) encode WinAnsi (Windows-1252) only and
+// throw on anything else, so "Łukasz", "Şebnem" or an arrow in the model's
+// output failed the whole request after the model had already been paid for.
+// Embedding a Unicode font would need a new dependency; until then, text is
+// brought into WinAnsi: accents WinAnsi lacks are dropped from their base
+// letter, a few common symbols get plain equivalents, and anything left that
+// cannot be encoded is removed.
+const WINANSI_EXTRAS = new Set(
+  Array.from('€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ'),
+)
+
+const PDF_REPLACEMENTS: Record<string, string> = {
+  'Ł': 'L', 'ł': 'l', 'Đ': 'D', 'đ': 'd', 'Ħ': 'H', 'ħ': 'h', 'ı': 'i', 'Ŀ': 'L', 'ŀ': 'l',
+  'Ŧ': 'T', 'ŧ': 't', 'ĸ': 'k', 'Ŋ': 'N', 'ŋ': 'n', 'Ə': 'E', 'ə': 'e',
+  '→': '->', '←': '<-', '↔': '<->', '⇒': '=>', '≥': '>=', '≤': '<=', '≠': '!=',
+  '−': '-', '‐': '-', '‑': '-', '‒': '-', '―': '-', '′': "'", '″': '"',
+  '\u00a0': ' ', '\u2009': ' ', '\u202f': ' ', '\u200b': '',
+}
+
+function isWinAnsiEncodable(char: string): boolean {
+  const code = char.codePointAt(0) ?? 0
+  if (char === '\n' || char === '\r' || char === '\t') return true
+  if (code >= 0x20 && code <= 0x7e) return true
+  if (code >= 0xa1 && code <= 0xff) return true
+  return WINANSI_EXTRAS.has(char)
+}
+
+export function toPdfSafeText(text: string): string {
+  let out = ''
+  for (const char of text) {
+    if (isWinAnsiEncodable(char)) {
+      out += char
+      continue
+    }
+    if (char in PDF_REPLACEMENTS) {
+      out += PDF_REPLACEMENTS[char]
+      continue
+    }
+    const base = char.normalize('NFKD').replace(/\p{M}+/gu, '')
+    if (base && Array.from(base).every(isWinAnsiEncodable)) {
+      out += base
+    }
+    // Anything else (emoji, CJK, symbols) cannot be drawn and is dropped.
+  }
+  return out
+}
+
+/** Applies toPdfSafeText to every string in a value, keeping its shape. */
+export function toPdfSafe<T>(value: T): T {
+  if (typeof value === 'string') return toPdfSafeText(value) as T
+  if (Array.isArray(value)) return value.map((item) => toPdfSafe(item)) as T
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, toPdfSafe(item)])) as T
+  }
+  return value
+}
+
+// ---------------------------------------------------------------------------
+// Failure reasons for logs
+// ---------------------------------------------------------------------------
+
+// Error messages from validation and from the model call can carry the
+// candidate's details (the model's own list of claims, fragments of its
+// output). Logs get a fixed reason code, never the message, the same rule
+// analyze-check follows with classifyValidationFailure.
+export function classifyGenerationError(message: string): string {
+  if (message.startsWith('Model reported unverified claims')) return 'unverified_claims'
+  const http = /^OpenAI API error: (\d{3})/.exec(message)
+  if (http) return `openai_http_${http[1]}`
+  if (message.includes('timed out')) return 'timeout'
+  if (message.startsWith('Empty response')) return 'empty_response'
+  if (message.includes('JSON')) return 'invalid_json'
+  if (message.startsWith('Tailored CV')) return 'cv_incomplete'
+  if (message.startsWith('Cover letter')) return 'cover_letter_invalid'
+  if (message.startsWith('Recruiter message')) return 'recruiter_message_invalid'
+  if (message.includes('placeholder')) return 'placeholder'
+  if (message.includes('did not look like English')) return 'not_english'
+  if (message.includes('WinAnsi')) return 'pdf_encoding'
+  return 'other'
+}
+
+/** A model error worth retrying: timeouts, rate limits, server errors, bad output. */
+export function isRetryableGenerationError(reason: string): boolean {
+  const http = /^openai_http_(\d{3})$/.exec(reason)
+  if (!http) return true
+  const status = Number(http[1])
+  return status === 408 || status === 409 || status === 429 || status >= 500
 }

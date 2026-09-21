@@ -24,6 +24,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { usePageMeta } from '@/hooks/usePageMeta'
 import {
   analyzeCheck,
+  CheckNotEditableError,
   createDraftCheck,
   extractJobDescriptionFromFile,
   extractJobDescriptionFromUrl,
@@ -55,12 +56,36 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error'
 type CvInputMode = 'file' | 'paste'
 type JobInputMode = 'paste' | 'url' | 'upload'
 
+/**
+ * /checks/new and /checks/:id/edit render the same component in the same
+ * place, so React Router reuses one instance between them. That is needed
+ * when a CV upload moves a new check from /checks/new to its edit URL, but
+ * going the other way ("New Check" while editing a draft, or Back from one
+ * draft to another) kept the old draft's id and fields, and the next
+ * autosave or Check acted on the wrong draft. A new key on those
+ * transitions starts clean.
+ */
 export function NewCheckPage() {
+  const { id } = useParams<{ id?: string }>()
+  const [previousId, setPreviousId] = useState(id)
+  const [generation, setGeneration] = useState(0)
+  if (id !== previousId) {
+    setPreviousId(id)
+    // Only the first save of a new check (no id, then its id) keeps the
+    // instance; any move away from a draft, to /checks/new or to another
+    // draft (Back after starting a new one), starts clean.
+    if (previousId) setGeneration((value) => value + 1)
+  }
+  return <NewCheckForm key={generation} />
+}
+
+function NewCheckForm() {
   usePageMeta({ title: 'New Check | MyRecruiterCheck', description: 'Start a new Recruiter Check.', path: '/checks/new', noindex: true })
   const { id } = useParams<{ id?: string }>()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { user, profile } = useAuth()
+  const { user, profile, profileError, refreshProfile } = useAuth()
+  const userId = user?.id ?? null
 
   const [gateChecked, setGateChecked] = useState(false)
   const [gateReason, setGateReason] = useState<CheckGateReason>(null)
@@ -92,9 +117,23 @@ export function NewCheckPage() {
   const checkIdRef = useRef<string | null>(id ?? null)
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const cvSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // CV saves run one after another. Two typing pauses used to start two
+  // saves at once, and before the first had created the draft the second
+  // created another one, with its own CV copy.
+  const cvSaveChainRef = useRef<Promise<void>>(Promise.resolve())
+  const pendingCvTextRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (!id) trackEvent('new_check_opened')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // The profile in memory was loaded when the session started. A check or a
+  // purchase since then changes the balance the gate below reads, so fetch
+  // it again before deciding, rather than showing "out of checks" to someone
+  // who has just paid, or "allowed" to someone the server will refuse.
+  useEffect(() => {
+    if (!id) void refreshProfile().catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -114,20 +153,28 @@ export function NewCheckPage() {
     setGateChecked(true)
   }, [id, user, profile])
 
-  // Load an existing draft when editing.
+  // Load an existing draft when editing. Keyed on the user id, not the user
+  // object: the auth client hands out a new object on every tab switch, and
+  // reloading then overwrote whatever had just been typed.
   useEffect(() => {
-    if (!id || !user) return
+    if (!id || !userId) return
 
     let cancelled = false
 
     async function loadDraft() {
       try {
-        const checks = await getChecks(user!.id)
+        const checks = await getChecks(userId!)
         if (cancelled) return
 
         const existing = checks.find((c) => c.id === id)
-        if (!existing || existing.status !== 'draft') {
+        if (!existing) {
           setNotFound(true)
+          return
+        }
+        // Already submitted: Back from the results page, or a reload while
+        // it was starting, lands here. Its results page is where it lives.
+        if (existing.status !== 'draft') {
+          navigate(`/checks/${existing.id}`, { replace: true })
           return
         }
 
@@ -150,7 +197,7 @@ export function NewCheckPage() {
     return () => {
       cancelled = true
     }
-  }, [id, user])
+  }, [id, userId, navigate])
 
   // Landing-page role pills: /checks/new?role=<job title>. Prefills the job
   // title with the role the visitor picked in the hero, so the choice
@@ -302,7 +349,14 @@ export function NewCheckPage() {
     }
   }
 
-  async function saveCvFile(file: File) {
+  // Queues the save behind any that is still running; see cvSaveChainRef.
+  function saveCvFile(file: File): Promise<void> {
+    const next = cvSaveChainRef.current.catch(() => {}).then(() => saveCvFileNow(file))
+    cvSaveChainRef.current = next
+    return next
+  }
+
+  async function saveCvFileNow(file: File) {
     if (!user) return
 
     try {
@@ -343,6 +397,11 @@ export function NewCheckPage() {
       return
     }
 
+    if (file.size === 0) {
+      setError('This file is empty. Choose the file that contains your CV.')
+      return
+    }
+
     setError(null)
     setUploadingCv(true)
 
@@ -363,17 +422,25 @@ export function NewCheckPage() {
 
     if (cvSaveTimeoutRef.current) clearTimeout(cvSaveTimeoutRef.current)
     setSaveState('saving')
+    pendingCvTextRef.current = trimmed
 
     cvSaveTimeoutRef.current = setTimeout(() => {
+      cvSaveTimeoutRef.current = null
+      pendingCvTextRef.current = null
       void saveCvFile(textToCvFile(trimmed))
         .then(() => setSaveState('saved'))
-        .catch(() => setSaveState('error'))
+        .catch((err) => {
+          if (err instanceof CheckNotEditableError && checkIdRef.current) {
+            navigate(`/checks/${checkIdRef.current}`, { replace: true })
+            return
+          }
+          setSaveState('error')
+        })
     }, 800)
   }
 
   async function handleAnalyze() {
-    const checkId = checkIdRef.current
-    if (!checkId) return
+    if (!checkIdRef.current || analyzing) return
 
     if (jobDescription.trim().length < MIN_JOB_DESCRIPTION_LENGTH) {
       setError(
@@ -385,13 +452,51 @@ export function NewCheckPage() {
     setError(null)
     setAnalyzing(true)
 
+    // A pasted CV edited in the last 800 ms has not been saved yet; save it
+    // now so the check runs on the text on screen, then wait for any save
+    // already running.
+    if (cvSaveTimeoutRef.current && pendingCvTextRef.current) {
+      clearTimeout(cvSaveTimeoutRef.current)
+      cvSaveTimeoutRef.current = null
+      const pending = pendingCvTextRef.current
+      pendingCvTextRef.current = null
+      void saveCvFile(textToCvFile(pending)).catch(() => {})
+    }
+    try {
+      await cvSaveChainRef.current
+      setSaveState((state) => (state === 'saving' ? 'saved' : state))
+    } catch (err) {
+      // Running the check now would analyse the previously saved CV, not
+      // the text on screen.
+      if (err instanceof CheckNotEditableError && checkIdRef.current) {
+        navigate(`/checks/${checkIdRef.current}`, { replace: true })
+        return
+      }
+      setSaveState('error')
+      setError('Your CV could not be saved. Check your connection and try again.')
+      setAnalyzing(false)
+      return
+    }
+
+    const checkId = checkIdRef.current
+    if (!checkId) {
+      setAnalyzing(false)
+      return
+    }
+
     try {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
       await updateDraftCheck(checkId, { jobTitle, companyName, jobDescription })
       await analyzeCheck(checkId)
       trackEvent('check_submitted')
-      navigate(`/checks/${checkId}`)
+      // Replace, so Back from the results goes to where the user came from
+      // rather than to this form for a check that is no longer a draft.
+      navigate(`/checks/${checkId}`, { replace: true })
     } catch (err) {
+      if (err instanceof CheckNotEditableError) {
+        navigate(`/checks/${checkId}`, { replace: true })
+        return
+      }
       setError(err instanceof Error ? err.message : 'Could not analyze this check')
       setAnalyzing(false)
     }
@@ -421,6 +526,22 @@ export function NewCheckPage() {
           </div>
         </Card>
       </>
+    )
+  }
+
+  if (!gateChecked && profileError) {
+    return (
+      <Card className="mx-auto max-w-md p-[20px] text-center sm:p-8">
+        <h2 className="text-base font-semibold text-text-primary">We could not load your account</h2>
+        <p className="mt-2 text-sm text-text-secondary">
+          Check your connection and try again.
+        </p>
+        <div className="mt-6 flex justify-center">
+          <Button size="sm" onClick={() => void refreshProfile()}>
+            Try again
+          </Button>
+        </div>
+      </Card>
     )
   }
 

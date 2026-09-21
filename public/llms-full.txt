@@ -1,7 +1,7 @@
 # MyRecruiterCheck: full product reference
 
 Official site: https://myrecruitercheck.com/
-Last reviewed: 26 August 2026
+Last reviewed: 21 September 2026
 
 ## What it is
 
@@ -31,11 +31,11 @@ MyRecruiterCheck does not require a matching job title. Internships, academic an
 ## Pricing (as of last review date above)
 
 - Free: 1 free Recruiter Check for life (Interview Score + Recruiter Feedback), plus 3 free keyword scans before spending a check; unlimited keyword scans after any paid pack purchase.
-- Starter pack: €10 one-time, 5 checks. Includes Interview Score, Recruiter Feedback, Improved CV Draft (for checks scoring 61+), and access to your most recent check.
+- Starter pack: €10 one-time, 5 checks. Includes Interview Score, Recruiter Feedback, Improved CV Draft (for checks scoring 61 to 84), and access to your full check history.
 - Active pack: €20 one-time, 15 checks. Same inclusions as Starter.
-- Power pack: €40 one-time, 40 checks. Adds a Cover Letter and Recruiter Message to every check, plus access to full check history (not just the most recent check).
+- Power pack: €40 one-time, 40 checks. Adds a Cover Letter and Recruiter Message to every eligible check.
 - There is no subscription. Nothing renews automatically. Purchased checks are valid for 90 days from purchase; the free check never expires.
-- Refunds: a full refund can be requested from the billing page if the most recent pack purchased is still fully unused and within 7 days of purchase.
+- Refunds: a full refund can be requested from the pricing page if the most recent pack purchased is still fully unused and within 7 days of purchase.
 
 ## Data handling
 

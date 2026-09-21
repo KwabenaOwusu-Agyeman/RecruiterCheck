@@ -196,6 +196,23 @@ export async function getCheck(checkId: string): Promise<Check | null> {
 }
 
 /**
+ * A draft edit found no draft to change: the check has already been
+ * submitted (or is no longer the caller's). PostgREST reports that as
+ * PGRST116 ("JSON object requested, multiple (or no) rows returned"), which
+ * used to reach the form verbatim.
+ */
+export class CheckNotEditableError extends Error {
+  constructor() {
+    super('This check has already been submitted, so it can no longer be edited.')
+    this.name = 'CheckNotEditableError'
+  }
+}
+
+function draftWriteError(error: { code?: string }): Error {
+  return error.code === 'PGRST116' ? new CheckNotEditableError() : (error as Error)
+}
+
+/**
  * Creates the draft row as soon as a CV is attached, per the locked spec
  * ("New Check creates a draft row immediately on CV upload"). Job description
  * may still be empty at this point — the draft is filled in via updateDraftCheck.
@@ -226,7 +243,11 @@ export async function createDraftCheck(userId: string, cvFile: File): Promise<Ch
     .select('*')
     .single()
 
-  if (error) throw error
+  if (error) {
+    // Nothing points at the upload, so nothing would ever delete it.
+    void supabase.storage.from('cvs').remove([storagePath])
+    throw error
+  }
   return mapCheck(data as Check)
 }
 
@@ -251,7 +272,7 @@ export async function updateDraftCheck(
     .select('*')
     .single()
 
-  if (error) throw error
+  if (error) throw draftWriteError(error)
   return mapCheck(data as Check)
 }
 
@@ -262,6 +283,15 @@ export async function replaceDraftCv(
 ): Promise<Check> {
   const fileExt = extensionForMimeType(cvFile.type)
   const storagePath = `${userId}/${checkId}-${Date.now()}.${fileExt}`
+
+  // Read before replacing, so the version being replaced can be deleted.
+  // Every pasted-CV autosave comes through here, and each earlier version
+  // used to stay in Storage.
+  const { data: previous } = await supabase
+    .from('checks')
+    .select('cv_storage_path')
+    .eq('id', checkId)
+    .maybeSingle()
 
   const { error: uploadError } = await supabase.storage
     .from('cvs')
@@ -280,7 +310,17 @@ export async function replaceDraftCv(
     .select('*')
     .single()
 
-  if (error) throw error
+  if (error) {
+    void supabase.storage.from('cvs').remove([storagePath])
+    throw draftWriteError(error)
+  }
+
+  // Best effort: the 24 hour purge and check deletion also remove every
+  // version stored for a check, so a failure here is caught later.
+  const previousPath = previous?.cv_storage_path
+  if (previousPath && previousPath !== storagePath && previousPath.startsWith(`${userId}/`)) {
+    void supabase.storage.from('cvs').remove([previousPath])
+  }
   return mapCheck(data as Check)
 }
 
@@ -294,11 +334,12 @@ export async function replaceDraftCv(
  * result quietly landed in the database. See analysisStart.ts for the exact
  * rules; the results page polls for the outcome from there.
  */
-export async function analyzeCheck(checkId: string): Promise<void> {
+export async function analyzeCheck(checkId: string, startedFrom: 'draft' | 'failed' = 'draft'): Promise<void> {
   await startAnalysis({
     invoke: () => invokeAnalyzeCheck(checkId),
     getStatus: () => getCheckStatus(checkId),
     sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+    startedFrom,
   })
 }
 

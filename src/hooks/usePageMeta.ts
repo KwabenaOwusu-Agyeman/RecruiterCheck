@@ -72,6 +72,8 @@ export function usePageMeta({ title, description, path, noindex = false }: PageM
     setMetaTag('meta[property="og:title"]', 'content', title)
     setMetaTag('meta[property="og:description"]', 'content', description)
     setMetaTag('meta[property="og:url"]', 'content', url)
+    setMetaTag('meta[name="twitter:title"]', 'content', title)
+    setMetaTag('meta[name="twitter:description"]', 'content', description)
     if (noindex) {
       setMetaTag('meta[name="robots"]', 'content', 'noindex, nofollow')
     }

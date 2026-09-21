@@ -60,8 +60,9 @@ export function MyChecksPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [pendingDelete, setPendingDelete] = useState<Check | null>(null)
 
-  // RLS itself only returns the single most recent check row for a
-  // Starter-only user (see migration gate_check_history_by_pack) — `checks`
+  // RLS itself only returns the single most recent check row for a user
+  // who has never bought a pack (see migration
+  // grant_check_history_to_all_packs) — `checks`
   // is already the entitled set, nothing to slice client-side. totalCount
   // comes from a separate count-only RPC so the "N earlier checks are
   // locked" message stays accurate without needing the (deliberately
@@ -287,8 +288,8 @@ export function MyChecksPage() {
       {lockedCount > 0 ? (
         <Card className="mt-6 flex flex-col items-center gap-3 p-4 text-center sm:flex-row sm:justify-between sm:text-left">
           <p className="text-sm font-medium text-navy">
-            {lockedCount} earlier {lockedCount === 1 ? 'check is' : 'checks are'} locked. Active and
-            Power packs unlock your full check history.
+            {lockedCount} earlier {lockedCount === 1 ? 'check is' : 'checks are'} locked. Any check
+            pack unlocks your full check history.
           </p>
           <Link to="/pricing" className="shrink-0">
             <Button size="sm">View packs</Button>

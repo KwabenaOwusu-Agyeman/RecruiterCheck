@@ -10,6 +10,7 @@ import {
   type AnalysisResult,
   type RawAnalysis,
 } from './logic.ts'
+import { fileExtensionForLog, isOwnStoragePath } from '../_shared/storage-path.ts'
 import { buildAnalysisRequestBody } from './prompt.ts'
 import { buildBrevoPayload, isTestAccountEmail, resolveSendDecision } from './trustpilot-email.ts'
 
@@ -119,6 +120,14 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Check not found' }, 404)
     }
 
+    // The service role downloads this path below, bypassing Storage policies,
+    // so it must be inside the caller's own folder. Refused before anything
+    // is reserved, so nothing changes state.
+    if (!isOwnStoragePath(check.cv_storage_path, user.id)) {
+      console.error('analyze-check: CV path outside the owner folder', { checkId })
+      return jsonResponse({ error: 'Could not read CV file' }, 400)
+    }
+
     if (check.job_description.trim().length < 50) {
       return jsonResponse({ error: 'Job description is too short to analyze' }, 400)
     }
@@ -176,7 +185,7 @@ Deno.serve(async (req) => {
     } catch (error) {
       console.error('analyze-check: CV parsing failed', {
         checkId,
-        fileName: check.cv_file_name,
+        fileType: fileExtensionForLog(check.cv_file_name),
         message: error instanceof Error ? error.message : String(error),
       })
       await markFailed(adminClient, checkId, 'Could not read text from this CV file')
@@ -283,16 +292,24 @@ Deno.serve(async (req) => {
         checkId,
         message: completeError.message,
       })
-      // complete_check_analysis is one plpgsql call: if it raised partway
-      // through, Postgres rolls back everything it did (status, score
-      // columns, credit consumption, ledger insert) as a unit — so no credit
-      // was consumed here either. The check's row is still 'processing'
-      // (feedback was saved above, but the check itself was never marked
-      // completed), which would otherwise sit there until the 10 minute
-      // staleness window in reserve_check_analysis lets a retry through.
-      // Marking it failed now makes that immediate instead of a silent wait.
-      await markFailed(adminClient, checkId, 'Could not save analysis result')
-      return jsonResponse({ error: 'Could not save analysis result' }, 500)
+      // The call can report an error after its transaction committed (the
+      // connection dropped on the way back). Read the row before undoing
+      // anything: a completed, paid check must keep its feedback.
+      const { data: afterError } = await adminClient.from('checks').select('status').eq('id', checkId).maybeSingle()
+      if (afterError?.status !== 'completed') {
+        // complete_check_analysis is one plpgsql call: if it raised partway
+        // through, Postgres rolled back everything it did (status, scores,
+        // credit, ledger), so no credit was consumed. The feedback saved above
+        // is removed, because the results page shows any feedback row and
+        // leaving it would hand over the analysis without a credit being used.
+        const { error: feedbackCleanupError } = await adminClient.from('feedback').delete().eq('check_id', checkId)
+        if (feedbackCleanupError) {
+          console.error('analyze-check: could not remove feedback after a failed completion', { checkId })
+        }
+        await markFailed(adminClient, checkId, 'Could not save analysis result')
+        return jsonResponse({ error: 'Could not save analysis result' }, 500)
+      }
+      console.error('analyze-check: completion reported an error but the check is completed', { checkId })
     }
 
     logMonitoringEvent({
@@ -466,10 +483,13 @@ async function markFailed(
   checkId: string,
   message: string,
 ) {
+  // Only a check that is still running: never turn a completed (and paid)
+  // check into a failed one, which would let a Retry charge it again.
   await client
     .from('checks')
     .update({ status: 'failed', error_message: message })
     .eq('id', checkId)
+    .eq('status', 'processing')
 }
 
 /**

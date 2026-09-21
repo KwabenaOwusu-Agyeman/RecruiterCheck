@@ -3,9 +3,9 @@ import { CaptureAttribution } from '@/components/CaptureAttribution'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { ScrollToTop } from '@/components/ScrollToTop'
 import { AuthProvider } from '@/hooks/useAuth'
+import { AppErrorBoundary } from '@/components/AppErrorBoundary'
 import { AppLayout } from '@/layouts/AppLayout'
 import { PublicLayout } from '@/layouts/PublicLayout'
-import { AccountPage } from '@/pages/AccountPage'
 import { AboutPage } from '@/pages/AboutPage'
 import { AiEngineerCvCheckerPage } from '@/pages/AiEngineerCvCheckerPage'
 import { AtsResumeCheckerPage } from '@/pages/AtsResumeCheckerPage'
@@ -17,24 +17,19 @@ import { CvKeywordCheckerPage } from '@/pages/CvKeywordCheckerPage'
 import { DataAnalystCvCheckerPage } from '@/pages/DataAnalystCvCheckerPage'
 import { DataScientistCvCheckerPage } from '@/pages/DataScientistCvCheckerPage'
 import { DisclaimerPage } from '@/pages/DisclaimerPage'
-import { ExtensionConnectPage } from '@/pages/ExtensionConnectPage'
 import { FaqPage } from '@/pages/FaqPage'
-import { FeedbackPage } from '@/pages/FeedbackPage'
 import { FreeCvCheckerPage } from '@/pages/FreeCvCheckerPage'
 import { HowInterviewScoreWorksPage } from '@/pages/HowInterviewScoreWorksPage'
 import { LandingPage } from '@/pages/LandingPage'
 import { InterviewProbabilityPage } from '@/pages/InterviewProbabilityPage'
 import { JobApplicationFeedbackPage } from '@/pages/JobApplicationFeedbackPage'
-import { KeywordScanPage } from '@/pages/KeywordScanPage'
 import { MachineLearningEngineerCvCheckerPage } from '@/pages/MachineLearningEngineerCvCheckerPage'
-import { MyChecksPage } from '@/pages/MyChecksPage'
 import { MyRecruiterCheckVsJobscanPage } from '@/pages/MyRecruiterCheckVsJobscanPage'
 import { MyRecruiterCheckVsChatGptPage } from '@/pages/MyRecruiterCheckVsChatGptPage'
 import { MyRecruiterCheckVsKickresumePage } from '@/pages/MyRecruiterCheckVsKickresumePage'
 import { MyRecruiterCheckVsReziPage } from '@/pages/MyRecruiterCheckVsReziPage'
 import { MyRecruiterCheckVsResumeWordedPage } from '@/pages/MyRecruiterCheckVsResumeWordedPage'
 import { MyRecruiterCheckVsTealPage } from '@/pages/MyRecruiterCheckVsTealPage'
-import { NewCheckPage } from '@/pages/NewCheckPage'
 import { NewsletterUnsubscribePage } from '@/pages/NewsletterUnsubscribePage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { PricingPage } from '@/pages/PricingPage'
@@ -48,6 +43,19 @@ import { ResumeJobMatchPage } from '@/pages/ResumeJobMatchPage'
 import { SoftwareEngineerResumeCheckerPage } from '@/pages/SoftwareEngineerResumeCheckerPage'
 import { TailorCvToJobPage } from '@/pages/TailorCvToJobPage'
 import { TermsPage } from '@/pages/TermsPage'
+import { lazyPage } from '@/lib/lazyPage'
+
+// The signed-in app is served from app-shell.html and never prerendered, so
+// its pages load on demand instead of in the bundle every public page pays
+// for. They carry the animation library, which nothing public uses. Public
+// pages stay eager: they are prerendered and hydrated, and a lazy component
+// would suspend during both.
+const AccountPage = lazyPage(() => import('@/pages/AccountPage'), 'AccountPage')
+const ExtensionConnectPage = lazyPage(() => import('@/pages/ExtensionConnectPage'), 'ExtensionConnectPage')
+const FeedbackPage = lazyPage(() => import('@/pages/FeedbackPage'), 'FeedbackPage')
+const KeywordScanPage = lazyPage(() => import('@/pages/KeywordScanPage'), 'KeywordScanPage')
+const MyChecksPage = lazyPage(() => import('@/pages/MyChecksPage'), 'MyChecksPage')
+const NewCheckPage = lazyPage(() => import('@/pages/NewCheckPage'), 'NewCheckPage')
 
 /**
  * Carries the query string across the redirect. A Stripe session created
@@ -138,7 +146,9 @@ export function App() {
       <BrowserRouter>
         <ScrollToTop />
         <CaptureAttribution />
-        <AppRoutes />
+        <AppErrorBoundary>
+          <AppRoutes />
+        </AppErrorBoundary>
       </BrowserRouter>
     </AuthProvider>
   )

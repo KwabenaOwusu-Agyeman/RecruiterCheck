@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
-import { assertStripeEnvironment } from '../_shared/stripe-environment.ts'
+import { removeFolder, type StorageBucketApi } from '../_shared/storage-cleanup.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': 'https://myrecruitercheck.com',
@@ -20,7 +20,6 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
 
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
@@ -36,116 +35,60 @@ Deno.serve(async (req) => {
     }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey)
+    const bucket = (name: string) => adminClient.storage.from(name) as unknown as StorageBucketApi
 
-    // Cancel any active Stripe subscription before wiping the local record
-    // of it, so the user isn't billed after deleting their account. This
-    // must block deletion on a genuine failure — silently deleting the
-    // account while a subscription is still active would leave it billing
-    // an account the user can no longer access or manage. A 404
-    // (resource_missing — already cancelled, or never existed) is not a
-    // failure and does not block deletion.
-    if (stripeSecretKey) {
-      // Stripe is optional here: deletion already proceeds when no key is set.
-      // But a key from the wrong mode must not be treated as "no Stripe" and
-      // silently skipped, because that would delete the account while leaving a
-      // live subscription billing the user. A mode mismatch is a cancellation
-      // failure, so it returns the same 502 the existing failure path returns.
-      try {
-        assertStripeEnvironment(stripeSecretKey)
-      } catch (error) {
-        console.error('delete-account: stripe environment guard failed', {
-          userId: user.id,
-          message: error instanceof Error ? error.message : String(error),
-        })
-        return jsonResponse(
-          { error: 'Could not cancel your subscription. Please try again or contact support.' },
-          502,
-        )
-      }
-
-      const { data: subscription } = await adminClient
-        .from('subscriptions')
-        .select('stripe_subscription_id')
-        .eq('user_id', user.id)
-        .maybeSingle()
-
-      if (subscription?.stripe_subscription_id) {
-        let stripeResponse: Response
-        try {
-          stripeResponse = await fetch(
-            `https://api.stripe.com/v1/subscriptions/${subscription.stripe_subscription_id}`,
-            {
-              method: 'DELETE',
-              headers: { Authorization: `Bearer ${stripeSecretKey}` },
-            },
-          )
-        } catch (stripeError) {
-          console.error('delete-account: Stripe cancellation request failed', {
-            userId: user.id,
-            message: stripeError instanceof Error ? stripeError.message : String(stripeError),
-          })
-          return jsonResponse(
-            { error: 'Could not cancel your subscription. Please try again or contact support.' },
-            502,
-          )
-        }
-
-        if (!stripeResponse.ok) {
-          const errorBody = await stripeResponse.json().catch(() => null)
-          const isAlreadyGone =
-            stripeResponse.status === 404 || errorBody?.error?.code === 'resource_missing'
-
-          if (!isAlreadyGone) {
-            console.error('delete-account: Stripe cancellation failed', {
-              userId: user.id,
-              status: stripeResponse.status,
-            })
-            return jsonResponse(
-              { error: 'Could not cancel your subscription. Please try again or contact support.' },
-              502,
-            )
-          }
-        }
-      }
-    }
-
-    // Nothing retained per the GDPR delete cascade: every CV, generated
-    // document, feedback row (via FK cascade), then the checks themselves.
-    const { data: checks } = await adminClient
-      .from('checks')
-      .select('id, cv_storage_path')
+    // A refund still in flight needs this account to settle: deleting it
+    // detaches the refund record from the user and the pack, and a pending
+    // refund can then never be reconciled. Checked before anything is removed.
+    const { count: pendingRefunds, error: refundCheckError } = await adminClient
+      .from('refund_events')
+      .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id)
-
-    for (const check of checks ?? []) {
-      if (check.cv_storage_path) {
-        await adminClient.storage.from('cvs').remove([check.cv_storage_path])
-      }
-
-      const documentsPrefix = `${user.id}/${check.id}`
-      const { data: documentFiles } = await adminClient.storage
-        .from('documents')
-        .list(documentsPrefix)
-
-      if (documentFiles && documentFiles.length > 0) {
-        await adminClient.storage
-          .from('documents')
-          .remove(documentFiles.map((file) => `${documentsPrefix}/${file.name}`))
-      }
+      .eq('status', 'pending')
+    if (refundCheckError) {
+      console.error('delete-account: pending refund check failed', { userId: user.id, code: refundCheckError.code })
+      return jsonResponse({ error: 'Could not delete your account. Please try again in a moment.' }, 500)
+    }
+    if ((pendingRefunds ?? 0) > 0) {
+      return jsonResponse(
+        {
+          error:
+            'A refund on your account is still being processed. Please try again in a few minutes, or email support@myrecruitercheck.com.',
+        },
+        409,
+      )
     }
 
-    await adminClient.from('checks').delete().eq('user_id', user.id)
-    await adminClient.from('subscriptions').delete().eq('user_id', user.id)
-    await adminClient.from('profiles').delete().eq('id', user.id)
+    // Files first, and the whole of the user's folder in both buckets rather
+    // than the paths on their rows: replaced CV versions and files no row
+    // points at are removed too. A failure stops here, before the account is
+    // touched, so trying again can finish the job.
+    const cvError = await removeFolder(bucket('cvs'), user.id)
+    const documentsError = cvError ? null : await removeFolder(bucket('documents'), user.id)
+    if (cvError || documentsError) {
+      console.error('delete-account: storage removal failed', { userId: user.id })
+      return jsonResponse({ error: 'Could not delete your files. Please try again in a moment.' }, 500)
+    }
 
+    // Deleting the auth user cascades to profiles, and from there to checks,
+    // feedback, credits, the ledger and every other row that belongs to the
+    // user. There is no subscription to cancel: packs are one-time payments
+    // and the subscriptions table was dropped in 20260825084801.
     const { error: deleteUserError } = await adminClient.auth.admin.deleteUser(user.id)
     if (deleteUserError) {
-      console.error('Could not delete auth user:', deleteUserError)
-      return jsonResponse({ error: 'Could not delete account' }, 500)
+      console.error('delete-account: auth user delete failed', { userId: user.id, message: deleteUserError.message })
+      return jsonResponse(
+        {
+          error:
+            'Your files were deleted, but we could not finish deleting your account. Please try again, or email support@myrecruitercheck.com and we will complete it.',
+        },
+        500,
+      )
     }
 
     return jsonResponse({ success: true })
   } catch (error) {
-    console.error('delete-account error:', error)
+    console.error('delete-account error:', error instanceof Error ? error.message : String(error))
     return jsonResponse({ error: 'Internal server error' }, 500)
   }
 })

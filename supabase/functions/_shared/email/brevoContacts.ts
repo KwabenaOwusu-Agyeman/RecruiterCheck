@@ -48,7 +48,10 @@ export async function upsertBrevoContact(email: string, listId: number): Promise
       const patch = await fetch(`https://api.brevo.com/v3/contacts/${encodeURIComponent(email)}`, {
         method: 'PUT',
         headers,
-        body: JSON.stringify({ listIds: [listId], emailBlacklisted: false }),
+        // Never clears a blacklist: Brevo sets it for hard bounces, spam
+        // complaints and its own unsubscribe link, and this endpoint accepts
+        // any address from anyone, so it must not be able to undo those.
+        body: JSON.stringify({ listIds: [listId] }),
       })
       return patch.ok
         ? { added: true }
@@ -56,6 +59,31 @@ export async function upsertBrevoContact(email: string, listId: number): Promise
     }
 
     return { added: false, reason: `Brevo responded ${response.status}` }
+  } catch (error) {
+    return { added: false, reason: `network error: ${error instanceof Error ? error.name : 'unknown'}` }
+  }
+}
+
+/**
+ * Takes a contact off a list, which is what the weekly campaign sends to.
+ * The contact itself is kept, so transactional email (check results, sign
+ * in) is unaffected.
+ *
+ * Never throws. A contact Brevo does not know is already off the list, so a
+ * 404 counts as done.
+ */
+export async function removeBrevoContactFromList(email: string, listId: number): Promise<BrevoContactResult> {
+  const apiKey = Deno.env.get('BREVO_API_KEY')
+  if (!apiKey) return { added: false, reason: 'BREVO_API_KEY not set' }
+
+  try {
+    const response = await fetch(`https://api.brevo.com/v3/contacts/${encodeURIComponent(email)}`, {
+      method: 'PUT',
+      headers: { 'api-key': apiKey, 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ unlinkListIds: [listId] }),
+    })
+    if (response.ok || response.status === 404) return { added: true }
+    return { added: false, reason: `Brevo list removal responded ${response.status}` }
   } catch (error) {
     return { added: false, reason: `network error: ${error instanceof Error ? error.name : 'unknown'}` }
   }
