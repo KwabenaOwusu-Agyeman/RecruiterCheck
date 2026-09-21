@@ -4,6 +4,7 @@ slug: what-recruiters-look-for-on-an-ai-engineer-cv
 title: What recruiters look for on an AI engineer CV
 description: Naming a tool is not the same as having used it. Here is what a recruiter actually looks for on an AI engineer CV, and how to show it.
 published: 2026-09-21
+updated: 2026-09-22
 status: published
 cluster: ai-jobs
 supports: /ai-engineer-cv-checker
@@ -42,7 +43,7 @@ This is the signal that separates a working system from a tutorial that was foll
 
 ## A project counts as much as a job title
 
-None of the above needs a job with "AI Engineer" in the title. A personal project, a hackathon build or coursework can carry exactly the same evidence, built and evaluated, and a CV that shows it gives a recruiter the same thing to weigh. What matters is the work and the checking, not the employment status behind it.
+None of the above needs a job with "AI Engineer" in the title. A personal project, a hackathon build or coursework can carry exactly the same evidence, built and evaluated, and a CV that shows it gives a recruiter the same thing to weigh. What matters is the work and the checking, not the employment status behind it. [Do projects count without a job title?](/resources/do-projects-count-without-a-job-title) makes the full case and covers what makes a project count.
 
 ## A rewrite, before and after
 

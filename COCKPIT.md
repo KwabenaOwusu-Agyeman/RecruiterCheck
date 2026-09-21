@@ -161,7 +161,7 @@ rule, and softened two benefit lines that pushed the same way. Added a
 and a link to Article 7. Reworded the unsourced "decide in seconds" opener.
 `src/pages/RecruiterEvaluationPage.tsx` now links this page. Left for Article
 9, as the review recommended: findings 6 and 8 in part. Brief 7 was approved
-by publishing. Article 5's project paragraph still does not link to Article 7.
+by publishing. Article 5's project paragraph now links to Article 7 (updated 2026-09-22, PR after 105).
 
 **Verified.** lint (no new warnings), typecheck, `npm run test:unit` 16/16,
 `npm run build`. Article 7 live at 200 and in the sitemap after deploy. Built
@@ -175,8 +175,7 @@ are **MANUAL CHECK REQUIRED**.
 **Founder action required.** None. Correct the AlternativeTo price, see Open
 items.
 
-**Next technical step.** Link Article 5's project paragraph to Article 7, if
-approved, since it changes a published article.
+**Next technical step.** Article 9 (software engineer CV first half page) if approved.
 
 **Commit or PR.** Branches `content/publish-article-7` and
 `content/software-engineer-page-fixes`.
