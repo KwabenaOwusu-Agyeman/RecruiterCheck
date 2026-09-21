@@ -220,13 +220,18 @@ Deno.serve(async (req) => {
     // Recorded only after the refund itself has succeeded. A failure here is
     // logged and swallowed: losing the product signal is not worth failing a
     // response for a refund the customer has already been given.
+    //
+    // Through record_refund_reason, not an UPDATE: service_role holds SELECT
+    // only on refund_events (20260905130000), so the direct update this used
+    // to make failed every time and no reason was ever saved.
     if (refundReason) {
-      const { error: reasonError } = await adminClient
-        .from('refund_events')
-        .update({ reason: refundReason, reason_detail: refundReasonDetail })
-        .eq('id', refundEventId)
+      const { error: reasonError } = await adminClient.rpc('record_refund_reason', {
+        p_refund_event_id: refundEventId,
+        p_reason: refundReason,
+        p_reason_detail: refundReasonDetail,
+      })
       if (reasonError) {
-        console.error('request-refund: could not record the refund reason', reasonError)
+        console.error('request-refund: could not record the refund reason', { refundEventId, code: reasonError.code })
       }
     }
 

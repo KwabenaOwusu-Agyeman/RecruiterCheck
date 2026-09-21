@@ -141,7 +141,7 @@ test('a malformed body cannot break the refund', () => {
 test('the reason is recorded only after the refund has succeeded', () => {
   // Written after finalize_refund so it can never influence whether the money
   // moves, and a failure to record it is swallowed rather than surfaced.
-  assert.ok(at("rpc('finalize_refund'") < at("update({ reason: refundReason"))
+  assert.ok(at("rpc('finalize_refund'") < at("rpc('record_refund_reason'"))
   const record = between('if (refundReason) {', 'return jsonResponse({ refunded: true })')
   assert.match(record, /console\.error/)
   assert.ok(!record.includes('return jsonResponse'), 'a failed reason write must not change the response')
