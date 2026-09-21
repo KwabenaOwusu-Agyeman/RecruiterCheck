@@ -3,8 +3,8 @@ type: article
 slug: do-projects-count-without-a-job-title
 title: Do projects count without a job title?
 description: A project can count as evidence without a job title attached. Here is what makes a recruiter treat it that way, and how to describe yours so it does.
-published: 2026-09-21
-status: draft
+published: 2026-09-22
+status: published
 cluster: ai-jobs
 supports: /ai-engineer-cv-checker, /machine-learning-engineer-cv-checker, /data-analyst-cv-checker, /data-scientist-cv-checker, /software-engineer-resume-checker
 noindex: false
