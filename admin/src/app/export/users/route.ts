@@ -1,14 +1,14 @@
 import { requireAdmin } from '@/server/auth'
 import { serviceClient } from '@/server/supabase'
 import { escapeLikeTerm, parseSearch } from '@/lib/params'
-import { csvResponse, EXPORT_LIMIT } from '../csvResponse'
+import { csvResponse, EXPORT_LIMIT, exportFailed, recordExport } from '../csvResponse'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
   // A route handler is a public endpoint, so it re-checks authorisation itself
   // rather than trusting that it is only ever reached from a gated page.
-  await requireAdmin()
+  const { admin } = await requireAdmin()
 
   const search = parseSearch(new URL(request.url).searchParams.get('q') ?? undefined)
 
@@ -24,8 +24,12 @@ export async function GET(request: Request) {
   }
 
   const { data, error } = await query
-  if (error) return new Response(`Export failed: ${error.message}`, { status: 500 })
+  if (error) {
+    await recordExport(admin, 'users', { error })
+    return exportFailed()
+  }
 
+  await recordExport(admin, 'users', { rows: (data ?? []).length, filtered: Boolean(search) })
   return csvResponse('users', data ?? [], [
     { header: 'User ID', value: (r) => r.id },
     { header: 'Email', value: (r) => r.email },

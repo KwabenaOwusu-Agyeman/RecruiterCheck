@@ -1,6 +1,6 @@
 import { requireAdmin } from '@/server/auth'
 import { serviceClient } from '@/server/supabase'
-import { csvResponse, EXPORT_LIMIT } from '../csvResponse'
+import { csvResponse, EXPORT_LIMIT, exportFailed, recordExport } from '../csvResponse'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +19,7 @@ interface Row {
 }
 
 export async function GET() {
-  await requireAdmin()
+  const { admin } = await requireAdmin()
 
   // No job_description, no cv_file_name, no cv_storage_path, and none of the
   // scoring internals. An export leaves the machine, so what it may contain is
@@ -32,10 +32,14 @@ export async function GET() {
     .order('created_at', { ascending: false })
     .limit(EXPORT_LIMIT)
 
-  if (error) return new Response(`Export failed: ${error.message}`, { status: 500 })
+  if (error) {
+    await recordExport(admin, 'checks', { error })
+    return exportFailed()
+  }
 
   const rows = (data ?? []) as unknown as Row[]
 
+  await recordExport(admin, 'checks', { rows: (rows).length, filtered: false })
   return csvResponse('application-checks', rows, [
     { header: 'Check ID', value: (r) => r.id },
     { header: 'User email', value: (r) => r.profiles?.email ?? '' },

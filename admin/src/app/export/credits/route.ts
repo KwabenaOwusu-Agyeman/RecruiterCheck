@@ -1,6 +1,6 @@
 import { requireAdmin } from '@/server/auth'
 import { serviceClient } from '@/server/supabase'
-import { csvResponse, EXPORT_LIMIT } from '../csvResponse'
+import { csvResponse, EXPORT_LIMIT, exportFailed, recordExport } from '../csvResponse'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,7 +17,7 @@ interface Row {
 }
 
 export async function GET() {
-  await requireAdmin()
+  const { admin } = await requireAdmin()
 
   const { data, error } = await serviceClient()
     .from('check_ledger')
@@ -27,10 +27,14 @@ export async function GET() {
     .order('created_at', { ascending: false })
     .limit(EXPORT_LIMIT)
 
-  if (error) return new Response(`Export failed: ${error.message}`, { status: 500 })
+  if (error) {
+    await recordExport(admin, 'credits', { error })
+    return exportFailed()
+  }
 
   const rows = (data ?? []) as unknown as Row[]
 
+  await recordExport(admin, 'credits', { rows: (rows).length, filtered: false })
   return csvResponse('credit-ledger', rows, [
     { header: 'Entry ID', value: (r) => r.id },
     { header: 'Customer', value: (r) => r.profiles?.email ?? '' },
