@@ -88,6 +88,42 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-22 — Article 7 published, software engineer page fixed
+
+**Objective.** Founder approved publishing Article 7 and fixing
+`/software-engineer-resume-checker` per the review findings 1 to 5 and 7.
+
+**Completed.** `content/resources/do-projects-count-without-a-job-title.md`
+published with `published: 2026-09-22`, the real publication date (PR 104).
+`src/pages/SoftwareEngineerResumeCheckerPage.tsx`: removed the verdict line
+"Every bullet has a number", which conflicted with the never invent statistics
+rule, and softened two benefit lines that pushed the same way. Added a
+`directAnswer`, an `example` labelled invented, a projects and bootcamp FAQ,
+and a link to Article 7. Reworded the unsourced "decide in seconds" opener.
+`src/pages/RecruiterEvaluationPage.tsx` now links this page. Left for Article
+9, as the review recommended: findings 6 and 8 in part. Brief 7 was approved
+by publishing. Article 5's project paragraph still does not link to Article 7.
+
+**Verified.** lint (no new warnings), typecheck, `npm run test:unit` 16/16,
+`npm run build`. Article 7 live at 200 and in the sitemap after deploy. Built
+software engineer page checked for canonical, robots, four FAQ entries in the
+schema, no leftover "Every bullet has a number" and resolving links. CSP
+hashes reconciled by the build. Structured data validator and browser checks
+are **MANUAL CHECK REQUIRED**.
+
+**Blockers.** None.
+
+**Founder action required.** None. Correct the AlternativeTo price, see Open
+items.
+
+**Next technical step.** Link Article 5's project paragraph to Article 7, if
+approved, since it changes a published article.
+
+**Commit or PR.** Branches `content/publish-article-7` and
+`content/software-engineer-page-fixes`.
+
+---
+
 ## 2026-09-21 — Article 7 drafted, software engineer page reviewed
 
 **Objective.** Founder asked for Article 7 (do projects count without a job

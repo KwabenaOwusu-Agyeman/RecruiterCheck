@@ -8,17 +8,23 @@ export function SoftwareEngineerResumeCheckerPage() {
       path="/software-engineer-resume-checker"
       eyebrow="Software Engineer"
       heading="What recruiters actually check on a software engineer resume"
-      introduction="Recruiters filtering engineering resumes decide in seconds. See what they're scanning for before you apply."
+      introduction="Recruiters reading engineering resumes are matching what you have built against one specific posting. See what they check before you apply."
+      directAnswer="A recruiter screening a software engineer resume or CV is checking three things against the specific job description: whether your languages and frameworks match the stack the role actually uses, whether your bullets show what you built and shipped rather than listing duties, and whether the resume makes clear how much of the work was yours and how far it reached, such as who used it or how large the system was, where that is true. A resume that lists a matching stack but only describes duties reads as a keyword list, not evidence. MyRecruiterCheck compares your resume against the exact job description you are applying to and reports on whether your experience, skills and candidate value are demonstrated with evidence, not just present as words."
       benefits={[
         { title: 'Stack match', description: 'See whether your listed languages and frameworks line up with what the job description actually asks for.' },
-        { title: 'Outcome check', description: 'Find bullets that describe duties instead of shipped, measurable results.' },
-        { title: 'Scale signal', description: 'Spot where scale, such as users, latency, or team size, is missing and should be added.' },
+        { title: 'Outcome check', description: 'Find bullets that describe duties instead of what you built and what happened.' },
+        { title: 'Scale signal', description: 'Spot where scale, such as users, latency, or team size, is real but not stated.' },
       ]}
       steps={[
         'Upload your resume in PDF or DOCX format.',
         'Paste the job description for the engineering role you want.',
         'Review your Interview Score and fix what recruiters would flag before you apply.',
       ]}
+      example={{
+        title: 'A worked example',
+        scenario: 'Take an invented resume for a "Junior Software Engineer" role that listed "Java, Spring Boot, PostgreSQL, Git" with one bullet reading "Worked on a team project building a student marketplace." The job description asked for someone who could "write and maintain automated tests for the services you ship."',
+        insight: 'The stack matched, but nothing showed the habit the posting emphasized: testing what you build. Rewriting the bullet to say which service the candidate owned, and that they wrote automated tests for it, including one bug the tests caught, gave the recruiter evidence of ownership from work the candidate had already done, without adding anything that was not there.',
+      }}
       verdict={{
         jobTitle: 'Software Engineer',
         reject: [
@@ -28,12 +34,13 @@ export function SoftwareEngineerResumeCheckerPage() {
         ],
         accept: [
           'Stack matched to the posting',
-          'Every bullet has a number',
+          'Bullets say what was built and what happened',
           'Ownership language ("built," "shipped")',
         ],
       }}
       faqs={[
         { question: 'Is the software engineer resume checker free?', answer: 'Yes. Your first Recruiter Check is free, so you can see how your resume matches a specific engineering role before deciding whether you need more checks.' },
+        { question: 'I only have projects, an internship or a bootcamp, no software engineer job title. Does this still work?', answer: 'Yes. MyRecruiterCheck evaluates the evidence already in your resume, including personal projects, internships, bootcamp work and coursework, not only paid job titles. What matters is whether what you built, which part was yours and what happened are described with specifics.' },
         { question: 'Does it check my resume against a specific job description?', answer: 'Yes. Feedback is based on your resume and the job description together, so results are specific to the role you are applying for.' },
         { question: 'Will it invent skills or projects I don\'t have?', answer: 'No. Feedback is based only on what\'s already in your resume. It never fabricates technologies or achievements on your behalf.' },
       ]}
@@ -45,6 +52,7 @@ export function SoftwareEngineerResumeCheckerPage() {
         { label: 'Data Scientist CV Checker', to: '/data-scientist-cv-checker' },
         { label: 'Machine Learning Engineer CV Checker', to: '/machine-learning-engineer-cv-checker' },
         { label: 'AI Engineer CV Checker', to: '/ai-engineer-cv-checker' },
+        { label: 'Do Projects Count Without a Job Title?', to: '/resources/do-projects-count-without-a-job-title' },
       ]}
     />
   )

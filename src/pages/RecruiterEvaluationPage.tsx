@@ -53,6 +53,7 @@ export function RecruiterEvaluationPage() {
         { label: 'Machine Learning Engineer CV Checker', to: '/machine-learning-engineer-cv-checker' },
         { label: 'Data Analyst CV Checker', to: '/data-analyst-cv-checker' },
         { label: 'Data Scientist CV Checker', to: '/data-scientist-cv-checker' },
+        { label: 'Software Engineer Resume Checker', to: '/software-engineer-resume-checker' },
         { label: 'What Recruiters Look for on an AI Engineer CV', to: '/resources/what-recruiters-look-for-on-an-ai-engineer-cv' },
         { label: 'About MyRecruiterCheck', to: '/about' },
         { label: 'Pricing', to: '/pricing' },
