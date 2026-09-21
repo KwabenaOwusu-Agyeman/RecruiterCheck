@@ -36,16 +36,16 @@ doing it.
   localhost. A local pass over `dist/` is representative, since the served bytes
   match, but production browser behaviour is **UNVERIFIED** and must be reported
   as such rather than inferred. Recorded 2026-09-10.
-- **Founder action, Level 3.** Branch `audit/production-hardening` carries
-  three migrations that are NOT in production: `20260921120000` (checks
-  lockdown, testimonial authors, cron sweep), `20260921121000` (deletion
-  foreign keys, refund reasons, indexes) and `20260921122000` (credit races).
-  Before `supabase db push`: run the role graph query recorded in
-  `20260828064337` against production. After it: regenerate
-  `src/types/database.ts` and `admin/src/types/database.ts` from production
-  (the branch copies were edited by hand). Until the first migration is
-  pushed, anon can read testimonial authors' email, user id and check id,
-  and signed-in users can rewrite their own check rows. Recorded 2026-09-21.
+- **Founder action, Level 3.** `20260921120000` (checks lockdown,
+  testimonial authors, cron sweep) was pushed to production on 2026-09-21
+  after approval; its post-conditions passed. Still NOT in production:
+  `20260921121000` (deletion foreign keys, refund reasons, indexes) and
+  `20260921122000` (credit races). The role graph query recorded in
+  `20260828064337` was not run (production SQL is off limits to Claude); run
+  it once. After the remaining pushes, regenerate `src/types/database.ts`
+  and `admin/src/types/database.ts` from production (the branch copies were
+  edited by hand). Confirm the landing page testimonials still load, and
+  that an anon read of `product_feedback` is refused. Recorded 2026-09-21.
 - **Founder decision.** `20260921121000` keeps refund records detached
   (`ON DELETE SET NULL`) when an account is deleted. If they should be
   deleted instead, change both `refund_events` foreign keys to `CASCADE`
