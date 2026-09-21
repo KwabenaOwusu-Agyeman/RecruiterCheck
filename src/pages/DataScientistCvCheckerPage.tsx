@@ -51,6 +51,7 @@ export function DataScientistCvCheckerPage() {
         { label: 'ATS Resume Checker', to: '/ats-resume-checker' },
         { label: 'Software Engineer Resume Checker', to: '/software-engineer-resume-checker' },
         { label: 'AI Engineer CV Checker', to: '/ai-engineer-cv-checker' },
+        { label: 'Machine Learning Engineer or Data Scientist: Which Role Fits Your Evidence', to: '/resources/machine-learning-engineer-or-data-scientist' },
       ]}
     />
   )

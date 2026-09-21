@@ -102,9 +102,10 @@ For current behaviour go to the migration, the function and the database.
 **Completed.** `content/resources/machine-learning-engineer-or-data-scientist.md`
 moved from draft to published with `published: 2026-09-22`, the real
 publication date. Body unchanged from the draft in PR 111. CSP ledger and
-`vercel.json` are prerender output, 70 to 72 hashes. Not done:
+`vercel.json` are prerender output, 70 to 72 hashes.
 `src/pages/MachineLearningEngineerCvCheckerPage.tsx` and
-`src/pages/DataScientistCvCheckerPage.tsx` do not link to the article yet.
+`src/pages/DataScientistCvCheckerPage.tsx` were linked to it in the next
+change, 2026-09-22.
 The page title with the site name runs long, about 93 characters, as Brief 6
 noted, and may be cut in search results. The founder kept the map's title.
 
@@ -117,7 +118,7 @@ links and a sitemap entry. Live verification is recorded in the PR.
 
 **Founder action required.** None.
 
-**Next technical step.** Link both role pages to the article, if approved.
+**Next technical step.** None open for this article.
 
 **Commit or PR.** Branch `content/publish-article-6`.
 
