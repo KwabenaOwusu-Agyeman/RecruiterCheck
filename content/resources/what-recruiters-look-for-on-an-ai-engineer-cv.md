@@ -4,7 +4,7 @@ slug: what-recruiters-look-for-on-an-ai-engineer-cv
 title: What recruiters look for on an AI engineer CV
 description: Naming a tool is not the same as having used it. Here is what a recruiter actually looks for on an AI engineer CV, and how to show it.
 published: 2026-09-21
-status: draft
+status: published
 cluster: ai-jobs
 supports: /ai-engineer-cv-checker
 noindex: false

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Alert } from '@/components/ui/Alert'
 import { BackLink } from '@/components/ui/BackLink'
@@ -18,6 +18,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { usePageMeta } from '@/hooks/usePageMeta'
 import { trackEvent } from '@/lib/analytics'
 import { runKeywordScan,
+  hasEverPurchasedPack,
   extractJobDescriptionFromFile,
   extractJobDescriptionFromUrl,
 } from '@/services/checkService'
@@ -104,7 +105,7 @@ export function KeywordScanPage() {
     noindex: true,
   })
 
-  const { profile } = useAuth()
+  const { user, profile, refreshProfile } = useAuth()
   const [cvFile, setCvFile] = useState<File | null>(null)
   const [cvInputMode, setCvInputMode] = useState<'file' | 'paste'>('file')
   const [cvPastedText, setCvPastedText] = useState('')
@@ -118,9 +119,30 @@ export function KeywordScanPage() {
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<KeywordScanResult | null>(null)
 
+  // null while loading. Scans are unlimited once any pack has been bought,
+  // spent or not, which is the rule the keyword-scan edge function enforces,
+  // so a positive checks_balance is not the test here.
+  const [hasPurchased, setHasPurchased] = useState<boolean | null>(null)
+
   const scansUsed = profile?.keyword_scans_consumed ?? 0
   const hasBalance = (profile?.checks_balance ?? 0) > 0
   const scansLeft = Math.max(FREE_SCAN_LIMIT - scansUsed, 0)
+
+  useEffect(() => {
+    if (!user?.id) return
+    let active = true
+    hasEverPurchasedPack(user.id)
+      .then((purchased) => {
+        if (active) setHasPurchased(purchased)
+      })
+      .catch(() => {
+        // Fall back to the free count wording; the server still decides.
+        if (active) setHasPurchased(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [user?.id])
 
   const PASTED_CV_FILE_NAME = 'cv.txt'
   const MIN_PASTED_CV_LENGTH = 50
@@ -183,6 +205,10 @@ export function KeywordScanPage() {
       setError(err instanceof Error ? err.message : 'Could not complete the scan')
     } finally {
       setScanning(false)
+      // The profile is loaded once per session, so without this the free
+      // count above stays at its sign in value until a full reload. Runs on
+      // failure too: a refused scan means the server's count moved on.
+      void refreshProfile()
     }
   }
 
@@ -195,9 +221,11 @@ export function KeywordScanPage() {
         <PageHeader
           title="Free Keyword Scan"
           description={
-            hasBalance
-              ? 'Check keyword overlap before spending a Recruiter Check. Free, unlimited.'
-              : `Free, ${scansLeft} of ${FREE_SCAN_LIMIT} left. Nothing here is saved.`
+            hasPurchased === null
+              ? 'Nothing here is saved.'
+              : hasPurchased
+                ? 'Check keyword overlap before spending a Recruiter Check. Free, unlimited.'
+                : `Free, ${scansLeft} of ${FREE_SCAN_LIMIT} left. Nothing here is saved.`
           }
         />
       </div>

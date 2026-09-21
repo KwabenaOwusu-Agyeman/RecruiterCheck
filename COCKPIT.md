@@ -138,6 +138,111 @@ then confirm an anon read of `product_feedback` is refused.
 
 ---
 
+## 2026-09-21 — Keyword Scan free count now updates after each scan
+
+**Objective.** Founder report: the free Keyword Scan count never went down
+after use.
+
+**Completed.** Cause was the page, not the server. The deployed
+`keyword-scan` function (read 2026-09-21, identical to the repo) increments
+`profiles.keyword_scans_consumed` correctly, but `KeywordScanPage` read the
+profile only once per session and never refreshed it. It now calls
+`refreshProfile()` after every scan attempt. Its header also decides "Free,
+unlimited" by the server's own rule, any pack ever bought, through the new
+`hasEverPurchasedPack` in `src/services/checkService.ts`, instead of
+`checks_balance > 0`. Unlimited for buyers confirmed by the founder, matching
+Product and Pricing (last edited 2026-08-26).
+
+**Verified.** lint (no new warnings), typecheck, `npm run test:unit` 16/16
+files, `npm run build`. Browser behaviour is a manual check.
+
+**Blockers.** None.
+
+**Founder action required.** None.
+
+**Next technical step.** The reservation model in migration
+`20260828064817` (`reserve_keyword_scan`, per pack `keyword_scans_remaining`)
+is not used by the live function, and it contradicts the approved unlimited
+rule. Nothing calls it. The `'free-tier'` branch in `NewCheckPage` cannot be
+reached, because `getCheckGateReason` never returns it.
+
+**Commit or PR.** PR #92, branch `keyword-scan-counter-refresh`.
+
+---
+
+## 2026-09-21 — Article 5 drafted and published
+
+**Objective.** Take "What recruiters look for on an AI engineer CV" from a
+Content Authority Map row to a live page, following the Article 4 sequence:
+write the brief, draft against it, merge as a draft, then publish. PRs #93 and
+#94.
+
+**Completed.**
+- Brief 5, in the Brief 4 format, as a child of the Content Authority Map in
+  Notion. Claude Code wrote it at the founder's instruction, because the Map
+  rows for Articles 5 to 9 carried only a working title, cluster, priority and
+  supported page. The founder approved it on 2026-09-21.
+- `content/resources/what-recruiters-look-for-on-an-ai-engineer-cv.md`, one new
+  file, 895 words, seven `h2`. Merged as `status: draft` in #93, then changed to
+  `status: published` in #94. `vercel.json` and `scripts/csp-managed-hashes.json`
+  are `prerender.mjs` output, 62 hashes to 64.
+- Three defects in the first draft were caught by checking it against Brief 5's
+  definition of done, and fixed before the draft merged: the before and after
+  example reproduced the product page's own worked example, which the brief
+  forbids; the body carried neither of the two internal links the brief
+  requires; and `supports` listed a page the brief does not. See
+  `memory/2026-09-21-draft-example-repeated-the-product-pages-example.md`.
+
+**Written here rather than supplied.** Brief and prose are both Claude Code's,
+so they deserve closer editorial review than an implementation would.
+
+**Verified.** Locally over `dist/` on localhost:5173: hydration exact, 213
+tokens with identical structure, attributes and text between the served markup
+and the live DOM; navigation away and back worked, with the `content-data` JSON
+fallback fetched on return; no console output beyond the missing Supabase env
+warning and the `trackEvent` diagnostic, both expected with no backend. CSP:
+policy and ledger agree at 64, 176 inline blocks across 37 pages, none
+executable and uncovered, the 4 uncovered being `application/json` data blocks.
+
+Live at
+`https://myrecruitercheck.com/resources/what-recruiters-look-for-on-an-ai-engineer-cv`:
+200 and 25,188 bytes, differing from the local build only in the JS bundle
+filename hash, since production bakes in real env values. Self canonical,
+`index, follow`, `Article` with `datePublished` 2026-09-21 and publisher and
+isPartOf resolving, `BreadcrumbList`, one `h1`, seven `h2`, no FAQ markup, the
+two approved internal links, fallback JSON 200, sitemap 36 URLs with all four
+articles. Regression: Articles 1, 3 and 4, `/`, `/about`, `/faq`, `/pricing`,
+the checker and methodology pages all 200 with one `main`, `header` and `h1`;
+`X-Robots-Tag: noindex` still on `/app-shell.html`; the www root still 301s to
+the apex.
+
+Not verified: production browser and hydration behaviour, and structured data
+by an external validator, since none exists in this repo. MANUAL CHECK REQUIRED.
+
+**Blockers.** None.
+
+**Founder action required.**
+- Two sources disagree and this entry does not reconcile them. This file, on
+  2026-09-10 and 2026-09-15, calls the Article 5 to 9 pipeline entries approved.
+  The Content Authority Map page itself, read on 2026-09-21, still says "draft
+  for founder approval" and lists Part 8 decisions 1 and 2, approving the
+  cluster architecture and the first ten articles, as unresolved and blocking
+  drafting. Article 5 proceeded on the approved Brief 5 and the founder's
+  approval in conversation. If those decisions are made, the Map should say so.
+- Editorial review of the prose. The most contestable call is that a recruiter
+  usually checks the type of AI work first, which repeats the live
+  `/ai-engineer-cv-checker` direct answer rather than adding independent
+  evidence.
+
+**Next technical step.** Briefs 6 to 9, one at a time, each approved before it
+is drafted. Article 7 has no brief, so Article 5 deliberately links nowhere for
+the projects without a title argument; add that link when Article 7 exists.
+Articles 2 and 10 stay blocked on the frozen consolidation decisions.
+
+**Commit or PR.** PR #93 merged as `c917890`, PR #94 merged as `9bf066c`.
+
+---
+
 ## 2026-09-16 — View report button removed from the check page
 
 **Objective.** Founder request: reach reports only from Reports and the user

@@ -495,6 +495,26 @@ export async function getNearestBatchExpiry(userId: string): Promise<string | nu
  * and the dialog's own outcome mapping explains precisely why not when the
  * answer turns out to be no.
  */
+/**
+ * Whether this account has ever bought a check pack, refunded or not. Mirrors
+ * the keyword-scan edge function's own `hasPurchased` query exactly, since that
+ * is what makes Keyword Scans unlimited (Product and Pricing: "Keyword scans
+ * become unlimited after buying any check pack"). Display only: the edge
+ * function enforces the free limit whatever this returns.
+ */
+export async function hasEverPurchasedPack(userId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('credit_batches')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('source', 'purchase')
+    .limit(1)
+    .maybeSingle()
+
+  if (error) throw error
+  return data !== null
+}
+
 export async function hasRefundablePurchase(userId: string): Promise<boolean> {
   const { data, error } = await supabase
     .from('credit_batches')
