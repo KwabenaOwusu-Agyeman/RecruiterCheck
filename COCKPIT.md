@@ -88,6 +88,37 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-21 — Article 7 drafted, software engineer page reviewed
+
+**Objective.** Founder asked for Article 7 (do projects count without a job
+title), then a review of `/software-engineer-resume-checker`.
+
+**Completed.** `content/resources/do-projects-count-without-a-job-title.md`,
+`status: draft`, so no route, prerendered file or sitemap entry. No Brief 7
+existed, so one was written in Notion and is unapproved. The example scenario
+was compared by scenario, not wording, against all five existing examples per
+`memory/2026-09-21-draft-example-repeated-the-product-pages-example.md`. The
+page review changed nothing; findings are in Notion. The main one:
+`src/pages/SoftwareEngineerResumeCheckerPage.tsx` says an accepted resume has
+"Every bullet has a number", which conflicts with the never invent statistics
+rule.
+
+**Verified.** `npm run test:unit` 16/16, `npm run build` parses the draft with
+no problems, no `dist/resources/do-projects-count-without-a-job-title`, not in
+the sitemap, no digits or dashes in the body.
+
+**Blockers.** Publishing waits on Brief 7 approval.
+
+**Founder action required.** Approve Brief 7 to publish. Approve or amend the
+page review findings.
+
+**Next technical step.** On approval, one line change from draft to published,
+then link Article 5's project paragraph to it.
+
+**Commit or PR.** Branch `content/article-7-projects`.
+
+---
+
 ## 2026-09-21 — GEO entity description on /about, llms files refreshed
 
 **Objective.** Make the product definition consistent and extractable for LLM
