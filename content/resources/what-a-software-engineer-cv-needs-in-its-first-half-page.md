@@ -4,7 +4,7 @@ slug: what-a-software-engineer-cv-needs-in-its-first-half-page
 title: What a software engineer CV needs in its first half page
 description: The top of a software engineer resume is where a recruiter checks your claims against the posting. Here is what it should show, and what can wait.
 published: 2026-09-22
-status: draft
+status: published
 cluster: tech-jobs
 supports: /software-engineer-resume-checker
 noindex: false

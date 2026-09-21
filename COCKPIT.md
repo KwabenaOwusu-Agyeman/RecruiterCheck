@@ -95,6 +95,33 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-22 — Article 9 published
+
+**Objective.** Founder approved publishing Article 9.
+
+**Completed.** `content/resources/what-a-software-engineer-cv-needs-in-its-first-half-page.md`
+moved from draft to published with `published: 2026-09-22`, the real
+publication date. Body unchanged from the draft in PR 108. CSP ledger and
+`vercel.json` are prerender output, 68 to 70 hashes. Not done:
+`src/pages/SoftwareEngineerResumeCheckerPage.tsx` does not link to the article
+yet, and its two remaining FAQs (role difference, ATS difference) are open.
+
+**Verified.** lint (no new warnings), typecheck, `npm run test:unit` 17/17,
+`npm run build`. Built page checked for canonical, robots `index, follow`,
+Article and BreadcrumbList schema with `datePublished`, resolving internal
+links and a sitemap entry. Live verification is recorded in the PR.
+
+**Blockers.** None.
+
+**Founder action required.** None.
+
+**Next technical step.** Link the software engineer page to Article 9 and add
+its two FAQs, if approved.
+
+**Commit or PR.** Branch `content/publish-article-9`.
+
+---
+
 ## 2026-09-22 — Article 9 drafted
 
 **Objective.** Founder approved Brief 9 as written and asked for the draft.
