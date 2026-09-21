@@ -29,12 +29,10 @@ doing it.
 - **Founder action.** Review the first newsletter issue in Brevo before it sends
   at 09:00 Europe/Amsterdam. The model leg has never been exercised, so this is
   the first generated copy anyone will have read. Recorded 2026-09-07.
-- **Founder action.** Provide the live public Capterra listing URL, or confirm
-  none exists. The link supplied 2026-09-21 was Capterra's own site navigation,
-  not a MyRecruiterCheck listing, so it is not in `Organization.sameAs`.
-  AlternativeTo was added. The AlternativeTo listing shows a one-time purchase
-  "from $100"; real packs are EUR 10, 20 and 40, so the listing needs
-  correcting by its owner. Recorded 2026-09-21.
+- **Founder action.** Correct the AlternativeTo listing: it shows a one-time
+  purchase "from $100"; real packs are EUR 10, 20 and 40. Only the listing owner
+  can edit it. Capterra listing (pricing correct) and AlternativeTo are both in
+  `Organization.sameAs`. Recorded 2026-09-21.
 - **Known limit.** Acquisition data begins 2026-09-05. Accounts created before
   that date cannot be attributed. Recorded 2026-09-06.
 - **Known limit, browser verification.** Hydration and console behaviour on the
