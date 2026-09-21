@@ -41,10 +41,9 @@ doing it.
   and the types were regenerated from production. Still open: run the role
   graph query recorded in `20260828064337` once (production SQL is off limits
   to Claude); confirm the landing page testimonials still load and an anon
-  read of `product_feedback` is refused; deploy the Control Centre export
-  audit with `cd admin && vercel --prod` (PR #96 is merged, its Edge
-  Functions and frontend are live, the Control Centre is not). Recorded
-  2026-09-21.
+  read of `product_feedback` is refused; export one CSV from the Control
+  Centre and confirm an `export.*` row in `admin_audit_log`. Everything from
+  PR #96 is live, the Control Centre included. Recorded 2026-09-21.
 - **Founder decision.** `20260921121000` (now in production) keeps refund
   records detached (`ON DELETE SET NULL`) when an account is deleted, but
   the refund amount lives on `credit_batches`, which is deleted with the
@@ -139,7 +138,10 @@ then confirm an anon read of `product_feedback` is refused.
 applied to production the same day. The merge deployed all 27 Edge Functions
 (`_shared/` changed; workflow run 35654691695, validate and deploy green) and
 the frontend through Vercel (production deployment for `3f17938` succeeded).
-Control Centre not deployed: awaiting `cd admin && vercel --prod`.
+The Control Centre was deployed from `main` at `3547886` with
+`vercel --prod` on 2026-09-21 after approval (deployment
+`dpl_pmAfuLXk4DFSNVyerYVAErdyjkB6`, ready, aliased to
+myrecruitercheck-admin.vercel.app).
 
 ---
 
