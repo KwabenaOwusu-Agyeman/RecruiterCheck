@@ -41,8 +41,9 @@ doing it.
   and the types were regenerated from production. Still open: run the role
   graph query recorded in `20260828064337` once (production SQL is off limits
   to Claude); confirm the landing page testimonials still load and an anon
-  read of `product_feedback` is refused; merge PR #96 to deploy the matching
-  Edge Functions and frontend, then `cd admin && vercel --prod`. Recorded
+  read of `product_feedback` is refused; deploy the Control Centre export
+  audit with `cd admin && vercel --prod` (PR #96 is merged, its Edge
+  Functions and frontend are live, the Control Centre is not). Recorded
   2026-09-21.
 - **Founder decision.** `20260921121000` (now in production) keeps refund
   records detached (`ON DELETE SET NULL`) when an account is deleted, but
@@ -134,7 +135,11 @@ reaches their checks; older than 24 hours they need a one-off cleanup.
 **Next technical step.** After the push: regenerate types from production,
 then confirm an anon read of `product_feedback` is refused.
 
-**Commit or PR.** PR #96, branch `audit/production-hardening`, not merged. Migrations applied to production on 2026-09-21.
+**Commit or PR.** PR #96 merged as `3f17938` on 2026-09-21. Migrations
+applied to production the same day. The merge deployed all 27 Edge Functions
+(`_shared/` changed; workflow run 35654691695, validate and deploy green) and
+the frontend through Vercel (production deployment for `3f17938` succeeded).
+Control Centre not deployed: awaiting `cd admin && vercel --prod`.
 
 ---
 
