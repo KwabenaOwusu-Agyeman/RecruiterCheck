@@ -31,6 +31,7 @@ export function CvKeywordCheckerPage() {
         { label: 'Resume Strengths and Weaknesses', to: '/resume-strengths-and-weaknesses' },
         { label: 'Job Application Feedback', to: '/job-application-feedback' },
         { label: 'How Recruiters Evaluate a CV', to: '/how-recruiters-evaluate-a-cv' },
+        { label: 'Evidence Against Keywords: What Recruiters Actually Count', to: '/resources/evidence-against-keywords-what-recruiters-actually-count' },
         { label: 'Pricing', to: '/pricing' },
       ]}
     />

@@ -13,7 +13,7 @@ export function DataAnalystCvCheckerPage() {
       benefits={[
         { title: 'Tooling match', description: 'See whether the SQL, BI tools and languages the job asks for are shown with a real project, not just listed in a skills section.' },
         { title: 'Business impact, not busywork', description: 'Find bullets that describe running a query or building a dashboard without saying what decision it supported or what changed as a result.' },
-        { title: 'Stakeholder signal', description: 'Spot where evidence of presenting findings to non technical stakeholders is missing, since most data analyst postings ask for it directly.' },
+        { title: 'Stakeholder signal', description: 'Spot where evidence of presenting findings to non technical stakeholders is missing.' },
       ]}
       steps={[
         'Upload your CV in PDF or DOCX format.',
@@ -52,6 +52,7 @@ export function DataAnalystCvCheckerPage() {
         { label: 'Software Engineer Resume Checker', to: '/software-engineer-resume-checker' },
         { label: 'Machine Learning Engineer CV Checker', to: '/machine-learning-engineer-cv-checker' },
         { label: 'AI Engineer CV Checker', to: '/ai-engineer-cv-checker' },
+        { label: 'What a Junior Data Analyst Is Expected to Know', to: '/resources/what-a-junior-data-analyst-is-expected-to-know' },
       ]}
     />
   )

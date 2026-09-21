@@ -35,6 +35,12 @@
 - [How to read a job description before you apply](https://myrecruitercheck.com/resources/how-to-read-a-job-description)
 - [Which job requirements are genuinely mandatory](https://myrecruitercheck.com/resources/which-job-requirements-are-mandatory)
 - [What recruiters look for on an AI engineer CV](https://myrecruitercheck.com/resources/what-recruiters-look-for-on-an-ai-engineer-cv)
+- [Evidence against keywords: what recruiters actually count](https://myrecruitercheck.com/resources/evidence-against-keywords-what-recruiters-actually-count): what makes a skill on a CV count as evidence
+- [Why you never hear which line lost it](https://myrecruitercheck.com/resources/why-you-never-hear-which-line-lost-it): what a silent rejection can and cannot tell you
+- [Do projects count without a job title?](https://myrecruitercheck.com/resources/do-projects-count-without-a-job-title)
+- [What a software engineer CV needs in its first half page](https://myrecruitercheck.com/resources/what-a-software-engineer-cv-needs-in-its-first-half-page)
+- [Machine learning engineer or data scientist: which role fits your evidence](https://myrecruitercheck.com/resources/machine-learning-engineer-or-data-scientist)
+- [What a junior data analyst is expected to know](https://myrecruitercheck.com/resources/what-a-junior-data-analyst-is-expected-to-know)
 
 ## Comparisons
 

@@ -37,6 +37,7 @@ export function FreeCvCheckerPage() {
         { label: 'CV Job Match', to: '/resume-job-description-match' },
         { label: 'Interview Score', to: '/interview-probability-score' },
         { label: 'How Interview Score Works', to: '/how-interview-score-works' },
+        { label: 'Why You Never Hear Which Line Lost It', to: '/resources/why-you-never-hear-which-line-lost-it' },
       ]}
     />
   )

@@ -95,6 +95,46 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-22 — Articles 2, 8 and 10 published, Decisions A and B unblocked
+
+**Objective.** Founder instruction: unblock Articles 2 and 10, write, publish
+and merge all remaining articles, review before publishing.
+
+**Completed.** Published `content/resources/evidence-against-keywords-what-recruiters-actually-count.md`,
+`content/resources/what-a-junior-data-analyst-is-expected-to-know.md` and
+`content/resources/why-you-never-hear-which-line-lost-it.md`. The instruction
+named no option, so it was read as Decision A Option 1 (Support) and Decision B
+Option 3 (leave as is), recorded on the Content Authority Map. No redirect,
+canonical, reframe or consolidation. Inbound links: `src/pages/CvKeywordCheckerPage.tsx`
+to Article 2, `src/pages/FreeCvCheckerPage.tsx` to Article 10,
+`src/pages/DataAnalystCvCheckerPage.tsx` to Article 8. `/application-checker`
+and `/job-application-feedback` were NOT edited, per the Map's recommendation
+not to touch the flagship page during recrawl. The live data analyst page
+claimed stakeholder evidence matters "since most data analyst postings ask for
+it directly", an unsourced proportion; the clause is removed. `public/llms.txt`
+now lists all ten articles. Briefs 2 and 10 were written first, and Brief 2's
+floor section was dropped after review as another article's territory.
+
+**Verified.** lint (no new warnings), typecheck, `npm run test:unit` 17/17,
+`npm run build`. Each article checked in `dist/` for canonical, robots
+`index, follow`, Article and BreadcrumbList schema, resolving links and a
+sitemap entry. Reviewed by the author and by an independent reviewer, which
+found two blockers and about twenty smaller defects, all addressed. Structured
+data validator and browser checks are **MANUAL CHECK REQUIRED**. ChatGPT
+visibility is **UNTESTED**.
+
+**Blockers.** None.
+
+**Founder action required.** Confirm the reading of "unblock" as Options 1 and
+3, or name a different option. Read the three articles, since all were written
+and reviewed by Claude Code.
+
+**Next technical step.** Baseline ChatGPT test round in the Notion testing log.
+
+**Commit or PR.** Branch `content/articles-2-8-10`.
+
+---
+
 ## 2026-09-22 — Article 6 published
 
 **Objective.** Founder approved publishing Article 6.
