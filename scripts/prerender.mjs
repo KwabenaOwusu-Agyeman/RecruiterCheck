@@ -52,15 +52,15 @@ console.log(
     `${staticRoutePaths().length} hand built routes`,
 )
 
-// vercel.json's catch-all rewrite sends every path with no matching static
-// file (all authenticated app routes: /account/billing, /checks/:id, /my-checks,
-// ...) to /index.html. Once the loop below overwrites dist/index.html with the
-// prerendered homepage markup, those routes would hydrate the real app against
-// the homepage's DOM on a hard load/refresh — a guaranteed hydration mismatch
-// (React errors #418/#423) that forces a full client re-render and freezes the
-// tab. Keep an empty-root shell for the rewrite to target instead; the
-// prerendered routes are still served as real static files, which Vercel
-// checks before falling back to the rewrite.
+// Routes that are never prerendered (the signed-in app under /checks,
+// /account and /extension, the auth pages, /sign-in, /sign-up and
+// /newsletter/unsubscribe) are rewritten to this empty-root shell by
+// vercel.json. Serving them the prerendered homepage (or 404.html, which is
+// what an unlisted path gets) would hydrate the real app against the wrong
+// DOM: a guaranteed hydration mismatch (React errors #418/#423) that forces
+// a full client re-render. A new client-only route needs a rewrite there.
+// The prerendered routes are still served as real static files, which Vercel
+// checks before applying a rewrite.
 fs.writeFileSync(path.join(clientDir, 'app-shell.html'), template)
 
 function withTag(html, regex, replacement) {
@@ -97,6 +97,18 @@ function applyMeta(html, meta) {
     out,
     /<meta property="og:url" content="[^"]*"\s*\/>/,
     `<meta property="og:url" content="${url}" />`,
+  )
+  // X reads twitter:* before og:*, so without these every page shared there
+  // showed the homepage's title and description.
+  out = withTag(
+    out,
+    /<meta name="twitter:title" content="[^"]*"\s*\/>/,
+    `<meta name="twitter:title" content="${escaped}" />`,
+  )
+  out = withTag(
+    out,
+    /<meta\s+name="twitter:description"\s+content="[^"]*"\s*\/>/,
+    `<meta name="twitter:description" content="${description.replace(/"/g, '&quot;')}" />`,
   )
   if (noindex) {
     out = withTag(

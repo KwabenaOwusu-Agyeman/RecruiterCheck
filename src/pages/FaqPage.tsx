@@ -36,7 +36,7 @@ const FAQ_ITEMS = [
   {
     question: 'What is the difference between Starter, Active, and Power packs?',
     answer:
-      'All three packs include your Interview Score, Recruiter Feedback, and an Improved CV Draft (for checks scoring 61 or above). Power additionally includes a Cover Letter and Recruiter Message with every check, plus access to your full check history. Starter and Active only show your most recent check.',
+      'All three packs include your Interview Score, Recruiter Feedback, an Improved CV Draft (for checks scoring 61 to 84), and access to your full check history. Power also includes a Cover Letter and Recruiter Message with every eligible check.',
   },
   {
     question: 'Is there a subscription?',
