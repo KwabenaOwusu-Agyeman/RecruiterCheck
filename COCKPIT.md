@@ -55,6 +55,38 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-21 — Keyword Scan free count now updates after each scan
+
+**Objective.** Founder report: the free Keyword Scan count never went down
+after use.
+
+**Completed.** Cause was the page, not the server. The deployed
+`keyword-scan` function (read 2026-09-21, identical to the repo) increments
+`profiles.keyword_scans_consumed` correctly, but `KeywordScanPage` read the
+profile only once per session and never refreshed it. It now calls
+`refreshProfile()` after every scan attempt. Its header also decides "Free,
+unlimited" by the server's own rule, any pack ever bought, through the new
+`hasEverPurchasedPack` in `src/services/checkService.ts`, instead of
+`checks_balance > 0`. Unlimited for buyers confirmed by the founder, matching
+Product and Pricing (last edited 2026-08-26).
+
+**Verified.** lint (no new warnings), typecheck, `npm run test:unit` 16/16
+files, `npm run build`. Browser behaviour is a manual check.
+
+**Blockers.** None.
+
+**Founder action required.** None.
+
+**Next technical step.** The reservation model in migration
+`20260828064817` (`reserve_keyword_scan`, per pack `keyword_scans_remaining`)
+is not used by the live function, and it contradicts the approved unlimited
+rule. Nothing calls it. The `'free-tier'` branch in `NewCheckPage` cannot be
+reached, because `getCheckGateReason` never returns it.
+
+**Commit or PR.** PR #92, branch `keyword-scan-counter-refresh`.
+
+---
+
 ## 2026-09-21 — Article 5 drafted and published
 
 **Objective.** Take "What recruiters look for on an AI engineer CV" from a
