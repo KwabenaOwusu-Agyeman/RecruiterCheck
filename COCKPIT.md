@@ -102,9 +102,9 @@ For current behaviour go to the migration, the function and the database.
 **Completed.** `content/resources/what-a-software-engineer-cv-needs-in-its-first-half-page.md`
 moved from draft to published with `published: 2026-09-22`, the real
 publication date. Body unchanged from the draft in PR 108. CSP ledger and
-`vercel.json` are prerender output, 68 to 70 hashes. Not done:
-`src/pages/SoftwareEngineerResumeCheckerPage.tsx` does not link to the article
-yet, and its two remaining FAQs (role difference, ATS difference) are open.
+`vercel.json` are prerender output, 68 to 70 hashes. The software engineer
+page link to the article and its two remaining FAQs (role difference, ATS
+difference) followed in the next change, 2026-09-22.
 
 **Verified.** lint (no new warnings), typecheck, `npm run test:unit` 17/17,
 `npm run build`. Built page checked for canonical, robots `index, follow`,
@@ -115,8 +115,7 @@ links and a sitemap entry. Live verification is recorded in the PR.
 
 **Founder action required.** None.
 
-**Next technical step.** Link the software engineer page to Article 9 and add
-its two FAQs, if approved.
+**Next technical step.** None open for this cluster. Baseline ChatGPT test round is due.
 
 **Commit or PR.** Branch `content/publish-article-9`.
 

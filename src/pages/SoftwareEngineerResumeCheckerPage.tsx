@@ -42,6 +42,8 @@ export function SoftwareEngineerResumeCheckerPage() {
         { question: 'Is the software engineer resume checker free?', answer: 'Yes. Your first Recruiter Check is free, so you can see how your resume matches a specific engineering role before deciding whether you need more checks.' },
         { question: 'I only have projects, an internship or a bootcamp, no software engineer job title. Does this still work?', answer: 'Yes. MyRecruiterCheck evaluates the evidence already in your resume, including personal projects, internships, bootcamp work and coursework, not only paid job titles. What matters is whether what you built, which part was yours and what happened are described with specifics.' },
         { question: 'Does it check my resume against a specific job description?', answer: 'Yes. Feedback is based on your resume and the job description together, so results are specific to the role you are applying for.' },
+        { question: 'How is a software engineer resume check different from an AI engineer one?', answer: 'The core check is the same: your resume against one specific job description. What differs is what the role asks for. For an AI engineer posting, a recruiter first checks the type of AI work, such as LLM applications, retrieval, agents or fine tuning. For a software engineer posting, the first checks are whether your stack matches the one the role uses and whether your bullets show what you built and shipped. If you are applying to both, run each role against its own job description.' },
+        { question: 'Is this the same as an ATS check?', answer: 'No. An ATS check mostly counts keyword matches between your resume and a job description. This is about how a person judges your resume once it reaches them, which looks at evidence such as what you built and what happened, not only whether a language or framework name appears.' },
         { question: 'Will it invent skills or projects I don\'t have?', answer: 'No. Feedback is based only on what\'s already in your resume. It never fabricates technologies or achievements on your behalf.' },
       ]}
       relatedLinks={[
@@ -53,6 +55,7 @@ export function SoftwareEngineerResumeCheckerPage() {
         { label: 'Machine Learning Engineer CV Checker', to: '/machine-learning-engineer-cv-checker' },
         { label: 'AI Engineer CV Checker', to: '/ai-engineer-cv-checker' },
         { label: 'Do Projects Count Without a Job Title?', to: '/resources/do-projects-count-without-a-job-title' },
+        { label: 'What a Software Engineer CV Needs in Its First Half Page', to: '/resources/what-a-software-engineer-cv-needs-in-its-first-half-page' },
       ]}
     />
   )
