@@ -95,6 +95,36 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-22 — Article 6 drafted
+
+**Objective.** Founder approved Brief 6 and asked for the draft.
+
+**Completed.** `content/resources/machine-learning-engineer-or-data-scientist.md`,
+`status: draft`, so no route, prerendered file or sitemap entry. Follows Brief 6
+with one amendment: the brief said no link to Article 7 until it existed, and
+it now does, so the no job title point is one paragraph linking to it. The
+article makes no salary, demand or which role is harder claim, has no digits,
+and the three invented bullets are new scenarios (demand forecast for a small
+shop, electricity use endpoint, housing maintenance classifier) against every
+existing example. Article 5 gets one sentence, both role pages are linked in
+the body, and there is no link to `/how-interview-score-works`, as briefed.
+The `published` date is provisional and must be set at publication.
+
+**Verified.** lint (no new warnings), typecheck, `npm run test:unit` 17/17,
+`npm run build`; draft absent from `dist/` and the sitemap. A six word overlap
+check found only link text and series phrasing.
+
+**Blockers.** Publishing waits on the founder.
+
+**Founder action required.** Approve publishing Article 6.
+
+**Next technical step.** On approval, one line change from draft to published
+with the real date, then verify live.
+
+**Commit or PR.** Branch `content/article-6-draft`.
+
+---
+
 ## 2026-09-22 — Article 9 published
 
 **Objective.** Founder approved publishing Article 9.
