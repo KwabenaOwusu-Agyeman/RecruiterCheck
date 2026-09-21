@@ -95,6 +95,36 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-22 — Article 9 drafted
+
+**Objective.** Founder approved Brief 9 as written and asked for the draft.
+
+**Completed.** `content/resources/what-a-software-engineer-cv-needs-in-its-first-half-page.md`,
+`status: draft`, so no route, prerendered file or sitemap entry. Uses the map's
+working title, since the brief was approved with it. Checked against the
+brief's definition of done: no digits or dashes, no layout or length advice,
+one product mention at the end, projects argued in one paragraph linking to
+Article 7. The example (front end resume top, community group event pages) is
+a new scenario against all seven existing ones. A shingle check found three
+sentences echoing Article 7, which were reworded. The `published` date is
+provisional and must be set to the real date at publication.
+
+**Verified.** lint (no new warnings), typecheck, `npm run test:unit` 17/17,
+`npm run build`; draft absent from `dist/` and the sitemap.
+
+**Blockers.** Publishing waits on the founder.
+
+**Founder action required.** Approve publishing Article 9. Decide whether the
+two remaining `/software-engineer-resume-checker` FAQs (role difference, ATS
+difference) are added, as a separate page change.
+
+**Next technical step.** On approval, one line change from draft to published
+with the real `published` date, then verify live.
+
+**Commit or PR.** Branch `content/article-9-draft`.
+
+---
+
 ## 2026-09-22 — Evidence Follow Up: one question, one reassessment
 
 **Objective.** Founder request: CV plus job description, initial score, one
