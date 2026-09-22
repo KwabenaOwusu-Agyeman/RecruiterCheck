@@ -98,6 +98,36 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-22 — Article 11 published
+
+**Objective.** Founder approved publishing Article 11.
+
+**Completed.** `content/resources/career-changer-evidence-what-transfers-and-what-does-not.md`
+moved from draft to published with `published: 2026-09-22`, the real
+publication date. Body unchanged from the draft in PR 118. CSP ledger and
+`vercel.json` are prerender output, 79 to 81 hashes. Not done: no page links
+to this article yet, since `supports: /how-recruiters-evaluate-a-cv` was a
+general anchor rather than a role page, and that page's own related links
+were not extended.
+
+**Verified.** lint (no new warnings), typecheck, `npm run test:unit` 17/17,
+`npm run build`. Built page checked for canonical, robots `index, follow`,
+Article and BreadcrumbList schema with `datePublished`, resolving internal
+links and a sitemap entry. Live verification is recorded in the PR.
+
+**Blockers.** None.
+
+**Founder action required.** None.
+
+**Next technical step.** Link `/how-recruiters-evaluate-a-cv` to the article,
+if approved. The map's first ten articles plus this P2 item are all now
+published; remaining work is the backlog beyond them, or the founder's own
+ChatGPT test round and AlternativeTo correction.
+
+**Commit or PR.** Branch `content/publish-article-11`.
+
+---
+
 ## 2026-09-22 — Article 11 drafted
 
 **Objective.** Founder approved Brief 11 (career changer evidence, a P2 backlog

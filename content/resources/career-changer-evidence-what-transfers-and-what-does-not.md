@@ -4,7 +4,7 @@ slug: career-changer-evidence-what-transfers-and-what-does-not
 title: Career changer evidence: what transfers and what does not
 description: Changing careers does not carry the old job title across. Here is how to find the skill behind it that does, and what does not transfer on its own.
 published: 2026-09-22
-status: draft
+status: published
 cluster: job-applications
 supports: /how-recruiters-evaluate-a-cv
 noindex: false
