@@ -10,6 +10,7 @@ import { Badge, checkStatusTone } from '@/components/ui/Badge'
 import { EmptyState } from '@/components/ui/States'
 import { PageHeader } from '@/components/dashboard/PageHeader'
 import { SupportNoteForm } from '../../support/SupportNoteForm'
+import { GrantCreditsForm } from './GrantCreditsForm'
 
 export const dynamic = 'force-dynamic'
 
@@ -101,6 +102,9 @@ export default async function UserDetailPage({
           <CardTitle>Purchases and credit batches</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
+          <div className="border-b border-border px-5 py-4">
+            <GrantCreditsForm userId={profile.id} />
+          </div>
           {batches.length === 0 ? (
             <EmptyState title="No purchases" />
           ) : (
