@@ -33,15 +33,16 @@ doing it.
   purchase "from $100"; real packs are EUR 10, 20 and 40. Only the listing owner
   can edit it. Capterra listing (pricing correct) and AlternativeTo are both in
   `Organization.sameAs`. Recorded 2026-09-21.
-- **Founder decision, Evidence Follow Up.** No Decision Log entry cites this
-  feature, and it changes what Notion Scoring Methodology says ("Judge only
-  evidence present in the CV and job description"): a self reported answer can
-  now raise the one score, through the same deterministic scoring. Record, or
-  amend the methodology for: the floor (the score can rise or stay, never
-  fall), the Needs Improvement only band (61 to 84), and document eligibility
-  following the updated score. Also: `RATE_LIMIT_MAX` in
-  `analyze-check/runtime.ts` is 10 per hour, not the 5 in the brief; both
-  Analyze calls of one flow draw from it. Recorded 2026-09-22.
+- **Founder decision, Evidence Follow Up rate limit.** Decision Log now has
+  [Evidence Follow Up: one optional question, floor, and Needs Improvement
+  only](https://app.notion.com/p/3e30b9d863fc8197882ddfb48ff50190) (2026-09-22),
+  covering the floor, the 61 to 84 band and document eligibility. It does not
+  amend the Scoring Methodology page itself, which still reads "Judge only
+  evidence present in the CV and job description"; still open whether that page
+  should cite the new decision. Separately unresolved: `RATE_LIMIT_MAX` in
+  `analyze-check/runtime.ts` is 10 per hour, not the 5 named in the original
+  brief; both Analyze calls of one Evidence Follow Up flow draw from it.
+  Recorded 2026-09-22.
 - **Known limit.** Acquisition data begins 2026-09-05. Accounts created before
   that date cannot be attributed. Recorded 2026-09-06.
 - **Known limit, browser verification.** Hydration and console behaviour on the
