@@ -33,16 +33,22 @@ doing it.
   purchase "from $100"; real packs are EUR 10, 20 and 40. Only the listing owner
   can edit it. Capterra listing (pricing correct) and AlternativeTo are both in
   `Organization.sameAs`. Recorded 2026-09-21.
-- **Founder decision, Evidence Follow Up rate limit.** Decision Log now has
+- **Founder decision, Evidence Follow Up rate limit.** Decision Log has
   [Evidence Follow Up: one optional question, floor, and Needs Improvement
   only](https://app.notion.com/p/3e30b9d863fc8197882ddfb48ff50190) (2026-09-22),
-  covering the floor, the 61 to 84 band and document eligibility. It does not
-  amend the Scoring Methodology page itself, which still reads "Judge only
-  evidence present in the CV and job description"; still open whether that page
-  should cite the new decision. Separately unresolved: `RATE_LIMIT_MAX` in
-  `analyze-check/runtime.ts` is 10 per hour, not the 5 named in the original
-  brief; both Analyze calls of one Evidence Follow Up flow draw from it.
-  Recorded 2026-09-22.
+  and both the Notion Scoring Methodology page and `/about` now cite it.
+  Still unresolved: `RATE_LIMIT_MAX` in `analyze-check/runtime.ts` is 10 per
+  hour, not the 5 named in the original brief; both Analyze calls of one
+  Evidence Follow Up flow draw from it. Recorded 2026-09-22.
+- **Known issue, existing feedback generation.** Found while reviewing a real
+  check the founder ran 2026-09-22: `analyze-check`'s Areas to Improve can
+  list two near duplicate items for the same requirement (seen: "Enhance SQL
+  experience" and "Strengthen evidence for Experience with SQL for
+  reporting", the second reusing the first's exact sample wording). Likely
+  `ensureThreeNeedsImprovementItems` in `logic.ts` filling a thin result with
+  a requirement gap already covered by a generated item. Pre-existing, not
+  part of Evidence Follow Up, and out of scope for that work; scoring/feedback
+  logic changes need their own review. Recorded 2026-09-22.
 - **Known limit.** Acquisition data begins 2026-09-05. Accounts created before
   that date cannot be attributed. Recorded 2026-09-06.
 - **Known limit, browser verification.** Hydration and console behaviour on the
@@ -95,6 +101,42 @@ It is carried by
 and the live `supabase/functions/keyword-scan/`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-22 — Evidence Follow Up question: fixed a grammar bug found in a live check
+
+**Objective.** Founder ran a real check on the deployed feature and shared a
+screenshot: the follow up question read "Have you used Experience with SQL
+for reporting in a project...".
+
+**Completed.** `selectEvidenceGap` in
+`supabase/functions/analyze-check/evidence-follow-up.ts` built its question by
+inserting the requirement text as the grammatical object of "used" or
+"experience of". The extraction prompt's own examples show a requirement is
+routinely phrased as a full clause ("Experience with Salesforce", "5+ years in
+B2B product marketing"), not a bare skill name, so that composition broke.
+Both question templates now open "The job asks for `${name}`.", the same
+pattern the "no evidence" summary already used safely, which reads correctly
+for any phrasing. No other template needed this (the summaries were already
+safe). A regression test reproduces the exact production wording.
+
+**Verified.** lint, typecheck, `test:scoring` 6/6, mutation check 14/14.
+**UNVERIFIED:** the deployed function still serves the old wording to any
+check whose row was already created before this deploys; only new gaps get
+the fixed question.
+
+**Blockers.** none.
+
+**Founder action required.** none beyond review; merging deploys
+`analyze-check` and `assess-evidence-follow-up` again.
+
+**Next technical step.** Watch for another odd question wording on a future
+live check; the fix is structural (safe for any requirement phrasing found so
+far) but was verified against one real example, not the full space of how the
+model phrases requirements.
+
+**Commit or PR.** Branch `fix/evidence-follow-up-question-grammar`.
 
 ---
 

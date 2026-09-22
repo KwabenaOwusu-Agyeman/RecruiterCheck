@@ -100,8 +100,24 @@ test('partial gap wording says the evidence is thin, no gap wording says it is a
 test('skills and experience gaps get different, requirement specific questions', () => {
   const skill = selectEvidenceGap([req({ requirement: 'SQL', category: 'skills' })])
   const experience = selectEvidenceGap([req({ requirement: 'stakeholder management', category: 'experience' })])
-  assert.match(skill!.question, /Have you used SQL in a project, internship, course, freelance work or personal project/)
-  assert.match(experience!.question, /experience of stakeholder management from a job, internship, project/)
+  assert.match(skill!.question, /The job asks for SQL\. Is there a project, internship, course, freelance piece of work or personal project/)
+  assert.match(experience!.question, /The job asks for stakeholder management\. Is there a job, internship, project, course, volunteering role or freelance piece of work/)
+})
+
+// Found on a live check (2026-09-22): the extraction prompt's own examples
+// show a requirement is routinely phrased as "Experience with Salesforce" or
+// "5+ years in B2B product marketing", not a bare skill name, and the old
+// templates ("Have you used ${name} in a project...") broke on that shape,
+// producing "Have you used Experience with SQL for reporting in a
+// project...". Every template must stay grammatical for that shape too.
+test('a full requirement phrase like "Experience with X" still reads as a grammatical question', () => {
+  const gap = selectEvidenceGap([
+    req({ requirement: 'Experience with SQL for reporting', category: 'skills', match_strength: 'partial', cv_evidence: 'x' }),
+  ])!
+  assert.equal(gap.requirement, 'Experience with SQL for reporting')
+  assert.match(gap.question, /^The job asks for Experience with SQL for reporting\. Is there a project/)
+  assert.doesNotMatch(gap.question, /Have you used Experience|used Experience with/)
+  assert.equal(gap.question.split('?').length - 1, 1)
 })
 
 test('the question never invites invention, suggests a good answer or coaches', () => {

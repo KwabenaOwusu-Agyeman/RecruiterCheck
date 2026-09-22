@@ -77,10 +77,22 @@ export function selectEvidenceGap(
     top.match_strength === 'partial'
       ? `Your CV shows some related evidence for ${name}, but not enough for a recruiter to see how you have applied it.`
       : `The job asks for ${name}, and your CV does not yet show evidence of it.`
+  // `name` is the model's own extracted requirement text (raw RawRequirement.
+  // requirement), and the extraction prompt's own examples show it is
+  // routinely a full phrase such as "Experience with Salesforce" or "5+
+  // years in B2B product marketing", never guaranteed to be a bare skill or
+  // activity name. A template that embeds `name` as the grammatical object
+  // of "used" or "experience of" breaks on that phrasing (a live check
+  // produced "Have you used Experience with SQL for reporting in a
+  // project..."). Both branches below instead open with "The job asks for
+  // ${name}", the same safe pattern the "no evidence" summary above already
+  // uses, so the sentence stays grammatical for any phrasing the model
+  // produces. Still exactly one question mark, and still names no example
+  // answer.
   const question =
     top.category === 'skills'
-      ? `Have you used ${name} in a project, internship, course, freelance work or personal project that your CV does not clearly show, and if so, what did you do with it?`
-      : `Do you have experience of ${name} from a job, internship, project, course, volunteering or freelance work that your CV does not clearly show, and if so, what was it and what did you do?`
+      ? `The job asks for ${name}. Is there a project, internship, course, freelance piece of work or personal project where you did this, that your CV does not clearly show, and if so what did you do?`
+      : `The job asks for ${name}. Is there a job, internship, project, course, volunteering role or freelance piece of work that shows this, that your CV does not clearly show, and if so what was it and what did you do?`
 
   return { requirement: name, summary, question }
 }
