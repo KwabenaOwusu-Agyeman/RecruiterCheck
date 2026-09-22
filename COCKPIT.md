@@ -119,10 +119,9 @@ links and a sitemap entry. Live verification is recorded in the PR.
 
 **Founder action required.** None.
 
-**Next technical step.** Link `/how-recruiters-evaluate-a-cv` to the article,
-if approved. The map's first ten articles plus this P2 item are all now
-published; remaining work is the backlog beyond them, or the founder's own
-ChatGPT test round and AlternativeTo correction.
+**Next technical step.** None open for this article. Remaining work is the
+backlog beyond the map's first ten, or the founder's own ChatGPT test round
+and AlternativeTo correction.
 
 **Commit or PR.** Branch `content/publish-article-11`.
 

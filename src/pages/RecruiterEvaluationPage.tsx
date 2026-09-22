@@ -55,6 +55,7 @@ export function RecruiterEvaluationPage() {
         { label: 'Data Scientist CV Checker', to: '/data-scientist-cv-checker' },
         { label: 'Software Engineer Resume Checker', to: '/software-engineer-resume-checker' },
         { label: 'What Recruiters Look for on an AI Engineer CV', to: '/resources/what-recruiters-look-for-on-an-ai-engineer-cv' },
+        { label: 'Career Changer Evidence: What Transfers and What Does Not', to: '/resources/career-changer-evidence-what-transfers-and-what-does-not' },
         { label: 'About MyRecruiterCheck', to: '/about' },
         { label: 'Pricing', to: '/pricing' },
       ]}
