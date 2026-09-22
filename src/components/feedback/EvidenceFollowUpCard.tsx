@@ -3,16 +3,11 @@ import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Textarea } from '@/components/ui/Textarea'
-import { FeedbackBullet } from '@/components/feedback/FeedbackBullet'
-import { getVerdictColor } from '@/components/feedback/verdictColor'
-import { FICTIONAL_SAMPLE_NOTICE, hasSampleWording } from '@/lib/feedbackText'
-import { getScoreLabel, sanitizeScore } from '@/lib/scoring'
 import {
   answerProblem,
   canSubmitAnswer,
   createSubmissionGuard,
   CANDIDATE_REPORTED_LABEL,
-  FINAL_SCORE_LABEL,
   FOLLOW_UP_HEADING,
   FOLLOW_UP_INTEGRITY_NOTE,
   FOLLOW_UP_INTRO,
@@ -20,7 +15,6 @@ import {
   FOLLOW_UP_SUBMIT_LABEL,
   FOLLOW_UP_SUBMITTING_LABEL,
   FOLLOW_UP_WORKING_MESSAGE,
-  INITIAL_SCORE_LABEL,
   MAX_ANSWER_CHARS,
 } from '@/lib/evidenceFollowUp'
 import { submitEvidenceFollowUp } from '@/services/checkService'
@@ -30,8 +24,9 @@ import { cn } from '@/utils/cn'
 
 interface EvidenceFollowUpCardProps {
   followUp: EvidenceFollowUp
-  // The check's own score, unchanged. Always shown beside the final one.
-  initialScore: number | null
+  // True when the follow up raised the score and the report above now shows
+  // the updated score and findings. No score is shown here: a report has one.
+  updated: boolean
   // Follows the results container: navy while there is work to do, otherwise light.
   dark: boolean
   onAssessed: (followUp: EvidenceFollowUp) => void
@@ -45,17 +40,17 @@ interface EvidenceFollowUpCardProps {
  *
  * The card only ever appears for a check that has a follow up row, and the
  * form only while the original CV still exists (see canAnswer). Once
- * assessed it shows the final score beside, never in place of, the initial
- * one, and labels everything drawn from the answer as candidate reported.
+ * assessed it shows no score at all: the report has one score, already
+ * updated, and this card says what happened and labels the answer as
+ * candidate reported.
  */
-export function EvidenceFollowUpCard({ followUp, initialScore, dark, onAssessed }: EvidenceFollowUpCardProps) {
+export function EvidenceFollowUpCard({ followUp, updated, dark, onAssessed }: EvidenceFollowUpCardProps) {
   const [answer, setAnswer] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // One submission at a time, even for two clicks in the same frame.
   const guard = useRef(createSubmissionGuard())
 
-  const tone: 'light' | 'dark' = dark ? 'dark' : 'light'
   const cardTone = dark ? 'nested' : 'nested-light'
   const c = {
     heading: dark ? 'text-white' : 'text-text-primary',
@@ -87,50 +82,25 @@ export function EvidenceFollowUpCard({ followUp, initialScore, dark, onAssessed 
   }
 
   if (followUp.status === 'assessed') {
-    const finalScore = sanitizeScore(followUp.final_score)
-    if (finalScore === null) return null
-    const initial = sanitizeScore(initialScore)
-    const improvements = followUp.final_improvements
     return (
-      <Card tone={cardTone} className="overflow-hidden">
+      <Card tone={cardTone}>
         <CardHeader tone={cardTone} className="px-5 py-3">
-          <h2 className={cn('text-base font-semibold', c.heading)}>{FINAL_SCORE_LABEL}</h2>
-          <p className={cn('mt-0.5 text-xs', c.sub)}>
-            Reassessed once with your answer. Your initial result above is unchanged.
-          </p>
+          <h2 className={cn('text-base font-semibold', c.heading)}>Your follow up</h2>
+          <p className={cn('mt-0.5 text-xs', c.sub)}>Reassessed once with your answer.</p>
         </CardHeader>
-        <CardContent className="space-y-5 px-5 py-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            {initial !== null ? (
-              <div>
-                <p className={cn('text-xs font-medium uppercase tracking-wider', c.faint)}>{INITIAL_SCORE_LABEL}</p>
-                <p className={cn('mt-1 text-2xl font-semibold tracking-[-0.02em]', c.heading)}>{initial}%</p>
-                <p className={cn('text-sm font-semibold', getVerdictColor(initial, tone))}>{getScoreLabel(initial)}</p>
-              </div>
-            ) : null}
-            <div>
-              <p className={cn('text-xs font-medium uppercase tracking-wider', c.faint)}>{FINAL_SCORE_LABEL}</p>
-              <p className={cn('mt-1 text-2xl font-semibold tracking-[-0.02em]', c.heading)}>{finalScore}%</p>
-              <p className={cn('text-sm font-semibold', getVerdictColor(finalScore, tone))}>{getScoreLabel(finalScore)}</p>
-            </div>
-          </div>
-
+        <CardContent className="space-y-4 px-5 py-4">
           {followUp.what_changed.length > 0 ? (
-            <div className={cn('border-t pt-4', c.rule)}>
-              <h3 className={cn('text-sm font-semibold', c.heading)}>What changed</h3>
-              <ul className="mt-2 space-y-2">
-                {followUp.what_changed.map((line) => (
-                  <li key={line} className="flex gap-2">
-                    <span className={c.accent} aria-hidden="true">
-                      •
-                    </span>
-                    <span className={cn('text-sm leading-snug', c.body)}>{line}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <ul className="space-y-2">
+              {followUp.what_changed.map((line) => (
+                <li key={line} className="flex gap-2">
+                  <span className={c.accent} aria-hidden="true">
+                    •
+                  </span>
+                  <span className={cn('text-sm leading-snug', c.body)}>{line}</span>
+                </li>
+              ))}
+            </ul>
           ) : null}
-
           {followUp.candidate_answer ? (
             <div className={cn('border-t pt-4', c.rule)}>
               <p className={cn('text-xs font-semibold', c.accent)}>{CANDIDATE_REPORTED_LABEL}</p>
@@ -139,33 +109,10 @@ export function EvidenceFollowUpCard({ followUp, initialScore, dark, onAssessed 
               </p>
             </div>
           ) : null}
-
-          {followUp.final_strengths.length > 0 || improvements.length > 0 ? (
-            <div className={cn('grid gap-5 border-t pt-4 md:grid-cols-2', c.rule)}>
-              {followUp.final_strengths.length > 0 ? (
-                <div>
-                  <h3 className={cn('text-sm font-semibold', c.heading)}>Updated strengths</h3>
-                  <ul className="mt-2 space-y-3">
-                    {followUp.final_strengths.map((item) => (
-                      <FeedbackBullet key={item} text={item} tone={tone} />
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-              {improvements.length > 0 ? (
-                <div>
-                  <h3 className={cn('text-sm font-semibold', c.heading)}>Updated areas to improve</h3>
-                  {improvements.some(hasSampleWording) ? (
-                    <p className={cn('mt-1 text-xs leading-snug', c.faint)}>{FICTIONAL_SAMPLE_NOTICE}</p>
-                  ) : null}
-                  <ul className="mt-2 space-y-3">
-                    {improvements.map((item) => (
-                      <FeedbackBullet key={item} text={item} tone={tone} />
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-            </div>
+          {updated ? (
+            <p className={cn('text-xs leading-snug', c.faint)}>
+              The score and findings above include this answer.
+            </p>
           ) : null}
         </CardContent>
       </Card>

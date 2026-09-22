@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { CONNECTION_DROPPED_MESSAGE, startAnalysis, type AnalysisInvokeOutcome } from '@/lib/analysisStart'
-import { resolveFollowUpOutcome } from '@/lib/evidenceFollowUp'
+import { resolveEffectiveResult, resolveFollowUpOutcome, type StoredFollowUp } from '@/lib/evidenceFollowUp'
 import type {
   Check,
   CheckLedgerEntry,
@@ -130,12 +130,26 @@ export async function deleteAccount(): Promise<void> {
 export async function getChecks(userId: string): Promise<Check[]> {
   const { data, error } = await supabase
     .from('checks')
-    .select('*')
+    .select(
+      '*, evidence_follow_ups(status, final_score, final_strengths, final_improvements, final_prospects)',
+    )
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
 
   if (error) throw error
-  return (data ?? []).map((row) => mapCheck(row as Check))
+  return (data ?? []).map((row) => {
+    const { evidence_follow_ups: embedded, ...check } = row as unknown as Check & {
+      evidence_follow_ups: StoredFollowUp | StoredFollowUp[] | null
+    }
+    const followUp = Array.isArray(embedded) ? (embedded[0] ?? null) : embedded
+    // One score everywhere: the list shows the follow up's score when it
+    // raised it, through the same rule the report uses. The check row itself
+    // is not modified.
+    const score = check.interview_probability_score
+    if (typeof score !== 'number') return mapCheck(check)
+    const effective = resolveEffectiveResult({ score, strengths: [], improvements: [], prospects: [] }, followUp)
+    return mapCheck({ ...check, interview_probability_score: effective.score })
+  })
 }
 
 /**

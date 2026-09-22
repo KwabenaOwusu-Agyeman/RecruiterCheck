@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { FeedbackBullet } from '@/components/feedback/FeedbackBullet'
 import { getVerdictColor } from '@/components/feedback/verdictColor'
-import { FICTIONAL_SAMPLE_NOTICE, hasSampleWording, splitFinding } from '@/lib/feedbackText'
+import { FICTIONAL_SAMPLE_NOTICE, hasSampleWording, lowerFirstClause, splitFinding } from '@/lib/feedbackText'
 import { EvidenceFollowUpCard } from '@/components/feedback/EvidenceFollowUpCard'
 import { SentimentPrompt } from '@/components/feedback/SentimentPrompt'
 import { TrustpilotResultsLink } from '@/components/feedback/TrustpilotResultsLink'
@@ -16,7 +16,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { usePageMeta } from '@/hooks/usePageMeta'
 import { getResultTone, getScoreLabel, sanitizeScore } from '@/lib/scoring'
 import { trackEvent } from '@/lib/analytics'
-import { INITIAL_SCORE_LABEL } from '@/lib/evidenceFollowUp'
+import { isFollowUpEligibleScore, resolveEffectiveResult, UPDATED_REPORT_NOTE } from '@/lib/evidenceFollowUp'
 import {
   getDocumentEntitlement,
   LIKELY_INTERVIEW_CANDIDATE_MIN_SCORE,
@@ -41,12 +41,6 @@ const RESULT_POLL_MS = 3000
 // and the cron sweep flips anything older than 12 to 'failed', so there is
 // nothing left to wait for past this point.
 const RESULT_POLL_MAX_MS = 13 * 60 * 1000
-
-function lowerFirstClause(text: string): string {
-  const trimmed = text.trim().replace(/[.!?]+$/, '')
-  if (!trimmed) return trimmed
-  return trimmed.charAt(0).toLowerCase() + trimmed.slice(1)
-}
 
 /**
  * The Recommendation box's forward action. Every completed check ends with
@@ -264,7 +258,24 @@ export function FeedbackPage() {
   // Sanitized to a finite 0-100 integer (or null) before it ever reaches
   // render — a malformed or legacy stored value is treated the same as "no
   // score yet" rather than risking a broken display.
-  const score = sanitizeScore(check.interview_probability_score)
+  const originalScore = sanitizeScore(check.interview_probability_score)
+  // A report always shows ONE score. If an Evidence Follow Up raised it, the
+  // updated score and its findings replace the original everywhere on this
+  // page (the check row itself is untouched); the original is never shown
+  // again. Everything below reads `report` and `score`, never the raw check.
+  const report =
+    feedback && originalScore !== null
+      ? resolveEffectiveResult(
+          {
+            score: originalScore,
+            strengths: feedback.strengths,
+            improvements: feedback.improvements,
+            prospects: feedback.prospects,
+          },
+          followUp,
+        )
+      : null
+  const score = report ? report.score : originalScore
   const fundingPackId = check.funding_pack_id
   // Single source of truth for what this check may generate — mirrors the
   // server side check in generate-documents exactly (see
@@ -295,20 +306,24 @@ export function FeedbackPage() {
     accent: isDark ? 'text-blue-light' : 'text-blue',
   }
   const firstName = profile?.full_name?.trim().split(/\s+/)[0]
-  const visibleImprovements = feedback
+  // The lists to show: the effective report, or, for a legacy check with no
+  // valid score, the stored feedback exactly as before.
+  const lists = report ?? feedback
+  const shownStrengths = lists?.strengths ?? []
+  const visibleImprovements = lists
     ? score === 100
       ? []
       : score !== null && score >= 85
-        ? feedback.improvements.slice(0, 1)
-        : feedback.improvements
+        ? lists.improvements.slice(0, 1)
+        : lists.improvements
     : []
-  const visibleProspects = feedback
+  const visibleProspects = lists
     ? score === 100
       ? [
           'Your application shows complete documented alignment with this role.',
           'Your application is ready to submit, although employer decisions and competition still apply.',
         ]
-      : feedback.prospects
+      : lists.prospects
     : []
 
   return (
@@ -338,7 +353,7 @@ export function FeedbackPage() {
               <p className={cn('text-[2.125rem] font-semibold tracking-[-0.02em] sm:text-[2.625rem]', t.heading)}>
                 <span>{score}%</span>{' '}
                 <span className={cn('text-base font-semibold sm:text-lg', t.subtle)}>
-                  {followUp ? INITIAL_SCORE_LABEL : 'Interview Score'}
+                  Interview Score
                 </span>
               </p>
               <p className={cn('mt-2 text-base font-semibold sm:text-lg', getVerdictColor(score, textTone))}>
@@ -371,6 +386,9 @@ export function FeedbackPage() {
                 <p className={cn('mt-2 max-w-xl text-sm', t.body)}>
                   {buildSummarySentence(score, visibleImprovements)}
                 </p>
+              ) : null}
+              {report?.updated ? (
+                <p className={cn('mt-2 max-w-xl text-xs font-semibold', t.accent)}>{UPDATED_REPORT_NOTE}</p>
               ) : null}
               <p className={cn('mt-2 max-w-xl text-xs', t.faint)}>
                 Based on the information provided. Hiring decisions and competition may affect the outcome.
@@ -410,13 +428,13 @@ export function FeedbackPage() {
         {feedback ? (
           <div className="mt-5 space-y-5 sm:mt-7">
             <div className="grid gap-5 md:grid-cols-2">
-              {feedback.strengths.length > 0 ? <Card tone={nestedTone}>
+              {shownStrengths.length > 0 ? <Card tone={nestedTone}>
                 <CardHeader tone={nestedTone} className="px-5 py-3">
                   <h2 className={cn('text-base font-semibold', t.heading)}>Strengths</h2>
                 </CardHeader>
                 <CardContent className="px-5 py-4">
                   <ul className="space-y-3">
-                    {feedback.strengths.map((item) => (
+                    {shownStrengths.map((item) => (
                       <FeedbackBullet key={item} text={item} tone={textTone} />
                     ))}
                   </ul>
@@ -477,10 +495,10 @@ export function FeedbackPage() {
               </CardContent>
             </Card> : null}
 
-            {followUp ? (
+            {followUp && (followUp.status === 'assessed' || isFollowUpEligibleScore(originalScore)) ? (
               <EvidenceFollowUpCard
                 followUp={followUp}
-                initialScore={score}
+                updated={report?.updated ?? false}
                 dark={isDark}
                 onAssessed={setFollowUp}
               />

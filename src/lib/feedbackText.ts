@@ -63,3 +63,19 @@ export function splitFinding(text: string): SplitFinding {
 export function hasSampleWording(text: string): boolean {
   return splitFinding(text).sampleWording.length > 0
 }
+
+/**
+ * Turns a finding's title into a clause that continues a sentence ("...but
+ * show how you applied Python before you apply"): trailing punctuation off,
+ * first letter lowered. Only an ordinary capitalised word is lowered. A first
+ * word with a capital anywhere after its first letter is an acronym, a tool
+ * or a product name (SQL, AWS, JavaScript, GitHub), and lowering it would
+ * misspell it ("sQL"), so it is left exactly as written.
+ */
+export function lowerFirstClause(text: string): string {
+  const trimmed = text.trim().replace(/[.!?]+$/, '')
+  if (!trimmed) return trimmed
+  const firstWord = trimmed.split(/\s/, 1)[0]
+  if (/[A-Z]/.test(firstWord.slice(1))) return trimmed
+  return trimmed.charAt(0).toLowerCase() + trimmed.slice(1)
+}

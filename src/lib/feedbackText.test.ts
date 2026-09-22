@@ -1,6 +1,6 @@
 // Run with: npx tsx src/lib/feedbackText.test.ts
 import assert from 'node:assert/strict'
-import { FICTIONAL_SAMPLE_NOTICE, hasSampleWording, splitFinding } from './feedbackText'
+import { FICTIONAL_SAMPLE_NOTICE, hasSampleWording, lowerFirstClause, splitFinding } from './feedbackText'
 
 let passed = 0
 function test(name: string, fn: () => void) {
@@ -69,6 +69,20 @@ test('the fictional notice carries no dashes and names the action', () => {
   assert.ok(!/[-–—]/.test(FICTIONAL_SAMPLE_NOTICE))
   assert.match(FICTIONAL_SAMPLE_NOTICE, /fictional examples/i)
   assert.match(FICTIONAL_SAMPLE_NOTICE, /real experience/i)
+})
+
+test('lowerFirstClause lowers an ordinary first word and drops trailing punctuation', () => {
+  assert.equal(lowerFirstClause('Show how you applied Python.'), 'show how you applied Python')
+  assert.equal(lowerFirstClause('  Strengthen evidence for stakeholder management  '), 'strengthen evidence for stakeholder management')
+  assert.equal(lowerFirstClause(''), '')
+})
+
+test('lowerFirstClause never misspells an acronym or product name at the start', () => {
+  assert.equal(lowerFirstClause('SQL evidence is thin'), 'SQL evidence is thin')
+  assert.equal(lowerFirstClause('AWS projects need results!'), 'AWS projects need results')
+  assert.equal(lowerFirstClause('JavaScript work is not shown'), 'JavaScript work is not shown')
+  assert.equal(lowerFirstClause('GitHub links would help.'), 'GitHub links would help')
+  assert.equal(lowerFirstClause('ORIGINAL improvement: show it'), 'ORIGINAL improvement: show it')
 })
 
 console.log(`\n${passed} tests passed`)

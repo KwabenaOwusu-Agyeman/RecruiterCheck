@@ -148,20 +148,18 @@ export function buildFollowUpCvText(cvText: string, question: string, answer: st
 }
 
 /**
- * The "what changed" lines shown under the final score. Built from the two
- * scores alone, so it states only what is true: it never claims the answer
- * caused a movement it cannot prove, and never implies a score is owed.
- * At most three lines.
+ * The "what changed" lines shown with an updated report. They name no score:
+ * the report shows one score, and the one it replaced is never shown again.
+ * The follow up can only raise the score or leave it unchanged (see
+ * applyFollowUpFloor), so there are exactly two cases. Nothing here claims
+ * the answer earned the movement beyond what the score itself shows, and
+ * nothing implies a score is owed.
  */
-export function buildWhatChanged(initialScore: number, finalScore: number): string[] {
-  const movement =
-    finalScore > initialScore
-      ? `After reassessing your application with your answer, your score moved from ${initialScore} to ${finalScore}.`
-      : finalScore < initialScore
-        ? `After reassessing your application with your answer, your score moved from ${initialScore} to ${finalScore}. Weighing the answer alongside your CV changed how some evidence was assessed.`
-        : `After reassessing your application with your answer, your score stayed at ${initialScore}. The new detail did not materially change the recruiter's assessment.`
+export function buildWhatChanged(improved: boolean): string[] {
   return [
-    movement,
+    improved
+      ? 'Your score was updated after your follow up answer.'
+      : "Your score stays the same. Your answer did not materially change the recruiter's assessment.",
     'Your answer is self reported and was not on your CV, so it is weighed with more caution than evidence your CV shows.',
   ]
 }

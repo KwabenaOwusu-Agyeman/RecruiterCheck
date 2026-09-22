@@ -4,6 +4,7 @@ import { zipSync } from 'npm:fflate@0.8.2'
 import mammoth from 'npm:mammoth@1.8.0'
 import { PDFDocument, PDFFont, PDFPage, StandardFonts, degrees, rgb } from 'npm:pdf-lib@1.17.1'
 import { extractText as extractPdfText, getDocumentProxy } from 'npm:unpdf@0.12.1'
+import { resolveEffectiveResult } from '../_shared/follow-up-result.ts'
 import { fileExtensionForLog, isOwnStoragePath } from '../_shared/storage-path.ts'
 import {
   classifyGenerationError,
@@ -169,15 +170,39 @@ Deno.serve(async (req) => {
     if (typeof check.interview_probability_score !== 'number') {
       return jsonResponse({ error: 'This check has no score yet' }, 400)
     }
-    const entitlement = getDocumentEntitlement(fundingPackId, check.interview_probability_score)
-
-    if (entitlement.blockedReason) {
-      return jsonResponse({ error: entitlement.blockedReason }, 403)
-    }
-
     const feedbackRow = Array.isArray(check.feedback) ? check.feedback[0] : check.feedback
     if (!feedbackRow) {
       return jsonResponse({ error: 'No feedback available for this check' }, 400)
+    }
+
+    // A report shows one score. When an Evidence Follow Up raised it, that
+    // score and its findings are the candidate's result, so eligibility and
+    // the documents follow it, exactly as the report does (see
+    // resolveEffectiveResult, which only ever replaces the original with a
+    // higher, assessed result). The completed check row is never touched.
+    const { data: followUpRow, error: followUpError } = await adminClient
+      .from('evidence_follow_ups')
+      .select('status, final_score, final_strengths, final_improvements, final_prospects')
+      .eq('check_id', checkId)
+      .maybeSingle()
+    if (followUpError) {
+      console.error('generate-documents: follow up lookup failed', { checkId, code: followUpError.code })
+      return jsonResponse({ error: 'Could not prepare your documents. Please try again.' }, 500)
+    }
+    const result = resolveEffectiveResult(
+      {
+        score: check.interview_probability_score,
+        strengths: feedbackRow.strengths as string[],
+        improvements: feedbackRow.improvements as string[],
+        prospects: feedbackRow.prospects as string[],
+      },
+      followUpRow,
+    )
+
+    const entitlement = getDocumentEntitlement(fundingPackId, result.score)
+
+    if (entitlement.blockedReason) {
+      return jsonResponse({ error: entitlement.blockedReason }, 403)
     }
 
     const { data: cvFile, error: downloadError } = await adminClient.storage
@@ -204,15 +229,15 @@ Deno.serve(async (req) => {
     const generated = await generateDocuments(openaiApiKey, cvText, check.job_description.slice(0, MAX_JOB_DESCRIPTION_CHARS), {
       jobTitle: check.job_title?.slice(0, MAX_JOB_FIELD_CHARS) ?? null,
       companyName: check.company_name?.slice(0, MAX_JOB_FIELD_CHARS) ?? null,
-      strengths: feedbackRow.strengths as string[],
+      strengths: result.strengths,
       // The trailing clause ("Sample wording: ..." on current checks, a
       // placeholder style "Example: ..." on historical ones) exists to show
       // a human reader on the Feedback page what a stronger bullet could
       // look like. Sample wording is fictional by design, so neither its
       // invented figures nor a legacy "X%" placeholder may ever reach a real
       // document: strip the clause before this reaches the generator.
-      improvements: (feedbackRow.improvements as string[]).map(stripExampleClause),
-      prospects: feedbackRow.prospects as string[],
+      improvements: result.improvements.map(stripExampleClause),
+      prospects: result.prospects,
     }, { coverLetter: entitlement.coverLetter, recruiterMessage: entitlement.recruiterMessage })
 
     // The standard PDF font can only draw Windows-1252 text; see toPdfSafeText.

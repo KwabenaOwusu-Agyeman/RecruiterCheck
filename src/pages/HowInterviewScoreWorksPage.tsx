@@ -50,7 +50,7 @@ const faqs = [
   {
     question: 'What is the follow up question after my check?',
     answer:
-      'When your check finds one important evidence gap, you can answer a single optional question about it. If your answer is specific and relevant, MyRecruiterCheck reassesses your application once and shows a Final Recruiter Score beside your initial one. What you write is self reported, so it is weighed with more caution than evidence in your CV, and a general claim such as "I am good at Python" does not raise your score. It is available while your uploaded CV still exists, because uploads are deleted within 24 hours.',
+      'When your result is Needs Improvement and your check finds one important evidence gap, you can answer a single optional question about it. If your answer is specific and relevant, MyRecruiterCheck reassesses your application once and updates your score and feedback in place, so your report always shows one score. Your score can go up or stay the same, and it never goes down. What you write is self reported, so it is weighed with more caution than evidence in your CV, and a general claim such as "I am good at Python" does not raise your score. It is available while your uploaded CV still exists, because uploads are deleted within 24 hours.',
   },
   {
     question: 'How do projects, internships or a career change count if I don\'t have direct job experience?',

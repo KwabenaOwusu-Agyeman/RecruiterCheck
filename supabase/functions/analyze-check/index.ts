@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 import { classifyValidationFailure, toAuditRecord, type AnalysisResult } from './logic.ts'
+import { isFollowUpEligibleScore } from '../_shared/follow-up-result.ts'
 import { fileExtensionForLog, isOwnStoragePath } from '../_shared/storage-path.ts'
 import {
   extractText,
@@ -296,14 +297,15 @@ Deno.serve(async (req) => {
       console.error('analyze-check: completion reported an error but the check is completed', { checkId })
     }
 
-    // Evidence Follow Up: when the analysis found a genuine evidence gap, offer
-    // the candidate one optional question about it. Written to its own table,
+    // Evidence Follow Up: when the analysis found a genuine evidence gap and the
+    // result is Needs Improvement (61 to 84), offer the candidate one optional
+    // question about it. Written to its own table,
     // never to `checks`, so the completed check stays immutable. Best effort
     // and non-blocking, like the email below: a failure here (or the table not
     // existing yet, if this deploys before the migration) must never turn a
     // completed check into an error. ignoreDuplicates keeps it to one row per
     // check even if this path ever runs twice.
-    if (analysis.evidence_gap) {
+    if (analysis.evidence_gap && isFollowUpEligibleScore(analysis.interview_probability_score)) {
       const { error: followUpError } = await adminClient.from('evidence_follow_ups').upsert(
         {
           check_id: checkId,

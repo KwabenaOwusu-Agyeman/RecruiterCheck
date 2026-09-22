@@ -36,9 +36,11 @@ doing it.
 - **Founder decision, Evidence Follow Up.** No Decision Log entry cites this
   feature, and it changes what Notion Scoring Methodology says ("Judge only
   evidence present in the CV and job description"): a self reported answer can
-  now move the Final score, through the same deterministic scoring. Record the
-  decision or amend the methodology. Also: `RATE_LIMIT_MAX` in
-  `analyze-check/runtime.ts` is 10 per hour, not the 5 in the brief. Both
+  now raise the one score, through the same deterministic scoring. Record, or
+  amend the methodology for: the floor (the score can rise or stay, never
+  fall), the Needs Improvement only band (61 to 84), and document eligibility
+  following the updated score. Also: `RATE_LIMIT_MAX` in
+  `analyze-check/runtime.ts` is 10 per hour, not the 5 in the brief; both
   Analyze calls of one flow draw from it. Recorded 2026-09-22.
 - **Known limit.** Acquisition data begins 2026-09-05. Accounts created before
   that date cannot be attributed. Recorded 2026-09-06.
@@ -247,6 +249,48 @@ difference) are added, as a separate page change.
 with the real `published` date, then verify live.
 
 **Commit or PR.** Branch `content/article-9-draft`.
+
+---
+
+## 2026-09-22 — One score after an Evidence Follow Up, Needs Improvement only
+
+**Objective.** Founder direction: a report always shows one score; after a
+follow up the old score is never shown again; the follow up is only for Needs
+Improvement. Agreed: a floor (never falls) and document eligibility follows the
+updated score.
+
+**Completed.** `supabase/functions/_shared/follow-up-result.ts` holds the band
+(61 to 84), `applyFollowUpFloor` and `resolveEffectiveResult`; the browser
+mirror is in `src/lib/evidenceFollowUp.ts` and a test runs both on the same
+cases. `analyze-check` creates the row only inside the band;
+`assess-evidence-follow-up` refuses outside it, applies the floor, and stores
+feedback only when the score rose (otherwise the report is unchanged).
+`generate-documents` decides eligibility on, and writes from, the effective
+result. `FeedbackPage` and `getChecks` (My Checks) show that one score; the
+card no longer shows scores and `what_changed` names none. Labels Initial and
+Final removed; FAQ updated. The completed `checks` row is still never written.
+No migration.
+
+**Verified.** lint, typecheck, `npm test` 45/45, mutation check 14/14, build
+(CSP hashes reconciled), `deno check` adds no errors (8 existing in
+`generate-documents`, 6 in `analyze-check`). Local mocked browser test
+(nothing reached production): 72 to 78 shows only 78 with updated findings and
+no 72 anywhere; an unchanged result keeps 72 and the original findings; the
+card appears at 61 and 84 and not at 55, 60, 85, 90; My Checks shows the
+updated score. Independent read only security review: no findings at 8 of 10.
+**UNVERIFIED:** the deployed functions, the model leg, and a real sign in.
+`generate-documents` wiring has no unit test (its handler is not importable).
+
+**Blockers.** none.
+
+**Founder action required.** Record the decisions, see Open items. Note the
+side effect: a Starter or Active candidate whose follow up lifts them to 85 or
+above loses the CV draft (existing rule: no CV draft at 85 and above).
+Control Centre metrics and the results email still show the original score.
+
+**Next technical step.** Live test on a test account after deploy.
+
+**Commit or PR.** Branch `feature/single-score-follow-up`.
 
 ---
 

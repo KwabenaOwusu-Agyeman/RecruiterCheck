@@ -4,19 +4,18 @@
 // written so the follow up reads as a chance to surface evidence that already
 // exists, never as a way to add qualifications or to negotiate the score.
 
-export const INITIAL_SCORE_LABEL = 'Initial Recruiter Score'
-export const FINAL_SCORE_LABEL = 'Final Recruiter Score'
-
 export const FOLLOW_UP_HEADING = 'One question before you finish'
 export const FOLLOW_UP_INTRO = 'The most important evidence gap in your check'
 export const FOLLOW_UP_OPTIONAL_NOTE = 'Optional. You can skip this and your result stays as it is.'
 export const FOLLOW_UP_INTEGRITY_NOTE =
-  'Only answer if this is genuinely true for you. This is a chance to show evidence you already have, not to add anything new. What you write is self reported, so it is weighed with more caution than evidence in your CV, and it does not change your score unless it is specific and relevant.'
+  'Only answer if this is genuinely true for you. This is a chance to show evidence you already have, not to add anything new. What you write is self reported, so it is weighed with more caution than evidence in your CV, and it does not change your score unless it is specific and relevant. Your score can go up or stay the same. It never goes down.'
 export const FOLLOW_UP_SUBMIT_LABEL = 'Update Recruiter Check'
 export const FOLLOW_UP_SUBMITTING_LABEL = 'Updating...'
 export const FOLLOW_UP_WORKING_MESSAGE =
   'Your recruiter is reassessing your application with your answer. This usually takes under a minute.'
 export const CANDIDATE_REPORTED_LABEL = 'Candidate reported, not on your CV'
+export const UPDATED_REPORT_NOTE =
+  'Updated after your follow up answer. Includes evidence you reported that is not on your CV.'
 export const FOLLOW_UP_FAILURE_PREFIX = 'Your original result is unchanged.'
 
 // The same limits the server enforces (assess-evidence-follow-up validates
@@ -109,4 +108,75 @@ export async function resolveFollowUpOutcome<T extends { status: string }>(optio
     await options.sleep(FOLLOW_UP_POLL_MS)
   }
   throw new Error(FOLLOW_UP_UNCONFIRMED_MESSAGE)
+}
+
+// ---------------------------------------------------------------------------
+// One score. Mirrors supabase/functions/_shared/follow-up-result.ts, which is
+// authoritative and used by the functions; a test in supabase/functions/
+// _shared/follow-up-result.test.ts runs both against the same cases.
+// ---------------------------------------------------------------------------
+
+// The Needs Improvement band: the only results offered a follow up.
+export const FOLLOW_UP_MIN_SCORE = 61
+export const FOLLOW_UP_MAX_SCORE = 84
+
+export function isFollowUpEligibleScore(score: unknown): score is number {
+  return (
+    typeof score === 'number' &&
+    Number.isFinite(score) &&
+    score >= FOLLOW_UP_MIN_SCORE &&
+    score <= FOLLOW_UP_MAX_SCORE
+  )
+}
+
+export interface ReportResult {
+  score: number
+  strengths: string[]
+  improvements: string[]
+  prospects: string[]
+}
+
+export interface StoredFollowUp {
+  status?: string | null
+  final_score?: number | null
+  final_strengths?: string[] | null
+  final_improvements?: string[] | null
+  final_prospects?: string[] | null
+}
+
+export interface EffectiveResult extends ReportResult {
+  updated: boolean
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string')
+}
+
+/**
+ * The one result the report and the check list show. The follow up replaces
+ * the original only when it is assessed, holds a whole score strictly above
+ * the original, and carries its own feedback; the score and the feedback move
+ * together, and the original score is never shown beside the new one.
+ */
+export function resolveEffectiveResult(base: ReportResult, followUp: StoredFollowUp | null | undefined): EffectiveResult {
+  if (
+    followUp &&
+    followUp.status === 'assessed' &&
+    typeof followUp.final_score === 'number' &&
+    Number.isInteger(followUp.final_score) &&
+    followUp.final_score > base.score &&
+    followUp.final_score <= 100 &&
+    isStringArray(followUp.final_strengths) &&
+    isStringArray(followUp.final_improvements) &&
+    isStringArray(followUp.final_prospects)
+  ) {
+    return {
+      score: followUp.final_score,
+      strengths: followUp.final_strengths,
+      improvements: followUp.final_improvements,
+      prospects: followUp.final_prospects,
+      updated: true,
+    }
+  }
+  return { ...base, updated: false }
 }

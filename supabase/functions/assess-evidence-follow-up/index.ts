@@ -22,6 +22,7 @@
 // window as analyze-check (see RATE_LIMIT_* in analyze-check/runtime.ts).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
+import { applyFollowUpFloor, isFollowUpEligibleScore } from '../_shared/follow-up-result.ts'
 import { isOwnStoragePath } from '../_shared/storage-path.ts'
 import { buildFollowUpCvText, buildWhatChanged, validateFollowUpAnswer } from '../analyze-check/evidence-follow-up.ts'
 import { classifyValidationFailure } from '../analyze-check/logic.ts'
@@ -98,6 +99,13 @@ Deno.serve(async (req) => {
     if (checkError || !check) return jsonResponse({ error: 'Check not found' }, 404)
     if (check.status !== 'completed' || typeof check.interview_probability_score !== 'number') {
       return jsonResponse({ error: 'This check is not complete yet' }, 409)
+    }
+    // Only a Needs Improvement result (61 to 84) is offered a follow up. The
+    // row is only created for one, but a stale row or a direct call must not
+    // get around that: the band is enforced here too, on the check's own
+    // immutable score.
+    if (!isFollowUpEligibleScore(check.interview_probability_score)) {
+      return jsonResponse({ error: 'A follow up is only available for a Needs Improvement result.' }, 409)
     }
     if (check.uploads_purged || !check.cv_storage_path || !check.job_description) {
       // Uploads are deleted automatically within 24 hours. The follow up needs
@@ -222,16 +230,21 @@ Deno.serve(async (req) => {
     }
 
     const analysis = result.analysis
-    const finalScore = analysis.interview_probability_score
+    // One score, and it never falls: the reassessment only replaces the
+    // original when it is strictly higher (see applyFollowUpFloor). When it
+    // is not, the row records that the answer was assessed, keeps the
+    // original score, and carries no feedback of its own, so the report keeps
+    // showing exactly the findings it had.
+    const outcome = applyFollowUpFloor(check.interview_probability_score, analysis.interview_probability_score)
     const { data: saved, error: saveError } = await adminClient
       .from('evidence_follow_ups')
       .update({
         status: 'assessed',
-        final_score: finalScore,
-        final_strengths: analysis.strengths,
-        final_improvements: analysis.improvements,
-        final_prospects: analysis.prospects,
-        what_changed: buildWhatChanged(check.interview_probability_score, finalScore),
+        final_score: outcome.score,
+        final_strengths: outcome.improved ? analysis.strengths : null,
+        final_improvements: outcome.improved ? analysis.improvements : null,
+        final_prospects: outcome.improved ? analysis.prospects : null,
+        what_changed: buildWhatChanged(outcome.improved),
         assessed_at: new Date().toISOString(),
       })
       .eq('id', followUp.id)

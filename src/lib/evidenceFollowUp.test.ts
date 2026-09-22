@@ -10,8 +10,11 @@ import {
   FOLLOW_UP_UNCONFIRMED_MESSAGE,
   MAX_ANSWER_CHARS,
   resolveFollowUpOutcome,
-  FINAL_SCORE_LABEL,
-  INITIAL_SCORE_LABEL,
+  resolveEffectiveResult,
+  isFollowUpEligibleScore,
+  FOLLOW_UP_MIN_SCORE,
+  FOLLOW_UP_MAX_SCORE,
+  UPDATED_REPORT_NOTE,
   CANDIDATE_REPORTED_LABEL,
   FOLLOW_UP_HEADING,
   FOLLOW_UP_WORKING_MESSAGE,
@@ -61,19 +64,65 @@ await test('the copy never invites invention and carries the integrity note', ()
   assert.match(CANDIDATE_REPORTED_LABEL, /not on your CV/)
 })
 
-await test('the score labels distinguish initial from final and use no dashes', () => {
-  assert.equal(INITIAL_SCORE_LABEL, 'Initial Recruiter Score')
-  assert.equal(FINAL_SCORE_LABEL, 'Final Recruiter Score')
+await test('the copy has no dashes and promises the score never goes down', () => {
+  assert.match(FOLLOW_UP_INTEGRITY_NOTE, /never goes down/)
   for (const text of [
     FOLLOW_UP_INTEGRITY_NOTE,
     FOLLOW_UP_OPTIONAL_NOTE,
     FOLLOW_UP_HEADING,
     FOLLOW_UP_WORKING_MESSAGE,
     CANDIDATE_REPORTED_LABEL,
-    INITIAL_SCORE_LABEL,
-    FINAL_SCORE_LABEL,
+    UPDATED_REPORT_NOTE,
   ]) {
     assert.doesNotMatch(text, /[-–—]/, text)
+  }
+  assert.match(UPDATED_REPORT_NOTE, /not on your CV/)
+})
+
+// ---------------------------------------------------------------------------
+// One score
+// ---------------------------------------------------------------------------
+
+const BASE = { score: 72, strengths: ['s0'], improvements: ['i0'], prospects: ['p0'] }
+const ASSESSED = { status: 'assessed', final_score: 78, final_strengths: ['s1'], final_improvements: ['i1'], final_prospects: ['p1'] }
+
+await test('only Needs Improvement, 61 to 84, is eligible', () => {
+  assert.equal(FOLLOW_UP_MIN_SCORE, 61)
+  assert.equal(FOLLOW_UP_MAX_SCORE, 84)
+  for (const [score, expected] of [[60, false], [61, true], [72, true], [84, true], [85, false], [100, false]] as const) {
+    assert.equal(isFollowUpEligibleScore(score), expected, String(score))
+  }
+  assert.equal(isFollowUpEligibleScore(null), false)
+  assert.equal(isFollowUpEligibleScore('72'), false)
+  assert.equal(isFollowUpEligibleScore(Number.NaN), false)
+})
+
+await test('an assessed, higher follow up replaces the score and the findings together', () => {
+  const result = resolveEffectiveResult(BASE, ASSESSED)
+  assert.deepEqual(result, { score: 78, strengths: ['s1'], improvements: ['i1'], prospects: ['p1'], updated: true })
+})
+
+await test('the original score is not present anywhere in an updated result', () => {
+  assert.doesNotMatch(JSON.stringify(resolveEffectiveResult(BASE, ASSESSED)), /72/)
+})
+
+await test('anything short of an assessed, strictly higher, complete follow up leaves the original', () => {
+  const untouched = { ...BASE, updated: false }
+  for (const followUp of [
+    null,
+    undefined,
+    { ...ASSESSED, status: 'pending' },
+    { ...ASSESSED, status: 'processing' },
+    { ...ASSESSED, final_score: 72 },
+    { ...ASSESSED, final_score: 60 },
+    { ...ASSESSED, final_score: 101 },
+    { ...ASSESSED, final_score: 78.5 },
+    { ...ASSESSED, final_score: null },
+    { ...ASSESSED, final_strengths: null },
+    { ...ASSESSED, final_improvements: null },
+    { ...ASSESSED, final_prospects: [1] as unknown as string[] },
+  ]) {
+    assert.deepEqual(resolveEffectiveResult(BASE, followUp), untouched, JSON.stringify(followUp))
   }
 })
 

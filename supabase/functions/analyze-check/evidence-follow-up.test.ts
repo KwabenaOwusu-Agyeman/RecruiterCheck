@@ -200,18 +200,18 @@ test('the original CV text is kept verbatim and the answer is labelled as self r
 // What changed
 // ---------------------------------------------------------------------------
 
-test('what changed states the movement without claiming the score was owed', () => {
-  const up = buildWhatChanged(72, 78)
-  const same = buildWhatChanged(72, 72)
-  const down = buildWhatChanged(72, 70)
-  assert.match(up[0], /from 72 to 78/)
-  assert.match(same[0], /stayed at 72/)
+test('what changed names no score, only whether it moved, and never claims a score was owed', () => {
+  const improved = buildWhatChanged(true)
+  const same = buildWhatChanged(false)
+  assert.match(improved[0], /score was updated after your follow up answer/)
+  assert.match(same[0], /stays the same/)
   assert.match(same[0], /did not materially change/)
-  assert.match(down[0], /from 72 to 70/)
-  for (const lines of [up, same, down]) {
+  for (const lines of [improved, same]) {
     assert.ok(lines.length <= 3)
     assert.match(lines[lines.length - 1], /self reported and was not on your CV/)
     assert.doesNotMatch(lines.join(' '), /[-–—]/)
+    // The report has one score: no number, so the replaced one is never shown.
+    assert.doesNotMatch(lines.join(' '), /\d/)
   }
 })
 
