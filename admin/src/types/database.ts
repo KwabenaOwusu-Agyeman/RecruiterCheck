@@ -1363,6 +1363,62 @@ export type Database = {
           },
         ]
       }
+      user_profile_basics: {
+        Row: {
+          consent_at: string
+          consent_version: string
+          country: string | null
+          created_at: string
+          education_level: string | null
+          employment_status: string | null
+          industry: string | null
+          needs_work_permit: boolean | null
+          seniority: string | null
+          target_role: string | null
+          updated_at: string
+          user_id: string
+          years_experience: number | null
+        }
+        Insert: {
+          consent_at?: string
+          consent_version: string
+          country?: string | null
+          created_at?: string
+          education_level?: string | null
+          employment_status?: string | null
+          industry?: string | null
+          needs_work_permit?: boolean | null
+          seniority?: string | null
+          target_role?: string | null
+          updated_at?: string
+          user_id: string
+          years_experience?: number | null
+        }
+        Update: {
+          consent_at?: string
+          consent_version?: string
+          country?: string | null
+          created_at?: string
+          education_level?: string | null
+          employment_status?: string | null
+          industry?: string | null
+          needs_work_permit?: boolean | null
+          seniority?: string | null
+          target_role?: string | null
+          updated_at?: string
+          user_id?: string
+          years_experience?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_profile_basics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       admin_auth_user_summary: {

@@ -1,6 +1,7 @@
 import { requireAdmin } from '@/server/auth'
 import { serviceClient } from '@/server/supabase'
 import { loadAudience } from '@/server/metrics/marketing'
+import { loadProfileBasics } from '@/server/metrics/profileBasics'
 import { resolvePeriod } from '@/lib/time'
 import { parseCustomRange, parsePeriod } from '@/lib/params'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -29,7 +30,8 @@ export default async function AudiencePage({
     parseCustomRange(params.from, params.to) ?? undefined,
   )
 
-  const data = await loadAudience(serviceClient(), period)
+  const db = serviceClient()
+  const [data, profileBasics] = await Promise.all([loadAudience(db, period), loadProfileBasics(db)])
 
   return (
     <div className="flex flex-col gap-6">
@@ -84,6 +86,90 @@ export default async function AudiencePage({
             <BreakdownList rows={data.byConsentSource} emptyTitle="No subscribers yet" />
           </CardContent>
         </Card>
+      </section>
+
+      <section aria-labelledby="profile-basics-heading" className="flex flex-col gap-3">
+        <h2 id="profile-basics-heading" className="text-sm font-semibold text-text-primary">
+          Who uses the product
+        </h2>
+        {!profileBasics.ok ? (
+          <ErrorState title="Could not load profile details" detail={profileBasics.reason} />
+        ) : (
+          <>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <MetricCard
+                label="Profiles saved"
+                metric={profileBasics.summary.saved}
+                hint="Users who added details in Account settings"
+              />
+            </div>
+
+            <Alert tone="info" title="Optional and self reported">
+              These details are only here because a user chose to add them, and every question can
+              be left blank. Each breakdown counts only the people who answered it, so the totals
+              differ between them. Counts only: no row is shown here.
+            </Alert>
+
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Level</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <BreakdownList rows={profileBasics.summary.bySeniority} emptyTitle="Nobody has said yet" />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Years of experience</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <BreakdownList rows={profileBasics.summary.byExperience} emptyTitle="Nobody has said yet" />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Where they are looking</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <BreakdownList rows={profileBasics.summary.byCountry} emptyTitle="Nobody has said yet" />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Industry</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <BreakdownList rows={profileBasics.summary.byIndustry} emptyTitle="Nobody has said yet" />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Employment status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <BreakdownList rows={profileBasics.summary.byEmployment} emptyTitle="Nobody has said yet" />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Highest education</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <BreakdownList rows={profileBasics.summary.byEducation} emptyTitle="Nobody has said yet" />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Work permit</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <BreakdownList rows={profileBasics.summary.needsWorkPermit} emptyTitle="Nobody has said yet" />
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        )}
       </section>
 
       <section aria-labelledby="proof-heading" className="flex flex-col gap-3">
