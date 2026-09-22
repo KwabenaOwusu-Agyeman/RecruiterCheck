@@ -129,7 +129,16 @@ executable by service_role only, `followup_token` and the answers unreadable
 by users, 0 rows. Types regenerated from production matched the hand written
 `src/types/database.ts` exactly. `isTestMode` treats anything but an exact
 `false` as on (unit tested), and nothing in the merge or deploy path sets the
-secret. **UNVERIFIED**: no browser check.
+secret. After the merge: the Edge Function workflow passed, both new functions
+are live with `verify_jwt` as pinned in `config.toml` (true for
+`send-outcome-followups`, false for `submit-application-outcome`), and Vercel
+built `001a3f2`. **Found after shipping:** `myrecruitercheck.com/outcome`
+returned 404, because `vercel.json` rewrites only listed routes to
+`app-shell.html` and #91 never added `/outcome`, so the email's link would
+have failed. Fixed in the follow up PR below with the rewrite, a `noindex`
+header and a robots.txt `Disallow`, matching `/newsletter/unsubscribe`. Nobody
+was affected: 0 opt ins, the first email is due 21 days after one, and test
+mode is on. **UNVERIFIED**: no browser check of the form.
 
 **Blockers.** None.
 
@@ -137,11 +146,12 @@ secret. **UNVERIFIED**: no browser check.
 
 **Next technical step.** None.
 
-**Commit or PR.** PR #91, branch `outcome-followup`. Migration pushed to
-production 2026-09-22 with `supabase db push` after approval. The merge
-deploys the frontend through Vercel and every Edge Function, since
-`supabase/config.toml` changed; the Control Centre deploy with `vercel --prod`
-follows the merge, after approval.
+**Commit or PR.** PR #91 merged as `001a3f2`. Migration pushed to production
+2026-09-22 with `supabase db push` after approval. The merge deployed the
+frontend through Vercel and every Edge Function, since `supabase/config.toml`
+changed. Control Centre deployed from `001a3f2` with `vercel --prod` after
+approval; `myrecruitercheck-admin.vercel.app` serves it. `/outcome` route fix:
+branch `fix-outcome-route`.
 
 ---
 

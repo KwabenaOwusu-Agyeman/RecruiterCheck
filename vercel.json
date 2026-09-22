@@ -47,6 +47,10 @@
     {
       "source": "/newsletter/unsubscribe",
       "destination": "/app-shell.html"
+    },
+    {
+      "source": "/outcome",
+      "destination": "/app-shell.html"
     }
   ],
   "headers": [
@@ -108,6 +112,15 @@
     },
     {
       "source": "/newsletter/unsubscribe",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex"
+        }
+      ]
+    },
+    {
+      "source": "/outcome",
       "headers": [
         {
           "key": "X-Robots-Tag",

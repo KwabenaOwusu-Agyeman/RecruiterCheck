@@ -7,6 +7,7 @@ Disallow: /auth
 Disallow: /sign-in
 Disallow: /sign-up
 Disallow: /newsletter/unsubscribe
+Disallow: /outcome
 
 Sitemap: https://myrecruitercheck.com/sitemap.xml
 
