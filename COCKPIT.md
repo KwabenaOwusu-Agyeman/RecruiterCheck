@@ -104,6 +104,39 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-22 — Sample wording: require a number in every bullet
+
+**Objective.** Founder reviewed a live check's Areas to Improve and found
+both Sample wording bullets had no number at all, even though the requirement
+(SQL for reporting) naturally has one.
+
+**Completed.** `analyze-check/prompt.ts`'s SAMPLE WORDING rule 5 changed from
+"include measurable evidence wherever it is reasonably possible and
+credible", which the model can and did skip, to a requirement with a named
+exception for genuinely uncountable soft skills (stakeholder management,
+attention to detail). This is safe where the same request for the Evidence
+Follow Up question was refused: sample wording is explicitly disclosed
+fiction that feeds no reassessment, existing rule 7 already forbids it being
+listed as a real claim (`new_claims_introduced`), unlike a candidate's self
+reported follow up answer, which the founder was told not to prompt for a
+number, and agreed. No score, weight or threshold touched.
+
+**Verified.** lint, typecheck, `test:scoring` 6/6, mutation check 14/14.
+**UNVERIFIED**, and unverifiable without a live OpenAI call, which this
+session cannot make: whether the model actually includes a number more
+reliably now. Only the prompt text and the existing tests were checked.
+
+**Blockers.** none.
+
+**Founder action required.** none beyond review.
+
+**Next technical step.** Watch the next few live Needs Improvement results for
+whether Sample wording bullets now carry a number.
+
+**Commit or PR.** Branch `prompt/sample-wording-require-numbers`.
+
+---
+
 ## 2026-09-22 — Evidence Follow Up question: fixed a grammar bug found in a live check
 
 **Objective.** Founder ran a real check on the deployed feature and shared a
