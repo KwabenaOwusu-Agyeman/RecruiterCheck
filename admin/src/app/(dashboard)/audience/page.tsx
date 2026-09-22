@@ -2,10 +2,12 @@ import { requireAdmin } from '@/server/auth'
 import { serviceClient } from '@/server/supabase'
 import { loadAudience } from '@/server/metrics/marketing'
 import { loadProfileBasics } from '@/server/metrics/profileBasics'
+import { loadResearchConsent } from '@/server/metrics/research'
 import { resolvePeriod } from '@/lib/time'
 import { parseCustomRange, parsePeriod } from '@/lib/params'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { MetricCard } from '@/components/dashboard/MetricCard'
+import { ButtonLink } from '@/components/ui/Button'
 import { BreakdownList } from '@/components/dashboard/BreakdownList'
 import { Alert, ErrorState } from '@/components/ui/States'
 import { PageHeader } from '@/components/dashboard/PageHeader'
@@ -31,7 +33,11 @@ export default async function AudiencePage({
   )
 
   const db = serviceClient()
-  const [data, profileBasics] = await Promise.all([loadAudience(db, period), loadProfileBasics(db)])
+  const [data, profileBasics, research] = await Promise.all([
+    loadAudience(db, period),
+    loadProfileBasics(db),
+    loadResearchConsent(db),
+  ])
 
   return (
     <div className="flex flex-col gap-6">
@@ -86,6 +92,31 @@ export default async function AudiencePage({
             <BreakdownList rows={data.byConsentSource} emptyTitle="No subscribers yet" />
           </CardContent>
         </Card>
+      </section>
+
+      <section aria-labelledby="research-heading" className="flex flex-col gap-3">
+        <h2 id="research-heading" className="text-sm font-semibold text-text-primary">
+          Research consent
+        </h2>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCard label="Consented" metric={research.active} hint="Live consents, not withdrawn" />
+          <MetricCard label="Withdrawn" metric={research.withdrawn} higherIsWorse />
+          <MetricCard
+            label="Checks in the dataset"
+            metric={research.checksInDataset}
+            hint="Completed checks the export would include"
+          />
+        </div>
+
+        <Alert tone="info" title="What the export contains">
+          Anonymised rows only: month, role, scores, and the profile and outcome answers those users
+          gave. No name, email, employer, job description or CV, and no free text. Every download is
+          written to the audit log.
+        </Alert>
+
+        <div>
+          <ButtonLink href="/export/research">Export research CSV</ButtonLink>
+        </div>
       </section>
 
       <section aria-labelledby="profile-basics-heading" className="flex flex-col gap-3">
