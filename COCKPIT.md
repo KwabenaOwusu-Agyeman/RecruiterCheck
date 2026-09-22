@@ -33,13 +33,6 @@ doing it.
   purchase "from $100"; real packs are EUR 10, 20 and 40. Only the listing owner
   can edit it. Capterra listing (pricing correct) and AlternativeTo are both in
   `Organization.sameAs`. Recorded 2026-09-21.
-- **Founder decision, Evidence Follow Up rate limit.** Decision Log has
-  [Evidence Follow Up: one optional question, floor, and Needs Improvement
-  only](https://app.notion.com/p/3e30b9d863fc8197882ddfb48ff50190) (2026-09-22),
-  and both the Notion Scoring Methodology page and `/about` now cite it.
-  Still unresolved: `RATE_LIMIT_MAX` in `analyze-check/runtime.ts` is 10 per
-  hour, not the 5 named in the original brief; both Analyze calls of one
-  Evidence Follow Up flow draw from it. Recorded 2026-09-22.
 - **Known issue, existing feedback generation.** Found while reviewing a real
   check the founder ran 2026-09-22: `analyze-check`'s Areas to Improve can
   list two near duplicate items for the same requirement (seen: "Enhance SQL
@@ -95,6 +88,40 @@ It is carried by
 and the live `supabase/functions/keyword-scan/`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-22 — Evidence Follow Up rate limit: closed, no code change
+
+**Objective.** Founder asked to resolve the open discrepancy between the
+`analyze-check` rate limit (10 per user per hour in code) and the 5 named in
+the original Evidence Follow Up feature brief.
+
+**Completed.** Investigated rather than changed. `RATE_LIMIT_MAX = 10` in
+`supabase/functions/analyze-check/runtime.ts` predates Evidence Follow Up by
+a month (introduced 2026-08-22, commit `a3373ba`; Evidence Follow Up work
+started 2026-09-21). It is the general `analyze-check` rate limit, not
+something this feature set. Searched Notion for an approved decision fixing
+it at 5: none exists, in the Decision Log or Product and Pricing. The 5 in
+the brief was unsourced scene setting in a pasted chat message, not a cited
+decision, so per `CLAUDE.md`'s source hierarchy the verified, already
+deployed 10 outranks it. Evidence Follow Up's own design, that a follow up
+reassessment draws from the existing shared bucket rather than a separate
+one, is unaffected either way and needed no change.
+
+**Verified.** `git log -S` on the constant; Notion search for a rate limit
+decision, none found.
+
+**Blockers.** none.
+
+**Founder action required.** none. Say so if 10 should actually change for a
+reason unrelated to Evidence Follow Up (cost, abuse); that would be a fresh
+product decision, not a correction of this one.
+
+**Next technical step.** none.
+
+**Commit or PR.** Documentation only, branch `wip/no-active-task`. No source
+file changed.
 
 ---
 
