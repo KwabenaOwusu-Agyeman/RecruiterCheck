@@ -133,6 +133,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "admin_support_notes_related_check_id_fkey"
+            columns: ["related_check_id"]
+            isOneToOne: false
+            referencedRelation: "research_checks"
+            referencedColumns: ["check_id"]
+          },
+          {
             foreignKeyName: "admin_support_notes_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -325,6 +332,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "application_outcomes_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: true
+            referencedRelation: "research_checks"
+            referencedColumns: ["check_id"]
+          },
+          {
             foreignKeyName: "application_outcomes_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -396,6 +410,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "check_ledger_related_check_id_fkey"
+            columns: ["related_check_id"]
+            isOneToOne: false
+            referencedRelation: "research_checks"
+            referencedColumns: ["check_id"]
+          },
+          {
             foreignKeyName: "check_ledger_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -455,6 +476,13 @@ export type Database = {
             referencedRelation: "checks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "check_score_audits_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: true
+            referencedRelation: "research_checks"
+            referencedColumns: ["check_id"]
+          },
         ]
       }
       check_sentiment: {
@@ -486,6 +514,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "checks"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "check_sentiment_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: true
+            referencedRelation: "research_checks"
+            referencedColumns: ["check_id"]
           },
           {
             foreignKeyName: "check_sentiment_user_id_fkey"
@@ -716,6 +751,13 @@ export type Database = {
             referencedRelation: "checks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "evidence_follow_ups_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: true
+            referencedRelation: "research_checks"
+            referencedColumns: ["check_id"]
+          },
         ]
       }
       extension_connect_codes: {
@@ -803,6 +845,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "checks"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: true
+            referencedRelation: "research_checks"
+            referencedColumns: ["check_id"]
           },
         ]
       }
@@ -1132,6 +1181,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "product_feedback_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: false
+            referencedRelation: "research_checks"
+            referencedColumns: ["check_id"]
+          },
+          {
             foreignKeyName: "product_feedback_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
@@ -1289,6 +1345,41 @@ export type Database = {
           },
         ]
       }
+      research_consents: {
+        Row: {
+          consent_version: string
+          created_at: string
+          granted_at: string
+          updated_at: string
+          user_id: string
+          withdrawn_at: string | null
+        }
+        Insert: {
+          consent_version: string
+          created_at?: string
+          granted_at?: string
+          updated_at?: string
+          user_id: string
+          withdrawn_at?: string | null
+        }
+        Update: {
+          consent_version?: string
+          created_at?: string
+          granted_at?: string
+          updated_at?: string
+          user_id?: string
+          withdrawn_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "research_consents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stripe_webhook_events: {
         Row: {
           attempt_count: number
@@ -1361,6 +1452,13 @@ export type Database = {
             referencedRelation: "checks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "upload_purge_log_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: false
+            referencedRelation: "research_checks"
+            referencedColumns: ["check_id"]
+          },
         ]
       }
       user_profile_basics: {
@@ -1412,41 +1510,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "user_profile_basics_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      research_consents: {
-        Row: {
-          consent_version: string
-          created_at: string
-          granted_at: string
-          updated_at: string
-          user_id: string
-          withdrawn_at: string | null
-        }
-        Insert: {
-          consent_version: string
-          created_at?: string
-          granted_at?: string
-          updated_at?: string
-          user_id: string
-          withdrawn_at?: string | null
-        }
-        Update: {
-          consent_version?: string
-          created_at?: string
-          granted_at?: string
-          updated_at?: string
-          user_id?: string
-          withdrawn_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "research_consents_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "profiles"
