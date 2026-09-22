@@ -188,6 +188,40 @@ myrecruitercheck-admin.vercel.app).
 
 ---
 
+## 2026-09-22 — Glossary now states the three score bands numerically
+
+**Objective.** With the scoring conflict resolved (PR 125, deployed), state
+the Interview Score's three result bands in the glossary rather than the
+labels only.
+
+**Completed.** `content/resources/glossary.md`, still `status: draft`. The
+Interview Score entry now reads: below 60 Not a Fit, 61 to 84 Needs
+Improvement, 85 to 95 Likely Interview Candidate, and notes 95 is now the
+highest a score can reach, matching the deployed `MAX_INTERVIEW_SCORE` cap
+and the Scoring Methodology.
+
+**A disk space fault occurred and was resolved during this change, not
+worked around silently.** The build failed with `ENOSPC: no space left on
+device`, and the host had only 117Mi free. Freed roughly 1GB by deleting
+`node_modules` from two clean, stale worktrees (`RecruiterCheck-audit`,
+`RecruiterCheck-release`) and `RecruiterCheck-audit/admin/.next`, all
+reinstallable caches, confirmed clean of uncommitted changes first, and
+touched no source or git history. Re-ran the build after, which passed.
+
+**Verified.** lint (no new warnings), typecheck, `npm run test:unit` 18/18,
+`npm run build`; draft still absent from `dist/` and the sitemap. Only digits
+in the body are the three bands.
+
+**Blockers.** None.
+
+**Founder action required.** None. Approve publishing when ready.
+
+**Next technical step.** Publish, one line change from draft to published.
+
+**Commit or PR.** Branch `content/glossary-score-bands`.
+
+---
+
 ## 2026-09-22 — Interview Score capped at 95, closing the scoring conflict from the glossary work
 
 **Objective.** Founder decision on the conflict reported in the 2026-09-22

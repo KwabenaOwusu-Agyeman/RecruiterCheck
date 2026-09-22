@@ -26,7 +26,7 @@ An ATS is mostly a database. It stores a CV, makes it searchable, and lets a rec
 
 ### Interview Score
 
-The Interview Score is an evidence based estimate of how strongly a CV matches one specific job description, scored across experience, skills and candidate value. It is not a statistical probability computed from historical hiring data, and it is not a guarantee of an interview or hiring decision. A result reads as Not a Fit, Needs Improvement or Likely Interview Candidate, in that order of strength. [How the Interview Score works](/how-interview-score-works) sets out the full method.
+The Interview Score is an evidence based estimate of how strongly a CV matches one specific job description, scored across experience, skills and candidate value. It is not a statistical probability computed from historical hiring data, and it is not a guarantee of an interview or hiring decision. A result below 60 reads as Not a Fit, 61 to 84 reads as Needs Improvement, and 85 to 95 reads as Likely Interview Candidate, the highest a score can reach. [How the Interview Score works](/how-interview-score-works) sets out the full method.
 
 ## How the four fit together
 
