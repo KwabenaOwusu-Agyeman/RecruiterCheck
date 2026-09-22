@@ -34,6 +34,10 @@ export default tseslint.config(
     //                    its browser globals do not describe a server runtime.
     //                    Lint it with `cd admin && npm run lint`, which
     //                    which-checks.mjs already selects for admin changes.
+    //   .claude/worktrees  nested git worktrees, each a full checkout with its
+    //                    own admin/, review/ etc. Without this, root `npm run
+    //                    lint` recurses into every one of them and reports
+    //                    their errors as this checkout's own.
     ignores: [
       'admin/**',
       'dist',
@@ -42,6 +46,7 @@ export default tseslint.config(
       '.scratch/**',
       'brand-concepts/**',
       'review/**',
+      '.claude/worktrees/**',
     ],
   },
   {

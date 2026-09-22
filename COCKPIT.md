@@ -100,6 +100,39 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-22 — eslint.config.js: stop root lint recursing into nested worktrees
+
+**Objective.** A full verification sweep (`npm run verify`) reported 24
+problems, 12 of them errors. Investigated before treating it as a real
+regression, per Failure handling.
+
+**Completed.** All 12 errors and 10 of the 12 warnings were not in this
+checkout's own source: `eslint.config.js`'s ignores list predates this
+machine's multi-worktree setup (several Claude sessions each work from
+`.claude/worktrees/<name>/`, a full nested checkout with its own `admin/`,
+`review/`, etc.), and root `npm run lint` was recursing into every one of
+them, reporting their errors and warnings as this checkout's own. This
+checkout's actual source carried 0 errors and 2 pre-existing warnings
+(`AuthModalContext.tsx:29`, `useAuth.tsx:183`, both unrelated,
+`react-refresh/only-export-components`). Added `.claude/worktrees/**` to the
+ignores list, documented the same way as the existing entries.
+
+**Verified.** `npm run lint`: 0 errors, the same 2 pre-existing warnings,
+no worktree paths in the output. `tsc -b`: clean. Full sweep otherwise
+already confirmed green before this fix: `npm test` 50/50 files, 732
+assertions; `npm run test:admin` 12/12, 130 assertions; admin's own lint,
+typecheck and build all clean.
+
+**Blockers.** None.
+
+**Founder action required.** None.
+
+**Next technical step.** None.
+
+**Commit or PR.** Branch `lint-scope-fix`.
+
+---
+
 ## 2026-09-22 — Application outcome follow up shipped (test mode on)
 
 **Objective.** Ship build item 1 of the Decision Log entry "Data strategy:
