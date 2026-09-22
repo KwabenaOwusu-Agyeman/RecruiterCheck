@@ -1340,7 +1340,6 @@ export type Database = {
           outcome: string
         }[]
       }
-      cleanup_expired_keyword_scan_results: { Args: never; Returns: undefined }
       complete_check_analysis: {
         Args: {
           p_check_id: string
@@ -1376,14 +1375,6 @@ export type Database = {
           p_uvp_score?: number
         }
         Returns: undefined
-      }
-      complete_keyword_scan: {
-        Args: { p_reservation_id: string; p_result: Json }
-        Returns: {
-          cached_result: Json
-          outcome: string
-          result_expires_at: string
-        }[]
       }
       complete_stripe_webhook_event: {
         Args: { p_claim_token: string; p_event_id: string }
@@ -1482,20 +1473,6 @@ export type Database = {
           stripe_payment_intent_id: string
         }[]
       }
-      poll_keyword_scan_status: {
-        Args: { p_idempotency_key: string }
-        Returns: {
-          cached_result: Json
-          outcome: string
-          reservation_id: string
-        }[]
-      }
-      reconcile_abandoned_keyword_scan_reservations: {
-        Args: never
-        Returns: {
-          reconciled_count: number
-        }[]
-      }
       reconcile_ambiguous_refunds: {
         Args: never
         Returns: {
@@ -1520,25 +1497,11 @@ export type Database = {
         Args: { p_check_id: string; p_user_id: string }
         Returns: undefined
       }
-      release_keyword_scan_reservation: {
-        Args: { p_reservation_id: string }
-        Returns: {
-          outcome: string
-        }[]
-      }
       reserve_check_analysis: {
         Args: { p_check_id: string; p_user_id: string }
         Returns: {
           allowed: boolean
           reason: string
-        }[]
-      }
-      reserve_keyword_scan: {
-        Args: { p_idempotency_key: string }
-        Returns: {
-          cached_result: Json
-          outcome: string
-          reservation_id: string
         }[]
       }
       reserve_refund: {

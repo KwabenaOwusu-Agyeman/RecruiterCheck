@@ -69,9 +69,9 @@ doing it.
   refunds come from the billing page; the extension connect page accepts any
   `*.chromiumapp.org` redirect (pin the extension id); the implicit auth flow
   allows login CSRF (PKCE); newsletter signup has no double opt in; disputes
-  do not claw back credits; `keyword-scan` still uses the pre Part A counter;
-  CLAUDE.md says the primary CTA reads "Check" while the site uses "Check My
+  do not claw back credits; CLAUDE.md says the primary CTA reads "Check" while the site uses "Check My
   Application". Recorded 2026-09-21.
+
 ## Historical review material
 
 `PART_A_KEYWORD_SCAN_REVIEW.md`, `PART_A_KEYWORD_SCAN_CORRECTED_REVIEW.md`,
@@ -82,12 +82,64 @@ current status record. This file is.
 
 Read them with one correction in mind. Each states in bold near the top that
 nothing in it has been applied, deployed, committed or pushed. That was true
-when each was written and is false now: the Part A keyword scan work shipped.
-It is carried by
-`supabase/migrations/20260828064817_part_a_keyword_scan_credits_and_refund_integrity.sql`
-and the live `supabase/functions/keyword-scan/`. Treat every "nothing applied"
+when each was written and is false now: the Part A database work shipped in
+`supabase/migrations/20260828064817_part_a_keyword_scan_credits_and_refund_integrity.sql`.
+Its Keyword Scan reservation design was never adopted by the live
+`supabase/functions/keyword-scan/`, which kept the free counter; the unused
+reservation functions are dropped by `20260922170000`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-22 — Unused Keyword Scan reservation functions dropped
+
+**Objective.** Founder request: remove the unused reservation code, keeping
+scans unlimited for buyers.
+
+**Completed.** Migration
+`20260922170000_drop_unused_keyword_scan_reservation_functions.sql`
+unschedules the `reconcile-abandoned-keyword-scans` (every 10 minutes) and
+`cleanup-expired-keyword-scan-results` (hourly) cron jobs, drops
+`reserve_keyword_scan`, `complete_keyword_scan`,
+`release_keyword_scan_reservation`, `poll_keyword_scan_status`,
+`reconcile_abandoned_keyword_scan_reservations` and
+`cleanup_expired_keyword_scan_results` without CASCADE, corrects the
+`profiles.keyword_scans_consumed` comment, and asserts that none remain. The
+first four were executable by any authenticated user. The six entries are
+removed from `src/types/database.ts` and `admin/src/types/database.ts`.
+Kept, because `reserve_refund` and `grant_pack_credits` still read them:
+`keyword_scan_reservations`, `credit_batches.keyword_scans_*`,
+`check_ledger.keyword_scan_reservation_id`.
+
+**Verified.** Root and admin typecheck, `npm run test:edge` 28/28,
+`npm run test:admin` 11/11, admin lint and build. A grep of all migrations
+found no caller other than the two cron jobs. No Docker here, so instead of
+`supabase db reset` the 65 earlier migrations were replayed on a local
+Postgres 16 with stubbed platform schemas, seeded like production (both cron
+jobs, two completed reservation rows), and this migration run in one
+transaction: its assertion passed, and `grant_pack_credits` then
+`reserve_refund` still ran (rolled back). Production, read only, before the
+push: all six signatures matched the drop statements, no dependants, no other
+function body named them. `keyword_scan_reservations` held two completed free
+scan rows from 2026-08-28 and 2026-08-30 with no batch, so the table comment
+was reworded from "always empty"; `reserve_refund` counts only `reserved` rows
+on the refunded batch, so they never block a refund. After the push:
+migration recorded, no function or cron job left, both callers present, and
+types regenerated from production matched `src/types/database.ts` exactly
+(admin copy byte identical).
+
+**Blockers.** None.
+
+**Founder action required.** None.
+
+**Next technical step.** Optional, separately reviewed: drop the reservation
+table and per pack scan columns by rewriting `grant_pack_credits` and
+`reserve_refund`.
+
+**Commit or PR.** PR #128, branch `drop-keyword-scan-reservation-functions`.
+Migration pushed to production 2026-09-22 with `supabase db push` after
+approval. No Edge Functions changed.
 
 ---
 
