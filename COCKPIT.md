@@ -87,6 +87,23 @@ doing it.
   allows login CSRF (PKCE); newsletter signup has no double opt in; disputes
   do not claw back credits; CLAUDE.md says the primary CTA reads "Check" while the site uses "Check My
   Application". Recorded 2026-09-21.
+- **Founder decision, document entitlement scope.** Raised 2026-09-22 from the
+  "Junior Data Analyst" check (see the 2026-09-22 manual credit grant entry
+  below): a completed check's document entitlement is fixed forever at
+  completion from whichever batch funded that specific check
+  (`complete_check_analysis` writes `checks.funding_pack_id` once,
+  `protect_check_analysis_fields` locks it after). Buying or correcting a
+  pack afterward does not retroactively unlock documents for a check that
+  already ran. Founder's proposal: base entitlement on currently held active
+  packs instead. Not built, because the current `reserve_refund` only checks
+  a batch is fully unused (`checks_remaining == checks_granted`), not whether
+  it funded a document generation, so evaluating entitlement live against
+  current holdings would open a buy-generate-refund gap. If this direction is
+  confirmed, it needs both a live entitlement check (`documentEntitlement.ts`,
+  `supabase/functions/generate-documents/logic.ts`) and a `reserve_refund`
+  change to block refunding a batch once it has been drawn on for a
+  generation. Only the Recommendation card's CTA layout changed so far (PR
+  #146); no entitlement or refund logic touched. Recorded 2026-09-22.
 
 ## Historical review material
 
@@ -105,6 +122,52 @@ Its Keyword Scan reservation design was never adopted by the live
 reservation functions are dropped by `20260922170000`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-22 — Recommendation card: drop the new-check CTA, generate only
+
+**Objective.** Founder-directed UI change on the Check Results page: the
+Recommendation card's blocked states should stop offering a "Run a new
+check" / "Get checks" CTA, since starting a new check is already reachable
+from the header and My Checks, and should show a document-related CTA only
+when this specific check has one to offer.
+
+**Completed.** `src/pages/FeedbackPage.tsx`: removed the `NextCheckCta`
+component and the `hasCheckBalance` variable; the two blocked branches of
+the Recommendation card (`isLowFit` and the general `blockedReason` branch)
+now render the explanatory text alone, with no button. The Generate CTA and
+the download buttons for an entitled check are unchanged, they already only
+render when `documentEntitlement.blockedReason` is null.
+
+This was raised from a real case: the founder's own "Junior Data Analyst"
+check (funded by the broken null-`pack_id` grant, see the entry below) shows
+the blocked message and, before this change, a "Run a new check" CTA even
+though the account now holds a valid pack. Whether current pack holdings
+should retroactively unlock that check's documents is a separate, undecided
+question, recorded as a new Open item; this change only removes the
+redundant CTA, it does not alter entitlement.
+
+**Verified.** Root lint (2 pre-existing warnings, unrelated files),
+typecheck, and `test:unit` 24/24 files, 279 assertions, all clean.
+`documentEntitlement.ts` itself is unchanged, so its 15 unit tests exercise
+the same behaviour as before. Confirmed `/checks/:id` is excluded from
+prerendering (`scripts/prerender.mjs:55`), so no build or SEO check applies.
+MANUAL CHECK REQUIRED: visual check against localhost:5173 was not run this
+session.
+
+**Blockers.** None.
+
+**Founder action required.** None for this change. See the new "Founder
+decision, document entitlement scope" Open item for the separate question
+this was raised from.
+
+**Next technical step.** None planned for the CTA layout. If the entitlement
+scope decision is made, the work is in `documentEntitlement.ts`,
+`supabase/functions/generate-documents/logic.ts`, and `reserve_refund`.
+
+**Commit or PR.** PR #146, merged as `5c4e5cb`. Pushed to `origin` and
+`personal`.
 
 ---
 
