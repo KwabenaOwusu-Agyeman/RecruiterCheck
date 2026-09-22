@@ -64,17 +64,11 @@ doing it.
   read of `product_feedback` is refused; export one CSV from the Control
   Centre and confirm an `export.*` row in `admin_audit_log`. Everything from
   PR #96 is live, the Control Centre included. Recorded 2026-09-21.
-- **Founder decision.** `20260921121000` (now in production) keeps refund
-  records detached (`ON DELETE SET NULL`) when an account is deleted, but
-  the refund amount lives on `credit_batches`, which is deleted with the
-  account, and the Control Centre refunds page inner joins both, so detached
-  rows are not shown. Either snapshot amount, currency and pack onto
-  `refund_events` and use left joins (keep the trail), or switch both keys to
-  `CASCADE` (delete it). Needs a follow up migration either way. Also
-  proposed for that migration: a separate retention timestamp instead of
-  resetting `checks.created_at` when a draft gets a new CV, and rejecting
-  `..` or empty segments in `cv_storage_path` in the trigger (Edge Functions
-  already do). Recorded 2026-09-21.
+- **Proposed, not decided.** Two small follow ups from the audit review:
+  a separate retention timestamp instead of resetting `checks.created_at`
+  when a draft gets a new CV, and rejecting `..` or empty segments in
+  `cv_storage_path` in the checks trigger (Edge Functions already do).
+  Recorded 2026-09-21.
 - **Founder decision.** Found by the 2026-09-21 audit and left unchanged
   because each is a product, legal or auth flow call: the Cookie Policy says
   nothing is kept in browser storage (attribution is, `mrc_attribution_v1`);
@@ -101,6 +95,37 @@ It is carried by
 and the live `supabase/functions/keyword-scan/`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-22 — Refund amounts kept on the refund record
+
+**Objective.** Founder decision on the audit's open item: keep the refund
+trail when an account is deleted, with its amounts.
+
+**Completed.** Migration `20260922090000_snapshot_refund_amounts.sql` adds
+`amount_paid`, `currency`, `pack_id` and `stripe_payment_intent_id` to
+`refund_events`, filled at insert by trigger `refund_events_snapshot_batch_facts`
+and backfilled for rows whose batch still existed. The Control Centre
+refunds page left joins, labels a deleted customer and reads the copied
+amount. Revenue metrics unchanged by design.
+
+**Verified.** Local replay: snapshot at insert, survival after account
+deletion, backfill of a pre-existing row. `test:admin` 11/11, `test:edge`
+28/28, root and admin typecheck, admin build. Production post-conditions
+passed on push; types regenerated from production matched the branch.
+
+**Blockers.** None.
+
+**Founder action required.** None. Refunds detached between
+`20260921121000` and this migration could not be backfilled; Stripe holds
+them.
+
+**Next technical step.** None.
+
+**Commit or PR.** PR #126 merged as `d0d1076`. Migration pushed to
+production 2026-09-22 after approval. Control Centre deployed from
+`d0d1076` with `vercel --prod` after approval. No Edge Functions changed.
 
 ---
 
