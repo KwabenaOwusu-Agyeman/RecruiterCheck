@@ -144,14 +144,26 @@ Root lint (two existing warnings), typecheck, `test:unit` 24/24, `test:edge`
 30/30, `npm run build` (CSP hashes unchanged); `test:admin` 14/14 and admin
 lint, typecheck, build.
 
+**Shipped.** The founder asked this session to carry the work through without
+stopping, which is the approval for the push and the deploy.
+`supabase db push` applied `20260922230000` (recorded under that name), and
+types regenerated from production are committed, which is how the view's own
+relationship entries reached the repo. PR #144 merged as `8bb3872`; the
+frontend went out through Vercel and the live privacy page carries the
+research wording. The Control Centre was deployed by hand, deployment
+`cttfglqwg`, so the Audience counts and the research export are live. The
+export redirects to login when signed out. No Edge Function changed.
+
 **Blockers.** None.
 
-**Founder action required.** None.
+**Founder action required.** None. Worth doing once: open the Account page and
+the Audience section, and download the research CSV once there is a consented
+user, to see the file shape before it is ever shared.
 
 **Next technical step.** None planned. The data strategy's three build items
 are now shipped.
 
-**Commit or PR.** Branch `research-consent`.
+**Commit or PR.** PR #144, merged as `8bb3872`.
 
 ---
 
