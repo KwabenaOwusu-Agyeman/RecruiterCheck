@@ -10,7 +10,7 @@ export function PrivacyPage() {
   })
 
   return (
-    <LegalLayout title="Privacy Policy" updated="16 September 2026">
+    <LegalLayout title="Privacy Policy" updated="22 September 2026">
       <Section title="1. Who We Are">
         <p>
           MyRecruiterCheck ("we", "us") operates from the Netherlands and is the data controller for
@@ -26,6 +26,7 @@ export function PrivacyPage() {
           <li><strong>Product feedback:</strong> ratings and comments you voluntarily provide after a Recruiter Check, plus your first name and target job title when you permit us to feature a review.</li>
           <li><strong>Content you submit:</strong> your CV, job descriptions, and any generated feedback and documents.</li>
           <li><strong>Application outcomes:</strong> only if you opt in after a check. Whether you applied, how you applied, how far the application got, how many days the employer took to reply, and any salary offered.</li>
+          <li><strong>Profile details:</strong> only if you choose to add them in Account settings. Your target role, level, country, years of experience, industry, employment status, highest education, and whether you need a work permit.</li>
           <li><strong>Payment data:</strong> handled directly by Stripe. We do not receive or store your card details.</li>
           <li><strong>Usage data:</strong> log data, device and browser information, and cookies necessary to operate the Service.</li>
         </ul>
@@ -84,6 +85,10 @@ export function PrivacyPage() {
           If you opt in to the application follow up, we email you once, three weeks after the
           check. Your answers are kept for as long as your account is active. You can stop the
           follow up at any time from the link in that email, and we will not ask again.
+        </p>
+        <p>
+          Profile details you add in Account settings are kept until you change or delete them.
+          Deleting them removes the record of your consent along with the details themselves.
         </p>
         <p>
           You can permanently delete your account and all remaining data at any time from{' '}

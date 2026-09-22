@@ -58,6 +58,11 @@ doing it.
   The cron job itself is confirmed: the founder ran
   `select jobname, schedule, active from cron.job` in the SQL editor on
   2026-09-22 and found one active row at 09:00 UTC. Recorded 2026-09-22.
+- **Founder action, before PR for profile basics merges.** Apply
+  `supabase/migrations/20260922210000_profile_basics.sql` with
+  `supabase db push` from the `profile-basics` branch. The Account page
+  section and the Control Centre reads depend on the table, so the PR must not
+  merge first. Recorded 2026-09-22.
 - **Known limit.** Acquisition data begins 2026-09-05. Accounts created before
   that date cannot be attributed. Recorded 2026-09-06.
 - **Known limit, browser verification.** Hydration and console behaviour on the
@@ -105,6 +110,53 @@ Its Keyword Scan reservation design was never adopted by the live
 reservation functions are dropped by `20260922170000`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-22 — Profile basics, opt in details on the Account page
+
+**Objective.** Build item 2 of the Decision Log entry "Data strategy: what we
+collect, for product value and exit readiness" (approved 2026-09-16): target
+role, level, country, years of experience, industry, employment status,
+education and work permit, each optional and behind the user's own consent.
+
+**Completed.** Migration `20260922210000_profile_basics.sql` adds
+`user_profile_basics`, one row per user, created only by that user's consent:
+RLS for select, insert, update and delete of their own row, column grants that
+keep `consent_at`, `created_at` and `updated_at` out of the client's hands, the
+shared `set_updated_at` trigger, and closed vocabularies as check constraints.
+`src/lib/profileBasics.ts` holds the wording, the option lists and the payload
+shaping; `src/services/profileBasicsService.ts` reads, upserts and deletes;
+`src/components/account/ProfileBasicsCard.tsx` is the Account page section,
+with Delete these details as the withdrawal. Privacy policy sections 2 and 7
+updated, dated 22 September 2026. Control Centre: a "Who uses the product"
+section on Audience, counts and shares only, from
+`admin/src/server/metrics/profileBasics.ts` and
+`admin/src/lib/profileBasicsSummary.ts`. The free text `target_role` is never
+selected into the Control Centre, guarded by a test.
+
+**Verified.** `scripts/local-db/replay.sh` applies all 68 migrations, and a 20
+case probe passes: a user can save, edit and delete only their own row, cannot
+write another user's row or backdate consent, values outside each list are
+refused, a blank role is refused, anon is refused, deleting the profile deletes
+the row. Root lint (two existing warnings), typecheck, `test:unit` 22/22,
+`test:edge` 30/30, `npm run build` (CSP hashes unchanged, privacy page carries
+the new wording); `test:admin` 13/13 and admin lint, typecheck, build. One test
+was corrected rather than the code: it asserted breakdown shares were out of
+all saved rows, while the code and the page say they are out of the people who
+answered that question. **UNVERIFIED**: types are hand written until the table
+exists in production; no browser check.
+
+**Blockers.** Migration push, see Open items.
+
+**Founder action required.** `supabase db push` from the `profile-basics`
+branch.
+
+**Next technical step.** After the push, regenerate types from production,
+merge (the frontend deploys through Vercel; no Edge Function changed), then
+the Control Centre deploy with approval.
+
+**Commit or PR.** Branch `profile-basics`.
 
 ---
 

@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { PageHeader } from '@/components/ui/Badge'
 import { PasswordInput } from '@/components/ui/PasswordInput'
+import { ProfileBasicsCard } from '@/components/account/ProfileBasicsCard'
 import { useAuth } from '@/hooks/useAuth'
 import { usePageMeta } from '@/hooks/usePageMeta'
 import { supabase } from '@/lib/supabase'
@@ -226,6 +227,8 @@ export function AccountPage() {
           </CardContent>
         </Card>
       </div>
+
+      <ProfileBasicsCard />
 
       <Card className="mt-4 sm:mt-8">
         <CardHeader className="flex-row items-center justify-between gap-3 py-3.5 sm:py-5">
