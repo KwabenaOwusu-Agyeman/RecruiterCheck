@@ -104,6 +104,58 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-22 — Control Centre: manual free-credit grant action, deployed and verified live
+
+**Objective.** Founder wanted the ability to grant a test account (owner's own,
+fullcircle.ai@gmail.com) a free check, and asked about a "power subscription".
+No subscription tier exists in the approved product (Product and Pricing,
+Decision Log "Use three prepaid credit packs": Power is a one-time 40-check
+pack, not a subscription; `profiles.subscription_tier` is dead, unused
+infrastructure). Resolved as: grant either 1 free check or a free 40-check
+Power pack, nothing else, since no feature is currently gated by tier.
+
+**Completed.** `admin/src/lib/creditGrant.ts` (allowlisted plan to amount:
+`single` to 1, `power` to 40), `admin/src/app/(dashboard)/users/[id]/actions.ts`
+(`grantFreeCredits` server action), `admin/src/app/(dashboard)/users/[id]/GrantCreditsForm.tsx`
+(two step confirm: pick a plan, then a required reason, then confirm), wired
+into `users/[id]/page.tsx`. Calls the existing, previously unused security
+definer RPC `grant_check_credits` (`supabase/migrations/20260825024217_check_pack_system.sql`),
+source `manual_grant`. Every grant is written to `admin_audit_log` via the
+existing `recordAdminAction`. No schema change. One bug caught in self review
+before merge: `armedPlan` was not resetting after a successful grant, leaving
+the confirm form (and its typed reason) on screen inviting a second submit;
+fixed with a `useEffect` that collapses the form back on `state.ok`.
+
+**Verified.** `npm run test:admin` 11/11 files, 123 assertions (new
+`creditGrant.test.ts`). Admin lint, typecheck and build clean. Security review
+(`/security-review`): one candidate finding, a double grant from a duplicate
+submission, investigated and excluded at 3/10 confidence, since the actor is
+always an already authorised admin and the same non-idempotent pattern already
+exists in `createSupportNote`. Local end-to-end testing was not possible: this
+machine has no Docker at all, so `supabase start` cannot run here. Verified
+instead live in production after deploy: granted fullcircle.ai@gmail.com a
+free Power pack through the deployed Control Centre UI, confirmed the balance
+moved 0 to 40, an `active` `manual_grant` batch and a `+40` ledger entry
+appeared, and a `success` `credits.manual_grant` row appeared in
+`admin_audit_log` with the reason given.
+
+**Blockers.** None.
+
+**Founder action required.** None. Review the account balance change on
+fullcircle.ai@gmail.com (0 to 40, one manual test grant) if you want to reset
+it.
+
+**Next technical step.** None planned. Possible follow up if it comes up
+again: a generic idempotency key on `grant_check_credits` alongside
+`stripe_payment_intent_id`, so a retried manual grant cannot double credit an
+account; not done here since the finding didn't clear the security review bar.
+
+**Commit or PR.** PR #124, merged as `33cdbc5`. Deployed to production with
+`vercel --prod` on 2026-09-22 after approval (aliased to
+myrecruitercheck-admin.vercel.app).
+
+---
+
 ## 2026-09-22 — Glossary drafted; a scoring source conflict found and reported, not resolved
 
 **Objective.** Founder approved Brief 12 (glossary, a P2 backlog item) with
