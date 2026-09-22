@@ -15,8 +15,13 @@ export const dynamic = 'force-dynamic'
 
 interface Row {
   id: string
-  user_id: string
+  // Null once the customer deleted their account (20260921121000).
+  user_id: string | null
   batch_id: string | null
+  // Copied from the batch when the refund was created (20260922090000), so
+  // they survive the account and its batch being deleted.
+  amount_paid: number | null
+  currency: string | null
   status: string
   stripe_refund_id: string | null
   reason: string | null
@@ -49,7 +54,9 @@ export default async function RefundsPage({
   const { data, count, error } = await serviceClient()
     .from('refund_events')
     .select(
-      'id, user_id, batch_id, status, stripe_refund_id, reason, reason_detail, attempt_number, created_at, finalized_at, profiles!inner(email), credit_batches!inner(amount_paid, currency, pack_id)',
+      // Left joins: a refund whose customer deleted their account keeps its
+      // row, and must stay on this page.
+      'id, user_id, batch_id, amount_paid, currency, status, stripe_refund_id, reason, reason_detail, attempt_number, created_at, finalized_at, profiles(email), credit_batches(amount_paid, currency, pack_id)',
       { count: 'exact' },
     )
     .order('created_at', { ascending: false })
@@ -75,11 +82,14 @@ export default async function RefundsPage({
     {
       key: 'user',
       header: 'Customer',
-      render: (row) => (
-        <Link href={`/users/${row.user_id}`} className="font-medium text-blue hover:underline">
-          {row.profiles?.email ?? 'unknown'}
-        </Link>
-      ),
+      render: (row) =>
+        row.user_id ? (
+          <Link href={`/users/${row.user_id}`} className="font-medium text-blue hover:underline">
+            {row.profiles?.email ?? 'unknown'}
+          </Link>
+        ) : (
+          <span className="text-text-secondary">Deleted account</span>
+        ),
     },
     {
       key: 'status',
@@ -92,10 +102,11 @@ export default async function RefundsPage({
       key: 'amount',
       header: 'Amount',
       numeric: true,
-      render: (row) =>
-        row.credit_batches?.amount_paid != null && row.credit_batches.currency
-          ? formatMoney(row.credit_batches.amount_paid, row.credit_batches.currency)
-          : '-',
+      render: (row) => {
+        const amount = row.amount_paid ?? row.credit_batches?.amount_paid ?? null
+        const currency = row.currency ?? row.credit_batches?.currency ?? null
+        return amount != null && currency ? formatMoney(amount, currency) : '-'
+      },
     },
     {
       key: 'reason',

@@ -1141,38 +1141,50 @@ export type Database = {
       }
       refund_events: {
         Row: {
+          amount_paid: number | null
           attempt_number: number
           batch_id: string | null
           created_at: string
+          currency: string | null
           finalized_at: string | null
           id: string
+          pack_id: string | null
           reason: string | null
           reason_detail: string | null
           status: string
+          stripe_payment_intent_id: string | null
           stripe_refund_id: string | null
           user_id: string | null
         }
         Insert: {
+          amount_paid?: number | null
           attempt_number?: number
           batch_id?: string | null
           created_at?: string
+          currency?: string | null
           finalized_at?: string | null
           id?: string
+          pack_id?: string | null
           reason?: string | null
           reason_detail?: string | null
           status?: string
+          stripe_payment_intent_id?: string | null
           stripe_refund_id?: string | null
           user_id?: string | null
         }
         Update: {
+          amount_paid?: number | null
           attempt_number?: number
           batch_id?: string | null
           created_at?: string
+          currency?: string | null
           finalized_at?: string | null
           id?: string
+          pack_id?: string | null
           reason?: string | null
           reason_detail?: string | null
           status?: string
+          stripe_payment_intent_id?: string | null
           stripe_refund_id?: string | null
           user_id?: string | null
         }
