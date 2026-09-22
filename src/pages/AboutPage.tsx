@@ -15,7 +15,7 @@ export function AboutPage() {
     // standalone={false}: /about is the one LegalLayout page routed inside
     // PublicLayout, which already supplies the skip link, header, back link and
     // main landmark. Rendering them again gave this page two of each.
-    <LegalLayout title="About MyRecruiterCheck" updated="21 September 2026" standalone={false}>
+    <LegalLayout title="About MyRecruiterCheck" updated="22 September 2026" standalone={false}>
       <Section title="What MyRecruiterCheck is">
         <p>
           MyRecruiterCheck is a recruiter style CV and job description match checker for early
@@ -111,6 +111,16 @@ export function AboutPage() {
           posting, not a guarantee of an interview or hiring decision, and not an exact simulation
           of any specific company's applicant tracking system or recruiting team.
         </p>
+        <p>
+          If your result is Needs Improvement, you may be offered one optional follow up
+          question about the single most important evidence gap. Your answer is self reported
+          and unverified, and it can only raise your score or leave it unchanged, never lower
+          it.{' '}
+          <Link to="/how-interview-score-works" className="font-medium text-blue hover:underline">
+            How the Interview Score works
+          </Link>{' '}
+          explains this in full.
+        </p>
       </Section>
 
       <Section title="Honest, evidence based feedback">
@@ -198,7 +208,7 @@ export function AboutPage() {
             '@id': `${BRAND.canonicalUrl}/about#webpage`,
             url: `${BRAND.canonicalUrl}/about`,
             name: 'About MyRecruiterCheck',
-            dateModified: '2026-09-21',
+            dateModified: '2026-09-22',
             isPartOf: { '@id': `${BRAND.canonicalUrl}/#website` },
             mainEntity: { '@id': `${BRAND.canonicalUrl}/#organization` },
           }),
