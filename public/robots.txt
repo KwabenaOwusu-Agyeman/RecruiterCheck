@@ -9,3 +9,6 @@ Disallow: /sign-up
 Disallow: /newsletter/unsubscribe
 
 Sitemap: https://myrecruitercheck.com/sitemap.xml
+
+# LLMs: https://myrecruitercheck.com/llms.txt
+# LLMs-full: https://myrecruitercheck.com/llms-full.txt

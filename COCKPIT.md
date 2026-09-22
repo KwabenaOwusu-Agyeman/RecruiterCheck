@@ -143,6 +143,32 @@ approval. No Edge Functions changed.
 
 ---
 
+## 2026-09-22 — robots.txt: courtesy comment lines added for llms.txt and llms-full.txt
+
+**Objective.** Founder asked to check whether `llms.txt`/`llms-full.txt` are
+linked from `public/robots.txt`. They were not.
+
+**Completed.** No spec (robots.txt or llmstxt.org) requires or defines a
+robots.txt directive for `llms.txt`; crawlers that support it check the
+well-known `/llms.txt` path directly, the same way `/robots.txt` itself is
+found. Added two `#`-prefixed comment lines under the existing `Sitemap:`
+line, pointing to `/llms.txt` and `/llms-full.txt`, purely informational, for
+any crawler or human that reads the file's contents rather than following the
+convention path.
+
+**Verified.** `npm run build`: sitemap unchanged (43 urls), CSP hash check
+passed with no changes needed (robots.txt is not part of that hash set).
+
+**Blockers.** None.
+
+**Founder action required.** None.
+
+**Next technical step.** None.
+
+**Commit or PR.** Branch `llm-discoverability`.
+
+---
+
 ## 2026-09-22 — llms.txt gap closed; structured data reviewed, no changes needed
 
 **Objective.** Founder request: add an `llms.txt` for AI crawler discoverability
