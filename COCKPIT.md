@@ -42,14 +42,18 @@ doing it.
   a requirement gap already covered by a generated item. Pre-existing, not
   part of Evidence Follow Up, and out of scope for that work; scoring/feedback
   logic changes need their own review. Recorded 2026-09-22.
-- **Founder action, outcome follow up.** Test mode is OFF:
-  `OUTCOME_FOLLOWUP_TEST_MODE` was set to `false` on 2026-09-22 at the
-  founder's instruction, so the daily `send-outcome-followups` job now emails
-  real users. Nobody could opt in before 2026-09-22, and the email is sent 21
-  days after opt in, so the first real send is 2026-10-13 at the earliest.
-  Still open: confirm the `send-outcome-followups` cron job exists in the
-  dashboard (production SQL is off limits to Claude), and read the first run's
-  logs when it matters. Recorded 2026-09-22.
+- **Founder decision, outcome follow up test mode.** Test mode is ON. This
+  session set `OUTCOME_FOLLOWUP_TEST_MODE` to `false` on 2026-09-22 when the
+  founder asked for it; the production audit session set it back to `true`
+  the same afternoon, also with the founder's approval, and it stays on. In
+  test mode the daily `send-outcome-followups` job emails only
+  `TEST_ACCOUNT_EMAILS` and holds everyone else without using an attempt.
+  Turning it off again is a founder decision. Secret VALUES cannot be read
+  back (`supabase secrets list` shows digests only), so neither state is
+  verifiable by Claude; this records what each session did.
+  The cron job itself is confirmed: the founder ran
+  `select jobname, schedule, active from cron.job` in the SQL editor on
+  2026-09-22 and found one active row at 09:00 UTC. Recorded 2026-09-22.
 - **Known limit.** Acquisition data begins 2026-09-05. Accounts created before
   that date cannot be attributed. Recorded 2026-09-06.
 - **Known limit, browser verification.** Hydration and console behaviour on the
