@@ -1,6 +1,6 @@
 // Run with: npx tsx admin/src/lib/creditGrant.test.ts
 import assert from 'node:assert/strict'
-import { resolveGrantAmount } from './creditGrant'
+import { resolveGrant } from './creditGrant'
 
 let passed = 0
 function test(name: string, fn: () => void) {
@@ -14,22 +14,25 @@ function test(name: string, fn: () => void) {
   }
 }
 
-test('single plan grants one free check', () => {
-  assert.equal(resolveGrantAmount('single'), 1)
+test('single plan grants one free check tagged as the Starter tier', () => {
+  assert.deepEqual(resolveGrant('single'), { amount: 1, packId: 'small' })
 })
 
-test('power plan grants forty checks, matching the Power pack size', () => {
-  assert.equal(resolveGrantAmount('power'), 40)
+test('power plan grants forty checks tagged as the Power tier', () => {
+  // packId 'large' is what generate-documents/logic.ts requires for Cover
+  // Letter and Recruiter Message entitlement (fundingPackId === 'large').
+  // Without it, a "free Power pack" grant would unlock nothing at all.
+  assert.deepEqual(resolveGrant('power'), { amount: 40, packId: 'large' })
 })
 
 test('an unrecognised plan is rejected rather than defaulted', () => {
-  assert.equal(resolveGrantAmount('unlimited'), null)
-  assert.equal(resolveGrantAmount(''), null)
+  assert.equal(resolveGrant('unlimited'), null)
+  assert.equal(resolveGrant(''), null)
 })
 
 test('inherited Object properties are not mistaken for a plan', () => {
-  assert.equal(resolveGrantAmount('toString'), null)
-  assert.equal(resolveGrantAmount('constructor'), null)
+  assert.equal(resolveGrant('toString'), null)
+  assert.equal(resolveGrant('constructor'), null)
 })
 
 console.log(`\n${passed} tests passed`)
