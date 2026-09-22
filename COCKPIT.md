@@ -79,12 +79,6 @@ doing it.
   do not claw back credits; `keyword-scan` still uses the pre Part A counter;
   CLAUDE.md says the primary CTA reads "Check" while the site uses "Check My
   Application". Recorded 2026-09-21.
-- **Founder action.** One real check ran against the broken batch below before
-  the fix shipped: "Junior Data Analyst" on fullcircle.ai@gmail.com, completed
-  2026-09-22 14:38. It almost certainly has no CV draft, Cover Letter or
-  Recruiter Message, since it drew from a `manual_grant` batch with
-  `pack_id = null`. Not independently verified; open its report in the
-  Control Centre to confirm. Recorded 2026-09-22.
 ## Historical review material
 
 `PART_A_KEYWORD_SCAN_REVIEW.md`, `PART_A_KEYWORD_SCAN_CORRECTED_REVIEW.md`,
@@ -127,16 +121,22 @@ admin/attacker controlled, passed through a parameterized RPC call). Verified
 live in the deployed Control Centre after `vercel --prod`: granted a second,
 correctly tagged `large` batch to fullcircle.ai@gmail.com (the same test
 account from the first grant), confirmed `active`, `large`, 40 of 40
-remaining, and a matching `admin_audit_log` row.
+remaining, and a matching `admin_audit_log` row. Also confirmed the predicted
+fallout directly: the one real check that ran against the broken batch before
+this fix shipped, "Junior Data Analyst" (completed 14:38), shows on
+`myrecruitercheck.com/checks/<id>` with the Recommendation section reading
+"This check includes your Interview Score and Recruiter Feedback only. Buy a
+check pack to also get an Improved CV Draft, Cover Letter, and Recruiter
+Message" — no document entitlement, exactly as `pack_id = null` predicts.
+One-off: the manual grant action did not exist before this session and
+nothing else calls `grant_check_credits` without a pack id, so no other
+account is affected.
 
-**Blockers.** None in code.
+**Blockers.** None.
 
-**Founder action required.** See Open items: the one real check that ran
-against the broken batch before this fix shipped is not confirmed to be
-missing its deliverables, only inferred from the code. The account now also
-carries two active batches (the broken one, 39 of 40 remaining, and the fixed
-one, 40 of 40): harmless for balance, but worth knowing if the numbers look
-odd later.
+**Founder action required.** None. The affected account now carries two
+active batches (the broken one, 39 of 40 remaining, and the fixed one, 40 of
+40): harmless for balance, but worth knowing if the numbers look odd later.
 
 **Next technical step.** None planned. If this pattern is needed again, the
 manual grant could take a generic idempotency key the same way
