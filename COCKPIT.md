@@ -91,6 +91,48 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-22 — llms.txt gap closed; structured data reviewed, no changes needed
+
+**Objective.** Founder request: add an `llms.txt` for AI crawler discoverability
+and check the site's structured data.
+
+**Completed.** `public/llms.txt` and `public/llms-full.txt` already existed
+and are actively maintained. Diffed the "Recruiter knowledge" list in
+`llms.txt` against every `content/resources/*.md` file with `status:
+published`, and found one gap: `career-changer-evidence-what-transfers-and-
+what-does-not`, published 2026-09-22, was missing. Added its entry to
+`public/llms.txt`. `llms-full.txt` does not enumerate individual resource
+articles, so it needed no change; its pricing and methodology figures were
+checked against `CHECK_PACKS` in `src/lib/constants.ts` and matched.
+
+Reviewed JSON-LD across `index.html`, `AboutPage`, `PricingPage`, `FaqPage`,
+`HowInterviewScoreWorksPage`, `SeoLandingPage` and `EditorialPage`: all of it
+is generated from the same page content it describes (FAQ schema from the
+`faqs` array, Product offers from `CHECK_PACKS`, Article schema from each
+resource's frontmatter) and joins one entity graph via stable `#organization`
+and `#website` `@id` references rather than restating them, so it cannot
+drift from the page or duplicate the organisation. No stale facts found, no
+changes made.
+
+**Verified.** `npm run build`: 11 editorial pages prerendered including the
+new article, sitemap 43 urls (unchanged, no route added since this was a
+content list update, not a new route), CSP hash check passed with no changes
+needed (structured data script content was not touched). Structured data
+correctness itself is **MANUAL CHECK REQUIRED**: no JSON-LD validator exists
+in this repo, per `CLAUDE.md`.
+
+**Blockers.** None.
+
+**Founder action required.** None.
+
+**Next technical step.** None identified. Re-run the same diff (published
+resources vs. `llms.txt`) whenever a new resource article ships, since this
+is a manual list with no build-time check tying it to `content/resources/`.
+
+**Commit or PR.** Branch `llm-discoverability`.
+
+---
+
 ## 2026-09-22 — Evidence Follow Up rate limit: closed, no code change
 
 **Objective.** Founder asked to resolve the open discrepancy between the
