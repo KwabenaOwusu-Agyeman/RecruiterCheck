@@ -39,6 +39,7 @@ export function PrivacyPage() {
           <li>Process payments for check pack purchases;</li>
           <li>Maintain the security and integrity of the Service;</li>
           <li>Review check results, including your feedback and the job description, and use voluntary product feedback and application outcomes, to maintain and improve the quality of the Service. We will not publish your comment without your permission, and application outcomes are only ever published in anonymised, combined form;</li>
+          <li>Where you have separately opted in to research in Account settings, use your checks with your name, email and the employer removed to improve the Service and to produce anonymous job market insights that may be published. This does not include training AI models, and you can withdraw at any time;</li>
           <li>Communicate with you about your account or the Service.</li>
         </ul>
         <p>
@@ -85,6 +86,11 @@ export function PrivacyPage() {
           If you opt in to the application follow up, we email you once, three weeks after the
           check. Your answers are kept for as long as your account is active. You can stop the
           follow up at any time from the link in that email, and we will not ask again.
+        </p>
+        <p>
+          If you opt in to research, withdrawing takes effect immediately and your checks are left
+          out of any work that follows. Insights already published cannot be unpublished, because
+          they contain no personal data and cannot be traced back to you.
         </p>
         <p>
           Profile details you add in Account settings are kept until you change or delete them.

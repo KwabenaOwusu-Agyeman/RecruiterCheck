@@ -108,6 +108,53 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-22 — Research consent, and the anonymised dataset it unlocks
+
+**Objective.** Build item 3 of the Decision Log entry "Data strategy: what we
+collect, for product value and exit readiness" (approved 2026-09-16): a
+separate opt in allowing a user's checks, with identifiers removed, to improve
+the product and to build job market insight.
+
+**Completed.** Migration `20260922230000_research_consent.sql` adds
+`research_consents` (one row per user, RLS for their own row, column grants
+keeping `granted_at` and the timestamps server side, withdrawal by setting
+`withdrawn_at` so the record of what was agreed survives) and the view
+`research_checks`, service_role only: completed checks of users whose consent
+is live, with no user id, email, name, employer, job description, CV or free
+text, dates reduced to the month, experience in bands and the role lower cased
+and whitespace collapsed. `src/lib/researchConsent.ts` holds the wording,
+`src/services/researchConsentService.ts` grants, re-grants and withdraws, and
+`src/components/account/ResearchConsentCard.tsx` is the Account card. Control
+Centre: consent counts and dataset size on Audience, plus an audited CSV at
+`admin/src/app/export/research/route.ts` reading the view and never a table.
+Privacy policy sections 3 and 7.
+
+Model training is deliberately out of scope: the decision allows it only if the
+consent says so, and this wording rules it out, so section 4 of the privacy
+policy still stands unchanged.
+
+**Verified.** `scripts/local-db/replay.sh` applies all 69 migrations, and a 19
+case probe passes: a user can consent, withdraw and consent again for
+themselves only, cannot backdate a grant or read the view, anon is refused,
+withdrawal empties the dataset at once and re-consenting refills it, drafts and
+non consenting users never appear, and deleting the account removes the
+consent. One code fix came from that probe: the view collapsed no inner
+whitespace, so "Data   Analyst" would not have grouped with "data analyst".
+Root lint (two existing warnings), typecheck, `test:unit` 24/24, `test:edge`
+30/30, `npm run build` (CSP hashes unchanged); `test:admin` 14/14 and admin
+lint, typecheck, build.
+
+**Blockers.** None.
+
+**Founder action required.** None.
+
+**Next technical step.** None planned. The data strategy's three build items
+are now shipped.
+
+**Commit or PR.** Branch `research-consent`.
+
+---
+
 ## 2026-09-22 — Profile basics, opt in details on the Account page
 
 **Objective.** Build item 2 of the Decision Log entry "Data strategy: what we
