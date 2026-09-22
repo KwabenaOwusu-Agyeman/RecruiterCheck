@@ -98,6 +98,38 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-22 — Article 11 drafted
+
+**Objective.** Founder approved Brief 11 (career changer evidence, a P2 backlog
+item, not one of the original ten) and asked for the draft.
+
+**Completed.** `content/resources/career-changer-evidence-what-transfers-and-what-does-not.md`,
+`status: draft`, so no route, prerendered file or sitemap entry. Kept distinct
+from Article 7 as the brief required: this is about a title in an unrelated
+field, not no title at all, and links Article 7 for one paragraph rather than
+re arguing it. The invented example is a retail shift supervisor, a
+genuinely non technical prior field, checked against every existing example
+by scenario. Cluster `job-applications` and `supports: /how-recruiters-evaluate-a-cv`
+used as proposed, since neither decision in the brief was answered directly.
+
+**Verified.** lint (no new warnings), typecheck, `npm run test:unit` 17/17,
+`npm run build`; draft absent from `dist/` and the sitemap. Reviewed by the
+author and by an independent reviewer, which found no blockers and two should
+fix items (an unsourced "career changers often" claim, and a sentence re
+teaching Article 3), both corrected.
+
+**Blockers.** Publishing waits on the founder.
+
+**Founder action required.** Approve publishing Article 11, or confirm the
+cluster and supports choice if a different one is preferred.
+
+**Next technical step.** On approval, one line change from draft to published
+with the real date, then verify live.
+
+**Commit or PR.** Branch `content/article-11-draft`.
+
+---
+
 ## 2026-09-22 — Articles 2, 8 and 10 published, Decisions A and B unblocked
 
 **Objective.** Founder instruction: unblock Articles 2 and 10, write, publish
