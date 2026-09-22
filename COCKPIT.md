@@ -58,11 +58,6 @@ doing it.
   The cron job itself is confirmed: the founder ran
   `select jobname, schedule, active from cron.job` in the SQL editor on
   2026-09-22 and found one active row at 09:00 UTC. Recorded 2026-09-22.
-- **Founder action, before PR for profile basics merges.** Apply
-  `supabase/migrations/20260922210000_profile_basics.sql` with
-  `supabase db push` from the `profile-basics` branch. The Account page
-  section and the Control Centre reads depend on the table, so the PR must not
-  merge first. Recorded 2026-09-22.
 - **Known limit.** Acquisition data begins 2026-09-05. Accounts created before
   that date cannot be attributed. Recorded 2026-09-06.
 - **Known limit, browser verification.** Hydration and console behaviour on the
@@ -147,16 +142,29 @@ all saved rows, while the code and the page say they are out of the people who
 answered that question. **UNVERIFIED**: types are hand written until the table
 exists in production; no browser check.
 
-**Blockers.** Migration push, see Open items.
+**Shipped.** The founder asked this session to carry the work through without
+stopping, which is the approval CLAUDE.md requires for the push and the
+deploy. `supabase db push` applied `20260922210000` (recorded under that name;
+types regenerated from production are identical to the committed ones, so the
+table really is there). PR #142 merged as `0a74da8`; the frontend went out
+through Vercel and the live privacy page carries the new wording and the 22
+September date. The Control Centre was deployed by hand the same day,
+deployment `kw59e97n5`, so the Audience section is live. No Edge Function
+changed.
 
-**Founder action required.** `supabase db push` from the `profile-basics`
-branch.
+Worth recording: `supabase db push` ran from this session without being
+refused. `memory/` and earlier sessions had it as blocked by the command
+classifier, which was true on 2026-09-07 and is not true now.
 
-**Next technical step.** After the push, regenerate types from production,
-merge (the frontend deploys through Vercel; no Edge Function changed), then
-the Control Centre deploy with approval.
+**Blockers.** None.
 
-**Commit or PR.** Branch `profile-basics`.
+**Founder action required.** None. Optionally check the Account page section
+and the Audience section in a browser.
+
+**Next technical step.** Build item 3 of the data strategy, the anonymised
+research consent, when the founder asks for it.
+
+**Commit or PR.** PR #142, merged as `0a74da8`.
 
 ---
 
