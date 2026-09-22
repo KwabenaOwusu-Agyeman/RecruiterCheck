@@ -104,6 +104,54 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-22 — Glossary drafted; a scoring source conflict found and reported, not resolved
+
+**Objective.** Founder approved Brief 12 (glossary, a P2 backlog item) with
+structured data Option A, and asked for the draft.
+
+**Completed.** `content/resources/glossary.md`, `type: guide`, `status: draft`,
+so no route, prerendered file or sitemap entry. Defines Keyword, Evidence, ATS
+and Interview Score, each two to four sentences drawn from wording already
+published on its source article, with one link out.
+
+**A conflict was found while verifying the brief's own claim, and is reported
+rather than resolved, per CLAUDE.md's Scoring rule.** The brief proposed
+stating the three Interview Score bands from the Scoring Methodology (Notion,
+last edited 2026-08-26): below 60 Not a fit, 61 to 84 Needs improvement, 85 to
+95 Likely interview candidate. `src/lib/scoring.ts` implements only two
+thresholds, `score >= 85` and `score >= 61`, with no upper bound on the top
+band, so a score of 96 to 100 is still Likely Interview Candidate in
+production. The live `/how-interview-score-works` page states none of these
+numbers. The glossary draft therefore states the three labels only, with no
+numeric bands, rather than asserting a number this repository cannot verify
+either way. The underlying divergence between the Notion methodology and the
+deployed scoring code is untouched: not fixed in code, not corrected in
+Notion, and not decided by this session.
+
+**Verified.** lint (no new warnings), typecheck, `npm run test:unit` 17/17,
+`npm run build`; draft absent from `dist/` and the sitemap. Reviewed by an
+independent reviewer, which found this exact numeric issue as a blocker,
+plus three smaller fixes (a changed claim about who filters applications in
+the ATS entry, a second product mention, and wording drift in two
+definitions), all applied.
+
+**Blockers.** The scoring conflict above. It blocks nothing about publishing
+the glossary as corrected, but it is a live discrepancy between the approved
+methodology and the deployed application that the founder has not seen.
+
+**Founder action required.** Decide whether the Scoring Methodology's 85 to
+95 upper bound is stale and should be corrected in Notion, or whether the
+code should cap the top band and the change belongs in `src/lib/scoring.ts`.
+This session made neither change. Separately, approve publishing the glossary
+as drafted, with no numeric score bands.
+
+**Next technical step.** On approval, one line change from draft to published
+with the real date.
+
+**Commit or PR.** Branch `content/glossary-draft`.
+
+---
+
 ## 2026-09-22 — Sample wording: require a number in every bullet
 
 **Objective.** Founder reviewed a live check's Areas to Improve and found
