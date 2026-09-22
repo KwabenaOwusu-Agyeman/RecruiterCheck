@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { requireAdmin } from '@/server/auth'
 import { serviceClient } from '@/server/supabase'
 import { recordAdminAction } from '@/server/audit'
-import { resolveGrantAmount } from '@/lib/creditGrant'
+import { resolveGrant } from '@/lib/creditGrant'
 
 export interface GrantState {
   error: string | null
@@ -30,8 +30,9 @@ export async function grantFreeCredits(
     return { error: 'Reason is limited to 500 characters.', ok: false, granted: null }
   }
 
-  const amount = resolveGrantAmount(rawPlan)
-  if (amount === null) return { error: 'Unrecognised grant plan.', ok: false, granted: null }
+  const grant = resolveGrant(rawPlan)
+  if (grant === null) return { error: 'Unrecognised grant plan.', ok: false, granted: null }
+  const { amount, packId } = grant
 
   const outcome = await recordAdminAction(
     admin,
@@ -40,16 +41,22 @@ export async function grantFreeCredits(
       targetType: 'user',
       targetId: userId,
       reason,
-      after: { plan: rawPlan, amount },
+      after: { plan: rawPlan, amount, packId },
     },
     async () => {
       // grant_check_credits is security definer, restricted to service_role,
       // and is the only path onto credit_batches / check_ledger / the balance:
       // there are no insert or update RLS policies on those tables.
+      //
+      // p_pack_id must be set: a completed check inherits funding_pack_id from
+      // whichever batch funded it, and generate-documents/logic.ts treats a
+      // null funding_pack_id as having NO entitlement at all (not even the CV
+      // draft Starter gets), so an untagged grant would unlock nothing.
       const { error } = await serviceClient().rpc('grant_check_credits', {
         p_user_id: userId,
         p_amount: amount,
         p_source: 'manual_grant',
+        p_pack_id: packId,
       })
       if (error) throw new Error(error.message)
       return { granted: amount }
