@@ -1,6 +1,13 @@
 // Run with: npx tsx src/lib/feedbackText.test.ts
 import assert from 'node:assert/strict'
-import { FICTIONAL_SAMPLE_NOTICE, hasSampleWording, lowerFirstClause, splitFinding } from './feedbackText'
+import {
+  FICTIONAL_SAMPLE_NOTICE,
+  hasSampleWording,
+  lowerFirstClause,
+  SAMPLE_WORDING_DISPLAY_LABEL,
+  SAMPLE_WORDING_LABEL,
+  splitFinding,
+} from './feedbackText'
 
 let passed = 0
 function test(name: string, fn: () => void) {
@@ -83,6 +90,19 @@ test('lowerFirstClause never misspells an acronym or product name at the start',
   assert.equal(lowerFirstClause('JavaScript work is not shown'), 'JavaScript work is not shown')
   assert.equal(lowerFirstClause('GitHub links would help.'), 'GitHub links would help')
   assert.equal(lowerFirstClause('ORIGINAL improvement: show it'), 'ORIGINAL improvement: show it')
+})
+
+test('the candidate reads "Example", but a new check is still detected and parsed by its internal marker', () => {
+  assert.equal(SAMPLE_WORDING_DISPLAY_LABEL, 'Example')
+  assert.notEqual(SAMPLE_WORDING_DISPLAY_LABEL, SAMPLE_WORDING_LABEL)
+  const newCheckItem =
+    'Expand on open source contributions. The CV does not show any open source work. Sample wording: Submitted 5 pull requests to an open source dashboard.'
+  const result = splitFinding(newCheckItem)
+  // The internal marker still drives detection, so a new check keeps
+  // getting the fictional notice and is never mistaken for a historical item.
+  assert.ok(hasSampleWording(newCheckItem))
+  assert.equal(result.sampleWording, 'Submitted 5 pull requests to an open source dashboard.')
+  assert.equal(result.example, '')
 })
 
 console.log(`\n${passed} tests passed`)

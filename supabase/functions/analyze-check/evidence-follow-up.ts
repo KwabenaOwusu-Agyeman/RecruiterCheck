@@ -73,10 +73,10 @@ export function selectEvidenceGap(
   if (!top) return null
 
   const name = displayName(top.requirement, clean)
-  const summary =
-    top.match_strength === 'partial'
-      ? `Your CV shows some related evidence for ${name}, but not enough for a recruiter to see how you have applied it.`
-      : `The job asks for ${name}, and your CV does not yet show evidence of it.`
+  // Short on purpose: this sits as a small framing line above the question
+  // itself, which carries the actual detail. Still draws the same partial
+  // versus no evidence distinction as before, just in a handful of words.
+  const summary = top.match_strength === 'partial' ? `Some evidence for ${name}, not enough.` : `No evidence for ${name} yet.`
   // `name` is the model's own extracted requirement text (raw RawRequirement.
   // requirement), and the extraction prompt's own examples show it is
   // routinely a full phrase such as "Experience with Salesforce" or "5+
@@ -88,11 +88,12 @@ export function selectEvidenceGap(
   // ${name}", the same safe pattern the "no evidence" summary above already
   // uses, so the sentence stays grammatical for any phrasing the model
   // produces. Still exactly one question mark, and still names no example
-  // answer.
+  // answer. Kept short on purpose: one short opening statement, then one
+  // short question.
   const question =
     top.category === 'skills'
-      ? `The job asks for ${name}. Is there a project, internship, course, freelance piece of work or personal project where you did this, that your CV does not clearly show, and if so what did you do?`
-      : `The job asks for ${name}. Is there a job, internship, project, course, volunteering role or freelance piece of work that shows this, that your CV does not clearly show, and if so what was it and what did you do?`
+      ? `The job asks for ${name}. Have you done this in a project, internship, course or job that your CV does not show, and if so what did you do?`
+      : `The job asks for ${name}. Have you done this in a job, project, course or volunteering role that your CV does not show, and if so what was it and what did you do?`
 
   return { requirement: name, summary, question }
 }

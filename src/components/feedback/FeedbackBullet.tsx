@@ -1,13 +1,17 @@
 import { cn } from '@/utils/cn'
-import { SAMPLE_WORDING_LABEL, splitFinding } from '@/lib/feedbackText'
+import { SAMPLE_WORDING_DISPLAY_LABEL, splitFinding } from '@/lib/feedbackText'
 
 /**
  * One strength or area to improve. The stored string is split (see
  * src/lib/feedbackText.ts) into a bold finding, plain evidence, and an
- * optional trailing line: "Sample wording" (a complete fictional CV bullet,
- * checks generated under prompt v6 and later) or the historical "Example"
- * clause. Both render on their own line under the evidence so the card
- * layout is identical for old and new checks.
+ * optional trailing line: a complete fictional CV bullet, stored under the
+ * "Sample wording" marker for checks generated under prompt v6 and later, or
+ * the historical "Example" clause for older checks. Both display under the
+ * same "Example" label now, so a candidate never sees two different words
+ * for the same kind of thing; only the internal marker used to detect which
+ * one it is (and whether to show the fictional notice) still differs. Both
+ * render on their own line under the evidence so the card layout is
+ * identical for old and new checks.
  */
 export function FeedbackBullet({
   text,
@@ -44,7 +48,7 @@ export function FeedbackBullet({
         {evidence ? ` ${evidence}` : null}
         {sampleWording ? (
           <span className={clauseClass}>
-            <span className="font-semibold">{SAMPLE_WORDING_LABEL}:</span>{' '}
+            <span className="font-semibold">{SAMPLE_WORDING_DISPLAY_LABEL}:</span>{' '}
             <span className="italic">&quot;{sampleWording}&quot;</span>
           </span>
         ) : example ? (

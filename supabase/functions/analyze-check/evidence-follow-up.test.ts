@@ -90,18 +90,18 @@ test('selects exactly one gap and one question', () => {
   assert.ok(!('gaps' in gap))
 })
 
-test('partial gap wording says the evidence is thin, no gap wording says it is absent', () => {
+test('partial gap wording says the evidence is thin, no gap wording says it is absent, both briefly', () => {
   const partial = selectEvidenceGap([req({ requirement: 'Python', match_strength: 'partial', cv_evidence: 'x' })])
-  assert.match(partial!.summary, /some related evidence for Python/)
+  assert.equal(partial!.summary, 'Some evidence for Python, not enough.')
   const none = selectEvidenceGap([req({ requirement: 'Python' })])
-  assert.match(none!.summary, /asks for Python, and your CV does not yet show evidence of it/)
+  assert.equal(none!.summary, 'No evidence for Python yet.')
 })
 
 test('skills and experience gaps get different, requirement specific questions', () => {
   const skill = selectEvidenceGap([req({ requirement: 'SQL', category: 'skills' })])
   const experience = selectEvidenceGap([req({ requirement: 'stakeholder management', category: 'experience' })])
-  assert.match(skill!.question, /The job asks for SQL\. Is there a project, internship, course, freelance piece of work or personal project/)
-  assert.match(experience!.question, /The job asks for stakeholder management\. Is there a job, internship, project, course, volunteering role or freelance piece of work/)
+  assert.match(skill!.question, /The job asks for SQL\. Have you done this in a project, internship, course or job/)
+  assert.match(experience!.question, /The job asks for stakeholder management\. Have you done this in a job, project, course or volunteering role/)
 })
 
 // Found on a live check (2026-09-22): the extraction prompt's own examples
@@ -115,7 +115,7 @@ test('a full requirement phrase like "Experience with X" still reads as a gramma
     req({ requirement: 'Experience with SQL for reporting', category: 'skills', match_strength: 'partial', cv_evidence: 'x' }),
   ])!
   assert.equal(gap.requirement, 'Experience with SQL for reporting')
-  assert.match(gap.question, /^The job asks for Experience with SQL for reporting\. Is there a project/)
+  assert.match(gap.question, /^The job asks for Experience with SQL for reporting\. Have you done this in a project/)
   assert.doesNotMatch(gap.question, /Have you used Experience|used Experience with/)
   assert.equal(gap.question.split('?').length - 1, 1)
 })
@@ -126,7 +126,7 @@ test('the question never invites invention, suggests a good answer or coaches', 
     for (const text of [question, summary]) {
       assert.doesNotMatch(text, /consider|you could|you should|try to|gain experience|for example|such as|good answer/i)
     }
-    assert.match(question, /that your CV does not clearly show/)
+    assert.match(question, /that your CV does not show/)
   }
 })
 

@@ -12,6 +12,15 @@
 
 export const SAMPLE_WORDING_LABEL = 'Sample wording'
 
+// Purely a display label. The stored marker text and every detection based
+// on it (hasSampleWording below, the CLAUSE_PATTERN branch, the server's own
+// SAMPLE_WORDING_LABEL in logic.ts) all still key off "Sample wording", so
+// already-generated checks keep parsing correctly and the fictional notice
+// keeps firing for the checks that need it. Only what the candidate reads
+// changed, from "Sample wording" to "Example" — the same word the historical
+// (pre prompt v6) clause already uses, so both generations now read the same.
+export const SAMPLE_WORDING_DISPLAY_LABEL = 'Example'
+
 // Shown once per Areas to Improve card, above the sample wording. Copy
 // convention: no dashes anywhere in user facing text.
 export const FICTIONAL_SAMPLE_NOTICE =

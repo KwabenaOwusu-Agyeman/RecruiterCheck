@@ -104,6 +104,38 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-22 — Evidence Follow Up: shorter copy, Sample wording relabelled Example
+
+**Objective.** Founder feedback from live checks: the follow up question and
+gap summary were too long, and "Sample wording" should read "Example" like
+the historical clause does.
+
+**Completed.** `evidence-follow-up.ts`'s gap summary is now "Some evidence for
+X, not enough." or "No evidence for X yet." (was a full sentence), and the
+question is shorter while keeping the grammar fix from the 2026-09-22 entry
+above (still opens "The job asks for X.", still one question mark, still
+names no example answer). `SAMPLE_WORDING_DISPLAY_LABEL` in
+`src/lib/feedbackText.ts` is a display only constant ("Example"); the internal
+marker `SAMPLE_WORDING_LABEL` ("Sample wording") that detection and the
+fictional notice key off is unchanged, so already generated checks keep
+parsing correctly. Only `FeedbackBullet.tsx`'s render changed.
+
+**Verified.** lint, typecheck, `test:scoring` 6/6, `test:unit` 18/18,
+mutation check 14/14. Local mocked browser test (nothing reached production):
+both shortened strings render exactly as written, "Example:" shows in both
+Strengths and Areas to Improve, "Sample wording:" is gone from the page, and
+the fictional notice still fires for the relabelled item.
+
+**Blockers.** none.
+
+**Founder action required.** none beyond review.
+
+**Next technical step.** none.
+
+**Commit or PR.** Branch `copy/follow-up-shorter-wording-and-example-label`.
+
+---
+
 ## 2026-09-22 — Control Centre: manual free-credit grant action, deployed and verified live
 
 **Objective.** Founder wanted the ability to grant a test account (owner's own,
