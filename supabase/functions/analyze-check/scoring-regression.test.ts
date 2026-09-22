@@ -127,7 +127,9 @@ test('the published category weights are 40 / 35 / 25 and sum to 1', () => {
 })
 
 test('blendCategoryScores rounds and clamps the way the score pipeline needs', () => {
-  assert.equal(blendCategoryScores(100, 100, 100), 100)
+  // Even three perfect categories cap at MAX_INTERVIEW_SCORE (95): there is
+  // no band above it in the approved Scoring Methodology.
+  assert.equal(blendCategoryScores(100, 100, 100), 95)
   assert.equal(blendCategoryScores(0, 0, 0), 0)
   // 0.4*63 + 0.35*53 + 0.25*70 = 61.25 -> 61, the ml-medium-match boundary case
   assert.equal(blendCategoryScores(63, 53, 70), 61)

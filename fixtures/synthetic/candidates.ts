@@ -85,8 +85,8 @@ export const SYNTHETIC_CASES: SyntheticCase[] = [
     // skills matrix = (3 + 3 + 1 + 1) / (3 + 3 + 2 + 1) = 8/9 -> 89
     // cat2 = (15*89 + 10*100 + 5*100 + 5*50)/35 = 3085/35 -> 88
     // cat3 = (10*100 + 5*100 + 5*100 + 5*100)/25 = 100
-    // 0.4*100 + 0.35*88 + 0.25*100 = 95.8 -> 96
-    expectedScore: 96,
+    // 0.4*100 + 0.35*88 + 0.25*100 = 95.8 -> 96, capped at MAX_INTERVIEW_SCORE -> 95
+    expectedScore: 95,
     expectedLabel: 'Likely Interview Candidate',
     note: 'Quantified results and a clean requirement match across the board.',
   },

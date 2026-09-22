@@ -611,7 +611,10 @@ test('normalizeAnalysis: strong matches across the board produce a high score', 
   assert.equal(result.experience_score, 100)
   assert.equal(result.skills_score, 100)
   assert.equal(result.uvp_score, 100)
-  assert.equal(result.interview_probability_score, 100)
+  // Every category is 100, but the Interview Score's top band caps at
+  // MAX_INTERVIEW_SCORE (95): there is no band above it in the approved
+  // Scoring Methodology, so a perfect blend is capped, not raised beyond it.
+  assert.equal(result.interview_probability_score, 95)
   assert.equal(getScoreLabel(result.interview_probability_score), 'Likely Interview Candidate')
   assert.deepEqual(result.improvements, [])
   assert.match(result.prospects[0], /complete documented alignment/i)
@@ -1076,11 +1079,18 @@ test('validateScoreBreakdown rejects a raw_weighted_score that does not equal th
 test('validateScoreBreakdown rejects a non whole-number or out of range final_score', () => {
   const decimal = validBreakdown()
   decimal.final_score = 77.5
-  assert.throws(() => validateScoreBreakdown(decimal), /whole number in 0-100/)
+  assert.throws(() => validateScoreBreakdown(decimal), /whole number in 0-95/)
 
   const tooHigh = validBreakdown()
   tooHigh.final_score = 150
-  assert.throws(() => validateScoreBreakdown(tooHigh), /whole number in 0-100/)
+  assert.throws(() => validateScoreBreakdown(tooHigh), /whole number in 0-95/)
+
+  // A score above MAX_INTERVIEW_SCORE but still under the old 0-100 range is
+  // exactly the bug the cap exists to catch: it must be rejected too, not
+  // just values that were already out of range before the cap existed.
+  const aboveCeiling = validBreakdown()
+  aboveCeiling.final_score = 96
+  assert.throws(() => validateScoreBreakdown(aboveCeiling), /whole number in 0-95/)
 })
 
 test('validateScoreBreakdown rejects final_score that silently diverges from raw_weighted_score without the cap flag', () => {
@@ -1703,7 +1713,10 @@ test('FAIRNESS: a candidate with no employment but strong, well documented proje
     ...subcriteriaDefaults('strong'),
   })
   assert.equal(result.experience_score, 100)
-  assert.equal(result.interview_probability_score, 100)
+  // "Full marks" is MAX_INTERVIEW_SCORE (95), the Interview Score's ceiling,
+  // not 100: the fairness guarantee is that this candidate reaches it, same
+  // as any other genuinely strong, fully documented application would.
+  assert.equal(result.interview_probability_score, 95)
 })
 
 // ---------------------------------------------------------------------------

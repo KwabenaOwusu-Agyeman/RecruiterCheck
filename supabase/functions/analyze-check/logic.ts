@@ -520,6 +520,20 @@ export function clampScore(value: number): number {
   return Math.max(0, Math.min(100, value))
 }
 
+/**
+ * The Interview Score a candidate actually sees never exceeds this. The
+ * Scoring Methodology's three result bands are Below 60 (Not a fit), 61 to
+ * 84 (Needs improvement) and 85 to 95 (Likely interview candidate) — there
+ * is no band above 95, so no score above 95 should ever be produced. This
+ * caps `raw_weighted_score` (via blendCategoryScores below), which is also
+ * `final_score` whenever no critical gap applies, since applyCriticalGapCap
+ * only ever lowers a score further, never raises one. It deliberately does
+ * NOT change `clampScore` itself: individual category subtotals and their
+ * subcriteria remain full 0-100 internal measurements, unaffected by where
+ * the customer facing top band ends.
+ */
+export const MAX_INTERVIEW_SCORE = 95
+
 const IMPORTANCE_WEIGHT: Record<RequirementImportance, number> = {
   must_have: 3,
   important: 2,
@@ -668,7 +682,18 @@ export const CATEGORY_BLEND_WEIGHTS = {
   fitAndCommunication: 0.25,
 } as const
 
-export function blendCategoryScores(
+/**
+ * The rounded blend before MAX_INTERVIEW_SCORE is applied. Exported
+ * separately so the call site can tell "capped down to the ceiling" apart
+ * from "genuinely, exactly maxed out": a candidate whose uncapped blend
+ * would have been 96 to 100 is not literally perfect, only close to it, and
+ * should still see whatever real improvement content the model generated
+ * rather than the no-further-improvements message that a truly perfect
+ * blend earns. See buildScoreAwareProspects and the improvements ternary in
+ * normalizeAnalysis below, which both key off this distinction, not off
+ * the capped score.
+ */
+export function blendCategoryScoresUncapped(
   evidenceAndAppliedAbility: number,
   technicalCapability: number,
   fitAndCommunication: number,
@@ -679,6 +704,17 @@ export function blendCategoryScores(
         CATEGORY_BLEND_WEIGHTS.technicalCapability * technicalCapability +
         CATEGORY_BLEND_WEIGHTS.fitAndCommunication * fitAndCommunication,
     ),
+  )
+}
+
+export function blendCategoryScores(
+  evidenceAndAppliedAbility: number,
+  technicalCapability: number,
+  fitAndCommunication: number,
+): number {
+  return Math.min(
+    MAX_INTERVIEW_SCORE,
+    blendCategoryScoresUncapped(evidenceAndAppliedAbility, technicalCapability, fitAndCommunication),
   )
 }
 
@@ -1208,7 +1244,12 @@ function ensureThreeNeedsImprovementItems(
   return unique
 }
 
-function buildScoreAwareProspects(score: number, requirements: RawRequirement[], improvements: string[]): string[] {
+function buildScoreAwareProspects(
+  score: number,
+  requirements: RawRequirement[],
+  improvements: string[],
+  isLiterallyPerfect: boolean,
+): string[] {
   const strongest = requirementName(requirements.find((item) => item.match_strength === 'strong'))
   const gap = requirementName(
     requirements.find((item) => item.match_strength === 'none' && item.importance === 'must_have') ??
@@ -1216,7 +1257,10 @@ function buildScoreAwareProspects(score: number, requirements: RawRequirement[],
       requirements.find((item) => item.match_strength === 'partial'),
   )
 
-  if (score === 100) {
+  // isLiterallyPerfect, not score === MAX_INTERVIEW_SCORE: a candidate whose
+  // uncapped blend was 96 to 100 also lands on the capped score, but is not
+  // actually maxed out and may still have real improvement content to show.
+  if (isLiterallyPerfect) {
     return [
       'Your application shows complete documented alignment with this role.',
       'Your application is ready to submit, although employer decisions and competition still apply.',
@@ -1458,16 +1502,18 @@ export function validateScoreBreakdown(breakdown: ScoreBreakdown): void {
     }
   }
 
+  // Recomputed via blendCategoryScores itself, not restated inline, so this
+  // check can never drift from the cap that function actually applies.
   const [cat1, cat2, cat3] = categories.map(([, c]) => c.subtotal)
-  const expectedRawWeighted = clampScore(Math.round(0.4 * cat1 + 0.35 * cat2 + 0.25 * cat3))
+  const expectedRawWeighted = blendCategoryScores(cat1, cat2, cat3)
   if (expectedRawWeighted !== breakdown.raw_weighted_score) {
     throw new Error(
       `score_breakdown: raw_weighted_score (${breakdown.raw_weighted_score}) does not equal the three category subtotals (expected ${expectedRawWeighted})`,
     )
   }
 
-  if (!Number.isInteger(breakdown.final_score) || breakdown.final_score < 0 || breakdown.final_score > 100) {
-    throw new Error('score_breakdown: final_score is not a whole number in 0-100')
+  if (!Number.isInteger(breakdown.final_score) || breakdown.final_score < 0 || breakdown.final_score > MAX_INTERVIEW_SCORE) {
+    throw new Error(`score_breakdown: final_score is not a whole number in 0-${MAX_INTERVIEW_SCORE}`)
   }
 
   if (breakdown.critical_gap_capped) {
@@ -1808,14 +1854,22 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string, meta: { mode
   const rawWeightedScore = blendCategoryScores(experienceScore, skillsScore, uvpScore)
   const finalScore = applyCriticalGapCap(rawWeightedScore, dedupedRequirements)
   const criticalGapCapped = finalScore !== rawWeightedScore
-  const improvements = finalScore === 100
+  // A capped score (either the critical gap cap or MAX_INTERVIEW_SCORE) is
+  // never literally perfect: the critical gap cap means a must-have gate is
+  // unmatched, and the ceiling can be reached by a blend of 95 to 100, only
+  // one value of which is genuinely maxed out. Checking the uncapped blend
+  // directly is the only way to tell a truly perfect result from one that
+  // merely landed on or above the ceiling.
+  const isLiterallyPerfect =
+    !criticalGapCapped && blendCategoryScoresUncapped(experienceScore, skillsScore, uvpScore) === 100
+  const improvements = isLiterallyPerfect
     ? []
     : finalScore >= 85
       ? generatedImprovements.slice(0, 1)
       : finalScore >= 61
         ? ensureThreeNeedsImprovementItems(generatedImprovements, dedupedRequirements, evidenceSafeUvpLevel)
         : generatedImprovements.slice(0, 3)
-  const scoreAwareProspects = buildScoreAwareProspects(finalScore, dedupedRequirements, improvements)
+  const scoreAwareProspects = buildScoreAwareProspects(finalScore, dedupedRequirements, improvements, isLiterallyPerfect)
 
   const essentialSkillsScore = calculateCategoryScore(dedupedRequirements, 'skills')
   const scoreBreakdown = buildScoreBreakdown({

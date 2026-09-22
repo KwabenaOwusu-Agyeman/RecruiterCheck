@@ -156,6 +156,68 @@ myrecruitercheck-admin.vercel.app).
 
 ---
 
+## 2026-09-22 — Interview Score capped at 95, closing the scoring conflict from the glossary work
+
+**Objective.** Founder decision on the conflict reported in the 2026-09-22
+glossary entry: cap the top band in code at 95, matching the Scoring
+Methodology's published bands (below 60 Not a fit, 61 to 84 Needs
+improvement, 85 to 95 Likely interview candidate). Not a side effect of
+other work; the founder was shown the conflict and chose this side of it.
+
+**Completed.** `supabase/functions/analyze-check/logic.ts`: added
+`MAX_INTERVIEW_SCORE = 95`. `blendCategoryScores` now caps its result there;
+`clampScore` itself is unchanged, so individual category subtotals and
+subcriteria stay full 0-100 internal measurements. `validateScoreBreakdown`
+now rejects `final_score` above 95 (was 100) and recomputes its expected
+`raw_weighted_score` by calling `blendCategoryScores` directly instead of
+restating the formula, so the two can never drift apart again.
+
+**A correctness bug was found and fixed during this change, not shipped.**
+The first version of the cap wired the "complete documented alignment,
+nothing to improve" messaging to `score === MAX_INTERVIEW_SCORE`. Because
+capping means a whole range of underlying blends (95 to 100 uncapped) all
+land on the same displayed 95, that check would have wrongly told candidates
+who still had real, specific improvement content, such as the BSN and work
+permit safety advice one regression test exists to protect, that nothing
+was left to improve. Fixed by adding `blendCategoryScoresUncapped`, exported
+alongside `blendCategoryScores`, and gating the "nothing to improve" branch
+on the uncapped blend being exactly 100 and no critical gap, not on the
+capped score reaching 95. `npm run test:scoring` caught this immediately
+before it reached a commit.
+
+**Fixture and test changes, all reportable, none silent.** One synthetic
+case, `ai-strong-match`, had `expectedScore: 96`, hand derived from the
+documented weights before any cap existed; the founder's change makes 95 the
+new correct expected value, and the file's own derivation comment is updated
+to show the cap step. Two unit tests in `logic.test.ts` and one in
+`scoring-regression.test.ts` asserted `interview_probability_score` or
+`blendCategoryScores(100, 100, 100)` equal to 100; each now asserts 95, with
+a comment explaining the new ceiling. One test asserted the literal old
+error message text (`whole number in 0-100`); updated to `0-95`, and
+strengthened with a new case for 96, exactly the value the cap exists to
+reject, which the old test never covered since it could not previously
+occur.
+
+**Verified.** lint (no new warnings), typecheck, `npm run test:scoring`
+(6/6 files, 226 assertions), `node scripts/mutation-check.mjs` (14/14
+mutations caught, 0 holes). Checked the client app (`src/features`,
+`src/components`) and the Control Centre (`admin/src`) for any other code
+depending on a score of exactly 100: none found.
+
+**Blockers.** None.
+
+**Founder action required.** None. This closes the divergence the glossary
+work surfaced; nothing further to decide.
+
+**Next technical step.** The glossary draft (`content/resources/glossary.md`)
+can now state the three approved bands numerically if wanted; it currently
+states the labels only. Separately, publish it, or leave it as a labels-only
+reference.
+
+**Commit or PR.** Branch `fix/cap-interview-score-at-95`.
+
+---
+
 ## 2026-09-22 — Glossary drafted; a scoring source conflict found and reported, not resolved
 
 **Objective.** Founder approved Brief 12 (glossary, a P2 backlog item) with
