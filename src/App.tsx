@@ -31,6 +31,7 @@ import { MyRecruiterCheckVsReziPage } from '@/pages/MyRecruiterCheckVsReziPage'
 import { MyRecruiterCheckVsResumeWordedPage } from '@/pages/MyRecruiterCheckVsResumeWordedPage'
 import { MyRecruiterCheckVsTealPage } from '@/pages/MyRecruiterCheckVsTealPage'
 import { NewsletterUnsubscribePage } from '@/pages/NewsletterUnsubscribePage'
+import { OutcomePage } from '@/pages/OutcomePage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { PricingPage } from '@/pages/PricingPage'
 import { NewsletterIssuePage, ResourceArticlePage } from '@/pages/EditorialPage'
@@ -123,6 +124,9 @@ export function AppRoutes() {
       {/* unsubscribe is declared before the slug route and is a reserved slug in
           the publishing schema, so a content file can never shadow it. */}
       <Route path="newsletter/unsubscribe" element={<NewsletterUnsubscribePage />} />
+      {/* Reached from the application outcome follow up email; no login, the
+          link token is the credential. */}
+      <Route path="outcome" element={<OutcomePage />} />
       <Route path="newsletter/:slug" element={<NewsletterIssuePage />} />
 
       <Route element={<ProtectedRoute />}>

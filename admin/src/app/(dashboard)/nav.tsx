@@ -27,6 +27,7 @@ const SECTIONS: { title: string; items: { href: string; label: string; ownerOnly
       { href: '/users', label: 'Users' },
       { href: '/checks', label: 'Application Checks' },
       { href: '/reports', label: 'Reports', ownerOnly: true },
+      { href: '/outcomes', label: 'Outcomes' },
       { href: '/support', label: 'Support' },
     ],
   },

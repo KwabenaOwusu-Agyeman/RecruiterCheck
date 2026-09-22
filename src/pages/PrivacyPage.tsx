@@ -25,6 +25,7 @@ export function PrivacyPage() {
           <li><strong>Newsletter data:</strong> email address, consent wording and consent date when you choose to subscribe.</li>
           <li><strong>Product feedback:</strong> ratings and comments you voluntarily provide after a Recruiter Check, plus your first name and target job title when you permit us to feature a review.</li>
           <li><strong>Content you submit:</strong> your CV, job descriptions, and any generated feedback and documents.</li>
+          <li><strong>Application outcomes:</strong> only if you opt in after a check. Whether you applied, how you applied, how far the application got, how many days the employer took to reply, and any salary offered.</li>
           <li><strong>Payment data:</strong> handled directly by Stripe. We do not receive or store your card details.</li>
           <li><strong>Usage data:</strong> log data, device and browser information, and cookies necessary to operate the Service.</li>
         </ul>
@@ -36,7 +37,7 @@ export function PrivacyPage() {
           <li>Provide the Service, including generating your interview score, feedback, and tailored documents;</li>
           <li>Process payments for check pack purchases;</li>
           <li>Maintain the security and integrity of the Service;</li>
-          <li>Review check results, including your feedback and the job description, and use voluntary product feedback, to maintain and improve the quality of the Service. We will not publish your comment without your permission;</li>
+          <li>Review check results, including your feedback and the job description, and use voluntary product feedback and application outcomes, to maintain and improve the quality of the Service. We will not publish your comment without your permission, and application outcomes are only ever published in anonymised, combined form;</li>
           <li>Communicate with you about your account or the Service.</li>
         </ul>
         <p>
@@ -76,8 +77,13 @@ export function PrivacyPage() {
           Your original uploaded CV and any documents we generate for you (tailored CV, cover
           letter, recruiter message) are automatically and permanently deleted from our storage
           within 24 hours of being processed. The results of a check, meaning your Interview Score,
-          feedback, job title, and company name, are retained for as long as your account is
-          active, so you can review your check history.
+          feedback, job title, company name, and the job description you provided, are retained
+          for as long as your account is active, so you can review your check history.
+        </p>
+        <p>
+          If you opt in to the application follow up, we email you once, three weeks after the
+          check. Your answers are kept for as long as your account is active. You can stop the
+          follow up at any time from the link in that email, and we will not ask again.
         </p>
         <p>
           You can permanently delete your account and all remaining data at any time from{' '}

@@ -42,6 +42,11 @@ doing it.
   a requirement gap already covered by a generated item. Pre-existing, not
   part of Evidence Follow Up, and out of scope for that work; scoring/feedback
   logic changes need their own review. Recorded 2026-09-22.
+- **Founder decision, outcome follow up test mode.** `OUTCOME_FOLLOWUP_TEST_MODE`
+  is unset in production, which counts as on: the daily
+  `send-outcome-followups` job emails only `TEST_ACCOUNT_EMAILS` and holds
+  everyone else without using an attempt. Real users are emailed only once it
+  is set to exactly `false`, a separate founder decision. Recorded 2026-09-22.
 - **Known limit.** Acquisition data begins 2026-09-05. Accounts created before
   that date cannot be attributed. Recorded 2026-09-06.
 - **Known limit, browser verification.** Hydration and console behaviour on the
@@ -89,6 +94,54 @@ Its Keyword Scan reservation design was never adopted by the live
 reservation functions are dropped by `20260922170000`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-22 — Application outcome follow up shipped (test mode on)
+
+**Objective.** Ship build item 1 of the Decision Log entry "Data strategy:
+what we collect, for product value and exit readiness" (approved 2026-09-16):
+opt in on the results page, one email 21 days later, public `/outcome` form,
+aggregate Control Centre page.
+
+**Completed.** Branch `outcome-followup` (PR #91) merged with `main`; only
+`COCKPIT.md` conflicted. The migration never reached production (confirmed with
+`supabase migration list --linked`), and five later migrations had been
+applied since, so it is renamed from `20260916200000` to
+`20260922180000_application_outcomes.sql`. Contents unchanged: table
+`application_outcomes`, RLS and column grants, the claim and release RPCs, and
+the daily 09:00 UTC cron job. Edge Functions `send-outcome-followups` and
+`submit-application-outcome`; `OutcomeOptIn`, `src/pages/OutcomePage.tsx`;
+privacy policy sections 2, 3 and 7; Control Centre `/outcomes`.
+
+**Verified.** `scripts/local-db/replay.sh` applies all 66 migrations. A 31 case
+probe against that database passes: a user can opt in only for their own
+completed check, cannot set the due date, read the token or answers, update,
+delete or call the RPCs; anon is refused; claim, release and the five attempt
+cap behave as written; the check constraints refuse bad answers; exactly one
+cron job; deleting a check deletes its row. Root lint (two existing warnings),
+typecheck, `test:unit` 20/20, `test:edge` 30/30, `npm run build`; `test:admin`
+12/12 and admin lint, typecheck, build. After merging main (with #128) the 67
+migrations replayed again on a local Postgres, and the column and RPC grants
+were rechecked. Production after `supabase db push`: migration recorded, RLS
+on, one `send-outcome-followups` cron job at 09:00 UTC, claim and release RPCs
+executable by service_role only, `followup_token` and the answers unreadable
+by users, 0 rows. Types regenerated from production matched the hand written
+`src/types/database.ts` exactly. `isTestMode` treats anything but an exact
+`false` as on (unit tested), and nothing in the merge or deploy path sets the
+secret. **UNVERIFIED**: no browser check.
+
+**Blockers.** None.
+
+**Founder action required.** None to ship. Test mode, see Open items.
+
+**Next technical step.** None.
+
+**Commit or PR.** PR #91, branch `outcome-followup`. Migration pushed to
+production 2026-09-22 with `supabase db push` after approval. The merge
+deploys the frontend through Vercel and every Edge Function, since
+`supabase/config.toml` changed; the Control Centre deploy with `vercel --prod`
+follows the merge, after approval.
 
 ---
 

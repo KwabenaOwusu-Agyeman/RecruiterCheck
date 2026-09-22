@@ -249,6 +249,90 @@ export type Database = {
           },
         ]
       }
+      application_outcomes: {
+        Row: {
+          applied: boolean | null
+          channel: string | null
+          check_id: string
+          consent_at: string
+          consent_version: string
+          created_at: string
+          days_to_reply: number | null
+          followup_due_at: string
+          followup_send_attempts: number
+          followup_sent_at: string | null
+          followup_token: string
+          id: string
+          responded_at: string | null
+          salary_country: string | null
+          salary_currency: string | null
+          salary_offered: number | null
+          stage: string | null
+          updated_at: string
+          user_id: string
+          withdrawn_at: string | null
+        }
+        Insert: {
+          applied?: boolean | null
+          channel?: string | null
+          check_id: string
+          consent_at?: string
+          consent_version: string
+          created_at?: string
+          days_to_reply?: number | null
+          followup_due_at?: string
+          followup_send_attempts?: number
+          followup_sent_at?: string | null
+          followup_token?: string
+          id?: string
+          responded_at?: string | null
+          salary_country?: string | null
+          salary_currency?: string | null
+          salary_offered?: number | null
+          stage?: string | null
+          updated_at?: string
+          user_id: string
+          withdrawn_at?: string | null
+        }
+        Update: {
+          applied?: boolean | null
+          channel?: string | null
+          check_id?: string
+          consent_at?: string
+          consent_version?: string
+          created_at?: string
+          days_to_reply?: number | null
+          followup_due_at?: string
+          followup_send_attempts?: number
+          followup_sent_at?: string | null
+          followup_token?: string
+          id?: string
+          responded_at?: string | null
+          salary_country?: string | null
+          salary_currency?: string | null
+          salary_offered?: number | null
+          stage?: string | null
+          updated_at?: string
+          user_id?: string
+          withdrawn_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_outcomes_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: true
+            referencedRelation: "checks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "application_outcomes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       check_ledger: {
         Row: {
           amount: number
@@ -1332,6 +1416,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      claim_application_outcome_followups: {
+        Args: { p_limit: number }
+        Returns: {
+          check_id: string
+          followup_token: string
+          id: string
+          user_id: string
+        }[]
+      }
       claim_stripe_webhook_event: {
         Args: { p_event_id: string; p_event_type: string }
         Returns: {
@@ -1495,6 +1588,10 @@ export type Database = {
       }
       refund_check_credit: {
         Args: { p_check_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      release_application_outcome_followup: {
+        Args: { p_count_attempt?: boolean; p_id: string }
         Returns: undefined
       }
       reserve_check_analysis: {

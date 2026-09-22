@@ -11,6 +11,7 @@ import { getVerdictColor } from '@/components/feedback/verdictColor'
 import { FICTIONAL_SAMPLE_NOTICE, hasSampleWording, lowerFirstClause, splitFinding } from '@/lib/feedbackText'
 import { EvidenceFollowUpCard } from '@/components/feedback/EvidenceFollowUpCard'
 import { SentimentPrompt } from '@/components/feedback/SentimentPrompt'
+import { OutcomeOptIn } from '@/components/feedback/OutcomeOptIn'
 import { TrustpilotResultsLink } from '@/components/feedback/TrustpilotResultsLink'
 import { useAuth } from '@/hooks/useAuth'
 import { usePageMeta } from '@/hooks/usePageMeta'
@@ -618,6 +619,8 @@ export function FeedbackPage() {
             </Card>
 
             <SentimentPrompt checkId={check.id} jobTitle={check.job_title} />
+
+            <OutcomeOptIn checkId={check.id} />
 
             <TrustpilotResultsLink userEmail={profile?.email} />
 

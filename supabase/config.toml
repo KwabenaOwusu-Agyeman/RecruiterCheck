@@ -111,6 +111,18 @@ verify_jwt = false
 [functions.newsletter-unsubscribe]
 verify_jwt = false
 
+# Reached from the application outcome follow up email with no login. The
+# link token is the credential, checked in the function, exactly as with
+# newsletter-unsubscribe.
+[functions.submit-application-outcome]
+verify_jwt = false
+
+# pg_cron target for the daily outcome follow up. Its own role check decodes
+# the JWT claim without verifying the signature, so it is only sound while the
+# gateway verifies the token first. Pinned so a deploy cannot turn that off.
+[functions.send-outcome-followups]
+verify_jwt = true
+
 # Instagram integration. instagram-oauth-start/callback are hit directly by
 # the operator's browser (Meta's redirect carries no Supabase JWT) and are
 # instead gated by INSTAGRAM_ADMIN_TOKEN / the signed OAuth state — see
