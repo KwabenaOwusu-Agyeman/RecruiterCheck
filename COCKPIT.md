@@ -79,6 +79,12 @@ doing it.
   do not claw back credits; `keyword-scan` still uses the pre Part A counter;
   CLAUDE.md says the primary CTA reads "Check" while the site uses "Check My
   Application". Recorded 2026-09-21.
+- **Founder action.** One real check ran against the broken batch below before
+  the fix shipped: "Junior Data Analyst" on fullcircle.ai@gmail.com, completed
+  2026-09-22 14:38. It almost certainly has no CV draft, Cover Letter or
+  Recruiter Message, since it drew from a `manual_grant` batch with
+  `pack_id = null`. Not independently verified; open its report in the
+  Control Centre to confirm. Recorded 2026-09-22.
 ## Historical review material
 
 `PART_A_KEYWORD_SCAN_REVIEW.md`, `PART_A_KEYWORD_SCAN_CORRECTED_REVIEW.md`,
@@ -95,6 +101,51 @@ It is carried by
 and the live `supabase/functions/keyword-scan/`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-22 — Manual credit grant fixed: pack_id was missing, entitlements were zero
+
+**Objective.** Follow up on the 2026-09-22 manual free-credit grant work: the
+founder pointed out the live pricing page shows Power includes two
+deliverables Starter and Active do not, Cover Letter and Recruiter Message,
+which the original grant action did not account for.
+
+**Completed.** The manual grant's call to `grant_check_credits` passed no
+`p_pack_id`, so `credit_batches.pack_id` came out null. A completed check
+inherits `funding_pack_id` from the batch that funded it, and
+`generate-documents/logic.ts` excludes a null `funding_pack_id` from every
+entitlement, including the CV draft even Starter gets. So the "Grant free
+Power pack (40)" button was silently granting checks that unlocked nothing at
+all. `admin/src/lib/creditGrant.ts` now tags each plan with the pack_id a real
+purchase of that pack uses: `small` for the single-check grant, `large` for
+Power. PR #130, merged as `07cabb2`.
+
+**Verified.** `test:admin` 11/11, admin lint, typecheck and build clean.
+Security review: no findings (the pack_id is allowlisted, never
+admin/attacker controlled, passed through a parameterized RPC call). Verified
+live in the deployed Control Centre after `vercel --prod`: granted a second,
+correctly tagged `large` batch to fullcircle.ai@gmail.com (the same test
+account from the first grant), confirmed `active`, `large`, 40 of 40
+remaining, and a matching `admin_audit_log` row.
+
+**Blockers.** None in code.
+
+**Founder action required.** See Open items: the one real check that ran
+against the broken batch before this fix shipped is not confirmed to be
+missing its deliverables, only inferred from the code. The account now also
+carries two active batches (the broken one, 39 of 40 remaining, and the fixed
+one, 40 of 40): harmless for balance, but worth knowing if the numbers look
+odd later.
+
+**Next technical step.** None planned. If this pattern is needed again, the
+manual grant could take a generic idempotency key the same way
+`stripe_payment_intent_id` protects a real purchase, so a retried grant can't
+double credit an account; not built here since it didn't clear the security
+review bar this time.
+
+**Commit or PR.** PR #130, merged as `07cabb2`. Deployed to production with
+`vercel --prod` on 2026-09-22 after approval.
 
 ---
 
