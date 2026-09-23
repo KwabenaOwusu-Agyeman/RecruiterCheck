@@ -69,10 +69,39 @@ doing it.
 - **Known limit.** Acquisition data begins 2026-09-05. Accounts created before
   that date cannot be attributed. Recorded 2026-09-06.
 - **Known limit, browser verification.** Hydration and console behaviour on the
-  live site cannot be observed: `CLAUDE.md` restricts the Chrome connector to
-  localhost. A local pass over `dist/` is representative, since the served bytes
-  match, but production browser behaviour is **UNVERIFIED** and must be reported
-  as such rather than inferred. Recorded 2026-09-10.
+  live site cannot be observed directly: `CLAUDE.md` restricts the Chrome
+  connector to localhost. A local pass over `dist/` is representative, since the
+  served bytes match, but is not identical to a real visitor's browser, so a
+  finding from it should still be treated as needing confirmation, not as
+  certain. Recorded 2026-09-10. A local pass on 2026-09-23 (see the
+  "React hydration errors on /pricing, /about, /faq" entry below) used this
+  method and found a real, reproducible finding this way, which is the method
+  earning its keep, not a reason to distrust it.
+- **Founder action, React hydration errors on `/pricing`, `/about`, `/faq`
+  (and likely more prerendered pages).** `dist/` served locally and viewed
+  through the Chrome connector throws minified React errors #418 and #423 on
+  these three pages on every load (10, 5 and 4 console exceptions
+  respectively), but not on `/`. Confirmed present on the pre-session commit
+  `20c3cbf` with identical counts, so this predates 2026-09-23's session
+  entirely and none of that session's three merged PRs caused it (none
+  touched these pages or SSR/prerender code). Not root-caused: static review
+  of `PricingPage.tsx`, `AboutPage.tsx`, `FaqPage.tsx` and their shared
+  `LegalLayout`/`BackLink` components found no obvious `typeof window`,
+  `Date.now()`, `Math.random()` or locale-dependent branch that would explain
+  a text or structural mismatch between server and client render. The
+  minified production bundle's error carries no diff detail; getting one
+  needs a non-minified/dev-mode SSR build, not attempted here. One caveat
+  going the other way: the Chrome connector used to observe this is itself a
+  known source of false-positive hydration mismatches (extensions can inject
+  DOM before React hydrates); the fact that `/` is consistently clean while
+  the other three are consistently not argues against a page-agnostic
+  extension artifact, since an extension's injection would not be page aware,
+  but this is not a substitute for confirming in a clean browser profile.
+  Founder action: open `/pricing`, `/about` or `/faq` on the live site in a
+  real browser's DevTools console (extensions disabled) and confirm whether
+  the same errors appear; if so this is a genuine bug worth a dedicated
+  investigation with a dev-mode SSR build to get the actual mismatch detail.
+  Recorded 2026-09-23.
 - **Founder action.** All three audit migrations are in production
   (`20260921120000`, `121000`, `122000`, pushed 2026-09-21 after approval)
   and the types were regenerated from production. Still open: run the role
@@ -138,7 +167,69 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
-## 2026-09-23 — Recommendation card: pricing CTA scoped to when it would help, free tier bug fixed
+## 2026-09-23 — React hydration errors found on /pricing, /about, /faq (not caused by this session)
+
+**Objective.** Founder asked to check the console for errors on the live
+pages, after the day's four merges (PRs #159, #160, #161, #162, see entries
+below). `CLAUDE.md` bars the Chrome connector from the hosted site, so this
+checked a local build of the exact live commit instead, the established
+substitute for this exact situation (see the "Known limit, browser
+verification" open item above).
+
+**Completed.** Built and served `dist/` for `8e3c5bd` (the commit live in
+production at the time, confirmed via the Vercel MCP's `list_deployments`
+against project `prj_9BGhut9Lyw0EXdtTr0ei24yOteSV`, `recruitercheck`).
+Checked `/`, `/pricing`, `/about` and `/faq` with the Chrome connector's
+`read_console_messages`, clearing between navigations after an initial pass
+without clearing gave misleadingly accumulated counts (messages persist
+across navigations within a tab unless cleared). Found minified React error
+#418 ("Hydration failed because the initial UI does not match what was
+rendered on the server") and #423 (recovered by a full client re-render) on
+every load of `/pricing` (10 exceptions), `/about` (5) and `/faq` (4), never
+on `/`.
+
+To find out whether this session's own three merged PRs caused it: checked
+out the pre-session commit `20c3cbf`, rebuilt, served on a second port, and
+reproduced identical counts on the same three pages. None of the three PRs
+touched `PricingPage.tsx`, `AboutPage.tsx`, `FaqPage.tsx` or any SSR/prerender
+code, so this rules them out directly as well as by the matching reproduction.
+
+Read `PricingPage.tsx`, `AboutPage.tsx`, `FaqPage.tsx` and their shared
+`LegalLayout`/`Section`/`BackLink` components for the usual causes of a
+server/client render mismatch (`typeof window`, `Date.now()`,
+`Math.random()`, locale-dependent formatting): found none. Did not get
+further, since the minified production bundle's error carries no diff detail
+(which specific text or node mismatched); that needs a dev-mode or
+unminified SSR build, not attempted this session.
+
+**Verified.** Reproduced three times: live commit, pre-session commit, and a
+second read after clearing the console properly (the first pass's counts,
+before the clearing bug was caught, were inflated by cross-page
+accumulation, not the same numbers as the corrected, isolated read; the
+corrected numbers are the ones reported here and are what reproduced
+identically on both commits).
+
+**Blockers.** Cannot confirm this reproduces on the actual hosted site or in
+a browser without the Chrome connector's own extension present, which is
+itself a known source of false-positive hydration errors (an extension can
+inject DOM content before React hydrates). The fact that `/` is consistently
+clean while the other three consistently are not is evidence against a
+purely page-agnostic extension artifact, but is not a substitute for a clean
+browser profile check.
+
+**Founder action required.** Open `/pricing`, `/about` or `/faq` on
+`myrecruitercheck.com` in a real browser's DevTools console (extensions
+disabled) and confirm whether errors #418/#423 appear there too. If they do,
+this is a real, currently-live bug, pre-dating this session, warranting a
+dedicated investigation with a dev-mode SSR build to get the actual mismatch
+detail. See the corresponding Open item above.
+
+**Next technical step.** If confirmed live: reproduce locally with an
+unminified build (`vite build --mode development` or equivalent for the SSR
+entry) to get React's full hydration diff, which names the exact
+mismatching node.
+
+**Commit or PR.** None. Read only investigation, no source file changed.
 
 **Objective.** Founder-directed audit of the Recommendation card on the Check
 Results page: the pricing CTA was showing regardless of whether buying would
