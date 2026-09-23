@@ -93,4 +93,30 @@ export const SAMPLE_WORDING_ROLES: SampleWordingRole[] = [
     ].join(' '),
     roleTerms: ['SQL', 'Snowflake', 'Power BI', 'pandas', 'dbt', 'stakeholder', 'metric', 'dashboard', 'data quality', 'Excel', 'Google Analytics'],
   },
+  {
+    // Deliberately mirrors a real flagged bug: an unquantified "worked with
+    // engineering and data science teams" bullet, to check whether the model
+    // now produces a quantified sample wording bullet for a cross team
+    // collaboration requirement, not only for clearly technical ones.
+    id: 'ai-product-analyst',
+    jobTitle: 'AI Product Analyst',
+    jobDescription: [
+      'AI Product Analyst at Hallowmere AI, Amsterdam. You will work across',
+      'engineering and data science to turn model capabilities into shipped',
+      'product features. Requirements: close cross functional collaboration',
+      'with engineering and data science teams to define AI product',
+      'requirements and solutions, and track feature adoption after launch.',
+      'Must have experience gathering requirements from multiple technical',
+      'teams. Nice to have: SQL for adoption reporting, Figma for specs.',
+    ].join(' '),
+    cv: [
+      'Rosalind Faircombe. Product Analyst, 1 year.',
+      'Thistledown Systems, Product Analyst (2025 to present): worked with',
+      'engineering and data science teams to define AI product requirements',
+      'and solutions. Wrote specs and joined planning meetings.',
+      'Education: Ashcombe College, BSc Business Informatics, 2025.',
+      'Skills: SQL, Figma, Jira, stakeholder management.',
+    ].join(' '),
+    roleTerms: ['engineering', 'data science', 'cross functional', 'product requirements', 'adoption', 'Figma', 'SQL'],
+  },
 ]
