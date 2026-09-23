@@ -23,23 +23,49 @@ technical and founder-blocking; everything else goes in a dated entry or in
 Notion. If this list keeps growing, Claude is handing work back instead of
 doing it.
 
-- **Founder action, Evidence Follow Up card needs a real check.** PR #159
-  (`EvidenceFollowUpCard.tsx`) replaced the gap-restatement label with
-  "About this requirement" naming the requirement directly, and enlarged
-  the heading to `text-xl`. Verified with a throwaway dev-preview route on
-  `localhost:5173` that rendered the real, unmodified component with
-  invented fixture `EvidenceFollowUp` objects across 4 states (pending/
-  assessed x dark/light), submit button never clicked so no network call
-  fired. Confirmed the requirement name renders in place of the old gap
-  restatement, the larger heading is visually prominent in both tones, and
-  the untouched assessed state (what-changed bullets, "Candidate reported"
-  quote) still renders correctly. Same Docker limitation as the other
-  cards: this is fixture data through the real component, not a real
-  completed check with a real follow up answer and reassessment. Founder
-  action: open a real Needs Improvement check with a pending follow up and
-  confirm the same, then optionally answer it and confirm the assessed
-  state and score floor still behave correctly end to end. Recorded
-  2026-09-24.
+- **Founder action, Evidence Follow Up card: live end to end reassessment
+  unverified.** PR #159 (`EvidenceFollowUpCard.tsx`) replaced the
+  gap-restatement label with "About this requirement" naming the
+  requirement directly, and enlarged the heading to `text-xl`. Split into
+  two parts on investigation, 2026-09-24, since they carry different risk:
+
+  The copy/rendering part is closed, nothing further to do. Unlike the
+  Evidence Assessment or Recommendation cards, this text is not derived from
+  a separately tested data-shaping function, it is literal inline JSX in the
+  component itself, so there is no "fixture drifted from the real function"
+  gap to close. The dev-preview check already rendered the real, unmodified
+  component (not a reimplementation) with invented `EvidenceFollowUp`
+  fixtures across 4 states (pending/assessed x dark/light), confirming the
+  requirement name renders in place of the old gap restatement, the larger
+  heading is visually prominent in both tones, and the untouched assessed
+  state (what-changed bullets, "Candidate reported" quote) still renders
+  correctly.
+
+  The live end to end part stays open and is genuinely blocked, the same
+  way the sample wording item below is: `submitEvidenceFollowUp`
+  (`checkService.ts`) calls the `assess-evidence-follow-up` edge function,
+  which needs a real OpenAI call to judge whether the candidate's answer is
+  new evidence, then a real reassessment. No amount of dev-preview or
+  fixture work can substitute for that, same Docker and API key limitation
+  as elsewhere in this file. One thing already covered, so it does not need
+  re-verifying live: the score floor itself, that a follow up answer can
+  only raise the score, never lower it, is frontend-side unit tested in
+  `evidenceFollowUp.test.ts` (`resolveEffectiveResult`: "the original score
+  is not present anywhere in an updated result," "anything short of an
+  assessed, strictly higher, complete follow up leaves the original"). What
+  is genuinely unverified is only whether the backend's real reassessment
+  produces a valid result for that merge logic to act on.
+
+  Founder action, whenever there is API access and a fresh Needs Improvement
+  check (score 61 to 84, which is what makes a follow up eligible per
+  `FOLLOW_UP_MIN_SCORE`/`FOLLOW_UP_MAX_SCORE`) with a pending follow up:
+  answer it once with a specific, quantified answer that genuinely
+  addresses the asked `gap_requirement` (a real number, tool or outcome the
+  original CV did not mention) and confirm the score rises and the assessed
+  state renders correctly; then, on a separate check, answer with something
+  vague or off topic and confirm the score does not move, the floor holds
+  against a real model response, not just the unit tested merge logic.
+  Recorded 2026-09-24, split 2026-09-24.
 - **Founder action, Prospects verdict line only checked with known-good
   strings.** PR #160 added a third, fixed sentence to Prospects per score
   band. `buildScoreAwareProspects` itself is private to
@@ -310,6 +336,54 @@ Its Keyword Scan reservation design was never adopted by the live
 reservation functions are dropped by `20260922170000`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-24 — Evidence Follow Up card: split the real-check item in two
+
+**Objective.** Founder asked to check the "Evidence Follow Up card needs a
+real check" open item (PR #159), the same treatment already given to the
+Evidence Assessment, Recommendation card and sample wording items.
+
+**Completed.** No source change, read only investigation. Read
+`EvidenceFollowUpCard.tsx`, `evidenceFollowUp.ts` and its 18 test
+`evidenceFollowUp.test.ts`, and `submitEvidenceFollowUp` in
+`checkService.ts`. Found the open item actually covers two risks of very
+different kinds: PR #159's own change (the "About this requirement" label,
+the larger heading) is literal inline JSX in the component, not derived
+from any separately tested data-shaping function the way Evidence
+Assessment's `evidence_strength` or Recommendation's `showPricingCta` are,
+so there is no "fixture drifted from the real function" gap to close by
+rerunning anything. The already-completed dev-preview check rendered the
+real, unmodified component directly, which is already the strongest
+verification that kind of change gets without a real check. Separately,
+`submitEvidenceFollowUp` calls the `assess-evidence-follow-up` edge
+function, which needs a real OpenAI call to judge the candidate's answer,
+the same Docker and API key limitation as the sample wording item; no
+dev-preview trick substitutes for that.
+
+**Verified.** Confirmed `evidenceFollowUp.test.ts` already covers the
+score floor property end to end on the frontend side: `resolveEffectiveResult`
+has tests asserting the original score never leaks into an updated result,
+and that anything short of a strictly higher, fully assessed follow up
+leaves the original result untouched. What remains genuinely unverified is
+narrower than the original item implied: only whether the backend's real
+reassessment, given a real candidate answer, produces a valid result for
+that already-tested merge logic to act on.
+
+**Blockers.** The live end to end half is blocked by the same missing
+Docker runtime and `OPENAI_API_KEY` as every other real-check item in this
+file; not something this environment can close.
+
+**Founder action required.** Updated the open item above with a precise
+procedure: answer a real pending follow up with a specific, quantified
+answer once (confirm the score rises) and a vague one on a separate check
+once (confirm the floor holds against a real model response, not just the
+unit tested merge logic).
+
+**Next technical step.** None planned.
+
+**Commit or PR.** None, read only investigation, no lasting code change.
 
 ---
 
