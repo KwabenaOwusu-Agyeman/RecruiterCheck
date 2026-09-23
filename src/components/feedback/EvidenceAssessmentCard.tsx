@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
-import { EvidenceStrengthBadge } from '@/components/ui/Badge'
-import type { RequirementEvidenceRow } from '@/types'
+import type { EvidenceStrength, RequirementEvidenceRow } from '@/types'
 import { cn } from '@/utils/cn'
 
 interface EvidenceAssessmentCardProps {
@@ -8,6 +7,15 @@ interface EvidenceAssessmentCardProps {
   recruiterDoubts: string[]
   // Follows the results container, same convention as EvidenceFollowUpCard.
   dark: boolean
+}
+
+// Best news first, same ordering principle as the Prospects score bands.
+const STRENGTH_ORDER: EvidenceStrength[] = ['strong', 'moderate', 'none']
+
+const STRENGTH_SECTION_LABEL: Record<EvidenceStrength, string> = {
+  strong: 'Strong evidence',
+  moderate: 'Moderate evidence',
+  none: 'No evidence',
 }
 
 /**
@@ -19,6 +27,12 @@ interface EvidenceAssessmentCardProps {
  * scoring system, it makes the evidence behind the existing recruiter
  * assessment visible: job requirement, CV evidence, recruiter
  * interpretation, gap.
+ *
+ * Grouped by evidence strength rather than left in requirement order, so a
+ * recruiter's eye lands on the strong evidence first and the gaps last,
+ * instead of the two interleaved. The strength badge that used to sit on
+ * each row now lives once, as the section heading; repeating it per row
+ * next to a heading that already says the same thing was pure noise.
  *
  * Historical checks with no data (requirement_evidence.length === 0) render
  * nothing, the same pattern EvidenceFollowUpCard uses for !canAnswer.
@@ -36,6 +50,22 @@ export function EvidenceAssessmentCard({ requirementEvidence, recruiterDoubts, d
     rule: dark ? 'border-white/10' : 'border-border',
   }
 
+  const strengthColor: Record<EvidenceStrength, string> = {
+    strong: dark ? 'text-success' : 'text-success-deep',
+    moderate: dark ? 'text-warning' : 'text-warning-deep',
+    none: dark ? 'text-error-light' : 'text-error',
+  }
+  const strengthDot: Record<EvidenceStrength, string> = {
+    strong: 'bg-success',
+    moderate: 'bg-warning',
+    none: 'bg-error',
+  }
+
+  const groups = STRENGTH_ORDER.map((strength) => ({
+    strength,
+    rows: requirementEvidence.filter((row) => row.evidence_strength === strength),
+  })).filter((group) => group.rows.length > 0)
+
   return (
     <Card tone={cardTone}>
       <CardHeader tone={cardTone} className="px-5 py-3">
@@ -45,30 +75,43 @@ export function EvidenceAssessmentCard({ requirementEvidence, recruiterDoubts, d
         </p>
       </CardHeader>
       <CardContent className="px-5 py-4">
-        <ul>
-          {requirementEvidence.map((row, index) => (
-            <li key={`${row.requirement}-${index}`} className={cn(index > 0 && cn('mt-4 border-t pt-4', c.rule))}>
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className={cn('text-sm font-semibold', c.heading)}>{row.requirement}</h3>
-                <EvidenceStrengthBadge strength={row.evidence_strength} tone={dark ? 'dark' : 'light'} />
-              </div>
-              <div className="mt-2">
-                <p className={cn('text-xs font-medium uppercase tracking-wider', c.faint)}>CV evidence</p>
-                <p className={cn('mt-1 text-sm leading-snug', c.body)}>{row.evidence_found}</p>
-              </div>
-              <div className="mt-2">
-                <p className={cn('text-xs font-medium uppercase tracking-wider', c.faint)}>Recruiter read</p>
-                <p className={cn('mt-1 text-sm leading-snug', c.body)}>{row.recruiter_interpretation}</p>
-              </div>
-              {row.gap_note ? (
-                <div className="mt-2">
-                  <p className={cn('text-xs font-medium uppercase tracking-wider', c.faint)}>Gap</p>
-                  <p className={cn('mt-1 text-sm leading-snug', c.body)}>{row.gap_note}</p>
-                </div>
-              ) : null}
-            </li>
-          ))}
-        </ul>
+        {groups.map((group, groupIndex) => (
+          <div key={group.strength} className={cn(groupIndex > 0 && cn('mt-5 border-t pt-5', c.rule))}>
+            <h3
+              className={cn(
+                'flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider',
+                strengthColor[group.strength],
+              )}
+            >
+              <span className={cn('h-1.5 w-1.5 rounded-full', strengthDot[group.strength])} aria-hidden="true" />
+              {STRENGTH_SECTION_LABEL[group.strength]}
+            </h3>
+            <ul>
+              {group.rows.map((row, rowIndex) => (
+                <li
+                  key={`${row.requirement}-${rowIndex}`}
+                  className={cn('mt-3', rowIndex > 0 && cn('border-t pt-3', c.rule))}
+                >
+                  <h4 className={cn('text-sm font-semibold', c.heading)}>{row.requirement}</h4>
+                  <div className="mt-1.5">
+                    <p className={cn('text-xs font-medium uppercase tracking-wider', c.faint)}>CV evidence</p>
+                    <p className={cn('mt-0.5 text-sm leading-snug', c.body)}>{row.evidence_found}</p>
+                  </div>
+                  <div className="mt-1.5">
+                    <p className={cn('text-xs font-medium uppercase tracking-wider', c.faint)}>Recruiter read</p>
+                    <p className={cn('mt-0.5 text-sm leading-snug', c.body)}>{row.recruiter_interpretation}</p>
+                  </div>
+                  {row.gap_note ? (
+                    <div className="mt-1.5">
+                      <p className={cn('text-xs font-medium uppercase tracking-wider', c.faint)}>Gap</p>
+                      <p className={cn('mt-0.5 text-sm leading-snug', c.body)}>{row.gap_note}</p>
+                    </div>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
 
         {recruiterDoubts.length > 0 ? (
           <div className={cn('mt-5 border-t pt-4', c.rule)}>
