@@ -23,6 +23,23 @@ technical and founder-blocking; everything else goes in a dated entry or in
 Notion. If this list keeps growing, Claude is handing work back instead of
 doing it.
 
+- **Founder action, Prospects verdict line only checked with known-good
+  strings.** PR #160 added a third, fixed sentence to Prospects per score
+  band. `buildScoreAwareProspects` itself is private to
+  `supabase/functions/analyze-check/logic.ts`, so it could not be called
+  directly from a dev-preview route; instead, the exact verdict strings
+  (already asserted verbatim by `logic.test.ts`, 167 tests, for all three
+  bands) were rendered through the real Prospects Card JSX on
+  `localhost:5173` with invented placeholder text standing in for the two
+  pre-existing sentences. Confirmed correct bullet convention, spacing and
+  contrast in dark, muted and light containers, no console errors. This is
+  a narrower gap than the Evidence Assessment or Recommendation cards: the
+  string content itself is already fully verified by the unit tests, only
+  its on-page rendering was checked with fixture data rather than a real
+  check's actual output. Founder action, lower priority than the other two:
+  open a real check in each score band and confirm the third line still
+  reads correctly alongside the model-generated first two. Recorded
+  2026-09-24.
 - **Founder action, Recommendation card CTA logic needs a real check.** PR
   #161 (`documentEntitlement.ts`, `showPricingCta`) scoped the pricing CTA to
   when buying would actually help. Verified with a throwaway dev-preview
@@ -207,6 +224,44 @@ Its Keyword Scan reservation design was never adopted by the live
 reservation functions are dropped by `20260922170000`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-24 — Prospects verdict line checked on localhost:5173
+
+**Objective.** Founder asked to check the Prospects verdict line (PR #160)
+on `localhost:5173`.
+
+**Completed.** No code change; a verification session.
+`buildScoreAwareProspects` in `supabase/functions/analyze-check/logic.ts`
+is not exported, so it could not be imported into a dev-preview route
+without changing scoring-relevant code, which was not done. Instead built
+a throwaway dev-preview route (`__DevPreviewProspectsVerdict.tsx`,
+discarded, never committed) rendering the exact Prospects Card JSX copied
+from `FeedbackPage.tsx`, fed with the three exact verdict strings already
+asserted verbatim by `logic.test.ts` for each band ("Recruiters would
+likely shortlist you for an interview.", "...would likely consider you for
+an interview once the evidence above is stronger.", "...would be unlikely
+to shortlist you for this specific role.") plus invented placeholder text
+standing in for the two pre-existing, unrelated candidate-specific
+sentences.
+
+**Verified.** All three bands (Not a Fit/dark, Needs Improvement/muted,
+Likely Interview Candidate/light) render the third line correctly: right
+position (always last), correct bullet convention, readable contrast in
+all three container tones. No console errors.
+
+**Blockers.** None technical for this check. See the new Open item above:
+the string content is fully verified by `logic.test.ts`, but this only
+confirms rendering, not a real check's actual generated output.
+
+**Founder action required.** See the Open item above (lower priority than
+the Evidence Assessment and Recommendation card real-check gaps, since the
+string content itself is already unit tested, not merely fixture-checked).
+
+**Next technical step.** None planned.
+
+**Commit or PR.** None. Read only investigation, no source file changed.
 
 ---
 
