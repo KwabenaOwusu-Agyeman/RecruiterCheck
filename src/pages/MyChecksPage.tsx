@@ -116,7 +116,7 @@ export function MyChecksPage() {
         action={
           <Link to="/checks/keyword-scan">
             <Button variant="secondary" size="sm" className="w-full sm:w-auto">
-              Free Keyword Scan
+              Free ATS Check
             </Button>
           </Link>
         }

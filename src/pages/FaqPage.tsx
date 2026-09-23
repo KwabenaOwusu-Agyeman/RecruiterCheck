@@ -49,9 +49,9 @@ const FAQ_ITEMS = [
   // Moved here from the pricing page when /pricing and /account/billing were
   // merged into one page, so the answers live in a single place.
   {
-    question: 'Is there a free keyword scan too?',
+    question: 'Is there a free ATS check too?',
     answer:
-      'Yes. Before you spend a check, run a free keyword scan to see which terms from a job description appear in your CV. It shows whether a word is present, not whether you have evidence of it, which is what a Recruiter Check assesses. You get 3 free scans, and unlimited scans once you have bought any check pack.',
+      'Yes. Before you spend a check, run a free ATS check to see which terms from a job description appear in your CV. It shows whether a word is present, not whether you have evidence of it, which is what a Recruiter Check assesses. You get 3 free checks, and unlimited checks once you have bought any check pack.',
   },
   {
     question: 'Do checks expire?',

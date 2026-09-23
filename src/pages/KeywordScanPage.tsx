@@ -99,8 +99,8 @@ function TermRow({
 
 export function KeywordScanPage() {
   usePageMeta({
-    title: 'Free Keyword Scan | MyRecruiterCheck',
-    description: 'See which terms from a job description appear in your CV, free. A Recruiter Check then assesses whether you have evidence for them.',
+    title: 'Free ATS Check | MyRecruiterCheck',
+    description: 'A free ATS check that shows which terms from a job description appear in your CV. A Recruiter Check then assesses whether you have evidence for them.',
     path: '/checks/keyword-scan',
     noindex: true,
   })
@@ -219,7 +219,7 @@ export function KeywordScanPage() {
       <BackLink to="/checks" />
       <div className="mt-3">
         <PageHeader
-          title="Free Keyword Scan"
+          title="Free ATS Check"
           description={
             hasPurchased === null
               ? 'Nothing here is saved.'
@@ -366,7 +366,7 @@ export function KeywordScanPage() {
               disabled={!canScan || scanning}
               onClick={() => void handleScan()}
             >
-              {scanning ? 'Scanning...' : 'Scan for keywords'}
+              {scanning ? 'Checking...' : 'Run ATS check'}
             </Button>
           </div>
         </Card>

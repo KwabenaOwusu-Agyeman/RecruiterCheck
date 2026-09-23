@@ -578,7 +578,7 @@ function NewCheckForm() {
           </h2>
           <p className="mt-2 text-sm text-text-secondary">
             {hasKeywordScansLeft
-              ? `Try a free keyword scan while you decide (${scansLeft} of ${FREE_SCAN_LIMIT} left), or upgrade for a full Interview Score check.`
+              ? `Try a free ATS check while you decide (${scansLeft} of ${FREE_SCAN_LIMIT} left), or upgrade for a full Interview Score check.`
               : 'Nice work getting this far. Upgrade to keep checking applications before you apply.'}
           </p>
           <div className="mt-6 flex flex-col items-center gap-3">
@@ -586,7 +586,7 @@ function NewCheckForm() {
               <>
                 <Link to="/checks/keyword-scan" className="w-full sm:w-auto">
                   <Button size="sm" className="w-full sm:w-auto">
-                    Try a free keyword scan
+                    Try a free ATS check
                   </Button>
                 </Link>
                 <Link
