@@ -66,15 +66,6 @@ doing it.
   quantified stakeholder/communication bullets now, rather than merely
   passing the offline tests, needs one live check on a machine with API
   access before this can be considered confirmed. Recorded 2026-09-23.
-- **Founder action, Free ATS Check rendered copy unverified.** PR #167
-  (merged) renamed the free feature's copy to "Free ATS Check" across
-  `KeywordScanPage.tsx`, `NewCheckPage.tsx` and `MyChecksPage.tsx`. Only the
-  unauthenticated `/faq` page was confirmed rendering the new text locally;
-  the three authenticated pages could not be, since local dev has no
-  Supabase session configured and redirects signed-out visitors. Founder
-  action: open `/checks/keyword-scan`, `/checks/new` and `/checks` with a
-  logged-in account and confirm the new copy renders as written. Recorded
-  2026-09-23.
 - **Founder action.** Verify a real Google sign-in end to end after the move
   to the `myrecruitercheck` Cloud project, then delete the old `RecruiterCheck`
   OAuth client in `theorycoach-ai`. Recorded 2026-09-07.
@@ -216,6 +207,50 @@ Its Keyword Scan reservation design was never adopted by the live
 reservation functions are dropped by `20260922170000`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-24 — Free ATS Check: authenticated pages visually confirmed
+
+**Objective.** Close the last open item from PR #167: confirm
+`/checks/keyword-scan`, `/checks/new` and `/checks` actually render the
+"Free ATS Check" copy, not only `/faq` (the one page confirmed at merge
+time, since it needs no session).
+
+**Completed.** This environment has no Docker runtime (`docker`, `colima`,
+`podman` all absent), so `supabase start` cannot run and no real session
+can be signed in, the same limit recorded elsewhere in this file. Used the
+same throwaway dev-preview technique as the Evidence Assessment card
+check: three temporary, unprotected routes added directly to `App.tsx`
+(`/__dev-preview/keyword-scan` and `/__dev-preview/my-checks`, rendering
+the real `KeywordScanPage` and `MyChecksPage` directly, both confirmed
+safe to mount without a session by reading their source first; and
+`/__dev-preview/new-check-gate`, a throwaway component reproducing
+`NewCheckPage`'s `gateReason === 'free-tier'` block verbatim with fixture
+values, since that block is hard-gated behind `if (!user || !profile)
+return` and cannot mount at all without one). Viewed with the Chrome
+connector against `localhost:5173`, never the hosted site. Route
+additions and the throwaway component were reverted (`git checkout --
+src/App.tsx`, file deleted) immediately after; nothing was committed.
+
+**Verified.** All three render correctly, no console errors on any of
+them: `/checks/keyword-scan` shows heading "Free ATS Check", tab title
+"Free ATS Check | MyRecruiterCheck", and submit button "Run ATS check";
+`/checks` (My Checks) shows the "Free ATS Check" CTA button linking to
+`/checks/keyword-scan`; the `/checks/new` free-tier gate block shows "Try
+a free ATS check while you decide (2 of 3 left)..." and a "Try a free ATS
+check" button, fixture values substituted correctly into the template
+string.
+
+**Blockers.** None.
+
+**Founder action required.** None. This was the one piece of PR #167 still
+unverified; closed now.
+
+**Next technical step.** None outstanding for this feature.
+
+**Commit or PR.** None, read only visual check with no lasting code
+change.
 
 ---
 
