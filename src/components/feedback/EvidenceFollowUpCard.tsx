@@ -126,7 +126,7 @@ export function EvidenceFollowUpCard({ followUp, updated, dark, onAssessed }: Ev
   return (
     <Card tone={cardTone}>
       <CardHeader tone={cardTone} className="px-5 py-3">
-        <h2 className={cn('text-base font-semibold', c.heading)}>{FOLLOW_UP_HEADING}</h2>
+        <h2 className={cn('text-xl font-semibold', c.heading)}>{FOLLOW_UP_HEADING}</h2>
         <p className={cn('mt-0.5 text-xs', c.sub)}>{FOLLOW_UP_OPTIONAL_NOTE}</p>
       </CardHeader>
       <CardContent className="space-y-4 px-5 py-4">
