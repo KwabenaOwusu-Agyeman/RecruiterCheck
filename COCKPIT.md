@@ -163,7 +163,12 @@ doing it.
   it lands `partial` or `none`). Run a real `analyze-check` call with that
   pair and check whether that requirement's `sample_wording` contains a
   number (a count, an audience size, a frequency) rather than reading like
-  the original flagged bullet. Recorded 2026-09-23.
+  the original flagged bullet. Separately confirmed 2026-09-24: the
+  "Areas to Improve" display itself (`FeedbackBullet.tsx`, `feedbackText.ts`,
+  neither touched by PR #165) renders a quantified sample wording bullet
+  exactly as well as the old unquantified style, so once the model does
+  produce one, no further frontend work is needed for it to show correctly.
+  Recorded 2026-09-23, updated 2026-09-24.
 - **Founder action.** Verify a real Google sign-in end to end after the move
   to the `myrecruitercheck` Cloud project, then delete the old `RecruiterCheck`
   OAuth client in `theorycoach-ai`. Recorded 2026-09-07.
@@ -305,6 +310,46 @@ Its Keyword Scan reservation design was never adopted by the live
 reservation functions are dropped by `20260922170000`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-24 — Areas to Improve display checked with a quantified example
+
+**Objective.** Founder asked to check the "Areas to Improve" examples on
+`localhost:5173`, in the context of PR #165's sample wording rule change.
+PR #165 itself touches only `supabase/functions/analyze-check/prompt.ts`
+and its test, no frontend file, so there was nothing new for that PR to
+render; this instead checks whether the existing, unmodified display
+handles a quantified bullet as well as the old style.
+
+**Completed.** No code change; a verification session. Built a throwaway
+dev-preview route (`__DevPreviewAreasToImprove.tsx`, discarded, never
+committed) rendering the real, unmodified `FeedbackBullet` component and
+`feedbackText.ts` parsing against three fixture "Areas to Improve" bullets:
+the founder's exact originally-flagged unquantified bullet ("Conducted
+workshops to explain AI/ML concepts to stakeholders..."), a new bullet in
+the quantified stakeholder-communication style matching the calibration
+example PR #165 added ("Led 5 stakeholder workshops... 40 sales and
+operations staff... 3 teams requesting follow up training"), and one
+ordinary technical example for comparison, across dark, muted and light
+containers.
+
+**Verified.** All three bullets parse and render identically: bold finding,
+plain evidence sentence, italic "Example:" quote with the sample wording.
+The quantified bullet shows no different than the unquantified one or the
+technical one, confirming the display has no dependency on whether the
+sample wording is quantified. No console errors on any of the 3 swatches.
+
+**Blockers.** None technical for this check. This confirms display
+compatibility only, not that the model currently produces quantified text:
+that remains the unverified item above (no `OPENAI_API_KEY`, no Docker).
+
+**Founder action required.** None new; see the existing sample wording
+open item above, now updated to note this display-side confirmation.
+
+**Next technical step.** None planned.
+
+**Commit or PR.** None. Read only investigation, no source file changed.
 
 ---
 
