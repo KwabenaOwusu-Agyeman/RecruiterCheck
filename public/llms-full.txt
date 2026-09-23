@@ -30,7 +30,7 @@ MyRecruiterCheck does not require a matching job title. Internships, academic an
 
 ## Pricing (as of last review date above)
 
-- Free: 1 free Recruiter Check for life (Interview Score + Recruiter Feedback), plus 3 free keyword scans before spending a check; unlimited keyword scans after any paid pack purchase.
+- Free: 1 free Recruiter Check for life (Interview Score + Recruiter Feedback), plus 3 free ATS checks before spending a check; unlimited ATS checks after any paid pack purchase.
 - Starter pack: €10 one-time, 5 checks. Includes Interview Score, Recruiter Feedback, Improved CV Draft (for checks scoring 61 to 84), and access to your full check history.
 - Active pack: €20 one-time, 15 checks. Same inclusions as Starter.
 - Power pack: €40 one-time, 40 checks. Adds a Cover Letter and Recruiter Message to every eligible check.
