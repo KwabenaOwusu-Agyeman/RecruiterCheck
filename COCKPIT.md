@@ -95,6 +95,20 @@ doing it.
   allows login CSRF (PKCE); newsletter signup has no double opt in; disputes
   do not claw back credits; CLAUDE.md says the primary CTA reads "Check" while the site uses "Check My
   Application". Recorded 2026-09-21.
+- **Founder action, Evidence Based Recruiter Assessment (PR #156).** Review
+  the diff and test results and merge when ready (not merged, per CLAUDE.md's
+  Level 2 gate). Before merging, run `supabase db reset` and `supabase gen
+  types typescript --local` on a machine with Docker and confirm it matches
+  this PR's hand patch to `src/types/database.ts`/`admin/src/types/
+  database.ts` byte for byte (no Docker in the sandbox that built this PR, so
+  the migration was reviewed by hand, never replayed, and the types file was
+  hand patched rather than generated). After merge, `supabase db push` for
+  `20260923130000_requirement_evidence.sql` needs its own explicit approval
+  in conversation, per Level 3. Also confirm the judgment call flagged in the
+  PR description: `buildRequirementEvidenceTable` can surface an
+  application-stage requirement (availability, work authorization) in the
+  evidence table, unlike the narrower Evidence Follow Up question selection
+  which excludes them. Recorded 2026-09-23.
 - **Founder decision, document entitlement scope.** Raised 2026-09-22 from the
   "Junior Data Analyst" check (see the 2026-09-22 manual credit grant entry
   below): a completed check's document entitlement is fixed forever at
@@ -132,6 +146,117 @@ Its Keyword Scan reservation design was never adopted by the live
 reservation functions are dropped by `20260922170000`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-23 — Evidence Based Recruiter Assessment card added
+
+**Objective.** Implement the founder-approved Evidence Based Recruiter
+Assessment plan: expose the existing per-requirement matrix that already
+computes the Interview Score as a candidate-facing card, without touching
+DEC-8's Evidence Follow Up mechanism or any scoring constant.
+
+**Completed.** `supabase/functions/analyze-check/prompt.ts`: three new
+per-requirement fields (`evidence_specificity`, internal only;
+`recruiter_interpretation`, `gap_note`, both candidate facing) and a
+top-level `recruiter_doubts: string[]`, following the existing
+`EVIDENCE_REFERENCE_SCHEMA` nullable pattern, with new calibration examples
+(`RECRUITER_INTERPRETATION_CALIBRATION_EXAMPLES`,
+`GAP_NOTE_CALIBRATION_EXAMPLES`) and a new RECRUITER READ / RECRUITER DOUBTS
+prompt section. `logic.ts`: `PROMPT_VERSION` bumped
+`analyze-check-prompt-v6` to `v7`; new exported `EvidenceStrength`,
+`RequirementEvidenceRow`, and pure function `buildRequirementEvidenceTable`
+(filters `nice_to_have`, maps `strong`/`partial`/`none` to
+`strong`/`moderate`/`none`, must_have before important, capped at 8 rows);
+`AnalysisResult` gained `requirement_evidence`/`recruiter_doubts`, populated
+in `normalizeAnalysis` from `dedupedRequirements`, the same finalized matrix
+`calculateCapabilityScore` already uses. `evidence-follow-up.ts`:
+`selectEvidenceGap`'s `question` now splices in `gap_note` as a lead-in
+clause when present; byte identical to the pre-v7 question when absent.
+Selection ranking, `summary`, the Needs Improvement band gate, and the floor
+are untouched. New migration
+`supabase/migrations/20260923130000_requirement_evidence.sql`:
+`feedback.requirement_evidence`/`recruiter_doubts` (jsonb, default `[]`),
+`evidence_follow_ups.final_requirement_evidence` (jsonb, nullable)/
+`final_recruiter_doubts` (text[], nullable), plain `ADD COLUMN` only, no
+RLS/grant/RPC change. Persistence wired in `analyze-check/index.ts` and
+`assess-evidence-follow-up/index.ts`. Shared resolver
+(`supabase/functions/_shared/follow-up-result.ts` and its `src/lib/
+evidenceFollowUp.ts` mirror) extended with `requirementEvidence`/
+`recruiterDoubts`, read leniently (default `[]`), never added to the score
+replacement gate. Client types (`src/types/index.ts`), `checkService.ts`
+(`mapFeedback`, `getEvidenceFollowUp`), new `EvidenceStrengthBadge` in
+`Badge.tsx` (reusing the app's `success`/`warning`/`error` tokens, never
+emoji), new `src/components/feedback/EvidenceAssessmentCard.tsx` ("How a
+recruiter reads your CV", reusing `EvidenceFollowUpCard.tsx`'s tone/label
+pattern, capped at 8 rows, "What may make a recruiter hesitate" bullets
+capped at 3, renders nothing when `requirement_evidence` is empty), wired
+into `FeedbackPage.tsx` between the Prospects and Evidence Follow Up cards.
+
+**Verified.** `npm run lint` (0 errors, 2 pre-existing unrelated warnings),
+`npm run typecheck` (clean), `npm run test:scoring` (6/6 files, 240
+assertions, `scoring-regression.test.ts` byte identical), `node
+scripts/mutation-check.mjs` (14/14 caught, 0 holes, 0 skipped, no new
+ambiguous collision), `npm run test:edge` (30/30 files, 501 assertions),
+`npm run test:unit` (24/24 files, 279 assertions), `npm run test:admin`
+(14/14 files), `cd admin && npm run lint`/`typecheck`/`build` (clean, after
+`npm ci` restored `admin/node_modules` from the existing lockfile, since it
+was not installed in this worktree), `npm run build` (client, SSR,
+prerender, CSP hash check all clean). Manually rendered
+`EvidenceAssessmentCard` to static HTML with invented fixture data (strong/
+moderate/none rows, doubts, light and dark tone, empty state) via a
+throwaway `.scratch/` harness and viewed it in Chrome against a local
+static server: title, subtitle, three-state badge colors, label-then-value
+rows, Gap omitted on a strong row, doubts bullets, and the empty-state
+null render all confirmed visually. Not a real end-to-end check (see
+Blockers).
+
+**Blockers.** No Docker runtime in this sandboxed environment (`docker`,
+`colima`, `podman`, `orbstack` all absent; `supabase start` fails at the
+daemon connection). Same limitation the 2026-09-23 DEC-9 entry above hit.
+Two consequences: (1) `supabase db reset` was not run; the migration was
+reviewed by hand instead of replayed locally. (2) `supabase gen types
+typescript --local` was not run; `src/types/database.ts` was hand patched
+to add exactly the two new migration's columns, copying the exact existing
+sibling-column shape (`strengths`/`improvements`/`prospects` on `feedback`,
+`final_strengths` etc. on `evidence_follow_ups`) rather than generated by
+the tool, then synced to `admin/src/types/database.ts` via the existing
+`admin/scripts/sync-types.mjs`. `admin/src/types/database-parity.test.ts`
+confirms the two files agree with each other, but neither has been checked
+against real Postgres introspection. Also could not exercise the full
+candidate flow (a real completed check, a real follow up answer) since
+that needs the local stack too.
+
+**Founder action required.** Two things, both gating merge: (1) run
+`supabase db reset` and `supabase gen types typescript --local >
+src/types/database.ts && cd admin && node scripts/sync-types.mjs` on a
+machine with Docker, and confirm the regenerated file matches this PR's
+hand patch byte for byte (it should, since it mirrors an existing sibling
+column exactly, but this has not been tool-verified); (2) review PR #156's
+diff and test results, per CLAUDE.md's Level 2 gate, before merging (do not
+merge on the assumption this report is enough). Separately, once merged
+and Edge Functions have deployed: `supabase db push` for
+`20260923130000_requirement_evidence.sql` needs its own explicit approval
+in conversation before it can run against production, per CLAUDE.md's
+Level 3 gate. A genuine judgment call for the founder's eyes, not a bug:
+`buildRequirementEvidenceTable` runs on the full deduplicated requirement
+matrix, so an application-stage requirement (availability, work
+authorization) can appear in the evidence table, unlike the narrower
+Evidence Follow Up gap selection which excludes them. This matches the
+founder's literal spec (only `nice_to_have` excluded) and how these items
+already surface elsewhere in the report; flagged in the PR description for
+confirmation.
+
+**Next technical step.** Once Docker is available somewhere: replay the
+migration with `supabase db reset`, regenerate both `database.ts` files for
+real and diff them against this PR's hand patch, then exercise a real
+Needs Improvement check with a follow up answer on `localhost:5173` to
+confirm the card updates after reassessment (the one part of the founder's
+manual check list that a static fixture render cannot substitute for).
+
+**Commit or PR.** `e330367` on `feature/evidence-based-recruiter-assessment`,
+pushed to `origin` and `personal`,
+[#156](https://github.com/fullcircleAI/RecruiterCheck/pull/156). Not merged.
 
 ---
 
