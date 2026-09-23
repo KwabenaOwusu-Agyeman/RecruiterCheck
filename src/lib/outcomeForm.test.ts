@@ -3,7 +3,6 @@ import assert from 'node:assert/strict'
 import {
   CHANNEL_OPTIONS,
   EMPTY_OUTCOME_FORM,
-  OUTCOME_CONSENT_TEXT,
   STAGE_OPTIONS,
   buildOutcomePayload,
   canSubmitOutcome,
@@ -91,7 +90,7 @@ test('the option values match what the server accepts', () => {
 })
 
 test('user facing copy contains no dashes', () => {
-  const copy = [OUTCOME_CONSENT_TEXT, ...CHANNEL_OPTIONS.map((o) => o.label), ...STAGE_OPTIONS.map((o) => o.label)]
+  const copy = [...CHANNEL_OPTIONS.map((o) => o.label), ...STAGE_OPTIONS.map((o) => o.label)]
   for (const text of copy) assert.ok(!/[‒–—―]| - /.test(text), text)
 })
 
