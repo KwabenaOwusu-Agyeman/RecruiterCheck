@@ -1291,6 +1291,16 @@ function buildScoreAwareProspects(
       requirements.find((item) => item.match_strength === 'partial'),
   )
 
+  // Fixed, score band only recruiter verdict, appended as a third line below.
+  // Deterministic and never LLM generated, unlike the two sentences above it
+  // (which are also deterministic, but templated around this candidate's
+  // specific strongest requirement/gap). isLiterallyPerfect shares the 85+
+  // verdict: it is still the top band, just a stronger case within it.
+  const RECRUITER_VERDICT_LIKELY_SHORTLIST = 'Recruiters would likely shortlist you for an interview.'
+  const RECRUITER_VERDICT_WOULD_CONSIDER =
+    'Recruiters would likely consider you for an interview once the evidence above is stronger.'
+  const RECRUITER_VERDICT_UNLIKELY_SHORTLIST = 'Recruiters would be unlikely to shortlist you for this specific role.'
+
   // isLiterallyPerfect, not score === MAX_INTERVIEW_SCORE: a candidate whose
   // uncapped blend was 96 to 100 also lands on the capped score, but is not
   // actually maxed out and may still have real improvement content to show.
@@ -1298,6 +1308,7 @@ function buildScoreAwareProspects(
     return [
       'Your application shows complete documented alignment with this role.',
       'Your application is ready to submit, although employer decisions and competition still apply.',
+      RECRUITER_VERDICT_LIKELY_SHORTLIST,
     ]
   }
   if (score >= 85) {
@@ -1308,6 +1319,7 @@ function buildScoreAwareProspects(
       improvements.length > 0
         ? 'Addressing the remaining refinement could further strengthen your interview chances.'
         : 'Your application is ready to submit, although employer decisions and competition still apply.',
+      RECRUITER_VERDICT_LIKELY_SHORTLIST,
     ]
   }
   if (score >= 61) {
@@ -1318,6 +1330,7 @@ function buildScoreAwareProspects(
       gap
         ? `Strengthen or confirm your evidence for ${gap} before applying.`
         : 'Address the areas above before applying to improve your interview chances.',
+      RECRUITER_VERDICT_WOULD_CONSIDER,
     ]
   }
   return [
@@ -1325,6 +1338,7 @@ function buildScoreAwareProspects(
       ? `Your CV does not yet show enough evidence for ${gap}, which is important for this role.`
       : 'Your CV does not yet show enough evidence for this specific role.',
     'Focus on the essential missing requirements before applying or target a more closely aligned role.',
+    RECRUITER_VERDICT_UNLIKELY_SHORTLIST,
   ]
 }
 
