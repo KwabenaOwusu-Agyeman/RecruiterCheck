@@ -110,8 +110,11 @@ doing it.
   confirmed, it needs both a live entitlement check (`documentEntitlement.ts`,
   `supabase/functions/generate-documents/logic.ts`) and a `reserve_refund`
   change to block refunding a batch once it has been drawn on for a
-  generation. Only the Recommendation card's CTA layout changed so far (PR
-  #146); no entitlement or refund logic touched. Recorded 2026-09-22.
+  generation. The Recommendation card's CTA layout changed in PR #146; the
+  two specific rows this was raised from were corrected by hand on
+  2026-09-23 (see that entry below), but no entitlement or refund logic
+  itself has changed. The design question is still open. Recorded
+  2026-09-22, updated 2026-09-23.
 
 ## Historical review material
 
@@ -130,6 +133,61 @@ Its Keyword Scan reservation design was never adopted by the live
 reservation functions are dropped by `20260922170000`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-23 — The two rows the broken manual grant left behind, corrected
+
+**Objective.** Close out the fallout from the 2026-09-22 manual credit grant
+bug (see that entry below): even after a correctly-tagged Power pack was
+granted to the affected account, the check that had already spent from the
+broken batch still showed no document entitlement, because a check's
+`funding_pack_id` is written once at completion and never revisited.
+
+**Completed.** Two direct data corrections, each reviewed and run by the
+founder in the Supabase SQL editor, not by this session: `execute_sql`
+against the hosted project is off limits by CLAUDE.md's environment-safety
+rule regardless of who asks, so this session prepared exact, guarded
+statements (`where id = ... and <column> is null`, with `returning` to
+confirm the actual row changed rather than trusting the SQL editor's
+ambiguous no-`RETURNING` success message) and the founder executed them.
+
+- `credit_batches.pack_id`: `null` to `large` on the batch the broken grant
+  created. This is the value `generate-documents` actually reads at
+  generate-time via `check_ledger` to `credit_batches`, so this is what
+  makes the real, server-side entitlement check pass, not merely the
+  display.
+- `checks.funding_pack_id`: `null` to `large` on "Junior Data Analyst", the
+  one check that had already spent from that batch.
+
+While verifying, a second check completed and landed with the same problem:
+its `funding_pack_id` was `null` despite drawing from the now-corrected
+batch, because it completed in the narrow window before the
+`credit_batches` fix had actually committed (that update failed twice with
+a client-side fetch error before succeeding on a third attempt in a fresh
+tab). Confirmed via the ledger join, which showed the batch's live
+`pack_id` as `large` while the check's own frozen column still said `null`.
+Patched the same way once identified.
+
+**Verified.** Founder confirmed both checks show the Generate CTA, clicked
+Generate on both, and both produced and downloaded documents successfully.
+Full end-to-end confirmation, not just the display fix.
+
+**Blockers.** None.
+
+**Founder action required.** None. Worth knowing: a check that completes in
+the exact window between a `credit_batches` correction being written and it
+actually committing can still freeze with a stale `funding_pack_id`, which
+is what happened here a second time in the same session. This is not fixed
+at the code level, only worked around by hand for these two rows. See the
+"Founder decision, document entitlement scope" open item above for the
+design question this keeps surfacing.
+
+**Next technical step.** None planned unless the entitlement-scope redesign
+above is picked up.
+
+**Commit or PR.** None. This was a production data correction, not a code
+change: no migration, no file touched.
 
 ---
 
