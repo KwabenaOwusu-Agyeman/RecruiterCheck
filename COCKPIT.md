@@ -40,22 +40,38 @@ doing it.
   open a real check in each score band and confirm the third line still
   reads correctly alongside the model-generated first two. Recorded
   2026-09-24.
-- **Founder action, Recommendation card CTA logic needs a real check.** PR
-  #161 (`documentEntitlement.ts`, `showPricingCta`) scoped the pricing CTA to
-  when buying would actually help. Verified with a throwaway dev-preview
-  route on `localhost:5173` that called the real `getDocumentEntitlement`
-  function (not a hand-built fixture object) across all 8 pack tier x score
-  band combinations plus 2 "documents already generated" states: free tier
-  shows the CTA at all three bands, paid Starter at Not a Fit correctly
-  shows no CTA (the bug this PR fixed), paid Starter at 85+ correctly shows
-  the CTA with an upgrade-to-Power message, paid Power shows no CTA at any
-  band, and the cross-sell "Get checks" button in the generated-documents
-  view appears only when the pack does not include a cover letter. No
-  console errors. This exercises the real entitlement logic and real JSX,
-  materially stronger than reading the code, but is still not a real
-  completed check: same Docker limitation as the Evidence Assessment card
-  above. Founder action: open a real check in each of these pack/score
-  combinations and confirm the CTA matches. Recorded 2026-09-24.
+- **Founder action, Recommendation card CTA logic needs a real check, lower
+  priority.** PR #161 (`documentEntitlement.ts`, `showPricingCta`) scoped the
+  pricing CTA to when buying would actually help. Verified with a throwaway
+  dev-preview route on `localhost:5173` that called the real
+  `getDocumentEntitlement` function (not a hand-built fixture object) across
+  all 8 pack tier x score band combinations plus 2 "documents already
+  generated" states: free tier shows the CTA at all three bands, paid
+  Starter at Not a Fit correctly shows no CTA (the bug this PR fixed), paid
+  Starter at 85+ correctly shows the CTA with an upgrade-to-Power message,
+  paid Power shows no CTA at any band, and the cross-sell "Get checks"
+  button in the generated-documents view appears only when the pack does
+  not include a cover letter. No console errors. This exercises the real
+  entitlement logic and real JSX, materially stronger than reading the code,
+  but is still not a real completed check: same Docker limitation as the
+  Evidence Assessment card above.
+  Downgraded from equal priority to the Evidence Assessment card, 2026-09-24:
+  `getDocumentEntitlement` itself already has exhaustive coverage in
+  `documentEntitlement.test.ts` (~19 tests: every pack x score band cell,
+  the 60/61/84/85 boundaries, the Starter-vs-no-pack regression this logic
+  exists to fix, and content assertions on every `blockedReason` string),
+  and `FeedbackPage.tsx:266` calls this exact function directly —
+  `getDocumentEntitlement(check.funding_pack_id, score)`, no reimplementation
+  or transformation in between, the same real function the dev-preview check
+  above also called. So both the logic and the rendering are independently
+  verified already; what a real check would still add is narrower than the
+  rest of this item implies, essentially whether a real row's
+  `funding_pack_id`/`score` behave as their generated types promise, a
+  schema-integrity question rather than a logic one, and not something PR
+  #161 or #164 touched. Founder action, same low priority as the Prospects
+  verdict item above: open a real check in each of these pack/score
+  combinations and confirm the CTA matches, when convenient rather than
+  urgently. Recorded 2026-09-24.
 - **Founder action, Evidence Assessment card grouping needs a real check.**
   PR #164 (`EvidenceAssessmentCard.tsx`) regrouped "How a recruiter reads
   your CV" into Strong evidence / Moderate evidence / No evidence sections.
