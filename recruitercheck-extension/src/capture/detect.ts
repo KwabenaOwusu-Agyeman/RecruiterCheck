@@ -32,6 +32,17 @@ export function cleanText(raw: string): string {
   return raw.replace(/\s+/g, ' ').trim()
 }
 
+// `.textContent` includes any descendant <style>/<script> text verbatim —
+// seen on Indeed's job-description container, which embeds component CSS
+// inline. Clones the node first so the live DOM is never mutated.
+export function textExcludingTags(el: Element, tags: string[]): string {
+  const clone = el.cloneNode(true) as Element
+  for (const tag of tags) {
+    clone.querySelectorAll(tag).forEach((node) => node.remove())
+  }
+  return cleanText(clone.textContent ?? '')
+}
+
 // Reads textContent from the first matching selector, skipping any node
 // nested inside a noise selector.
 export function queryText(root: ParentNode, selectors: string[]): string | null {
