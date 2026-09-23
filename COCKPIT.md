@@ -95,20 +95,15 @@ doing it.
   allows login CSRF (PKCE); newsletter signup has no double opt in; disputes
   do not claw back credits; CLAUDE.md says the primary CTA reads "Check" while the site uses "Check My
   Application". Recorded 2026-09-21.
-- **Founder action, Evidence Based Recruiter Assessment (PR #156).** Review
-  the diff and test results and merge when ready (not merged, per CLAUDE.md's
-  Level 2 gate). Before merging, run `supabase db reset` and `supabase gen
-  types typescript --local` on a machine with Docker and confirm it matches
-  this PR's hand patch to `src/types/database.ts`/`admin/src/types/
-  database.ts` byte for byte (no Docker in the sandbox that built this PR, so
-  the migration was reviewed by hand, never replayed, and the types file was
-  hand patched rather than generated). After merge, `supabase db push` for
-  `20260923130000_requirement_evidence.sql` needs its own explicit approval
-  in conversation, per Level 3. Also confirm the judgment call flagged in the
-  PR description: `buildRequirementEvidenceTable` can surface an
-  application-stage requirement (availability, work authorization) in the
-  evidence table, unlike the narrower Evidence Follow Up question selection
-  which excludes them. Recorded 2026-09-23.
+- **Non-blocking, Evidence Based Recruiter Assessment (PR #156, merged).**
+  Nobody has yet spot checked the new "How a recruiter reads your CV" card
+  rendering live across all three score bands (Not a Fit, Needs Improvement,
+  Likely Interview Candidate) on a real completed check; verified only by
+  reading the code so far (no score band branching anywhere in its render
+  path or in the new `AnalysisResult` fields, and its light/dark theming
+  reuses the same `isDark` boolean every other card on this page already
+  uses across all three bands). No browser test framework exists in this
+  repo for this kind of check. Recorded 2026-09-23.
 - **Founder decision, document entitlement scope.** Raised 2026-09-22 from the
   "Junior Data Analyst" check (see the 2026-09-22 manual credit grant entry
   below): a completed check's document entitlement is fixed forever at
@@ -257,6 +252,64 @@ manual check list that a static fixture render cannot substitute for).
 **Commit or PR.** `e330367` on `feature/evidence-based-recruiter-assessment`,
 pushed to `origin` and `personal`,
 [#156](https://github.com/fullcircleAI/RecruiterCheck/pull/156). Not merged.
+
+---
+
+## 2026-09-23 — Evidence Based Recruiter Assessment: migration pushed, PR merged (PR #156)
+
+**Objective.** Close out PR #156: confirm the hand patched `database.ts`
+files against real Supabase codegen, push the migration to production, fix
+a gap found while verifying the document generation flow, and merge.
+
+**Completed.** Founder ran `supabase db reset && supabase gen types
+typescript --local > src/types/database.ts && cd admin && node
+scripts/sync-types.mjs` on a Docker capable machine; the diff against the
+PR's hand patch was empty, confirming it byte identical to real codegen.
+Traced the Generate CTA's document generation flow end to end
+(`handleGenerateDocuments` to `generateDocuments` to the `generate-documents`
+Edge Function) and found its own call to `resolveEffectiveResult` (in
+`_shared/follow-up-result.ts`) had not been updated for the two new
+`ReportResult` fields (`requirementEvidence`, `recruiterDoubts`), a gap no
+tooling in this repo would have caught: `npm run typecheck` (`tsc -b`) does
+not cover `supabase/functions/**` at all (neither `tsconfig.app.json` nor
+`tsconfig.node.json` references it), and `generate-documents`'s only test
+file never exercises `index.ts`'s Deno serve handler. Confirmed the bug was
+real with `deno check` (installed locally, not run by any script in this
+repo): the original call failed with "missing the following properties from
+type 'ReportResult': requirementEvidence, recruiterDoubts". No runtime
+impact, confirmed by tracing every read of the result in that file, only
+`score`, `strengths`, `improvements` and `prospects` are ever used. Fixed by
+passing empty arrays at that one call site. Checked every other caller of
+`resolveEffectiveResult` in the repo (`FeedbackPage.tsx`, `checkService.ts`'s
+`getChecks`), both were already correct. Linked this worktree to the
+`RecruiterCheck` production project (not the separate
+`myrecruitercheck-scoring-test` project) and ran `supabase migration list`
+first to confirm no history drift, every prior migration's Local and Remote
+columns matched, only `20260923130000_requirement_evidence.sql` was pending.
+Ran `supabase db push` with the founder's explicit approval for this
+specific push; confirmed applied with a second `supabase migration list`.
+Merged PR #156.
+
+**Verified.** `npm run test:edge` re-run after the `generate-documents` fix:
+30/30 files, 501 assertions, still green. Migration confirmed applied to
+production, Local and Remote columns both show `20260923130000` in
+`supabase migration list`. Also checked PR #155 (merged earlier the same
+day, the unrelated outcome opt in feature) for conflicts with this one: none
+found, at the git, file or functional level; its own migration was
+correctly pushed before its merge too, confirmed by reading its COCKPIT
+entry rather than trusting its PR body's stale unchecked checklist.
+
+**Blockers.** None technical.
+
+**Founder action required.** None for this PR.
+
+**Next technical step.** Spot check the Evidence Assessment card on a real
+completed check in each of the three score bands (see the non-blocking open
+item above).
+
+**Commit or PR.** `1171aa5` (the `generate-documents` fix),
+[#156](https://github.com/fullcircleAI/RecruiterCheck/pull/156), merged as
+`54ade816`.
 
 ---
 
