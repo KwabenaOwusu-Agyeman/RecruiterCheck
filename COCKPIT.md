@@ -82,7 +82,21 @@ doing it.
   `logic.test.ts`, never a real call. Whether the model actually produces
   quantified stakeholder/communication bullets now, rather than merely
   passing the offline tests, needs one live check on a machine with API
-  access before this can be considered confirmed. Recorded 2026-09-23.
+  access before this can be considered confirmed. Confirmed 2026-09-23 this
+  session cannot run it either: no `OPENAI_API_KEY` in this environment (the
+  process environment was checked directly, not any `.env` file) and no
+  Docker runtime for `supabase functions serve`, and calling the deployed
+  production function to check is off limits regardless. Ready-to-run
+  scenario for whoever has API access, chosen to mirror the founder's
+  original flagged example (an unquantified "conducted workshops for
+  stakeholders" bullet): job description requirement "Strong stakeholder
+  communication skills; comfortable presenting technical concepts to non
+  technical audiences," CV line "Communicated project updates to
+  stakeholders and ran occasional training sessions" (vague on purpose, so
+  it lands `partial` or `none`). Run a real `analyze-check` call with that
+  pair and check whether that requirement's `sample_wording` contains a
+  number (a count, an audience size, a frequency) rather than reading like
+  the original flagged bullet. Recorded 2026-09-23.
 - **Founder action.** Verify a real Google sign-in end to end after the move
   to the `myrecruitercheck` Cloud project, then delete the old `RecruiterCheck`
   OAuth client in `theorycoach-ai`. Recorded 2026-09-07.
