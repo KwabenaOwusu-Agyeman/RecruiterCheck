@@ -66,23 +66,33 @@ doing it.
   vague or off topic and confirm the score does not move, the floor holds
   against a real model response, not just the unit tested merge logic.
   Recorded 2026-09-24, split 2026-09-24.
-- **Founder action, Prospects verdict line only checked with known-good
-  strings.** PR #160 added a third, fixed sentence to Prospects per score
-  band. `buildScoreAwareProspects` itself is private to
-  `supabase/functions/analyze-check/logic.ts`, so it could not be called
-  directly from a dev-preview route; instead, the exact verdict strings
-  (already asserted verbatim by `logic.test.ts`, 167 tests, for all three
-  bands) were rendered through the real Prospects Card JSX on
-  `localhost:5173` with invented placeholder text standing in for the two
-  pre-existing sentences. Confirmed correct bullet convention, spacing and
-  contrast in dark, muted and light containers, no console errors. This is
-  a narrower gap than the Evidence Assessment or Recommendation cards: the
-  string content itself is already fully verified by the unit tests, only
-  its on-page rendering was checked with fixture data rather than a real
-  check's actual output. Founder action, lower priority than the other two:
-  open a real check in each score band and confirm the third line still
-  reads correctly alongside the model-generated first two. Recorded
-  2026-09-24.
+- **Founder action, Prospects verdict line, lower priority.** PR #160 added
+  a third, fixed sentence to Prospects per score band. `buildScoreAwareProspects`
+  itself is private to `supabase/functions/analyze-check/logic.ts`, so the
+  first check on this (2026-09-24) rendered the real Prospects Card JSX with
+  invented placeholder text standing in for the two pre-existing,
+  model-generated sentences, confirming only bullet convention, spacing and
+  contrast in dark, muted and light containers.
+  Closed further, 2026-09-24: `buildScoreAwareProspects` is private, but
+  `normalizeAnalysis` (which calls it) is exported and pure, the same as
+  `buildRequirementEvidenceTable` and `getDocumentEntitlement` above. Called
+  it for real (`npx tsx` on a throwaway scratchpad script, deleted after)
+  using the exact fixture recipes `logic.test.ts` itself already uses for
+  its three score-band prospects assertions (one strong-across-the-board,
+  one mixed strong/partial/none, one all-none), producing the REAL
+  `prospects` array for each band, all three lines including the two
+  previously-placeholder ones, not just the fixed third line. Fed that real
+  output into the real Prospects Card JSX (copied verbatim from
+  `FeedbackPage.tsx`) via a throwaway dev-preview route: all three bands
+  rendered correctly in order, in both dark and light tones, no console
+  errors. This closes the same "hand typed vs real function output" gap the
+  Evidence Assessment card item above closed, and brings this to that same
+  standard. What a real completed check would still add is the same narrow
+  schema-integrity question as the other cards, not a logic or rendering
+  one. Founder action, same low priority as the Recommendation card,
+  Evidence Assessment card and Follow Up card items: open a real check in
+  each score band and confirm the third line still reads correctly, when
+  convenient rather than urgently. Recorded 2026-09-24.
 - **Founder action, Recommendation card CTA logic needs a real check, lower
   priority.** PR #161 (`documentEntitlement.ts`, `showPricingCta`) scoped the
   pricing CTA to when buying would actually help. Verified with a throwaway
@@ -250,30 +260,68 @@ doing it.
   method and found a real, reproducible finding this way, which is the method
   earning its keep, not a reason to distrust it.
 - **Founder action, React hydration errors on `/pricing`, `/about`, `/faq`
-  (and likely more prerendered pages).** `dist/` served locally and viewed
-  through the Chrome connector throws minified React errors #418 and #423 on
-  these three pages on every load (10, 5 and 4 console exceptions
-  respectively), but not on `/`. Confirmed present on the pre-session commit
-  `20c3cbf` with identical counts, so this predates 2026-09-23's session
-  entirely and none of that session's three merged PRs caused it (none
-  touched these pages or SSR/prerender code). Not root-caused: static review
-  of `PricingPage.tsx`, `AboutPage.tsx`, `FaqPage.tsx` and their shared
-  `LegalLayout`/`BackLink` components found no obvious `typeof window`,
-  `Date.now()`, `Math.random()` or locale-dependent branch that would explain
-  a text or structural mismatch between server and client render. The
-  minified production bundle's error carries no diff detail; getting one
-  needs a non-minified/dev-mode SSR build, not attempted here. One caveat
-  going the other way: the Chrome connector used to observe this is itself a
-  known source of false-positive hydration mismatches (extensions can inject
-  DOM before React hydrates); the fact that `/` is consistently clean while
-  the other three are consistently not argues against a page-agnostic
-  extension artifact, since an extension's injection would not be page aware,
-  but this is not a substitute for confirming in a clean browser profile.
-  Founder action: open `/pricing`, `/about` or `/faq` on the live site in a
-  real browser's DevTools console (extensions disabled) and confirm whether
-  the same errors appear; if so this is a genuine bug worth a dedicated
-  investigation with a dev-mode SSR build to get the actual mismatch detail.
-  Recorded 2026-09-23.
+  (and likely more prerendered pages), root cause narrowed.** `dist/` served
+  locally and viewed through the Chrome connector throws minified React
+  errors #418 and #423 on these three pages on every load (10, 5 and 4
+  console exceptions respectively), but not on `/`. Confirmed present on the
+  pre-session commit `20c3cbf` with identical counts, so this predates
+  2026-09-23's session entirely and none of that session's three merged PRs
+  caused it (none touched these pages or SSR/prerender code).
+  Attempted the dev-mode SSR build this item said it needed, 2026-09-24: a
+  throwaway `vite.dev-debug.config.ts` (deleted after, `define:
+  {'process.env.NODE_ENV': '"development"'}`, `build.minify: false`; plain
+  `--mode development` alone does not disable minification or unlock React's
+  dev warnings for `vite build`) built an unminified client and SSR bundle,
+  then `node scripts/prerender.mjs` regenerated `dist/` from them (gitignored,
+  no risk to anything tracked). Served with `vite preview` and viewed with
+  the Chrome connector, which now printed the actual warning instead of a
+  digest: "Expected server HTML to contain a matching `<div>` in `<main>`,"
+  with an identical component stack on both `/pricing` and `/about`:
+  `div` (inside) `Container`, inside `main`, inside the outer `div` that is
+  `PublicLayoutContent`. Same warning, same stack, on both pages, which
+  narrows this to `PublicLayout.tsx`'s own conditional `<Container><BackLink
+  /></Container>` before `<Outlet />` inside `<main>` (rendered whenever
+  `!isLanding`), not to anything page-specific in `PricingPage.tsx`,
+  `AboutPage.tsx` or `FaqPage.tsx`'s own content, which is where the prior
+  static review had looked.
+  Two hypotheses checked and ruled out. Read the raw prerendered
+  `dist/pricing/index.html` directly: `<main>` does contain the expected
+  `<div class="mx-auto w-full max-w-7xl ... pt-5 sm:pt-6"><button ...>Back
+  </button>` exactly where the client expects it, so the server is not
+  simply failing to render it (rules out `isLanding` disagreeing between
+  server and client). Also compared the server's render tree
+  (`entry-server.tsx`: `AuthProvider > StaticRouter > AppRoutes`) against
+  the client's (`App.tsx`: `AuthProvider > BrowserRouter > ScrollToTop +
+  CaptureAttribution + AppErrorBoundary > AppRoutes`): the client wraps
+  three extra components the server never renders, but all three are
+  confirmed hydration-safe by their own code, `ScrollToTop` and
+  `CaptureAttribution` return `null`, `AppErrorBoundary`'s `Boundary.render()`
+  returns `this.props.children` directly with no wrapping element unless it
+  has actually caught an error, which the captured stacks show it had not
+  (they show the real `PublicLayoutContent` tree, not the boundary's
+  fallback markup). So this specific difference is not the cause either.
+  Genuinely not root-caused yet: what's left unexplained is why hydration
+  still fails to match a `<div>` that demonstrably exists in the server
+  markup at the expected position. Worth checking next, not attempted here:
+  whether `BackLink`'s `hasHistory` computation (`location.key !== 'default'`)
+  reads a different `location.key` during the SSR pass than the one
+  `StaticRouter` assigns, since that is the one piece of `PublicLayout`'s
+  `Container`/`BackLink` subtree this session did not directly inspect for a
+  server/client divergent value; or a `console.log` of the exact server
+  `renderToString` output for `/pricing` diffed byte for byte against the
+  client's first hydration-time DOM snapshot, which was not attempted here
+  either. One caveat unchanged: the Chrome connector is itself a known
+  source of false-positive hydration mismatches, but the fact that this is
+  now the same specific warning and stack on two different pages argues
+  against a page-agnostic extension artifact the same way the original
+  reasoning did. Founder action: open `/pricing` or `/about` on the live
+  site in a real browser's DevTools console (extensions disabled) and
+  confirm whether the same specific warning appears; if so, the component
+  stack above already points a next investigator straight at
+  `PublicLayout.tsx`'s `Container`/`BackLink` rendering rather than at
+  `PricingPage.tsx`/`AboutPage.tsx`/`FaqPage.tsx`, which is a narrower
+  starting point than this item had before. Recorded 2026-09-23, updated
+  2026-09-24.
 - **Founder action.** All three audit migrations are in production
   (`20260921120000`, `121000`, `122000`, pushed 2026-09-21 after approval)
   and the types were regenerated from production. Still open: run the role
@@ -336,6 +384,92 @@ Its Keyword Scan reservation design was never adopted by the live
 reservation functions are dropped by `20260922170000`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-24 — Remaining open items checked: Prospects real pipeline closed, hydration root cause narrowed, rest triaged
+
+**Objective.** Founder asked to check the remaining open items after the
+Evidence Follow Up, Evidence Assessment, Recommendation card and sample
+wording items had each already been checked. Two had further real
+technical work available; the rest were triaged without forcing an update.
+
+**Completed.**
+
+Prospects verdict line: closed the same gap the Evidence Assessment card
+item closed earlier today. `buildScoreAwareProspects` is private, but the
+exported, pure `normalizeAnalysis` that calls it is not. Called it for real
+via a throwaway `npx tsx` script (deleted after) using `logic.test.ts`'s own
+three fixture recipes for its score-band prospects assertions, producing
+the real `prospects` array for Likely Interview Candidate (score 95),
+Needs Improvement (score 78) and Not a Fit (score 0), all three lines each,
+not just the fixed third one. Fed that into the real Prospects Card JSX
+(copied verbatim from `FeedbackPage.tsx`) via a throwaway dev-preview route
+on `localhost:5173`: all three bands rendered correctly, dark and light
+tones, no console errors. Route and scratchpad script reverted or deleted
+after; nothing committed. See the updated Open item above for the full
+detail.
+
+React hydration errors: attempted the dev-mode SSR build this item had
+flagged as needed but not attempted. A throwaway `vite.dev-debug.config.ts`
+(deleted after) forced an unminified client and SSR bundle with React's
+development warnings active (`vite build --mode development` alone does
+not do this for a production `vite build`; needed explicit `define` and
+`build.minify: false`), rebuilt `dist/` and `dist-ssr/` with it (both
+gitignored, no risk to anything tracked), and viewed `/pricing` and
+`/about` with the Chrome connector. Got a real warning for the first time:
+"Expected server HTML to contain a matching `<div>` in `<main>`," identical
+component stack on both pages, pointing at `PublicLayout.tsx`'s own
+`Container`/`BackLink` rendering rather than at the three pages' own
+content. Read the raw prerendered HTML directly and confirmed the server
+does render the expected div there, ruling out the most obvious hypothesis
+(`isLanding` disagreeing between server and client). Also compared the
+server's and client's render trees and confirmed the three components only
+the client wraps (`ScrollToTop`, `CaptureAttribution`, `AppErrorBoundary`)
+are each hydration-safe by their own code (two return `null`, the third
+passes children through unless it has caught an error, which the captured
+stacks show it had not). Not fully root-caused, but substantially narrowed
+from "somewhere in three pages or their shared layout" to "specifically
+`PublicLayout.tsx`'s `Container`/`BackLink`, for a reason not yet
+identified." Debug config and dev-mode `dist/`/`dist-ssr/` output were not
+specially restored (gitignored, and a normal `npm run build` regenerates
+them in production mode whenever next run); the debug config itself was
+deleted. See the updated Open item above for the two ruled-out hypotheses
+and the concrete next steps.
+
+The rest of the open items were read and triaged rather than each getting
+its own entry: Google sign-in verification and the old OAuth client
+deletion, the Brevo newsletter review, the AlternativeTo listing
+correction, and the outcome follow up test mode's actual secret value all
+need direct founder access to an external system (Google Cloud Console,
+Brevo, a third-party listing, a Supabase secret whose value cannot be read
+back) this environment has none of. The Areas to Improve duplicate items
+bug, the audit migration follow-ups needing production SQL, the two
+proposed-not-decided audit follow-ups, the bundled founder-decision list,
+and the document entitlement scope question are each already correctly
+recorded as either out of scope for other work, blocked on production
+access Claude does not have, or an open product decision for the founder
+to make, not something to investigate further without being asked to build
+something specific. None were changed.
+
+**Verified.** See each closed/updated Open item above for what was
+specifically confirmed.
+
+**Blockers.** None for the two items advanced. The hydration item's
+remaining gap needs either a direct comparison of server vs client render
+output or checking `BackLink`'s `location.key` value during SSR, neither
+attempted here.
+
+**Founder action required.** See the two updated Open items above.
+Everything else in the triage needs the founder's own access to systems
+this environment cannot reach, or is already an open decision waiting on
+the founder, not a technical gap Claude can close.
+
+**Next technical step.** For hydration: diff the server's `renderToString`
+output against the client's hydration-time DOM for `/pricing`, or check
+`BackLink`'s `hasHistory` value during SSR specifically.
+
+**Commit or PR.** None, read only investigation, no lasting code change.
 
 ---
 
