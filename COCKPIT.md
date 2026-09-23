@@ -115,6 +115,23 @@ doing it.
   2026-09-23 (see that entry below), but no entitlement or refund logic
   itself has changed. The design question is still open. Recorded
   2026-09-22, updated 2026-09-23.
+- **Founder action, outcome follow up migration not pushed.** DEC-9 (approved
+  2026-09-23) switches the application outcome follow up from an opt in
+  checkbox to default enrollment. Code and migration are ready (branch
+  `worktree-outcome-followup-default-optout`,
+  `supabase/migrations/20260923120000_application_outcomes_default_enroll.sql`),
+  but the migration has not been pushed and needs explicit approval for that
+  specific `supabase db push`, per `CLAUDE.md`. Sequencing matters: merging
+  the branch deploys the frontend (checkbox removed) through Vercel
+  immediately, while the SPA and the migration do not deploy together. Push
+  the migration first, then merge, so there is no window where the old
+  checkbox is gone and the new trigger does not exist yet, in which nobody
+  would be enrolled at all. `supabase db reset` could not be run locally in
+  this session: no Docker runtime is available in this environment, so the
+  migration is reviewed by hand (RLS/grants, trigger scoping against
+  `protect_check_analysis_fields`) and by a security-review agent, not
+  replayed. Regenerate `src/types/database.ts` from production once pushed,
+  as usual. Recorded 2026-09-23.
 
 ## Historical review material
 
@@ -133,6 +150,72 @@ Its Keyword Scan reservation design was never adopted by the live
 reservation functions are dropped by `20260922170000`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-23 — Application outcome follow up switched to default enrollment (DEC-9)
+
+**Objective.** Implement DEC-9: switch the application outcome follow up from
+an opt in checkbox to default enrollment, per the founder's approval in
+conversation, and remove the checkbox from the results page entirely (no
+passive notice either), as directed.
+
+**Completed.** `supabase/migrations/20260923120000_application_outcomes_default_enroll.sql`
+drops the two `authenticated` RLS policies from `20260922180000` and revokes
+its column grants, then adds `enroll_application_outcome_followup()` (SECURITY
+DEFINER) fired by a new trigger, `application_outcomes_auto_enroll`, `AFTER
+UPDATE ON checks` when `status` transitions to `'completed'`. It inserts one
+row per check (`check_id`, `user_id` from the row itself, not client input;
+`consent_version` hardcoded to `'default-enrollment-2026-09-23'`) with `ON
+CONFLICT (check_id) DO NOTHING`. Only checks completed after this migration
+runs are enrolled; nothing is backfilled for checks completed before it.
+Deleted `src/components/feedback/OutcomeOptIn.tsx` and its render in
+`FeedbackPage.tsx`; removed the now dead `getOutcomeOptIn`/
+`optInToOutcomeFollowup` from `outcomeService.ts` and the unused
+`OUTCOME_CONSENT_TEXT`/`OUTCOME_CONSENT_VERSION` from `outcomeForm.ts` (and
+its test). `send-outcome-followups` and `submit-application-outcome` needed
+no changes: neither cares how a row was created.
+
+Decision Log: DEC-9, "Application outcome follow up, default opt out instead
+of opt in," created as a draft and then marked approved in the same
+conversation once the founder confirmed. While checking DEC-7 to cite it, its
+own Status/Rationale fields still read "Not started"/"DRAFT, not approved"
+despite its body stating it was approved 16 September 2026; flagged on the
+DEC-9 page rather than resolved, since that is DEC-7's record to fix.
+
+**Verified.** `npm run lint` (0 errors, 2 pre-existing unrelated warnings),
+`npm run typecheck` (clean), `npm run test:unit` (24/24 files, 279
+assertions), `npm run test:edge` (30/30 files, 485 assertions, including
+`send-outcome-followups` and `submit-application-outcome`). A security-review
+agent read the new migration against the original `20260922180000` grants and
+`protect_check_analysis_fields`/`complete_check_analysis` (client cannot set
+`checks.user_id` or reach `status = 'completed'` directly) and found no
+introduced vulnerability: no residual `authenticated`/`anon` access, no
+client-influenced input into the new insert, revoke statements match the
+original grant's columns exactly.
+
+**Not verified.** `supabase db reset` could not be run: no Docker runtime
+exists in this environment (checked `/Applications`, `docker`, `colima`,
+`podman` on PATH and via Homebrew; none present). The migration was reviewed
+by hand instead of replayed locally. **MANUAL CHECK REQUIRED**, before
+pushing: run `supabase db reset` somewhere Docker is available and confirm it
+applies cleanly.
+
+**Blockers.** None technical.
+
+**Founder action required.** See the matching Open items entry: approve and
+run `supabase db push` for this one migration, then this branch can merge.
+Do not merge first; see that entry for why.
+
+**Next technical step.** After the migration is pushed: regenerate
+`src/types/database.ts` from production, merge the branch (no Edge Function
+changed, so this does not trigger the Edge Functions deploy workflow; the SPA
+deploys through Vercel as usual), and confirm on a real completed check
+locally that a row appears in `application_outcomes` with the new
+`consent_version` and no client-visible trace of the old card.
+
+**Commit or PR.** `0398d34` on `worktree-outcome-followup-default-optout`. Not
+pushed, no PR yet, pending the migration push above.
 
 ---
 
