@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "MyRecruiterCheck — Job Capture",
+  "name": "MyRecruiterCheck: Job Capture",
   "short_name": "MyRecruiterCheck",
   "version": "0.1.0",
   "description": "Send the job posting you're viewing straight into MyRecruiterCheck for a recruiter's-eye check.",
