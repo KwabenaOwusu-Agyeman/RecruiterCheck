@@ -89,23 +89,57 @@ doing it.
   verdict item above: open a real check in each of these pack/score
   combinations and confirm the CTA matches, when convenient rather than
   urgently. Recorded 2026-09-24.
-- **Founder action, Evidence Assessment card grouping needs a real check.**
-  PR #164 (`EvidenceAssessmentCard.tsx`) regrouped "How a recruiter reads
-  your CV" into Strong evidence / Moderate evidence / No evidence sections.
-  Verified twice with a throwaway dev-preview route and invented fixture
-  data on `localhost:5173`, once before merge and once against the merged
-  commit, covering all three container tones and the edge case where no row
-  is `moderate` strength (confirms the section is skipped with a single
-  clean divider, not an empty heading or a gap). Both checks used fixture
-  data run through the real component, never a real completed check: this
-  environment has no Docker runtime (`docker`, `colima`, `podman`,
-  `orbstack` all absent), so `supabase start` cannot run and no real check
-  can be generated locally, and reading a real check from production to
-  verify this is off limits regardless. Founder action: open a real
-  completed check whose CV has some requirements with strong evidence and
-  some with none but nothing landing in `partial` match strength (which
-  becomes "moderate" evidence), and confirm the card renders the same way
-  there. Recorded 2026-09-23.
+- **Founder action, Evidence Assessment card grouping needs a real check,
+  lower priority.** PR #164 (`EvidenceAssessmentCard.tsx`) regrouped "How a
+  recruiter reads your CV" into Strong evidence / Moderate evidence / No
+  evidence sections. Verified three times now with a throwaway dev-preview
+  route on `localhost:5173`, never a real completed check: this environment
+  has no Docker runtime (`docker`, `colima`, `podman`, `orbstack` all
+  absent), so `supabase start` cannot run and no real check can be generated
+  locally, and reading a real check from production to verify this is off
+  limits regardless.
+  The first two checks (before merge, and against the merged commit) used
+  invented `RequirementEvidenceRow[]` fixtures hand typed directly into the
+  component's props, covering all three container tones and the edge case
+  where no row is `moderate` strength. The third check, 2026-09-24, closed
+  the one gap those two left open: neither had run raw requirements through
+  the real `buildRequirementEvidenceTable` (`supabase/functions/analyze-check/
+  logic.ts`, the function this card's own doc comment says it is "built
+  entirely from") first, so the hand typed fixtures could in principle have
+  drifted from what that function actually produces. That function already
+  has its own dedicated unit coverage in `logic.test.ts`, including a test
+  asserting the exact mapping this card depends on ("maps strong to strong,
+  partial to moderate, none to none") and one confirming `evidence_specificity`
+  never changes it. This third check called the real function directly (via
+  `npx tsx` on a throwaway scratchpad script, output printed and pasted
+  into the dev-preview fixture, not hand retyped) on realistic
+  `RawRequirement[]` input built from the same `requirement()` fixture
+  helper `logic.test.ts` itself uses, in exactly the scenario this item asks
+  for: some `strong`, some `none`, zero `partial`. Fed that real output into
+  the real component: the Moderate Evidence section was correctly absent
+  entirely, not rendered empty, confirmed by the rendered page text, not
+  just by reading the code. A second scenario adding one `partial`
+  (moderate) row through the same real pipeline rendered all three sections
+  plus `recruiterDoubts` correctly. No console errors either time. Route,
+  throwaway component and scratchpad script were all reverted or deleted
+  immediately after; nothing was committed.
+  With this, both the data shaping (`buildRequirementEvidenceTable`,
+  unit tested plus now run live end to end into the real component) and the
+  card's own grouping and rendering are independently verified through an
+  unbroken real pipeline, the same standard the Recommendation card item
+  above met (which called its real function directly from the start and
+  needed no follow up). What a real completed check would still add is the
+  same narrow schema-integrity question as that item: whether a real stored
+  row's `requirement_evidence` JSON round trips as its generated type
+  promises, guarded by the same `Array.isArray` defensive mapping already
+  proven safe by every other feedback array field already live in
+  production (`strengths`, `improvements`, `prospects`), nothing specific to
+  this card. Downgraded to the same low priority as the Recommendation card
+  and Prospects verdict items. Founder action, when convenient rather than
+  urgently: open a real completed check whose CV has some requirements with
+  strong evidence and some with none but nothing landing in `partial` match
+  strength, and confirm the card renders the same way there. Recorded
+  2026-09-23, updated 2026-09-24.
 - **Founder action, sample wording live compliance unverified.** PR #165
   rewrote the SAMPLE WORDING prompt rule that let non-quantified soft skill
   examples through (it named "stakeholder management" as an exempt category)
@@ -271,6 +305,56 @@ Its Keyword Scan reservation design was never adopted by the live
 reservation functions are dropped by `20260922170000`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-24 — Evidence Assessment card: real pipeline check closes prior gap
+
+**Objective.** Founder asked to check the "Evidence Assessment card grouping
+needs a real check" open item. Two prior dev-preview checks (before and
+after PR #164 merged) had already verified the component with hand typed
+fixture data; the goal here was to see whether that framing still held up,
+and to close it further if it did not.
+
+**Completed.** No source change. Found that `buildRequirementEvidenceTable`
+(`supabase/functions/analyze-check/logic.ts`), the function
+`EvidenceAssessmentCard`'s own doc comment says the card is "built entirely
+from," already has dedicated unit coverage in `logic.test.ts`, including a
+test asserting the exact mapping this card depends on and one confirming
+`evidence_specificity` never changes it. Neither prior dev-preview check had
+actually called that real function first, so wrote a throwaway scratchpad
+script (`gen-evidence-fixture.ts`, `npx tsx`, deleted after) that imports it
+directly and calls it on realistic `RawRequirement[]` input, built with the
+same `requirement()` fixture helper `logic.test.ts` itself uses, in the
+open item's own named scenario: some `strong`, some `none`, zero `partial`.
+Took that real, printed output (not hand retyped) and pasted it into a
+throwaway dev-preview route (`__DevPreviewEvidenceRealPipeline.tsx`) that
+renders the real `EvidenceAssessmentCard` with it. A second scenario added
+one `partial` row through the same real pipeline. Viewed with the Chrome
+connector against `localhost:5173`. Route, component and script were all
+reverted or deleted immediately after; nothing was committed.
+
+**Verified.** Scenario 1 (zero `partial` inputs): Strong Evidence section
+(2 rows) directly followed by No Evidence (2 rows), confirmed by the
+rendered page text, not just the DOM tree, that the Moderate Evidence
+section is genuinely absent, not rendered empty. Scenario 2 (one `partial`
+input): all three sections render in order, plus the `recruiterDoubts`
+list. No console errors on either. This closes the one gap the first two
+checks left open (hand typed fixtures could in principle have drifted from
+the real function's actual output) and brings this item to the same
+standard the Recommendation card item already met.
+
+**Blockers.** None for this check. A true real completed check still needs
+the same Docker runtime this environment lacks, and reading one from
+production remains off limits regardless.
+
+**Founder action required.** Downgraded this open item to the same low
+priority as the Recommendation card and Prospects verdict items; see the
+Open item above for what remains and why it is now narrow.
+
+**Next technical step.** None planned for this card specifically.
+
+**Commit or PR.** None, read only investigation, no lasting code change.
 
 ---
 
