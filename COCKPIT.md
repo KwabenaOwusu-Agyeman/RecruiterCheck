@@ -23,10 +23,23 @@ technical and founder-blocking; everything else goes in a dated entry or in
 Notion. If this list keeps growing, Claude is handing work back instead of
 doing it.
 
-- **Founder action.** Review and merge PR #167 (Free Keyword Scan renamed to
-  Free ATS Check in user-facing copy). Merging deploys the frontend through
-  Vercel; no Edge Function is touched. See the 2026-09-23 entry below for
-  what was and was not checked locally. Recorded 2026-09-23.
+- **Founder action, Evidence Assessment card grouping needs a real check.**
+  PR #164 (`EvidenceAssessmentCard.tsx`) regrouped "How a recruiter reads
+  your CV" into Strong evidence / Moderate evidence / No evidence sections.
+  Verified twice with a throwaway dev-preview route and invented fixture
+  data on `localhost:5173`, once before merge and once against the merged
+  commit, covering all three container tones and the edge case where no row
+  is `moderate` strength (confirms the section is skipped with a single
+  clean divider, not an empty heading or a gap). Both checks used fixture
+  data run through the real component, never a real completed check: this
+  environment has no Docker runtime (`docker`, `colima`, `podman`,
+  `orbstack` all absent), so `supabase start` cannot run and no real check
+  can be generated locally, and reading a real check from production to
+  verify this is off limits regardless. Founder action: open a real
+  completed check whose CV has some requirements with strong evidence and
+  some with none but nothing landing in `partial` match strength (which
+  becomes "moderate" evidence), and confirm the card renders the same way
+  there. Recorded 2026-09-23.
 - **Founder action, sample wording live compliance unverified.** PR #165
   rewrote the SAMPLE WORDING prompt rule that let non-quantified soft skill
   examples through (it named "stakeholder management" as an exempt category)
@@ -37,6 +50,10 @@ doing it.
   quantified stakeholder/communication bullets now, rather than merely
   passing the offline tests, needs one live check on a machine with API
   access before this can be considered confirmed. Recorded 2026-09-23.
+- **Founder action.** Review and merge PR #167 (Free Keyword Scan renamed to
+  Free ATS Check in user-facing copy). Merging deploys the frontend through
+  Vercel; no Edge Function is touched. See the 2026-09-23 entry below for
+  what was and was not checked locally. Recorded 2026-09-23.
 - **Founder action.** Verify a real Google sign-in end to end after the move
   to the `myrecruitercheck` Cloud project, then delete the old `RecruiterCheck`
   OAuth client in `theorycoach-ai`. Recorded 2026-09-07.
@@ -232,6 +249,54 @@ piece of work raised but not scoped here.
 **Commit or PR.** Branch `free-ats-check-rename`, commit `f95a18b`, PR
 [#167](https://github.com/fullcircleAI/RecruiterCheck/pull/167) (open, not
 yet merged).
+
+---
+
+## 2026-09-23 — Evidence Assessment card: grouped rows by evidence strength
+
+**Objective.** Founder-directed redesign of "How a recruiter reads your CV":
+rows were in requirement order with strength shown as a per-row badge,
+mixing strong, moderate and no-evidence rows together, and the founder
+asked for it grouped by strength with no unnecessary vertical spacing.
+
+**Completed.** `src/components/feedback/EvidenceAssessmentCard.tsx`: rows
+now group into three sections, strong evidence, moderate evidence, no
+evidence, in that order (best news first, the same ordering principle the
+Prospects score bands already use). Strength is now a section heading
+(colored dot plus label, e.g. "STRONG EVIDENCE") instead of a per-row badge
+next to each requirement name; the per-row badge was pure redundancy once
+grouped, so it and the now-unused `EvidenceStrengthBadge` component in
+`src/components/ui/Badge.tsx` were removed. A group with no rows for that
+strength renders nothing, no empty heading. Within-group row spacing
+tightened from `mt-4 border-t pt-4` to `mt-3 border-t pt-3`, since the
+grouping itself now does more of the visual organizing work.
+
+**Verified.** `npm run lint` (0 errors, 2 pre-existing unrelated warnings),
+`npm run typecheck` (clean, no unused-import fallout from removing
+`EvidenceStrengthBadge`), `npm run test:unit` (24/24 files, 284 assertions).
+Checked visually with a throwaway dev-preview route (`__DevPreviewEvidence
+Grouping.tsx`, discarded, never committed) rendering the real component
+with invented fixture data, all three container tones and an edge case with
+no moderate-strength rows, on `localhost:5173`: correct grouping and order,
+readable contrast in all three tones, no double dividers at group
+boundaries, and the empty-middle-group edge case skips cleanly. Re-ran the
+same check a second time against the merged commit (`404a185`, after PRs
+#165 and #166 also merged) to confirm nothing regressed in the merge; same
+result. See the "Evidence Assessment card grouping needs a real check" open
+item above for what this visual check cannot substitute for: a real
+completed check exercising the same edge case.
+
+**Blockers.** None technical for the change itself. See the Open item above
+for the real-check verification gap (no Docker in this environment).
+
+**Founder action required.** See the Open item above.
+
+**Next technical step.** None planned for this card's layout.
+
+**Commit or PR.** `611efb9` on `feature/evidence-card-strength-grouping`,
+pushed to `origin` and `personal`,
+[#164](https://github.com/fullcircleAI/RecruiterCheck/pull/164), merged as
+`ba50f0e`.
 
 ---
 
