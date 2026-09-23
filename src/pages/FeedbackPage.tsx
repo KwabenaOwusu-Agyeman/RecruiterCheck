@@ -239,8 +239,10 @@ export function FeedbackPage() {
   // updated score and its findings replace the original everywhere on this
   // page (the check row itself is untouched); the original is never shown
   // again. Everything below reads `report` and `score`, never the raw check.
-  const report =
-    feedback && originalScore !== null
+  // Factored out so onAssessed below can recompute it for a just-arrived
+  // follow up result, before state has re-rendered this component.
+  function buildReport(currentFollowUp: EvidenceFollowUp | null) {
+    return feedback && originalScore !== null
       ? resolveEffectiveResult(
           {
             score: originalScore,
@@ -250,9 +252,11 @@ export function FeedbackPage() {
             requirementEvidence: feedback.requirement_evidence,
             recruiterDoubts: feedback.recruiter_doubts,
           },
-          followUp,
+          currentFollowUp,
         )
       : null
+  }
+  const report = buildReport(followUp)
   const score = report ? report.score : originalScore
   const fundingPackId = check.funding_pack_id
   // Single source of truth for what this check may generate — mirrors the
@@ -487,7 +491,21 @@ export function FeedbackPage() {
                 followUp={followUp}
                 updated={report?.updated ?? false}
                 dark={isDark}
-                onAssessed={setFollowUp}
+                onAssessed={(next) => {
+                  setFollowUp(next)
+                  // A credited follow up changes the effective strengths and
+                  // improvements generate-documents builds from, so a CV
+                  // already generated before this answer is now stale.
+                  // Clear it so the candidate is prompted to regenerate,
+                  // rather than keep downloading a file that predates the
+                  // credited answer. An uncredited answer changes nothing
+                  // (the report itself is unchanged, per DEC-8), so leave an
+                  // already generated set of documents alone in that case.
+                  if (buildReport(next)?.updated) {
+                    setDocuments(null)
+                    setDocumentsError(null)
+                  }
+                }}
               />
             ) : null}
 
@@ -533,6 +551,12 @@ export function FeedbackPage() {
                           supporting evidence for in your CV is marked with a placeholder figure (e.g.
                           "X%"), replace it with your real numbers before sending it.
                         </p>
+                        {report?.updated ? (
+                          <p className="w-full basis-full text-xs text-text-secondary">
+                            We added one line to your CV draft reflecting your follow up answer. Review
+                            it before sending.
+                          </p>
+                        ) : null}
                       </>
                     ) : isLikelyInterviewCandidate ? (
                       <p className="w-full basis-full text-xs text-text-secondary">
