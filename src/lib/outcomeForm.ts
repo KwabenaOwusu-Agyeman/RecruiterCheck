@@ -1,15 +1,6 @@
-// Pure helpers for the application outcome opt in and the /outcome form.
-// The server (supabase/functions/submit-application-outcome/logic.ts)
-// validates everything again; these only shape what the page sends.
-
-/**
- * Bump the version whenever OUTCOME_CONSENT_TEXT changes, so each stored row
- * records exactly which wording the user agreed to.
- */
-export const OUTCOME_CONSENT_VERSION = '2026-09-16'
-
-export const OUTCOME_CONSENT_TEXT =
-  'Email me in three weeks to ask how this application went. My answers help improve MyRecruiterCheck and may be used, anonymised, in job market insights. I can stop these emails at any time.'
+// Pure helpers for the /outcome form. The server
+// (supabase/functions/submit-application-outcome/logic.ts) validates
+// everything again; these only shape what the page sends.
 
 export const CHANNEL_OPTIONS = [
   { value: 'job_board', label: 'Job board' },
