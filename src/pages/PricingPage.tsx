@@ -14,6 +14,16 @@ import { trackEvent } from '@/lib/analytics'
 import { createCheckoutSession, hasRefundablePurchase, requestRefund } from '@/services/checkService'
 import type { CheckPack } from '@/types'
 
+// Google requires an explicit country list (max 50) for hasMerchantReturnPolicy,
+// with no "worldwide" value. This is Stripe's full-support country list (stripe.com/global,
+// checked 2026-09-23), which approximates but understates real coverage: customers can pay
+// from ~195 countries, this only covers where a Stripe account can be registered.
+const STRIPE_SUPPORTED_COUNTRIES = [
+  'AU', 'AT', 'BE', 'BR', 'BG', 'CA', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GI', 'GR',
+  'HK', 'HU', 'IE', 'IT', 'JP', 'LV', 'LI', 'LT', 'LU', 'MY', 'MT', 'MX', 'NL', 'NZ', 'NO', 'PL',
+  'PT', 'RO', 'SG', 'SK', 'SI', 'ES', 'SE', 'CH', 'TH', 'AE', 'GB', 'US',
+]
+
 /**
  * The single pricing page, for signed-out and signed-in visitors alike.
  *
@@ -265,6 +275,22 @@ export function PricingPage() {
               url: `${BRAND.canonicalUrl}/pricing`,
               availability: 'https://schema.org/InStock',
               description: pack.features.join(', '),
+              shippingDetails: {
+                '@type': 'OfferShippingDetails',
+                shippingRate: { '@type': 'MonetaryAmount', value: '0', currency: 'EUR' },
+                deliveryTime: {
+                  '@type': 'ShippingDeliveryTime',
+                  handlingTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 0, unitCode: 'DAY' },
+                  transitTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 0, unitCode: 'DAY' },
+                },
+              },
+              hasMerchantReturnPolicy: {
+                '@type': 'MerchantReturnPolicy',
+                returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+                merchantReturnDays: 7,
+                returnFees: 'https://schema.org/FreeReturn',
+                applicableCountry: STRIPE_SUPPORTED_COUNTRIES,
+              },
             })),
           }),
         }}
