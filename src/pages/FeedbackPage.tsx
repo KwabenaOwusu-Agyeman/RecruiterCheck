@@ -18,11 +18,7 @@ import { usePageMeta } from '@/hooks/usePageMeta'
 import { getResultTone, getScoreLabel, sanitizeScore } from '@/lib/scoring'
 import { trackEvent } from '@/lib/analytics'
 import { isFollowUpEligibleScore, resolveEffectiveResult, UPDATED_REPORT_NOTE } from '@/lib/evidenceFollowUp'
-import {
-  getDocumentEntitlement,
-  LIKELY_INTERVIEW_CANDIDATE_MIN_SCORE,
-  NOT_A_FIT_MAX_SCORE,
-} from '@/lib/documentEntitlement'
+import { getDocumentEntitlement, LIKELY_INTERVIEW_CANDIDATE_MIN_SCORE } from '@/lib/documentEntitlement'
 import {
   analyzeCheck,
   generateDocuments,
@@ -268,7 +264,6 @@ export function FeedbackPage() {
   // entitled to the Improved CV Draft (see CHECK_PACKS in constants.ts —
   // every paid pack includes it).
   const documentEntitlement = getDocumentEntitlement(fundingPackId, score)
-  const isLowFit = score !== null && score <= NOT_A_FIT_MAX_SCORE
   const isLikelyInterviewCandidate = score !== null && score >= LIKELY_INTERVIEW_CANDIDATE_MIN_SCORE
   const resultTone = getResultTone(score)
   const isDark = resultTone === 'dark'
@@ -511,18 +506,14 @@ export function FeedbackPage() {
               </CardHeader>
               <CardContent className="px-5 py-4">
                 {documentEntitlement.blockedReason ? (
-                  isLowFit ? (
-                    // No CTA here: starting a new check is reachable from the
-                    // header and My Checks on every screen, so this card is
-                    // document status only.
-                    <p className="text-sm text-text-secondary">
-                      This score suggests the role is not a strong match for your current CV, so we do
-                      not generate a CV draft, cover letter, or recruiter message for it. Look for a
-                      role that better fits your experience, then run a new Recruiter Check.
-                    </p>
-                  ) : (
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-sm text-text-secondary">{documentEntitlement.blockedReason}</p>
-                  )
+                    {documentEntitlement.showPricingCta ? (
+                      <Link to="/pricing" className="shrink-0">
+                        <Button size="sm" className="whitespace-nowrap">Get checks</Button>
+                      </Link>
+                    ) : null}
+                  </div>
                 ) : documents ? (
                   <motion.div
                     className="flex flex-wrap gap-2"
@@ -576,13 +567,37 @@ export function FeedbackPage() {
                   </motion.div>
                 ) : (
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm text-text-secondary">
-                      {documentEntitlement.cv && documentEntitlement.coverLetter
-                        ? 'Generate an improved CV draft, cover letter, and recruiter message for this application.'
-                        : documentEntitlement.cv
-                          ? 'Generate an improved CV draft for this application.'
-                          : 'Generate a cover letter and recruiter message for this application. Your Interview Score is already strong for this role, so we do not generate a CV draft at this score.'}
-                    </p>
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wider text-text-secondary">
+                        You will get
+                      </p>
+                      <ul className="mt-1 space-y-1">
+                        {documentEntitlement.cv ? (
+                          <li className="flex gap-2 text-sm text-text-secondary">
+                            <span aria-hidden="true">•</span>
+                            <span>Improved CV Draft</span>
+                          </li>
+                        ) : null}
+                        {documentEntitlement.coverLetter ? (
+                          <li className="flex gap-2 text-sm text-text-secondary">
+                            <span aria-hidden="true">•</span>
+                            <span>Cover Letter</span>
+                          </li>
+                        ) : null}
+                        {documentEntitlement.recruiterMessage ? (
+                          <li className="flex gap-2 text-sm text-text-secondary">
+                            <span aria-hidden="true">•</span>
+                            <span>Recruiter Message</span>
+                          </li>
+                        ) : null}
+                      </ul>
+                      {!documentEntitlement.cv && documentEntitlement.coverLetter ? (
+                        <p className="mt-1 text-xs text-text-secondary">
+                          Your Interview Score is already strong for this role, so we do not generate a
+                          CV draft at this score.
+                        </p>
+                      ) : null}
+                    </div>
                     <Button
                       size="sm"
                       className="shrink-0"
