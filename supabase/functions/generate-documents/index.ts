@@ -195,6 +195,12 @@ Deno.serve(async (req) => {
         strengths: feedbackRow.strengths as string[],
         improvements: feedbackRow.improvements as string[],
         prospects: feedbackRow.prospects as string[],
+        // Documents never reference the Evidence Assessment card's data, so
+        // this caller doesn't need real values here, only ReportResult's
+        // contract honoured so `result`'s shape matches what the type
+        // promises everywhere else it's used.
+        requirementEvidence: [],
+        recruiterDoubts: [],
       },
       followUpRow,
     )
