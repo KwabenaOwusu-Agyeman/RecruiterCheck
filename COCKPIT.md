@@ -179,32 +179,55 @@ doing it.
 - **Founder action, sample wording live compliance unverified.** PR #165
   rewrote the SAMPLE WORDING prompt rule that let non-quantified soft skill
   examples through (it named "stakeholder management" as an exempt category)
-  and added a fourth calibration example. This environment has no live
-  OpenAI access, so `test:scoring` only runs the prompt through
-  `prompt.test.ts`'s static assertions and a hand written mock model in
-  `logic.test.ts`, never a real call. Whether the model actually produces
-  quantified stakeholder/communication bullets now, rather than merely
-  passing the offline tests, needs one live check on a machine with API
-  access before this can be considered confirmed. Confirmed 2026-09-23 this
-  session cannot run it either: no `OPENAI_API_KEY` in this environment (the
-  process environment was checked directly, not any `.env` file) and no
-  Docker runtime for `supabase functions serve`, and calling the deployed
-  production function to check is off limits regardless. Ready-to-run
-  scenario for whoever has API access, chosen to mirror the founder's
-  original flagged example (an unquantified "conducted workshops for
-  stakeholders" bullet): job description requirement "Strong stakeholder
-  communication skills; comfortable presenting technical concepts to non
-  technical audiences," CV line "Communicated project updates to
-  stakeholders and ran occasional training sessions" (vague on purpose, so
-  it lands `partial` or `none`). Run a real `analyze-check` call with that
-  pair and check whether that requirement's `sample_wording` contains a
-  number (a count, an audience size, a frequency) rather than reading like
-  the original flagged bullet. Separately confirmed 2026-09-24: the
-  "Areas to Improve" display itself (`FeedbackBullet.tsx`, `feedbackText.ts`,
-  neither touched by PR #165) renders a quantified sample wording bullet
-  exactly as well as the old unquantified style, so once the model does
-  produce one, no further frontend work is needed for it to show correctly.
-  Recorded 2026-09-23, updated 2026-09-24.
+  and added a fourth calibration example. Founder ran a live check
+  2026-09-24 and found the same underlying gap survived for a different
+  shape of bullet: cross team collaboration ("Collaborated with engineering
+  and data science teams...", no number). PR #180 tightened rule 5 further
+  so a bullet naming any people, team, or result can never be waved through
+  as uncountable, added a fifth calibration example, and added a
+  non-blocking `console.warn` in `validateSampleWording` so a missing digit
+  shows up in logs even though it is not rejected. Neither PR's fix is live
+  verified yet: this environment has no live OpenAI access, so `test:scoring`
+  only runs the prompt through `prompt.test.ts`'s static assertions and a
+  hand written mock model in `logic.test.ts`, never a real call. Confirmed
+  again 2026-09-24 this session cannot run it either: no `OPENAI_API_KEY` in
+  the process environment and no Docker runtime for `supabase functions
+  serve`; calling the deployed production function to check is off limits
+  regardless. Two ready-to-run scenarios for whoever has API access: (1) the
+  stakeholder communication one from PR #165's own verification note, still
+  prose only, not wired into a fixture: job description requirement "Strong
+  stakeholder communication skills; comfortable presenting technical
+  concepts to non technical audiences," CV line "Communicated project
+  updates to stakeholders and ran occasional training sessions"; (2) the
+  collaboration one PR #180 added as a real fixture, `ai-product-analyst` in
+  `fixtures/synthetic/sample-wording-roles.ts`, which now runs automatically
+  as one of the four roles `OPENAI_API_KEY=<key> npx tsx
+  scripts/live-sample-wording.ts` sends. For either, check whether the
+  relevant requirement's `sample_wording` contains a number rather than
+  reading like the originally flagged bullet. Separately confirmed
+  2026-09-24: the "Areas to Improve" display itself (`FeedbackBullet.tsx`,
+  `feedbackText.ts`, touched by neither PR) renders a quantified sample
+  wording bullet exactly as well as the old unquantified style, so once the
+  model does produce one, no further frontend work is needed for it to show
+  correctly. Recorded 2026-09-23, updated 2026-09-24.
+- **Founder action, credited follow up CV bullet needs a real check.** PR
+  #182 makes `generate-documents` append a credited Evidence Follow Up
+  answer to the CV text (the same `buildFollowUpCvText` addendum the
+  reassessment already uses) and tells the model to write it as an ordinary,
+  unlabelled `tailored_cv` bullet. No live OpenAI call was made to build or
+  verify this (same access limits as the sample wording item above): the
+  prompt wiring and the gating on `result.updated` are confirmed by reading
+  the code and the existing test suite, not by seeing real model output.
+  Founder action: run one real Needs Improvement check through to a credited
+  follow up, click Generate, and confirm the resulting CV.pdf contains one
+  natural bullet reflecting the follow up answer, with no mention of a
+  follow up question or self reporting anywhere in the document, and that
+  the "We added one line to your CV draft..." note only appears in that
+  credited case. Also **MANUAL CHECK REQUIRED** (no browser test tooling in
+  this repo): confirm on `localhost:5173` that generating a CV, then
+  answering and getting credited on the follow up, correctly clears the
+  stale CV button and prompts a fresh Generate, per the `onAssessed` fix in
+  the same PR. Recorded 2026-09-24.
 - **Founder action.** Verify a real Google sign-in end to end after the move
   to the `myrecruitercheck` Cloud project, then delete the old `RecruiterCheck`
   OAuth client in `theorycoach-ai`. Recorded 2026-09-07.
@@ -384,6 +407,125 @@ Its Keyword Scan reservation design was never adopted by the live
 reservation functions are dropped by `20260922170000`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-24 — Credited Evidence Follow Up answer now reaches the generated CV draft
+
+**Objective.** Founder asked how a follow up answer that raises a score
+reflects on the candidate's CV: in the feedback report, in the generated
+document, or both, and whether the "follow up column" should also show the
+percentage increase. Checked both asks against DEC-8 and the Scoring
+Methodology (Notion) before building anything, since DEC-8 explicitly states
+a report always shows one score and the original is never shown again once
+replaced. Founder decision this session: keep DEC-8 as is, no percentage or
+before/after reveal anywhere, candidate facing or otherwise; instead, make
+sure a credited answer's substance actually reaches the generated CV.
+
+**Completed.** `supabase/functions/generate-documents/index.ts` fetches
+`question`/`candidate_answer` alongside the existing `evidence_follow_ups`
+columns, and, only when `resolveEffectiveResult` reports `updated: true`
+(DEC-8's own credited signal), builds the CV text handed to the document
+generator with `buildFollowUpCvText`, the exact same labelled, delimited
+addendum `assess-evidence-follow-up` already uses for reassessment. A new
+`FOLLOW_UP_DOCUMENT_ADDENDUM` prompt paragraph tells the model to treat that
+section as valid evidence for a case (A)/(B) `tailored_cv` rewrite (reusing
+the prompt's existing improvement classification system), never a case (C)
+placeholder bullet, written in ordinary CV language with no mention of a
+follow up question or self reporting anywhere in the document; scoped to
+`tailored_cv` only; `cover_letter` and `recruiter_message` are unaffected.
+`FeedbackPage.tsx` shows a short confirmation next to the CV download when
+`report.updated` is true. Also fixed, found while building this:
+`EvidenceFollowUpCard`'s `onAssessed` only updated `followUp` state, so a CV
+generated before a credited follow up stayed on screen with nothing
+prompting a regenerate; it now clears `documents`/`documentsError` when the
+new result is credited, and leaves them alone otherwise.
+
+**Verified.** `npm run lint` (0 errors, 2 pre-existing unrelated warnings),
+`npm run typecheck` (clean), `npm run test:unit` (24/24 files, 284
+assertions), `npm run test:edge` (30/30 files, 501 assertions, including
+`generate-documents/logic.test.ts` unchanged at 42/42 since `logic.ts` was
+not touched), `npm run build` (clean, CSP hashes verified, sitemap
+generated). Mandatory security review completed (Edge Function request
+handling, reads candidate data): no findings. Ownership scoping on the new
+columns reuses the `checkId`/`user_id` check already done earlier in the
+same handler; `candidate_answer` is sanitized at write time by the existing
+`validateFollowUpAnswer` and this code only reads that already sanitized
+column; the model's full output still passes through the existing
+`toPdfSafe` pass regardless. **UNVERIFIED:** no live OpenAI call was made
+(no `OPENAI_API_KEY` in this environment, no Docker for local `functions
+serve`, deployed production off limits), so whether the model actually
+writes a natural, unlabelled bullet from a real follow up answer, rather
+than merely satisfying the offline tests, is not yet confirmed. See Open
+items.
+
+**Blockers.** None technical.
+
+**Founder action required.** See Open items: one real credited follow up
+check through to Generate, and a `localhost:5173` check that a stale CV
+button clears correctly after a credited follow up.
+
+**Next technical step.** None planned beyond the founder checks above.
+
+**Commit or PR.** `266a40a`,
+[#182](https://github.com/fullcircleAI/RecruiterCheck/pull/182), merged as
+`711987f`.
+
+---
+
+## 2026-09-24 — Sample wording: closed the collaboration quantification loophole
+
+**Objective.** Founder ran a live check and found PR #165's fix (which
+closed the named "stakeholder management" exemption) had not closed the
+same underlying gap for a different bullet shape: "Collaborated with
+engineering and data science teams to define AI product requirements and
+solutions," no number anywhere.
+
+**Completed.** `supabase/functions/analyze-check/prompt.ts`'s SAMPLE WORDING
+rule 5 now states explicitly that a bullet naming any people, team, or
+result always has a natural count (scope, and, where a concrete result is
+also named, outcome too), and can be skipped only for a bullet about a soft
+skill's own quality in the abstract, with no person, group, frequency, or
+result named at all. Added a fifth calibration example pairing a scope
+number with an outcome number, and one line disambiguating that the STEP 1
+/ STEP 2B "quantification is a bonus, never a gate" scoring language (about
+judging the candidate's real CV) does not apply to sample wording.
+`validateSampleWording` in `logic.ts` gets a non-blocking `console.warn`
+when a sample still lacks a digit, so future drift is visible in logs
+without rejecting or retrying anything, since sample wording is fictional
+and never scored. New `ai-product-analyst` fixture role in
+`fixtures/synthetic/sample-wording-roles.ts`, mirroring the exact flagged
+bug, extends `scripts/live-sample-wording.ts` to four roles for the next
+manual live-model run. No scoring, weight or threshold touched;
+`PROMPT_VERSION` not bumped, same precedent as PR #165.
+
+**Verified.** `npm run lint` (0 errors, 2 pre-existing unrelated warnings),
+`npm run typecheck` (clean), `npm run test:scoring` (6/6 files, 240
+assertions), `node scripts/mutation-check.mjs` (14/14 caught, 0 holes, 0
+skipped), `npm run test:edge` (30/30 files, 501 assertions; one transient
+failure on a first concurrent run reproduced neither in isolation nor on a
+clean re-run of the full suite, and this diff touches no scoring code, so
+it was flagged as environmental and not a regression). The new fixture role
+is used by `scripts/live-sample-wording.ts` only: `logic.test.ts`'s ROLE
+FLOW suite is a separate, hand authored list keyed by role id, not a loop
+over every `SAMPLE_WORDING_ROLES` entry, so this addition does not by
+itself extend `test:scoring`'s automated coverage. **UNVERIFIED**, and
+unverifiable here: whether the model actually complies now, same access
+limits as the PR #165 item below. See Open items, which now covers both
+PRs' verification together.
+
+**Blockers.** None.
+
+**Founder action required.** None beyond the live check recorded in Open
+items.
+
+**Next technical step.** Watch the next few live Needs Improvement results,
+or run the live script, for whether a collaboration style bullet now
+carries two numbers.
+
+**Commit or PR.** `3cfd1e5`,
+[#180](https://github.com/fullcircleAI/RecruiterCheck/pull/180), merged as
+`96147c2`.
 
 ---
 
