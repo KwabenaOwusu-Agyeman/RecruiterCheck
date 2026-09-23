@@ -95,15 +95,6 @@ doing it.
   allows login CSRF (PKCE); newsletter signup has no double opt in; disputes
   do not claw back credits; CLAUDE.md says the primary CTA reads "Check" while the site uses "Check My
   Application". Recorded 2026-09-21.
-- **Non-blocking, Evidence Based Recruiter Assessment (PR #156, merged).**
-  Nobody has yet spot checked the new "How a recruiter reads your CV" card
-  rendering live across all three score bands (Not a Fit, Needs Improvement,
-  Likely Interview Candidate) on a real completed check; verified only by
-  reading the code so far (no score band branching anywhere in its render
-  path or in the new `AnalysisResult` fields, and its light/dark theming
-  reuses the same `isDark` boolean every other card on this page already
-  uses across all three bands). No browser test framework exists in this
-  repo for this kind of check. Recorded 2026-09-23.
 - **Founder decision, document entitlement scope.** Raised 2026-09-22 from the
   "Junior Data Analyst" check (see the 2026-09-22 manual credit grant entry
   below): a completed check's document entitlement is fixed forever at
@@ -252,6 +243,49 @@ manual check list that a static fixture render cannot substitute for).
 **Commit or PR.** `e330367` on `feature/evidence-based-recruiter-assessment`,
 pushed to `origin` and `personal`,
 [#156](https://github.com/fullcircleAI/RecruiterCheck/pull/156). Not merged.
+
+---
+
+## 2026-09-23 — Evidence Assessment card spot checked across all three score bands
+
+**Objective.** Close the last open item from PR #156: confirm the "How a
+recruiter reads your CV" card renders correctly for Not a Fit, Needs
+Improvement and Likely Interview Candidate, not only by reading the code.
+
+**Completed.** No real completed check was available at each band without
+the local Supabase stack (Docker unavailable in this environment), so this
+used a throwaway route instead: a temporary `__DevPreviewEvidenceCard.tsx`
+page and a matching entry in `App.tsx`'s `Routes`, rendering
+`EvidenceAssessmentCard` inside the exact container markup and tone classes
+`FeedbackPage.tsx` uses for each of the three `resultTone` values (`dark`,
+`muted`, `light`), with invented per-band data. This exercises the real
+component and the real compiled Tailwind classes, only the underlying check
+data is fake, so it is materially stronger than reading the code alone,
+though still short of a real end to end check. Viewed with the Chrome
+connector against `localhost:5173` (never the hosted site, per CLAUDE.md).
+Worktree, branch, temporary route and file were all discarded after use;
+nothing was committed.
+
+**Verified.** All three bands render correctly: Not a Fit (muted cream
+container) showed a red No evidence badge and an amber Moderate evidence
+badge on the same page, both correctly colored; Needs Improvement (dark
+navy) showed white heading and body text with the badge's dark tone variant
+adapting correctly; Likely Interview Candidate (light) correctly omitted
+the Gap line on every strong row and omitted the whole "What may make a
+recruiter hesitate" section when `recruiterDoubts` was empty. No emoji, no
+dash characters, in any rendered copy.
+
+**Blockers.** None technical.
+
+**Founder action required.** None.
+
+**Next technical step.** None outstanding for this feature. A real end to
+end check (an actual completed check in each band, not invented data)
+remains possible once Docker is available in an automated session, but is
+not blocking.
+
+**Commit or PR.** None, this was a read only visual check with no lasting
+code change.
 
 ---
 
