@@ -10,7 +10,6 @@ import {
   CANDIDATE_REPORTED_LABEL,
   FOLLOW_UP_HEADING,
   FOLLOW_UP_INTEGRITY_NOTE,
-  FOLLOW_UP_INTRO,
   FOLLOW_UP_OPTIONAL_NOTE,
   FOLLOW_UP_SUBMIT_LABEL,
   FOLLOW_UP_SUBMITTING_LABEL,
@@ -132,8 +131,8 @@ export function EvidenceFollowUpCard({ followUp, updated, dark, onAssessed }: Ev
       </CardHeader>
       <CardContent className="space-y-4 px-5 py-4">
         <div>
-          <p className={cn('text-xs font-medium uppercase tracking-wider', c.faint)}>{FOLLOW_UP_INTRO}</p>
-          <p className={cn('mt-1 text-sm leading-snug', c.body)}>{followUp.gap_summary}</p>
+          <p className={cn('text-xs font-medium uppercase tracking-wider', c.faint)}>About this requirement</p>
+          <p className={cn('mt-1 text-sm font-semibold leading-snug', c.heading)}>{followUp.gap_requirement}</p>
         </div>
 
         <div>

@@ -7,7 +7,6 @@
 import type { RequirementEvidenceRow } from '@/types'
 
 export const FOLLOW_UP_HEADING = 'One question before you finish'
-export const FOLLOW_UP_INTRO = 'The most important evidence gap in your check'
 export const FOLLOW_UP_OPTIONAL_NOTE = 'Optional. You can skip this and your result stays as it is.'
 export const FOLLOW_UP_INTEGRITY_NOTE =
   'Only answer if this is genuinely true for you. This is a chance to show evidence you already have, not to add anything new. What you write is self reported, so it is weighed with more caution than evidence in your CV, and it does not change your score unless it is specific and relevant. Your score can go up or stay the same. It never goes down.'
