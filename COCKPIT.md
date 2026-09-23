@@ -50,10 +50,15 @@ doing it.
   quantified stakeholder/communication bullets now, rather than merely
   passing the offline tests, needs one live check on a machine with API
   access before this can be considered confirmed. Recorded 2026-09-23.
-- **Founder action.** Review and merge PR #167 (Free Keyword Scan renamed to
-  Free ATS Check in user-facing copy). Merging deploys the frontend through
-  Vercel; no Edge Function is touched. See the 2026-09-23 entry below for
-  what was and was not checked locally. Recorded 2026-09-23.
+- **Founder action, Free ATS Check rendered copy unverified.** PR #167
+  (merged) renamed the free feature's copy to "Free ATS Check" across
+  `KeywordScanPage.tsx`, `NewCheckPage.tsx` and `MyChecksPage.tsx`. Only the
+  unauthenticated `/faq` page was confirmed rendering the new text locally;
+  the three authenticated pages could not be, since local dev has no
+  Supabase session configured and redirects signed-out visitors. Founder
+  action: open `/checks/keyword-scan`, `/checks/new` and `/checks` with a
+  logged-in account and confirm the new copy renders as written. Recorded
+  2026-09-23.
 - **Founder action.** Verify a real Google sign-in end to end after the move
   to the `myrecruitercheck` Cloud project, then delete the old `RecruiterCheck`
   OAuth client in `theorycoach-ai`. Recorded 2026-09-07.
@@ -195,6 +200,50 @@ Its Keyword Scan reservation design was never adopted by the live
 reservation functions are dropped by `20260922170000`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-24 — ATS Resume Checker CTA reconciliation: investigated, no code change
+
+**Objective.** Founder asked to check whether `/ats-resume-checker`'s CTA
+should be reconciled with the newly renamed Free ATS Check feature (raised
+as a possible follow up in the 2026-09-23 PR #167 entry below), so that the
+footer nav's "ATS Checker" and the in-app free feature tell one consistent
+story.
+
+**Completed.** Read-only investigation, no code changed.
+[`AtsResumeCheckerPage.tsx`](src/pages/AtsResumeCheckerPage.tsx)'s primary
+CTA ("Check My Application") calls `useCheckCta`
+([`useCheckCta.ts`](src/hooks/useCheckCta.ts)), which routes a signed-in
+visitor straight to `/checks/new`, the flow for their first Recruiter
+Check, free for life per `FreeCvCheckerPage.tsx`'s own copy ("your first
+check is free"). The Free ATS Check
+([`KeywordScanPage.tsx`](src/pages/KeywordScanPage.tsx)) only appears later
+in the funnel, inside `NewCheckPage.tsx`, offered to a user who has
+already used that first free check and is deciding whether to buy a pack.
+
+**Verified.** The two free offers are not peers: the full Recruiter Check
+is the stronger, already free first offer that `/ats-resume-checker`
+correctly routes new visitors toward. Adding a `relatedLinks` entry
+pointing to `/checks/keyword-scan` would hand first-time visitors a weaker
+alternative immediately next to the page's own argument that "an ATS check
+mostly counts keyword matches, we do more" (its FAQ copy), undercutting its
+own pitch, while saving no real friction, since both paths hit the same
+sign-up gate. The naming overlap that motivated the original concern (two
+things called "ATS Checker" telling different stories) is already resolved
+by the PR #167 rename itself: the free feature's name now matches how the
+site defines the term elsewhere, while this page's copy and CTA are
+unchanged and still correctly point to the stronger free offer.
+
+**Blockers.** None.
+
+**Founder action required.** None. No change recommended; the current
+routing is correct as is.
+
+**Next technical step.** None. This closes out the follow up raised in the
+2026-09-23 PR #167 entry below.
+
+**Commit or PR.** None, read only investigation, no lasting code change.
 
 ---
 
