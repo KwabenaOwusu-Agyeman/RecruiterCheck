@@ -62,8 +62,37 @@ which opens a browser-controlled window for the user to authorize the
 extension on their existing, already-signed-in MyRecruiterCheck account. No
 password is ever entered inside the extension.
 
-## Screenshots needed before submission (not yet captured)
-Chrome Web Store requires at least one 1280x800 or 640x400 screenshot.
-Recommended: (1) the "Capture this job" initial popup state, (2) the preview
-state showing a captured job with "Check this job," (3) New Check pre-filled
-after clicking through.
+## Privacy practices (Developer Dashboard "Privacy" tab)
+
+Data categories collected, per the audit report's verified data-handling
+findings:
+
+- **Website content**: the job title, company name, job description, and
+  page URL of the posting the user explicitly captures. Nothing else on the
+  page.
+- **Authentication information**: the extension's own MyRecruiterCheck
+  session, established through a single-use, short-lived, server-issued code,
+  not a password. It never reads the web app's cookies or the user's
+  password.
+
+Everything else (personally identifiable information beyond the account
+connection, health, financial, location, web history, user activity,
+personal communications) does not apply. Not collected.
+
+Certifications (all true, matching the audit's findings):
+- Does not sell or transfer user data to third parties outside approved use.
+- Does not use or transfer user data for purposes unrelated to the single
+  purpose above.
+- Does not use or transfer user data to determine creditworthiness or for
+  lending.
+
+Privacy policy URL: https://myrecruitercheck.com/privacy (Section 14,
+"Browser Extension").
+
+## Screenshots
+
+Captured 2026-09-23 against real postings, live end to end: (1) the
+"Capture this job" initial popup state, (2) the preview state showing a
+captured job with "Check this job," (3) New Check pre-filled after clicking
+through. Held locally by the founder, ready to upload to the Developer
+Dashboard.
