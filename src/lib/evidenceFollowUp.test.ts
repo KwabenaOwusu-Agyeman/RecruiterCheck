@@ -83,8 +83,25 @@ await test('the copy has no dashes and promises the score never goes down', () =
 // One score
 // ---------------------------------------------------------------------------
 
-const BASE = { score: 72, strengths: ['s0'], improvements: ['i0'], prospects: ['p0'] }
-const ASSESSED = { status: 'assessed', final_score: 78, final_strengths: ['s1'], final_improvements: ['i1'], final_prospects: ['p1'] }
+const BASE = {
+  score: 72,
+  strengths: ['s0'],
+  improvements: ['i0'],
+  prospects: ['p0'],
+  requirementEvidence: [],
+  recruiterDoubts: [],
+}
+const ASSESSED = {
+  status: 'assessed',
+  final_score: 78,
+  final_strengths: ['s1'],
+  final_improvements: ['i1'],
+  final_prospects: ['p1'],
+  final_requirement_evidence: [
+    { requirement: 'R1', importance: 'must_have', evidence_strength: 'strong', evidence_found: 'e1', recruiter_interpretation: 'ri1', gap_note: null },
+  ],
+  final_recruiter_doubts: ['d1'],
+}
 
 await test('only Needs Improvement, 61 to 84, is eligible', () => {
   assert.equal(FOLLOW_UP_MIN_SCORE, 61)
@@ -99,7 +116,15 @@ await test('only Needs Improvement, 61 to 84, is eligible', () => {
 
 await test('an assessed, higher follow up replaces the score and the findings together', () => {
   const result = resolveEffectiveResult(BASE, ASSESSED)
-  assert.deepEqual(result, { score: 78, strengths: ['s1'], improvements: ['i1'], prospects: ['p1'], updated: true })
+  assert.deepEqual(result, {
+    score: 78,
+    strengths: ['s1'],
+    improvements: ['i1'],
+    prospects: ['p1'],
+    requirementEvidence: ASSESSED.final_requirement_evidence,
+    recruiterDoubts: ['d1'],
+    updated: true,
+  })
 })
 
 await test('the original score is not present anywhere in an updated result', () => {

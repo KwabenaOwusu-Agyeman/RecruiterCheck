@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict'
 import {
   applyCriticalGapCap,
+  buildRequirementEvidenceTable,
   calculateCapabilityScore,
   calculateCategoryScore,
   calculateEvidenceAbilityScore,
@@ -35,6 +36,7 @@ import {
   type EvidenceReference,
   type RawAnalysis,
   type RawRequirement,
+  type RequirementEvidenceRow,
   type ScoreBreakdown,
 } from './logic.ts'
 import { getScoreLabel } from '../../../src/lib/scoring'
@@ -180,6 +182,7 @@ function baseRaw(overrides: Partial<RawAnalysis> = {}): RawAnalysis {
     prospect_1: 'Your background is a reasonable match for this role.',
     prospect_2: 'Adding measurable outcomes would most increase your interview odds.',
     new_claims_introduced: [],
+    recruiter_doubts: [],
     ...overrides,
   }
 }
@@ -587,6 +590,109 @@ test('capRequirements keeps the highest importance tiers first when oversized', 
   const capped = capRequirements([...niceToHaves, ...mustHaves])
   assert.equal(capped.length, 20)
   assert.ok(mustHaves.every((m) => capped.includes(m)))
+})
+
+// ---------------------------------------------------------------------------
+// buildRequirementEvidenceTable (Evidence Based Recruiter Assessment)
+// ---------------------------------------------------------------------------
+
+test('buildRequirementEvidenceTable excludes nice_to_have requirements', () => {
+  const rows: RequirementEvidenceRow[] = buildRequirementEvidenceTable([
+    requirement({ requirement: 'Must', importance: 'must_have' }),
+    requirement({ requirement: 'Nice', importance: 'nice_to_have' }),
+  ])
+  assert.deepEqual(rows.map((r) => r.requirement), ['Must'])
+})
+
+test('buildRequirementEvidenceTable returns at most 8 rows, must_have before important, original order preserved within each tier', () => {
+  const musts = Array.from({ length: 5 }, (_, i) => requirement({ requirement: `must ${i}`, importance: 'must_have' }))
+  const importants = Array.from({ length: 5 }, (_, i) => requirement({ requirement: `important ${i}`, importance: 'important' }))
+  const rows: RequirementEvidenceRow[] = buildRequirementEvidenceTable([...importants, ...musts])
+  assert.equal(rows.length, 8)
+  assert.deepEqual(
+    rows.map((r) => r.requirement),
+    ['must 0', 'must 1', 'must 2', 'must 3', 'must 4', 'important 0', 'important 1', 'important 2'],
+  )
+})
+
+test('buildRequirementEvidenceTable maps strong to strong, partial to moderate, none to none', () => {
+  const rows: RequirementEvidenceRow[] = buildRequirementEvidenceTable([
+    requirement({ requirement: 'A', match_strength: 'strong' }),
+    requirement({ requirement: 'B', match_strength: 'partial' }),
+    requirement({ requirement: 'C', match_strength: 'none', cv_evidence: '' }),
+  ])
+  assert.deepEqual(rows.map((r) => r.evidence_strength), ['strong', 'moderate', 'none'])
+})
+
+test('buildRequirementEvidenceTable maps partial to moderate regardless of evidence_specificity', () => {
+  const rows: RequirementEvidenceRow[] = buildRequirementEvidenceTable([
+    requirement({ requirement: 'A', match_strength: 'partial', evidence_specificity: 'limited_evidence' }),
+    requirement({ requirement: 'B', match_strength: 'partial', evidence_specificity: 'mention_only' }),
+  ])
+  assert.deepEqual(rows.map((r) => r.evidence_strength), ['moderate', 'moderate'])
+})
+
+test('buildRequirementEvidenceTable falls back to a fixed string when cv_evidence is empty', () => {
+  const rows: RequirementEvidenceRow[] = buildRequirementEvidenceTable([
+    requirement({ requirement: 'A', match_strength: 'none', cv_evidence: '' }),
+  ])
+  assert.equal(rows[0].evidence_found, 'No matching evidence found in the CV.')
+})
+
+test('buildRequirementEvidenceTable keeps gap_note null for a strong match even if the model sent one', () => {
+  const rows: RequirementEvidenceRow[] = buildRequirementEvidenceTable([
+    requirement({ requirement: 'A', match_strength: 'strong', gap_note: 'should be ignored' }),
+  ])
+  assert.equal(rows[0].gap_note, null)
+})
+
+test('buildRequirementEvidenceTable passes through recruiter_interpretation and gap_note for a partial match', () => {
+  const rows: RequirementEvidenceRow[] = buildRequirementEvidenceTable([
+    requirement({
+      requirement: 'SQL',
+      match_strength: 'partial',
+      recruiter_interpretation: 'SQL is claimed but practical use is unclear.',
+      gap_note: 'Show a project or work example using SQL.',
+    }),
+  ])
+  assert.equal(rows[0].recruiter_interpretation, 'SQL is claimed but practical use is unclear.')
+  assert.equal(rows[0].gap_note, 'Show a project or work example using SQL.')
+})
+
+// normalizeAnalysis-level assertion. Important: leave cv_evidence at
+// requirement()'s default (grounded in this file's shared CV_TEXT fixture)
+// rather than overriding it with an arbitrary string — an ungrounded
+// cv_evidence on a "partial"/"strong" claim gets downgraded to "none" by the
+// existing evidence-grounding safety net, which would silently break this
+// test's assumptions about which evidence_strength survives. The
+// buildRequirementEvidenceTable-only unit tests above are unaffected by this
+// (they call the pure function directly, bypassing normalizeAnalysis's
+// grounding pipeline entirely).
+test('normalizeAnalysis populates requirement_evidence from the finalized matrix and caps recruiter_doubts at 3', () => {
+  const result = analyze({
+    requirements: [
+      requirement({
+        requirement: 'Requirement 30',
+        importance: 'must_have',
+        match_strength: 'strong',
+        recruiter_interpretation: 'Clear practical evidence.',
+        gap_note: null,
+      }),
+      requirement({
+        requirement: 'Requirement 31',
+        importance: 'important',
+        match_strength: 'partial',
+        recruiter_interpretation: 'Some evidence, not enough.',
+        gap_note: 'Show a project.',
+      }),
+    ],
+    recruiter_doubts: ['Doubt one.', 'Doubt two.', 'Doubt three.', 'Doubt four.'],
+  })
+  assert.equal(result.requirement_evidence.length, 2)
+  assert.equal(result.requirement_evidence[0].requirement, 'Requirement 30')
+  assert.equal(result.requirement_evidence[1].gap_note, 'Show a project.')
+  assert.equal(result.recruiter_doubts.length, 3)
+  assert.deepEqual(result.recruiter_doubts, ['Doubt one.', 'Doubt two.', 'Doubt three.'])
 })
 
 // ---------------------------------------------------------------------------

@@ -700,6 +700,8 @@ export type Database = {
           created_at: string
           final_improvements: string[] | null
           final_prospects: string[] | null
+          final_recruiter_doubts: string[] | null
+          final_requirement_evidence: Json | null
           final_score: number | null
           final_strengths: string[] | null
           gap_requirement: string
@@ -717,6 +719,8 @@ export type Database = {
           created_at?: string
           final_improvements?: string[] | null
           final_prospects?: string[] | null
+          final_recruiter_doubts?: string[] | null
+          final_requirement_evidence?: Json | null
           final_score?: number | null
           final_strengths?: string[] | null
           gap_requirement: string
@@ -734,6 +738,8 @@ export type Database = {
           created_at?: string
           final_improvements?: string[] | null
           final_prospects?: string[] | null
+          final_recruiter_doubts?: string[] | null
+          final_requirement_evidence?: Json | null
           final_score?: number | null
           final_strengths?: string[] | null
           gap_requirement?: string
@@ -820,6 +826,8 @@ export type Database = {
           id: string
           improvements: Json
           prospects: Json
+          recruiter_doubts: Json
+          requirement_evidence: Json
           strengths: Json
         }
         Insert: {
@@ -828,6 +836,8 @@ export type Database = {
           id?: string
           improvements?: Json
           prospects?: Json
+          recruiter_doubts?: Json
+          requirement_evidence?: Json
           strengths?: Json
         }
         Update: {
@@ -836,6 +846,8 @@ export type Database = {
           id?: string
           improvements?: Json
           prospects?: Json
+          recruiter_doubts?: Json
+          requirement_evidence?: Json
           strengths?: Json
         }
         Relationships: [

@@ -73,6 +73,22 @@ const EVIDENCE_REFERENCE_SCHEMA = {
   anyOf: [EVIDENCE_REFERENCE_OBJECT_SCHEMA, { type: 'null' }],
 } as const
 
+// Nullable per the same officially-supported strict-schema pattern as
+// EVIDENCE_REFERENCE_SCHEMA above: the key stays required, its value may be
+// this literal or JSON null. Only set by the model when match_strength is
+// "partial" (see the STEP 1 instructions below) — never shown to the
+// candidate; it exists only so a "partial" match's two flavors (genuine but
+// limited evidence vs. a bare mention) can still be told apart internally.
+const EVIDENCE_SPECIFICITY_SCHEMA = {
+  anyOf: [{ type: 'string', enum: ['limited_evidence', 'mention_only'] }, { type: 'null' }],
+} as const
+
+// gap_note: null only for a "strong" match (see STEP 1). Every "partial" or
+// "none" match must carry one short, direct sentence naming what's missing.
+const GAP_NOTE_SCHEMA = {
+  anyOf: [{ type: 'string' }, { type: 'null' }],
+} as const
+
 const SAMPLE_WORDING_FIELD_DESCRIPTION =
   'Sample wording: exactly one complete, fictional, realistic CV bullet the candidate could adapt, following every rule in the SAMPLE WORDING section. Past tense, no "you", digits for every number, no placeholders, no instructions. Required whenever this slot has a finding; empty string only when the whole slot is unused.'
 
@@ -83,6 +99,22 @@ export const SAMPLE_WORDING_CALIBRATION_EXAMPLES = [
   'Submitted 5 pull requests to an open source React and TypeScript dashboard, resolving WCAG 2.2 keyboard navigation issues across 12 reusable components.',
   'Diagnosed a Safari rendering defect using Chrome DevTools and BrowserStack, corrected conflicting CSS Grid rules and reduced cross browser UI issues by 30%.',
   'Created OpenAPI documentation for 18 REST API endpoints, covering OAuth 2.0 authentication, request schemas and error responses, reducing developer onboarding time by 2 days.',
+] as const
+
+// The candidate-facing "recruiter read" pair the Evidence Assessment card
+// shows per requirement. Exported so prompt.test.ts can assert they are
+// present, short (6 to 14 words), and dash free, and so a live harness can
+// flag a model that copies them verbatim. These are the founder's own
+// example lines from the approved spec, unchanged.
+export const RECRUITER_INTERPRETATION_CALIBRATION_EXAMPLES = [
+  'Clear practical evidence of Python use.',
+  'SQL is claimed but practical use is unclear.',
+  'The CV does not demonstrate AWS experience.',
+] as const
+
+export const GAP_NOTE_CALIBRATION_EXAMPLES = [
+  'Show a project or work example using SQL.',
+  'Add relevant project or work evidence if you have it.',
 ] as const
 
 function buildBaseSystemPrompt(context: AnalysisContext): string {
@@ -109,6 +141,9 @@ Read the job description and extract the distinct requirements that matter for t
   A match must never be downgraded because an achievement lacks numbers or metrics. Quantification is a presentation quality issue, not a fit issue — if the CV clearly shows the candidate did the thing, that is strong or partial evidence regardless of whether the result was quantified. Never reduce a match, and never reuse the same "not quantified" observation to justify a lower match on a different requirement.
 - cv_evidence: for a strong or partial match, copy a short excerpt of the CV's own text that supports it, word for word (trimming to the relevant sentence or clause is fine, and minor whitespace cleanup is fine) — do not rewrite it into your own words or summarize it, since a rephrased version can no longer be verified against the original. Never invent an excerpt that is not genuinely present in the CV, and never let the excerpt state a fact, number, tool, or qualification the CV itself does not state. If the CV shows only related or transferable evidence rather than the exact thing requested (for example the requirement is Odoo but the CV only shows SAP), quote what the CV actually says (the SAP text) and let match_strength (e.g. "partial") carry the transferability judgment — never substitute the requirement's own terminology into the quote. For a "none" match, leave this as an empty string.
 - sample_wording: for a "partial" or "none" match on a requirement that belongs on a CV, one fictional sample CV bullet that would demonstrate this specific requirement for this role, written under the SAMPLE WORDING rules below. An empty string for a "strong" match, and for any requirement about work authorization, availability, or private information.
+- evidence_specificity: set only when match_strength is "partial" — "limited_evidence" (genuine, relevant evidence that is limited or unclear) or "mention_only" (mentioned or implied with little proof of practical use). Null for every "strong" or "none" match. This field is never shown to the candidate directly.
+- recruiter_interpretation: required for every requirement. One short, direct sentence, roughly 6 to 14 words, saying exactly what the evidence shows, the way a recruiter would put it in one breath. Never repeat the requirement's own name or phrase inside this sentence. Never hedge ("This appears to suggest..."), never explain the scoring system, never add a confidence statement, never invent evidence. See the RECRUITER READ section below for the exact quality bar and calibration examples.
+- gap_note: one short, direct sentence, roughly 6 to 14 words, naming exactly what is missing or weak, under the same rules as recruiter_interpretation. Null only when match_strength is "strong". Never a generic instruction like "add more detail", name the specific gap.
 
 Extract only requirements that are actually stated or clearly implied by the job description — never invent a requirement the posting does not raise, even for a short posting. Do not create duplicate or near duplicate entries for the same underlying requirement (e.g. do not list "5 years experience" and "significant prior experience" separately if the posting only raises one such requirement) — merge them into a single entry. Focus on the requirements that actually define whether this candidate fits the role; extract roughly 6 to 12 total across both categories for a typical posting, fewer for a very narrow one, never dozens of near identical entries.
 
@@ -207,7 +242,24 @@ Calibration examples of the required quality. Do not copy them; write fresh ones
 
 Apply exactly the same rules to requirements[].sample_wording: for every requirement whose match_strength is "partial" or "none" and that belongs on a CV, write one sample CV bullet that would demonstrate that specific requirement for this role. Return an empty string for a "strong" match and for any requirement about work authorization, availability, or private information. The application uses these when it needs an additional area to improve for a mid range score, so each must stand on its own.
 
-Finally, self check your own output and populate new_claims_introduced: a JSON array of any specific fact (a metric, employer name, date, credential, or achievement) that you stated about the candidate in strengths, in the finding or evidence of an area to improve, or in prospects that is not actually present in the original CV text. Sample wording fields (improvement_N_example and requirements[].sample_wording) are fictional illustrations by design and are never claims about the candidate: never list their contents here. If, after careful review, you introduced no such fact, return an empty array.
+== RECRUITER READ (requirements[].recruiter_interpretation and requirements[].gap_note) ==
+
+These two fields are shown to the candidate directly under each requirement, so they must be scannable in seconds, never another paragraph of AI explanation. Both are mandatory rules, no exceptions:
+1. One short, direct sentence each, roughly 6 to 14 words. Say exactly what the evidence shows (recruiter_interpretation) and exactly what is missing (gap_note), nothing more.
+2. Never repeat the requirement's own name or phrase inside either sentence, the row next to these two lines already names the requirement.
+3. Never hedge ("This appears to suggest...", "It seems that..."), never explain how scoring works, never state a confidence level, never add generic motivational language.
+4. Ground every word in the same cv_evidence you just wrote for this requirement (or, for gap_note, in what that evidence is missing), never state a fact, tool, or number the CV does not show.
+5. gap_note is null only when match_strength is "strong". For "partial" or "none", name the one specific thing missing or weak.
+
+Calibration examples of the required quality. Do not copy them; write fresh ones for this requirement:
+- recruiter_interpretation: "${RECRUITER_INTERPRETATION_CALIBRATION_EXAMPLES[0]}" / "${RECRUITER_INTERPRETATION_CALIBRATION_EXAMPLES[1]}" / "${RECRUITER_INTERPRETATION_CALIBRATION_EXAMPLES[2]}"
+- gap_note: "${GAP_NOTE_CALIBRATION_EXAMPLES[0]}" / "${GAP_NOTE_CALIBRATION_EXAMPLES[1]}"
+
+== RECRUITER DOUBTS (recruiter_doubts) ==
+
+Populate recruiter_doubts with at most 3 short, direct sentences naming what may make a recruiter hesitate. Every doubt must be grounded in a requirement you already classified "partial" or "none" in the matrix above, never invent a concern that isn't already reflected there, and never raise a doubt about a requirement classified "strong". Leave the array empty when nothing genuinely clears that bar. Each item follows the same brevity rules as gap_note: one short, direct sentence, no hedging, no invented facts.
+
+Finally, self check your own output and populate new_claims_introduced: a JSON array of any specific fact (a metric, employer name, date, credential, or achievement) that you stated about the candidate in strengths, in the finding or evidence of an area to improve, in prospects, or in a requirement's recruiter_interpretation or gap_note, that is not actually present in the original CV text. Sample wording fields (improvement_N_example and requirements[].sample_wording) are fictional illustrations by design and are never claims about the candidate: never list their contents here. If, after careful review, you introduced no such fact, return an empty array.
 
 Never use hyphens, en dashes, or em dashes anywhere in your output text (no "-", "–", or "—", including inside compound words). Write in plain sentences instead, using commas, periods, or separate words (e.g. "well structured" not "well-structured", "data driven" not "data-driven").`
 }
@@ -282,8 +334,26 @@ export const ANALYSIS_RESPONSE_FORMAT = {
                 description:
                   'For a partial or none match on a requirement that belongs on a CV: one fictional sample CV bullet demonstrating this requirement for this role, under the SAMPLE WORDING rules. Empty string for a strong match, and for work authorization, availability, or private information requirements.',
               },
+              evidence_specificity: EVIDENCE_SPECIFICITY_SCHEMA,
+              recruiter_interpretation: {
+                type: 'string',
+                description:
+                  'One short, direct sentence (roughly 6 to 14 words) saying exactly what the evidence shows, in the style of the RECRUITER READ calibration examples. Never repeats the requirement name, never hedges, never invents evidence.',
+              },
+              gap_note: GAP_NOTE_SCHEMA,
             },
-            required: ['requirement', 'category', 'importance', 'critical', 'match_strength', 'cv_evidence', 'sample_wording'],
+            required: [
+              'requirement',
+              'category',
+              'importance',
+              'critical',
+              'match_strength',
+              'cv_evidence',
+              'sample_wording',
+              'evidence_specificity',
+              'recruiter_interpretation',
+              'gap_note',
+            ],
             additionalProperties: false,
           },
           description: 'The extracted, classified job requirements with their CV match. The application calculates experience and skills scores from this, not the model.',
@@ -340,6 +410,12 @@ export const ANALYSIS_RESPONSE_FORMAT = {
           description:
             'Any specific fact about the candidate stated in strengths, improvement findings or evidence, or prospects that is not present in the original CV. Sample wording fields are fictional by design and are never listed here. Empty array if none.',
         },
+        recruiter_doubts: {
+          type: 'array',
+          items: { type: 'string' },
+          description:
+            'At most 3 short, direct sentences naming what may make a recruiter hesitate, each grounded in a requirement already classified partial or none. Empty array if none.',
+        },
       },
       required: [
         'job_title',
@@ -385,6 +461,7 @@ export const ANALYSIS_RESPONSE_FORMAT = {
         'prospect_1',
         'prospect_2',
         'new_claims_introduced',
+        'recruiter_doubts',
       ],
       additionalProperties: false,
     },

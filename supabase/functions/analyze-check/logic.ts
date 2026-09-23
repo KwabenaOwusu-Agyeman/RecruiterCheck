@@ -16,7 +16,11 @@ export const RUBRIC_VERSION = 'early_career_tech_v1'
 // The audit row's prompt_version is how a reviewer tells which rules a
 // stored check was generated under. Cosmetic wording fixes that don't
 // change what's measured or produced don't need a bump.
-export const PROMPT_VERSION = 'analyze-check-prompt-v6'
+// v7: each requirement also carries evidence_specificity (internal only),
+// recruiter_interpretation and gap_note (candidate facing, the Evidence
+// Assessment card), and the response gained a top level recruiter_doubts
+// array. None of this changes the scoring formula itself.
+export const PROMPT_VERSION = 'analyze-check-prompt-v7'
 
 /**
  * Generic, network-free retry wrapper: try `attempt` up to `maxAttempts`
@@ -173,6 +177,13 @@ export interface RawRequirement {
   // deterministic Needs Improvement fill (requirementImprovement), never by
   // scoring, and never persisted on its own.
   sample_wording?: string
+  // New in prompt v7. Optional for the same reason as sample_wording above:
+  // the strict response schema always returns all three, but synthetic
+  // fixtures and the follow-up test helper build RawRequirement objects
+  // directly without them.
+  evidence_specificity?: 'limited_evidence' | 'mention_only' | null
+  recruiter_interpretation?: string
+  gap_note?: string | null
 }
 
 export interface RawAnalysis {
@@ -227,6 +238,18 @@ export interface RawAnalysis {
   prospect_1: string
   prospect_2: string
   new_claims_introduced: string[]
+  // New in prompt v7: at most 3 short sentences naming what may make a
+  // recruiter hesitate, each grounded in an existing partial/none
+  // requirement (see buildRequirementEvidenceTable below and the RECRUITER
+  // DOUBTS prompt section). Required — every RawAnalysis construction site
+  // is either `JSON.parse(...) as RawAnalysis` (runtime.ts, live-sample-
+  // wording.ts — safe, no literal to update) or a literal in logic.test.ts /
+  // evidence-follow-up.test.ts (needs one line added — see the test files).
+  // fixtures/synthetic/candidates.ts and scoring-regression.test.ts never
+  // construct a RawAnalysis at all (they import only
+  // RawRequirement/EvidenceLevel and call the pure scoring functions
+  // directly), so this is safe to make required with zero fixture changes.
+  recruiter_doubts: string[]
 }
 
 // One entry per rubric subcriterion. `level` is present for every holistic
@@ -301,6 +324,11 @@ export interface AnalysisResult {
   // from the same requirement matrix the score uses; it never feeds back
   // into the score.
   evidence_gap: EvidenceGap | null
+  // The candidate-facing Evidence Assessment card's data — see
+  // buildRequirementEvidenceTable above. Populated from the same finalized
+  // requirement matrix the score uses; never feeds back into scoring.
+  requirement_evidence: RequirementEvidenceRow[]
+  recruiter_doubts: string[]
 }
 
 // This app is English only — every check must produce English output
@@ -1120,7 +1148,13 @@ function isValidRequirement(value: unknown): value is RawRequirement {
     typeof r.critical === 'boolean' &&
     (r.match_strength === 'strong' || r.match_strength === 'partial' || r.match_strength === 'none') &&
     typeof r.cv_evidence === 'string' &&
-    (r.sample_wording === undefined || typeof r.sample_wording === 'string')
+    (r.sample_wording === undefined || typeof r.sample_wording === 'string') &&
+    (r.evidence_specificity === undefined ||
+      r.evidence_specificity === null ||
+      r.evidence_specificity === 'limited_evidence' ||
+      r.evidence_specificity === 'mention_only') &&
+    (r.recruiter_interpretation === undefined || typeof r.recruiter_interpretation === 'string') &&
+    (r.gap_note === undefined || r.gap_note === null || typeof r.gap_note === 'string')
   )
 }
 
@@ -1620,6 +1654,75 @@ export function toAuditRecord(
   }
 }
 
+// ---------------------------------------------------------------------------
+// Requirement evidence table (Evidence Based Recruiter Assessment)
+//
+// A compact, candidate-facing view of the exact same finalized, deduplicated,
+// grounding-safe requirement matrix calculateCapabilityScore already uses —
+// never a second extraction, never a new scoring signal. Only three
+// user-facing evidence states reach the UI (strong/moderate/none); the
+// model's internal evidence_specificity distinction between two flavors of
+// "partial" (limited_evidence vs mention_only) both collapse to "moderate"
+// here and are never exposed beyond this file.
+// ---------------------------------------------------------------------------
+
+export type EvidenceStrength = 'strong' | 'moderate' | 'none'
+
+export interface RequirementEvidenceRow {
+  requirement: string
+  importance: 'must_have' | 'important'
+  evidence_strength: EvidenceStrength
+  evidence_found: string
+  recruiter_interpretation: string
+  gap_note: string | null
+}
+
+const EVIDENCE_STRENGTH_MAP: Record<MatchStrength, EvidenceStrength> = {
+  strong: 'strong',
+  partial: 'moderate',
+  none: 'none',
+}
+
+const REQUIREMENT_EVIDENCE_TABLE_TIER_ORDER: Record<'must_have' | 'important', number> = {
+  must_have: 0,
+  important: 1,
+}
+
+const MAX_REQUIREMENT_EVIDENCE_ROWS = 8
+
+const NO_MATCHING_EVIDENCE_TEXT = 'No matching evidence found in the CV.'
+
+/**
+ * Requirement -> candidate-facing evidence row. Called on dedupedRequirements
+ * (already deduplicated, grounding-checked, capped at 20 — the identical
+ * input calculateCapabilityScore uses), never on raw model output. Excludes
+ * nice_to_have, keeps must_have before important, preserves each tier's own
+ * original extraction order (never reordered by strength), and returns at
+ * most 8 rows so a cap can never silently drop a must_have in favor of an
+ * earlier important one.
+ */
+export function buildRequirementEvidenceTable(requirements: RawRequirement[]): RequirementEvidenceRow[] {
+  const eligible = requirements.filter((r) => r.importance !== 'nice_to_have')
+  const ordered = eligible
+    .map((r, index) => ({ r, index }))
+    .sort(
+      (a, b) =>
+        REQUIREMENT_EVIDENCE_TABLE_TIER_ORDER[a.r.importance as 'must_have' | 'important'] -
+          REQUIREMENT_EVIDENCE_TABLE_TIER_ORDER[b.r.importance as 'must_have' | 'important'] || a.index - b.index,
+    )
+    .slice(0, MAX_REQUIREMENT_EVIDENCE_ROWS)
+    .map(({ r }) => r)
+
+  return ordered.map((r) => ({
+    requirement: r.requirement,
+    importance: r.importance as 'must_have' | 'important',
+    evidence_strength: EVIDENCE_STRENGTH_MAP[r.match_strength],
+    evidence_found: r.cv_evidence.trim() ? r.cv_evidence : NO_MATCHING_EVIDENCE_TEXT,
+    recruiter_interpretation: typeof r.recruiter_interpretation === 'string' ? r.recruiter_interpretation : '',
+    gap_note: r.match_strength === 'strong' ? null : typeof r.gap_note === 'string' ? r.gap_note : null,
+  }))
+}
+
 export function normalizeAnalysis(raw: RawAnalysis, cvText: string, meta: { model?: string | null } = {}): AnalysisResult {
   const strengths = [
     combineFinding(raw.strength_1_finding, raw.strength_1_evidence),
@@ -1652,7 +1755,17 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string, meta: { mode
   if (generatedImprovements.length > 3) throw new Error('Expected at most 3 areas to improve')
   if (prospects.length > 2) throw new Error('Expected at most 2 prospects')
 
-  const combinedContent = [...strengths, ...generatedImprovements, ...prospects].join(' ')
+  const requirementProseForEnglishCheck = Array.isArray(raw.requirements)
+    ? raw.requirements.flatMap((item) => {
+        if (typeof item !== 'object' || item === null) return []
+        const r = item as { recruiter_interpretation?: unknown; gap_note?: unknown }
+        return [
+          typeof r.recruiter_interpretation === 'string' ? r.recruiter_interpretation : '',
+          typeof r.gap_note === 'string' ? r.gap_note : '',
+        ]
+      })
+    : []
+  const combinedContent = [...strengths, ...generatedImprovements, ...prospects, ...requirementProseForEnglishCheck].join(' ')
   if (!looksLikeEnglish(combinedContent)) {
     throw new Error('Content did not look like English')
   }
@@ -1916,5 +2029,15 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string, meta: { mode
       dedupedRequirements.filter((requirement) => verificationStage(requirement) === 'cv'),
       stripDashes,
     ),
+    // Deliberate design note, not a bug: unlike selectEvidenceGap above
+    // (narrowed to verificationStage === 'cv' only), this runs on the full
+    // dedupedRequirements array, which still includes application-stage
+    // requirements (availability, work authorization) — post-hire/BSN items
+    // are already filtered out upstream, before dedupedRequirements exists
+    // (see evidenceSafeRequirements' own post_hire filter). This matches the
+    // founder's literal spec (only nice_to_have is excluded) and how these
+    // items already appear elsewhere in the report today.
+    requirement_evidence: buildRequirementEvidenceTable(dedupedRequirements),
+    recruiter_doubts: sanitizeStrings(raw.recruiter_doubts).slice(0, 3),
   }
 }

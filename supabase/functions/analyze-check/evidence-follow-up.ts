@@ -90,10 +90,20 @@ export function selectEvidenceGap(
   // produces. Still exactly one question mark, and still names no example
   // answer. Kept short on purpose: one short opening statement, then one
   // short question.
+  // gap_note (new in prompt v7) is one short, direct sentence naming exactly
+  // what's missing. When present, splice it in as a lead-in clause so the
+  // one question DEC-8 already asks is worded more specifically — nothing
+  // about which requirement is picked, how many questions are asked (still
+  // exactly one), or the floor/band logic changes. When gap_note is absent
+  // (undefined/null/empty), gapNoteClause is '' and the resulting string is
+  // byte identical to the pre-v7 question.
+  const gapNote = typeof top.gap_note === 'string' ? clean(top.gap_note.trim()) : ''
+  const gapNoteClause = gapNote ? ` ${gapNote}` : ''
+
   const question =
     top.category === 'skills'
-      ? `The job asks for ${name}. Have you done this in a project, internship, course or job that your CV does not show, and if so what did you do?`
-      : `The job asks for ${name}. Have you done this in a job, project, course or volunteering role that your CV does not show, and if so what was it and what did you do?`
+      ? `The job asks for ${name}.${gapNoteClause} Have you done this in a project, internship, course or job that your CV does not show, and if so what did you do?`
+      : `The job asks for ${name}.${gapNoteClause} Have you done this in a job, project, course or volunteering role that your CV does not show, and if so what was it and what did you do?`
 
   return { requirement: name, summary, question }
 }

@@ -120,6 +120,44 @@ test('a full requirement phrase like "Experience with X" still reads as a gramma
   assert.equal(gap.question.split('?').length - 1, 1)
 })
 
+test('a gap_note sharpens the wording of the one question when present, and leaves it byte identical when absent', () => {
+  const withGap = selectEvidenceGap([
+    req({
+      requirement: 'SQL',
+      category: 'skills',
+      match_strength: 'partial',
+      cv_evidence: 'x',
+      gap_note: 'Show a project or work example using SQL.',
+    }),
+  ])!
+  assert.equal(
+    withGap.question,
+    'The job asks for SQL. Show a project or work example using SQL. Have you done this in a project, internship, course or job that your CV does not show, and if so what did you do?',
+  )
+  assert.equal(withGap.question.split('?').length - 1, 1)
+
+  const withoutGap = selectEvidenceGap([
+    req({ requirement: 'SQL', category: 'skills', match_strength: 'partial', cv_evidence: 'x' }),
+  ])!
+  assert.equal(
+    withoutGap.question,
+    'The job asks for SQL. Have you done this in a project, internship, course or job that your CV does not show, and if so what did you do?',
+  )
+})
+
+test('gap_note never changes which requirement is selected or the summary wording', () => {
+  const withGap = selectEvidenceGap([
+    req({ requirement: 'Important thing', importance: 'important' }),
+    req({ requirement: 'Must have thing', importance: 'must_have', gap_note: 'Some gap detail.' }),
+  ])
+  const withoutGap = selectEvidenceGap([
+    req({ requirement: 'Important thing', importance: 'important' }),
+    req({ requirement: 'Must have thing', importance: 'must_have' }),
+  ])
+  assert.equal(withGap?.requirement, 'Must have thing')
+  assert.equal(withGap?.summary, withoutGap?.summary)
+})
+
 test('the question never invites invention, suggests a good answer or coaches', () => {
   for (const category of ['skills', 'experience'] as const) {
     const { question, summary } = selectEvidenceGap([req({ category })])!
@@ -324,6 +362,7 @@ function raw(overrides: Partial<RawAnalysis> = {}, requirements: RawRequirement[
     prospect_1: 'Your background is a reasonable start for this role.',
     prospect_2: 'Showing where you applied Python would most help your case.',
     new_claims_introduced: [],
+    recruiter_doubts: [],
     ...overrides,
   }
 }

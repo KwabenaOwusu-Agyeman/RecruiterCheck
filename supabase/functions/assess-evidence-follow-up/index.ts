@@ -244,6 +244,8 @@ Deno.serve(async (req) => {
         final_strengths: outcome.improved ? analysis.strengths : null,
         final_improvements: outcome.improved ? analysis.improvements : null,
         final_prospects: outcome.improved ? analysis.prospects : null,
+        final_requirement_evidence: outcome.improved ? analysis.requirement_evidence : null,
+        final_recruiter_doubts: outcome.improved ? analysis.recruiter_doubts : null,
         what_changed: buildWhatChanged(outcome.improved),
         assessed_at: new Date().toISOString(),
       })

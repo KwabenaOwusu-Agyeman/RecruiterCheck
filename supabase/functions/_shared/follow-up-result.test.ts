@@ -69,19 +69,65 @@ test('the score can never fall, for every pair of scores', () => {
   }
 })
 
-const BASE = { score: 72, strengths: ['s0'], improvements: ['i0'], prospects: ['p0'] }
+const BASE = {
+  score: 72,
+  strengths: ['s0'],
+  improvements: ['i0'],
+  prospects: ['p0'],
+  requirementEvidence: [],
+  recruiterDoubts: [],
+}
 const ASSESSED: StoredFollowUp = {
   status: 'assessed',
   final_score: 78,
   final_strengths: ['s1'],
   final_improvements: ['i1'],
   final_prospects: ['p1'],
+  final_requirement_evidence: [
+    { requirement: 'R1', importance: 'must_have', evidence_strength: 'strong', evidence_found: 'e1', recruiter_interpretation: 'ri1', gap_note: null },
+  ],
+  final_recruiter_doubts: ['d1'],
 }
 
 test('a higher assessed follow up replaces score and findings together, and nothing of the original survives', () => {
   const result = resolveEffectiveResult(BASE, ASSESSED)
-  assert.deepEqual(result, { score: 78, strengths: ['s1'], improvements: ['i1'], prospects: ['p1'], updated: true })
+  assert.deepEqual(result, {
+    score: 78,
+    strengths: ['s1'],
+    improvements: ['i1'],
+    prospects: ['p1'],
+    requirementEvidence: ASSESSED.final_requirement_evidence,
+    recruiterDoubts: ['d1'],
+    updated: true,
+  })
   assert.doesNotMatch(JSON.stringify(result), /72|s0|i0|p0/)
+})
+
+test('malformed new fields default safely to empty arrays without blocking the score/findings replacement', () => {
+  const malformed = resolveEffectiveResult(BASE, {
+    ...ASSESSED,
+    final_requirement_evidence: 'not an array',
+    final_recruiter_doubts: [1, 2] as unknown as string[],
+  })
+  assert.equal(malformed.score, 78)
+  assert.deepEqual(malformed.strengths, ['s1'])
+  assert.deepEqual(malformed.requirementEvidence, [])
+  assert.deepEqual(malformed.recruiterDoubts, [])
+  assert.equal(malformed.updated, true)
+})
+
+test('missing new fields (a follow up written before this migration) default safely too', () => {
+  const withoutNewFields: StoredFollowUp = {
+    status: ASSESSED.status,
+    final_score: ASSESSED.final_score,
+    final_strengths: ASSESSED.final_strengths,
+    final_improvements: ASSESSED.final_improvements,
+    final_prospects: ASSESSED.final_prospects,
+  }
+  const result = resolveEffectiveResult(BASE, withoutNewFields)
+  assert.deepEqual(result.requirementEvidence, [])
+  assert.deepEqual(result.recruiterDoubts, [])
+  assert.equal(result.updated, true)
 })
 
 const NOT_REPLACING: Array<[string, StoredFollowUp | null | undefined]> = [

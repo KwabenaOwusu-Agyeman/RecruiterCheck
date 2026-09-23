@@ -10,6 +10,8 @@ import {
   buildAnalysisRequestBody,
   buildSystemPrompt,
   buildUserPrompt,
+  GAP_NOTE_CALIBRATION_EXAMPLES,
+  RECRUITER_INTERPRETATION_CALIBRATION_EXAMPLES,
   SAMPLE_WORDING_CALIBRATION_EXAMPLES,
 } from './prompt.ts'
 import { normalizeSampleWording, validateSampleWording } from './logic.ts'
@@ -84,6 +86,43 @@ test('the response schema requires sample_wording on every requirement and an ex
   }
   assert.match(schema.properties.new_claims_introduced.description, /Sample wording fields are fictional by design/)
   assert.equal(ANALYSIS_RESPONSE_FORMAT.json_schema.strict, true)
+})
+
+test('the response schema requires the v7 recruiter-read fields on every requirement, and recruiter_doubts at the top level', () => {
+  const schema = ANALYSIS_RESPONSE_FORMAT.json_schema.schema
+  const requirementItem = schema.properties.requirements.items
+  for (const key of ['evidence_specificity', 'recruiter_interpretation', 'gap_note']) {
+    assert.ok(key in requirementItem.properties, `missing ${key} in requirement item properties`)
+    assert.ok((requirementItem.required as readonly string[]).includes(key), `${key} not required`)
+  }
+  // Nullable fields use the same anyOf [X, {type:'null'}] convention as
+  // EVIDENCE_REFERENCE_SCHEMA, never a bare type with no null branch.
+  assert.ok(Array.isArray((requirementItem.properties.evidence_specificity as { anyOf?: unknown }).anyOf))
+  assert.ok(Array.isArray((requirementItem.properties.gap_note as { anyOf?: unknown }).anyOf))
+  assert.equal(requirementItem.properties.recruiter_interpretation.type, 'string')
+  assert.ok('recruiter_doubts' in schema.properties)
+  assert.ok((schema.required as readonly string[]).includes('recruiter_doubts'))
+  assert.equal(schema.properties.recruiter_doubts.type, 'array')
+})
+
+test('the recruiter read calibration examples are in the prompt, short, and dash free', () => {
+  for (const example of [...RECRUITER_INTERPRETATION_CALIBRATION_EXAMPLES, ...GAP_NOTE_CALIBRATION_EXAMPLES]) {
+    assert.ok(prompt.includes(example), `missing calibration example: ${example}`)
+    const words = example.trim().split(/\s+/).length
+    assert.ok(words >= 6 && words <= 14, `"${example}" is ${words} words, expected 6 to 14`)
+    assert.ok(!/[-–—]/.test(example), `dash in calibration example: ${example}`)
+  }
+})
+
+test('the self check paragraph also names the per-requirement recruiter read fields', () => {
+  assert.match(prompt, /recruiter_interpretation/)
+  assert.match(prompt, /gap_note/)
+})
+
+test('the prompt caps recruiter_doubts at 3 and requires each to be grounded in an existing partial or none requirement', () => {
+  assert.match(prompt, /recruiter_doubts/)
+  assert.match(prompt, /at most 3/i)
+  assert.match(prompt, /partial.*or.*none|"partial" or "none"/i)
 })
 
 test('buildAnalysisRequestBody is the exact production request: model, temperature 0, strict schema, inputs in the user turn', () => {
