@@ -62,8 +62,10 @@ which opens a browser-controlled window for the user to authorize the
 extension on their existing, already-signed-in MyRecruiterCheck account. No
 password is ever entered inside the extension.
 
-## Screenshots needed before submission (not yet captured)
-Chrome Web Store requires at least one 1280x800 or 640x400 screenshot.
-Recommended: (1) the "Capture this job" initial popup state, (2) the preview
-state showing a captured job with "Check this job," (3) New Check pre-filled
-after clicking through.
+## Screenshots
+
+Captured 2026-09-23 against real postings, live end to end: (1) the
+"Capture this job" initial popup state, (2) the preview state showing a
+captured job with "Check this job," (3) New Check pre-filled after clicking
+through. Held locally by the founder, ready to upload to the Developer
+Dashboard.
