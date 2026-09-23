@@ -339,6 +339,47 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-24 — Pricing page checked on localhost:5173, dev mode
+
+**Objective.** Founder asked to check `/pricing` on `localhost:5173`. No
+recent change or open item ties to this page specifically; a general
+health check.
+
+**Completed.** No code change; a verification session. Unlike the fixture
+checks this session did for auth-gated cards, `/pricing` is a public page
+needing no session, so this ran the real page directly via `npm run dev`,
+no throwaway route needed. Read `PricingPage.tsx` first to identify the
+one thing worth being careful with: `handleBuy` calls `createCheckoutSession`
+and redirects to Stripe only when a user is signed in; with no session in
+this environment it opens the sign up modal instead and returns before any
+checkout call. Confirmed this by actually clicking "Buy pack" on the
+Active tier: the sign up modal opened, no checkout was attempted, closed
+without submitting it (no account created).
+
+**Verified.** All three tiers (Starter, Active "Most Popular", Power "Best
+Value") render correctly with prices, per-check rates, credit validity and
+feature checklists. "Buy pack" correctly gates on auth as described above.
+The Stripe security note and "Read the FAQ" link (to `/faq`, itself already
+checked this session) render at the bottom. No console errors anywhere on
+the page.
+
+**Blockers.** None technical. This check is unrelated to and does not
+touch the "React hydration errors on /pricing, /about, /faq" open item
+above: that issue only reproduces when a built (`dist/`) prerendered page
+is hydrated, and `npm run dev` does plain client rendering with no
+prerendered HTML to hydrate against, so this check could not have
+surfaced or resolved it either way.
+
+**Founder action required.** None from this check. The hydration open
+item above is unaffected and still needs the founder's own confirmation
+on the live site.
+
+**Next technical step.** None planned.
+
+**Commit or PR.** None. Read only investigation, no source file changed.
+
+---
+
 ## 2026-09-24 — Evidence Follow Up card: split the real-check item in two
 
 **Objective.** Founder asked to check the "Evidence Follow Up card needs a
