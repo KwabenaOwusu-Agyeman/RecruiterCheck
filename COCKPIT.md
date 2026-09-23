@@ -23,6 +23,16 @@ technical and founder-blocking; everything else goes in a dated entry or in
 Notion. If this list keeps growing, Claude is handing work back instead of
 doing it.
 
+- **Founder action, sample wording live compliance unverified.** PR #165
+  rewrote the SAMPLE WORDING prompt rule that let non-quantified soft skill
+  examples through (it named "stakeholder management" as an exempt category)
+  and added a fourth calibration example. This environment has no live
+  OpenAI access, so `test:scoring` only runs the prompt through
+  `prompt.test.ts`'s static assertions and a hand written mock model in
+  `logic.test.ts`, never a real call. Whether the model actually produces
+  quantified stakeholder/communication bullets now, rather than merely
+  passing the offline tests, needs one live check on a machine with API
+  access before this can be considered confirmed. Recorded 2026-09-23.
 - **Founder action.** Verify a real Google sign-in end to end after the move
   to the `myrecruitercheck` Cloud project, then delete the old `RecruiterCheck`
   OAuth client in `theorycoach-ai`. Recorded 2026-09-07.
@@ -167,6 +177,65 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-23 — Sample wording: closed the stakeholder/soft-skill quantification loophole
+
+**Objective.** Founder found a live "Areas to Improve" example bullet with no
+number ("Conducted workshops to explain AI/ML concepts to stakeholders,
+enhancing understanding and engagement") and gave a quantified rewrite adding
+a workshop count, an audience size, and a follow-on booking count. Find why
+the model produced an unquantified bullet and fix the prompt.
+
+**Completed.** `supabase/functions/analyze-check/prompt.ts`: rule 5 of the
+`== SAMPLE WORDING ==` section required a number "unless the requirement is
+a soft skill or activity with no natural count, such as stakeholder
+management or attention to detail" — the named exemption is exactly the
+category that produced the founder's flagged example. Removed the named
+exemption; rule 5 now says most activities can be quantified even when they
+do not look numeric at first (a session count, an audience size, a
+frequency, or a resulting outcome) and to quantify soft skill and
+communication bullets the same way as technical ones, with a much narrower
+remaining exception (an activity with genuinely no countable aspect, e.g.
+exercising discretion). Added a fourth `SAMPLE_WORDING_CALIBRATION_EXAMPLES`
+entry demonstrating the pattern the founder asked for (workshop count,
+audience size, follow-on request count), since the calibration examples are
+what the model actually imitates, not the abstract rule alone.
+`prompt.test.ts`'s calibration-count assertion updated from 3 to 4 (a
+legitimate widened-coverage correction, not a weakened check — the new
+example is asserted present, validator-passing, digit-bearing and dash-free
+exactly like the other three).
+
+Does not touch any scoring constant, grounding rule, or response shape, so
+no `PROMPT_VERSION` bump, per its own comment in `logic.ts`: "cosmetic
+wording fixes that don't change what's measured don't need one."
+
+**Verified.** `npm run lint` (0 errors, 2 pre-existing unrelated warnings),
+`npm run typecheck` (clean), `npm run test:scoring` (6/6 files, 240
+assertions, including `prompt.test.ts`'s validator check on the new fourth
+calibration example), `node scripts/mutation-check.mjs` (14/14 caught, 0
+holes, 0 skipped, `logic.ts` restored).
+
+**Blockers.** None technical.
+
+**Founder action required.** See the new Open item above: model compliance
+with the rewritten rule is **UNVERIFIED**, since this environment has no
+live OpenAI access and `test:scoring` runs entirely against static prompt
+assertions and a hand written mock model, never a real call. The same
+limitation the 2026-09-22 "require a number in every bullet" prompt change
+hit; that change's own live compliance was also never confirmed.
+
+**Next technical step.** Run a live check (a real `analyze-check` call
+against a job description raising a stakeholder/communication style
+requirement) on a machine with OpenAI API access, and confirm the model
+produces a quantified sample wording bullet for it, not merely one that
+passes the offline validator.
+
+**Commit or PR.** `68a4cbe` on
+`prompt/sample-wording-close-soft-skill-loophole`, pushed to `origin` and
+`personal`, [#165](https://github.com/fullcircleAI/RecruiterCheck/pull/165).
+Not merged.
+
+---
+
 ## 2026-09-23 — React hydration errors found on /pricing, /about, /faq (not caused by this session)
 
 **Objective.** Founder asked to check the console for errors on the live
@@ -230,6 +299,10 @@ entry) to get React's full hydration diff, which names the exact
 mismatching node.
 
 **Commit or PR.** None. Read only investigation, no source file changed.
+
+---
+
+## 2026-09-23 — Recommendation card: pricing CTA scoped to when it would help, free tier bug fixed
 
 **Objective.** Founder-directed audit of the Recommendation card on the Check
 Results page: the pricing CTA was showing regardless of whether buying would
