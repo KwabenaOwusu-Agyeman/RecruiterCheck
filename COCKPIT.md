@@ -23,6 +23,22 @@ technical and founder-blocking; everything else goes in a dated entry or in
 Notion. If this list keeps growing, Claude is handing work back instead of
 doing it.
 
+- **Founder action, Recommendation card CTA logic needs a real check.** PR
+  #161 (`documentEntitlement.ts`, `showPricingCta`) scoped the pricing CTA to
+  when buying would actually help. Verified with a throwaway dev-preview
+  route on `localhost:5173` that called the real `getDocumentEntitlement`
+  function (not a hand-built fixture object) across all 8 pack tier x score
+  band combinations plus 2 "documents already generated" states: free tier
+  shows the CTA at all three bands, paid Starter at Not a Fit correctly
+  shows no CTA (the bug this PR fixed), paid Starter at 85+ correctly shows
+  the CTA with an upgrade-to-Power message, paid Power shows no CTA at any
+  band, and the cross-sell "Get checks" button in the generated-documents
+  view appears only when the pack does not include a cover letter. No
+  console errors. This exercises the real entitlement logic and real JSX,
+  materially stronger than reading the code, but is still not a real
+  completed check: same Docker limitation as the Evidence Assessment card
+  above. Founder action: open a real check in each of these pack/score
+  combinations and confirm the CTA matches. Recorded 2026-09-24.
 - **Founder action, Evidence Assessment card grouping needs a real check.**
   PR #164 (`EvidenceAssessmentCard.tsx`) regrouped "How a recruiter reads
   your CV" into Strong evidence / Moderate evidence / No evidence sections.
@@ -200,6 +216,46 @@ Its Keyword Scan reservation design was never adopted by the live
 reservation functions are dropped by `20260922170000`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-24 — Recommendation card CTA logic checked on localhost:5173
+
+**Objective.** Founder asked to check the Recommendation card (PR #161's
+`showPricingCta` scoping) on `localhost:5173`.
+
+**Completed.** No code change; a verification session. Built a throwaway
+dev-preview route (`__DevPreviewRecommendationCard.tsx`, discarded, never
+committed) that imports the real, unmodified `getDocumentEntitlement` from
+`src/lib/documentEntitlement.ts` and renders the exact JSX block copied from
+`FeedbackPage.tsx`'s Recommendation card, across 8 fixture combinations of
+`fundingPackId` (`null`/free, `small`/Starter, `large`/Power) and score band
+(Not a Fit, Needs Improvement, Likely Interview Candidate), plus 2
+"documents already generated" states.
+
+**Verified.** All three free-tier bands show `showPricingCta: true` with
+the CTA rendered. Paid Starter at Not a Fit shows `showPricingCta: false`
+and correctly renders no CTA, the exact case PR #161 fixed (previously
+every paid user saw a CTA regardless of whether buying would help). Paid
+Starter at 85+ shows `showPricingCta: true` with "Upgrade to the Power
+pack for a Cover Letter and Recruiter Message", since Power would unlock
+something real there. Paid Power shows `showPricingCta: false` at every
+band, since it already includes everything available at each. Both
+generated-documents fixtures render their download buttons correctly, and
+the cross-sell "Get checks" button in that view appears only when
+`!documentEntitlement.coverLetter` (Starter, not Power), matching the real
+condition in `FeedbackPage.tsx`. No console errors on any of the 10
+swatches.
+
+**Blockers.** None technical for this check. See the new Open item above:
+this still isn't a real completed check, same Docker limitation as the
+Evidence Assessment card verification.
+
+**Founder action required.** See the Open item above.
+
+**Next technical step.** None planned.
+
+**Commit or PR.** None. Read only investigation, no source file changed.
 
 ---
 
