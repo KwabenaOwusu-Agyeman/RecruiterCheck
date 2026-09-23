@@ -99,6 +99,7 @@ export const SAMPLE_WORDING_CALIBRATION_EXAMPLES = [
   'Submitted 5 pull requests to an open source React and TypeScript dashboard, resolving WCAG 2.2 keyboard navigation issues across 12 reusable components.',
   'Diagnosed a Safari rendering defect using Chrome DevTools and BrowserStack, corrected conflicting CSS Grid rules and reduced cross browser UI issues by 30%.',
   'Created OpenAPI documentation for 18 REST API endpoints, covering OAuth 2.0 authentication, request schemas and error responses, reducing developer onboarding time by 2 days.',
+  'Led 5 stakeholder workshops introducing a new AI reporting tool to 40 sales and operations staff, resulting in 3 teams requesting follow up training.',
 ] as const
 
 // The candidate-facing "recruiter read" pair the Evidence Assessment card
@@ -228,7 +229,7 @@ Every sample wording field is one complete, realistic CV bullet the candidate co
 2. Make it specific to the identified weakness and to this job: the requirement, technology, or evidence gap the finding names, in the context of this role and its seniority.
 3. Use clear, technically accurate terminology from the job description: the relevant programming languages, frameworks, libraries, tools, platforms, methodologies and technical processes it names. Use important ATS keywords naturally, in the correct technical context, and only in combinations that would realistically be used together on one real piece of work. Never stuff keywords.
 4. Show a clear understanding of how those technologies are used in real work: a specific action, the technical implementation, and the outcome.
-5. Include at least one measurable number, a count, a duration, a percentage, or a scale, unless the requirement is a soft skill or activity with no natural count, such as stakeholder management or attention to detail. Write every number as a digit: "5", not "five"; "2 days", not "two days".
+5. Include at least one measurable number, a count, a duration, a percentage, or a scale. Most activities can be quantified even when they do not look numeric at first: a session count, an audience size, how often, or a resulting outcome such as repeat requests or adoption, so quantify soft skill and communication bullets the same way, not only technical ones. Skip a number only when the activity has genuinely no countable aspect at all, such as exercising discretion. Write every number as a digit: "5", not "five"; "2 days", not "two days".
 6. Never use a placeholder such as "X%", "[X%]", "[project]", "[technology]", "N", or any bracketed text. Use fictional but believable project details, metrics and outcomes instead.
 7. The details are fictional illustration. Never present them as facts about this candidate, never claim they came from the CV, and never list anything from a sample wording field in new_claims_introduced, since sample wording is not a claim about the candidate.
 8. Vary the sentence structure, verbs, and metrics across the three improvements and across requirements. Never reuse the same metric, the same outcome, or the same opening words.
@@ -239,6 +240,7 @@ Calibration examples of the required quality. Do not copy them; write fresh ones
 - Open source contributions, frontend role: "${SAMPLE_WORDING_CALIBRATION_EXAMPLES[0]}"
 - Debugging, frontend role: "${SAMPLE_WORDING_CALIBRATION_EXAMPLES[1]}"
 - Technical communication, backend role: "${SAMPLE_WORDING_CALIBRATION_EXAMPLES[2]}"
+- Stakeholder communication, product role: "${SAMPLE_WORDING_CALIBRATION_EXAMPLES[3]}"
 
 Apply exactly the same rules to requirements[].sample_wording: for every requirement whose match_strength is "partial" or "none" and that belongs on a CV, write one sample CV bullet that would demonstrate that specific requirement for this role. Return an empty string for a "strong" match and for any requirement about work authorization, availability, or private information. The application uses these when it needs an additional area to improve for a mid range score, so each must stand on its own.
 
