@@ -64,8 +64,8 @@ test('the system prompt exempts sample wording from the invented claims self che
   assert.match(prompt, /Sample wording fields \(improvement_N_example and requirements\[\]\.sample_wording\) are fictional illustrations by design/)
 })
 
-test('the four calibration examples are in the prompt and each passes the validator', () => {
-  assert.equal(SAMPLE_WORDING_CALIBRATION_EXAMPLES.length, 4)
+test('the five calibration examples are in the prompt and each passes the validator', () => {
+  assert.equal(SAMPLE_WORDING_CALIBRATION_EXAMPLES.length, 5)
   for (const example of SAMPLE_WORDING_CALIBRATION_EXAMPLES) {
     assert.ok(prompt.includes(example), `missing calibration example: ${example}`)
     assert.equal(validateSampleWording(normalizeSampleWording(example)), null, example)

@@ -480,6 +480,13 @@ export function validateSampleWording(sample: string): string | null {
   if (PRIVATE_IDENTIFIER_PATTERN.test(text)) {
     return 'names a private identifier such as a BSN or permit number: sample wording must never include one'
   }
+  // Advisory only, never rejected: rule 5 requires a number, but sample
+  // wording is fictional and never scored, so a missing digit here is a
+  // prompt compliance signal to watch in logs, not a reason to fail the
+  // whole analysis or force a retry.
+  if (!/\d/.test(text)) {
+    console.warn(`sample wording has no digit (non-blocking, not rejected): ${text}`)
+  }
   return null
 }
 

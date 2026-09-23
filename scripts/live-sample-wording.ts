@@ -1,8 +1,9 @@
 // Run with: OPENAI_API_KEY=<key> npx tsx scripts/live-sample-wording.ts
 //           npx tsx scripts/live-sample-wording.ts --dry-run
 //
-// Sends the three synthetic roles in fixtures/synthetic/sample-wording-roles.ts
-// (Frontend Developer, Machine Learning Engineer, Data Analyst) through the
+// Sends the four synthetic roles in fixtures/synthetic/sample-wording-roles.ts
+// (Frontend Developer, Machine Learning Engineer, Data Analyst, AI Product
+// Analyst) through the
 // production analyze-check request (buildAnalysisRequestBody, the exact body
 // index.ts sends) and the real normalizeAnalysis, with the same two attempt
 // retry, then holds every stored area to improve to the sample wording rules:
