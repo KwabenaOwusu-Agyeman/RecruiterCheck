@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { FeedbackBullet } from '@/components/feedback/FeedbackBullet'
 import { getVerdictColor } from '@/components/feedback/verdictColor'
 import { FICTIONAL_SAMPLE_NOTICE, hasSampleWording, lowerFirstClause, splitFinding } from '@/lib/feedbackText'
+import { EvidenceAssessmentCard } from '@/components/feedback/EvidenceAssessmentCard'
 import { EvidenceFollowUpCard } from '@/components/feedback/EvidenceFollowUpCard'
 import { SentimentPrompt } from '@/components/feedback/SentimentPrompt'
 import { TrustpilotResultsLink } from '@/components/feedback/TrustpilotResultsLink'
@@ -250,6 +251,8 @@ export function FeedbackPage() {
             strengths: feedback.strengths,
             improvements: feedback.improvements,
             prospects: feedback.prospects,
+            requirementEvidence: feedback.requirement_evidence,
+            recruiterDoubts: feedback.recruiter_doubts,
           },
           followUp,
         )
@@ -285,6 +288,13 @@ export function FeedbackPage() {
   // The lists to show: the effective report, or, for a legacy check with no
   // valid score, the stored feedback exactly as before.
   const lists = report ?? feedback
+  // report carries these two camelCase (from resolveEffectiveResult, see
+  // src/lib/evidenceFollowUp.ts) while raw feedback carries them snake_case
+  // straight off the DB row (see src/types/index.ts), so lists.xxx cannot be
+  // used uniformly for these two the way it can for strengths/improvements/
+  // prospects, which share the same field name in both shapes.
+  const requirementEvidence = report?.requirementEvidence ?? feedback?.requirement_evidence ?? []
+  const recruiterDoubts = report?.recruiterDoubts ?? feedback?.recruiter_doubts ?? []
   const shownStrengths = lists?.strengths ?? []
   const visibleImprovements = lists
     ? score === 100
@@ -470,6 +480,12 @@ export function FeedbackPage() {
                 </ul>
               </CardContent>
             </Card> : null}
+
+            <EvidenceAssessmentCard
+              requirementEvidence={requirementEvidence}
+              recruiterDoubts={recruiterDoubts}
+              dark={isDark}
+            />
 
             {followUp && (followUp.status === 'assessed' || isFollowUpEligibleScore(originalScore)) ? (
               <EvidenceFollowUpCard

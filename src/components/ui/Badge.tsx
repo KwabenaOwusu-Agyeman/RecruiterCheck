@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react'
 import { cn } from '@/utils/cn'
-import type { CheckStatus } from '@/types'
+import type { CheckStatus, EvidenceStrength } from '@/types'
 
 interface StatusBadgeProps {
   status: CheckStatus
@@ -47,6 +47,56 @@ export function StatusBadge({ status, className, tone = 'light' }: StatusBadgePr
     >
       <span className={cn('h-1.5 w-1.5 rounded-full', dotColors[status])} />
       {labels[status]}
+    </span>
+  )
+}
+
+interface EvidenceStrengthBadgeProps {
+  strength: EvidenceStrength
+  className?: string
+  tone?: 'light' | 'dark'
+}
+
+// Mirrors StatusBadge's own dot-plus-pill structure exactly, and reuses this
+// app's existing success/warning/error tokens the same way ScoreLockup.tsx's
+// PILL_TONE and verdictColor.ts's getVerdictColor already do for their own
+// tiered verdicts — strong=green, moderate=yellow/amber, no evidence=red.
+// Never literal emoji.
+const evidenceStrengthLabels: Record<EvidenceStrength, string> = {
+  strong: 'Strong evidence',
+  moderate: 'Moderate evidence',
+  none: 'No evidence',
+}
+
+const evidenceStrengthDotColors: Record<EvidenceStrength, string> = {
+  strong: 'bg-success',
+  moderate: 'bg-warning',
+  none: 'bg-error',
+}
+
+const evidenceStrengthPillColors: Record<EvidenceStrength, string> = {
+  strong: 'bg-success/10 text-success-deep',
+  moderate: 'bg-warning/15 text-warning-deep',
+  none: 'bg-error/10 text-error',
+}
+
+const evidenceStrengthDarkPillColors: Record<EvidenceStrength, string> = {
+  strong: 'bg-white/10 text-success',
+  moderate: 'bg-white/10 text-warning',
+  none: 'bg-white/10 text-error-light',
+}
+
+export function EvidenceStrengthBadge({ strength, className, tone = 'light' }: EvidenceStrengthBadgeProps) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold',
+        tone === 'dark' ? evidenceStrengthDarkPillColors[strength] : evidenceStrengthPillColors[strength],
+        className,
+      )}
+    >
+      <span className={cn('h-1.5 w-1.5 rounded-full', evidenceStrengthDotColors[strength])} />
+      {evidenceStrengthLabels[strength]}
     </span>
   )
 }

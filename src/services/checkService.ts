@@ -10,6 +10,7 @@ import type {
   KeywordScanResult,
   PackId,
   Profile,
+  RequirementEvidenceRow,
 } from '@/types'
 
 /**
@@ -84,6 +85,8 @@ function mapFeedback(row: Feedback): Feedback {
     strengths: Array.isArray(row.strengths) ? row.strengths : [],
     improvements: Array.isArray(row.improvements) ? row.improvements : [],
     prospects: Array.isArray(row.prospects) ? row.prospects : [],
+    requirement_evidence: Array.isArray(row.requirement_evidence) ? row.requirement_evidence : [],
+    recruiter_doubts: Array.isArray(row.recruiter_doubts) ? row.recruiter_doubts : [],
   }
 }
 
@@ -147,7 +150,10 @@ export async function getChecks(userId: string): Promise<Check[]> {
     // is not modified.
     const score = check.interview_probability_score
     if (typeof score !== 'number') return mapCheck(check)
-    const effective = resolveEffectiveResult({ score, strengths: [], improvements: [], prospects: [] }, followUp)
+    const effective = resolveEffectiveResult(
+      { score, strengths: [], improvements: [], prospects: [], requirementEvidence: [], recruiterDoubts: [] },
+      followUp,
+    )
     return mapCheck({ ...check, interview_probability_score: effective.score })
   })
 }
@@ -217,6 +223,10 @@ export async function getEvidenceFollowUp(checkId: string): Promise<EvidenceFoll
     final_strengths: row.final_strengths ?? [],
     final_improvements: row.final_improvements ?? [],
     final_prospects: row.final_prospects ?? [],
+    final_requirement_evidence: Array.isArray(row.final_requirement_evidence)
+      ? (row.final_requirement_evidence as unknown as RequirementEvidenceRow[])
+      : [],
+    final_recruiter_doubts: row.final_recruiter_doubts ?? [],
     what_changed: row.what_changed ?? [],
     assessed_at: row.assessed_at,
     canAnswer: row.status === 'pending' && purged === false,

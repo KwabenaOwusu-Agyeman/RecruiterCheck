@@ -234,6 +234,8 @@ Deno.serve(async (req) => {
         strengths: analysis.strengths,
         improvements: analysis.improvements,
         prospects: analysis.prospects,
+        requirement_evidence: analysis.requirement_evidence,
+        recruiter_doubts: analysis.recruiter_doubts,
       },
       { onConflict: 'check_id' },
     )

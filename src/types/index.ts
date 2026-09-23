@@ -1,6 +1,24 @@
 export type CheckStatus = 'draft' | 'processing' | 'completed' | 'failed'
 export type OutputLanguage = 'auto' | 'en' | 'nl'
 
+// Evidence Based Recruiter Assessment: the candidate-facing status per
+// requirement. Only three states ever reach the UI — the model's internal
+// evidence_specificity distinction collapses into 'moderate' before this
+// leaves the server (see buildRequirementEvidenceTable in
+// supabase/functions/analyze-check/logic.ts, the canonical Deno-side
+// definition this mirrors — duplicated here because src/ cannot import from
+// supabase/functions/).
+export type EvidenceStrength = 'strong' | 'moderate' | 'none'
+
+export interface RequirementEvidenceRow {
+  requirement: string
+  importance: 'must_have' | 'important'
+  evidence_strength: EvidenceStrength
+  evidence_found: string
+  recruiter_interpretation: string
+  gap_note: string | null
+}
+
 export interface Profile {
   id: string
   email: string
@@ -51,6 +69,8 @@ export interface Feedback {
   strengths: string[]
   improvements: string[]
   prospects: string[]
+  requirement_evidence: RequirementEvidenceRow[]
+  recruiter_doubts: string[]
   created_at: string
 }
 
@@ -73,6 +93,8 @@ export interface EvidenceFollowUp {
   final_strengths: string[]
   final_improvements: string[]
   final_prospects: string[]
+  final_requirement_evidence: RequirementEvidenceRow[]
+  final_recruiter_doubts: string[]
   what_changed: string[]
   assessed_at: string | null
   // False once the original CV and job description have been auto deleted

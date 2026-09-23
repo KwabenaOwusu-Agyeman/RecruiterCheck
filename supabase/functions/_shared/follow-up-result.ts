@@ -11,6 +11,8 @@
 // here); a test in supabase/functions/_shared/follow-up-result.test.ts runs
 // both against the same cases so they cannot drift.
 
+import type { RequirementEvidenceRow } from '../analyze-check/logic.ts'
+
 // The Needs Improvement band. Below it (Not a Fit) one answer rarely closes
 // the gap; above it (Likely Interview Candidate) there is little to gain.
 // Equal to NOT_A_FIT_MAX_SCORE + 1 and LIKELY_INTERVIEW_CANDIDATE_MIN_SCORE - 1
@@ -51,6 +53,10 @@ export interface ReportResult {
   strengths: string[]
   improvements: string[]
   prospects: string[]
+  // Additive, new in prompt v7. Never part of the "does the follow up
+  // replace the original" gate below — read defensively, default to [].
+  requirementEvidence: RequirementEvidenceRow[]
+  recruiterDoubts: string[]
 }
 
 export interface StoredFollowUp {
@@ -59,6 +65,8 @@ export interface StoredFollowUp {
   final_strengths?: string[] | null
   final_improvements?: string[] | null
   final_prospects?: string[] | null
+  final_requirement_evidence?: unknown
+  final_recruiter_doubts?: string[] | null
 }
 
 export interface EffectiveResult extends ReportResult {
@@ -68,6 +76,20 @@ export interface EffectiveResult extends ReportResult {
 
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === 'string')
+}
+
+function isRequirementEvidenceRowArray(value: unknown): value is RequirementEvidenceRow[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (item) =>
+        typeof item === 'object' &&
+        item !== null &&
+        typeof (item as RequirementEvidenceRow).requirement === 'string' &&
+        typeof (item as RequirementEvidenceRow).evidence_found === 'string' &&
+        typeof (item as RequirementEvidenceRow).recruiter_interpretation === 'string',
+    )
+  )
 }
 
 /**
@@ -95,6 +117,10 @@ export function resolveEffectiveResult(base: ReportResult, followUp: StoredFollo
       strengths: followUp.final_strengths,
       improvements: followUp.final_improvements,
       prospects: followUp.final_prospects,
+      requirementEvidence: isRequirementEvidenceRowArray(followUp.final_requirement_evidence)
+        ? followUp.final_requirement_evidence
+        : [],
+      recruiterDoubts: isStringArray(followUp.final_recruiter_doubts) ? followUp.final_recruiter_doubts : [],
       updated: true,
     }
   }
