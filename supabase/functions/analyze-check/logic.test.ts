@@ -724,6 +724,10 @@ test('normalizeAnalysis: strong matches across the board produce a high score', 
   assert.equal(getScoreLabel(result.interview_probability_score), 'Likely Interview Candidate')
   assert.deepEqual(result.improvements, [])
   assert.match(result.prospects[0], /complete documented alignment/i)
+  // The fixed, score band only recruiter verdict is the third prospects
+  // line, appended after the two existing candidate specific sentences.
+  assert.equal(result.prospects.length, 3)
+  assert.equal(result.prospects[2], 'Recruiters would likely shortlist you for an interview.')
 })
 
 // TEST 2 — partial candidate. Mixed JD requirement matches plus a genuinely
@@ -748,6 +752,11 @@ test('normalizeAnalysis: a mix of strong/partial/none lands in Needs Improvement
   assert.equal(label, 'Needs Improvement')
   assert.equal(result.improvements.length, 3)
   assert.ok(result.improvements.every((item) => /Sample wording:/.test(item)))
+  assert.equal(result.prospects.length, 3)
+  assert.equal(
+    result.prospects[2],
+    'Recruiters would likely consider you for an interview once the evidence above is stronger.',
+  )
 })
 
 test('normalizeAnalysis deterministically completes three Needs Improvement items when the model returns only two', () => {
@@ -799,6 +808,8 @@ test('normalizeAnalysis keeps Not a Fit prospects consistent with the score', ()
   assert.equal(getScoreLabel(result.interview_probability_score), 'Not a Fit')
   assert.match(result.prospects[0], /does not yet show enough evidence/i)
   assert.doesNotMatch(result.prospects.join(' '), /competitive candidate/i)
+  assert.equal(result.prospects.length, 3)
+  assert.equal(result.prospects[2], 'Recruiters would be unlikely to shortlist you for this specific role.')
 })
 
 test('normalizeAnalysis excludes BSN requirements from scoring and removes unsafe BSN advice', () => {
@@ -879,6 +890,10 @@ test('normalizeAnalysis keeps likely candidate prospects positive but conditiona
   })
   assert.equal(getScoreLabel(result.interview_probability_score), 'Likely Interview Candidate')
   assert.match(result.prospects[0], /strong documented evidence/i)
+  // Same fixed verdict as the isLiterallyPerfect case above: still the top
+  // band, just not a maxed out blend.
+  assert.equal(result.prospects.length, 3)
+  assert.equal(result.prospects[2], 'Recruiters would likely shortlist you for an interview.')
 })
 
 // TEST 4 — critical requirement missing overrides an otherwise passing score
@@ -1903,6 +1918,12 @@ test('classifyValidationFailure never needs to inspect CV, job description, or r
 // combineFinding/ensureThreeNeedsImprovementItems/buildScoreAwareProspects
 // or the strengths/generatedImprovements/prospects construction below) —
 // these tests exist to keep it that way going forward.
+//
+// One intentional, tested exception: buildScoreAwareProspects appends a
+// fixed, score band only recruiter verdict as a third prospects line (never
+// LLM generated, decided directly with the founder). It never touches the
+// first two sentences below, which is what these tests assert on, so this
+// stays additive rather than a change to what was already live.
 // ---------------------------------------------------------------------------
 
 test('WRITTEN FEEDBACK: a fully strong candidate receives exactly 2 strengths, not 11 subcriterion restatements', () => {
@@ -1941,11 +1962,16 @@ test('WRITTEN FEEDBACK: the Needs Improvement band always produces exactly 3 are
   assert.equal(result.improvements.length, 3)
 })
 
-test('WRITTEN FEEDBACK: prospects are always exactly 2 sentences, regardless of score band', () => {
+// Was "always exactly 2 sentences" before the fixed recruiter verdict line
+// was added as a third prospects entry (decided directly with the founder;
+// see the "Written feedback preservation" comment above). The invariant
+// itself (a fixed length regardless of score band) still holds, just at 3
+// instead of 2.
+test('WRITTEN FEEDBACK: prospects are always exactly 3 sentences, regardless of score band', () => {
   const strong = analyze({ ...subcriteriaDefaults('strong'), uvp_evidence_level: 'strong' })
   const weak = analyze({ ...subcriteriaDefaults('none'), uvp_evidence_level: 'none' })
-  assert.equal(strong.prospects.length, 2)
-  assert.equal(weak.prospects.length, 2)
+  assert.equal(strong.prospects.length, 3)
+  assert.equal(weak.prospects.length, 3)
 })
 
 test('WRITTEN FEEDBACK: the raw AI schema still has exactly 2 strength slots, 3 improvement slots, and 2 prospect slots', () => {
