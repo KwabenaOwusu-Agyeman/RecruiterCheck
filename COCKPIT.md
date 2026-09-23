@@ -113,8 +113,11 @@ doing it.
   generation. The Recommendation card's CTA layout changed in PR #146; the
   two specific rows this was raised from were corrected by hand on
   2026-09-23 (see that entry below), but no entitlement or refund logic
-  itself has changed. The design question is still open. Recorded
-  2026-09-22, updated 2026-09-23.
+  itself has changed. The design question is still open. PR #161
+  (2026-09-23, see entry below) further changed the same card's CTA
+  visibility logic (`showPricingCta`, score and pack aware) but likewise
+  did not touch entitlement or refund logic; the design question is
+  unchanged. Recorded 2026-09-22, updated 2026-09-23.
 ## Historical review material
 
 `PART_A_KEYWORD_SCAN_REVIEW.md`, `PART_A_KEYWORD_SCAN_CORRECTED_REVIEW.md`,
@@ -132,6 +135,143 @@ Its Keyword Scan reservation design was never adopted by the live
 reservation functions are dropped by `20260922170000`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-23 — Recommendation card: pricing CTA scoped to when it would help, free tier bug fixed
+
+**Objective.** Founder-directed audit of the Recommendation card on the Check
+Results page: the pricing CTA was showing regardless of whether buying would
+change anything, and a frontend-only override was hiding the free tier's own
+blocked-state messaging entirely.
+
+**Completed.** Added `showPricingCta: boolean` to `DocumentEntitlement`
+(`src/lib/documentEntitlement.ts`). Free tier (no pack held) messaging is now
+score-band aware (Not a Fit / Needs Improvement / Likely Interview
+Candidate), all three `showPricingCta: true`, confirmed with the founder that
+every free user gets the CTA regardless of score. Paid user at Not a Fit:
+`showPricingCta: false` (no purchase changes that verdict). Paid non-Power
+user at 85+: `showPricingCta: true` (Power unlocks something they do not
+hold). `src/pages/FeedbackPage.tsx`: removed a frontend-only `isLowFit`
+override that was making free users at Not a Fit see generic paid-user copy
+with no free-tier mention and no CTA at all, a real bug found while auditing
+the card, not a copy choice; replaced the single-branch blocked-state render
+with `documentEntitlement.blockedReason` shown unconditionally plus a CTA
+gated by the new field. Reformatted the pre-generate description into a
+bulleted "You will get:" list, matching the app's existing `•` convention.
+
+**Verified.** `npm run lint` (0 errors, 2 pre-existing unrelated warnings),
+`npm run typecheck` (clean), `npm run test:unit` (24/24 files, 284
+assertions; `documentEntitlement.test.ts` at 20 tests, up from 15).
+
+**Blockers.** None.
+
+**Founder action required.** None. **MANUAL CHECK REQUIRED**: browser
+verification of CTA visibility across free and paid accounts at all three
+score bands on `localhost:5173` was not run this session.
+
+**Next technical step.** None planned for this CTA layout. The "Founder
+decision, document entitlement scope" open item above (whether currently
+held packs should retroactively unlock an already-completed check's
+documents) is a separate, still-open design question; this change only
+scoped which CTA shows, it does not alter what any check is entitled to.
+
+**Commit or PR.** `5c35ce9` on `feature/recommendation-card-improvements`,
+pushed to `origin` and `personal`,
+[#161](https://github.com/fullcircleAI/RecruiterCheck/pull/161), merged as
+`d012a7c`. Same operation also fast-forwarded `personal`'s `main` from
+`c2e9c28` (last synced before PR #155, six merges behind) to `d012a7c`,
+matching `origin`.
+
+---
+
+## 2026-09-23 — Prospects: fixed recruiter verdict line added per score band
+
+**Objective.** Founder-directed redesign of the Prospects section on the
+Check Results page: add a third, deterministic sentence stating plainly
+whether a recruiter would shortlist the candidate, additive to the existing
+two sentences, softened wording rather than first person ("I would...").
+
+**Completed.** `supabase/functions/analyze-check/logic.ts`:
+`buildScoreAwareProspects` now appends one of three fixed sentences to every
+band: "Recruiters would likely shortlist you for an interview." (Likely
+Interview Candidate, including the literally-perfect case), "Recruiters
+would likely consider you for an interview once the evidence above is
+stronger." (Needs Improvement), "Recruiters would be unlikely to shortlist
+you for this specific role." (Not a Fit). Purely deterministic string
+concatenation, no LLM involvement, no scoring constant touched.
+
+**Verified.** `npm run lint` (0 errors, 2 pre-existing unrelated warnings),
+`npm run typecheck` (clean), `npm run test:scoring` (6/6 files, 240
+assertions, including the 167-test `logic.test.ts`), `node
+scripts/mutation-check.mjs` (14/14 caught, 0 holes, 0 skipped, `logic.ts`
+restored).
+
+**Test correction, reported per Failure handling.** One existing test
+asserted "prospects are always exactly 2 sentences." That invariant is now
+wrong by design, so the test was updated to assert 3; the new count is
+itself verified per band, not merely relaxed to pass.
+
+**Blockers.** None.
+
+**Founder action required.** None. **MANUAL CHECK REQUIRED**: browser
+verification of the verdict line across all three bands on `localhost:5173`
+was not run this session.
+
+**Next technical step.** None planned.
+
+**Commit or PR.** `937face` on `feature/prospects-recruiter-verdict`, pushed
+to `origin` and `personal`,
+[#160](https://github.com/fullcircleAI/RecruiterCheck/pull/160), merged as
+`cbf021b`. Touched `analyze-check/**`, so
+`.github/workflows/deploy-edge-functions.yml` redeployed `analyze-check` and
+`assess-evidence-follow-up` (the latter imports shared code from the same
+folder); its own Validate job (lint, typecheck, Edge Function tests, scoring
+mutation check) passed before Deploy ran.
+
+---
+
+## 2026-09-23 — Evidence Follow Up card: gap restatement removed, heading enlarged
+
+**Objective.** Founder-directed redesign of the Evidence Follow Up card
+(DEC-8). Since the Evidence Assessment card (below) now shows each
+requirement's own gap in its own row, the Follow Up card's separate "THE
+MOST IMPORTANT EVIDENCE GAP IN YOUR CHECK" label plus `gap_summary`
+restatement duplicated it. Replace that with a direct link to the
+requirement by name, and make the card's own heading stand out more.
+
+**Completed.** `src/components/feedback/EvidenceFollowUpCard.tsx`: replaced
+the `FOLLOW_UP_INTRO` label and `gap_summary` sentence with a small "About
+this requirement" label directly naming `followUp.gap_requirement`, using
+the same heading-weight class Evidence Assessment gives each requirement
+row. Heading ("One question before you finish") changed from `text-base` to
+`text-xl`. `src/lib/evidenceFollowUp.ts`: removed the now-unused
+`FOLLOW_UP_INTRO` constant, its only reference in the repo.
+
+DEC-8's mechanism is untouched: still one optional question, still Needs
+Improvement band only, still a score floor that never decreases, still
+exactly one score ever shown anywhere. `selectEvidenceGap`, its ranking, the
+floor, and the single-resolver display (`resolveEffectiveResult`) were not
+touched. `gap_summary` stays computed and stored server-side; this only
+stops rendering it on this one card.
+
+**Verified.** `npm run lint` (0 errors, 2 pre-existing unrelated warnings),
+`npm run typecheck` (clean), `npm run test:unit` (24/24 files, 279
+assertions; no test referenced the removed constant), `npm run build` (32
+routes prerendered, CSP hashes verified with no changes needed).
+
+**Blockers.** None.
+
+**Founder action required.** None. **MANUAL CHECK REQUIRED**: browser
+verification on `localhost:5173` of the new label, the requirement name,
+and the larger heading was not run this session.
+
+**Next technical step.** None planned.
+
+**Commit or PR.** `c871ec3`, `f990bdb` on
+`feature/follow-up-card-no-duplication`, pushed to `origin` and `personal`,
+[#159](https://github.com/fullcircleAI/RecruiterCheck/pull/159), merged as
+`4b280db`.
 
 ---
 
