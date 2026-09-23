@@ -23,6 +23,23 @@ technical and founder-blocking; everything else goes in a dated entry or in
 Notion. If this list keeps growing, Claude is handing work back instead of
 doing it.
 
+- **Founder action, Evidence Follow Up card needs a real check.** PR #159
+  (`EvidenceFollowUpCard.tsx`) replaced the gap-restatement label with
+  "About this requirement" naming the requirement directly, and enlarged
+  the heading to `text-xl`. Verified with a throwaway dev-preview route on
+  `localhost:5173` that rendered the real, unmodified component with
+  invented fixture `EvidenceFollowUp` objects across 4 states (pending/
+  assessed x dark/light), submit button never clicked so no network call
+  fired. Confirmed the requirement name renders in place of the old gap
+  restatement, the larger heading is visually prominent in both tones, and
+  the untouched assessed state (what-changed bullets, "Candidate reported"
+  quote) still renders correctly. Same Docker limitation as the other
+  cards: this is fixture data through the real component, not a real
+  completed check with a real follow up answer and reassessment. Founder
+  action: open a real Needs Improvement check with a pending follow up and
+  confirm the same, then optionally answer it and confirm the assessed
+  state and score floor still behave correctly end to end. Recorded
+  2026-09-24.
 - **Founder action, Prospects verdict line only checked with known-good
   strings.** PR #160 added a third, fixed sentence to Prospects per score
   band. `buildScoreAwareProspects` itself is private to
@@ -254,6 +271,42 @@ Its Keyword Scan reservation design was never adopted by the live
 reservation functions are dropped by `20260922170000`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-24 — Evidence Follow Up card checked on localhost:5173
+
+**Objective.** Founder asked to check the Evidence Follow Up card (PR #159)
+on `localhost:5173`.
+
+**Completed.** No code change; a verification session. Built a throwaway
+dev-preview route (`__DevPreviewFollowUpCard.tsx`, discarded, never
+committed) rendering the real, unmodified `EvidenceFollowUpCard` component
+with invented fixture `EvidenceFollowUp` objects, across 4 states: pending
+in a dark container, pending in a light container, assessed in a dark
+container, assessed in a light container. The submit button was never
+clicked, so no network call fired against a backend this environment does
+not have.
+
+**Verified.** Both pending swatches show "About this requirement" followed
+by the actual requirement name ("Strong understanding of AI/ML concepts")
+in place of the old gap-summary restatement, and the heading "One question
+before you finish" renders clearly at the larger `text-xl` size in both
+tones. Both assessed swatches, untouched by PR #159, still render
+correctly: the what-changed bullets, the "Candidate reported, not on your
+CV" label, and the quoted answer. No console errors on any of the 4
+swatches.
+
+**Blockers.** None technical for this check. See the new Open item above:
+same Docker limitation as the Evidence Assessment and Recommendation card
+checks, fixture data through the real component, not a real completed
+check with a real follow up answer and reassessment.
+
+**Founder action required.** See the Open item above.
+
+**Next technical step.** None planned.
+
+**Commit or PR.** None. Read only investigation, no source file changed.
 
 ---
 
