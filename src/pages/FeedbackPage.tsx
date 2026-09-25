@@ -483,6 +483,8 @@ export function FeedbackPage() {
             <EvidenceAssessmentCard
               requirementEvidence={requirementEvidence}
               recruiterDoubts={recruiterDoubts}
+              originalRequirementEvidence={feedback?.requirement_evidence ?? []}
+              candidateAnswer={report?.updated ? (followUp?.candidate_answer ?? null) : null}
               dark={isDark}
             />
 
@@ -514,9 +516,9 @@ export function FeedbackPage() {
                 <h2 className="text-base font-semibold text-text-primary">Recommendation</h2>
                 <p className="mt-1 text-xs text-text-secondary">
                   {documentEntitlement.cv && documentEntitlement.coverLetter
-                    ? 'An improved CV draft, cover letter, and recruiter message based on your feedback. Your CV draft may include placeholder figures (e.g. "X%") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with real numbers before submitting.'
+                    ? 'An improved CV draft, cover letter, and recruiter message based on your feedback. Your CV draft may include placeholders (e.g. "[X%]") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with your real information before submitting.'
                     : documentEntitlement.cv
-                      ? 'An improved CV draft based on your feedback. Your CV draft may include placeholder figures (e.g. "X%") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with real numbers before submitting.'
+                      ? 'An improved CV draft based on your feedback. Your CV draft may include placeholders (e.g. "[X%]") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with your real information before submitting.'
                       : documentEntitlement.coverLetter
                         ? 'A cover letter and recruiter message based on your feedback. Your Interview Score is already strong for this role, so we do not generate a CV draft at this score.'
                         : 'This check includes your Interview Score and Recruiter Feedback only.'}
@@ -548,13 +550,13 @@ export function FeedbackPage() {
                         </a>
                         <p className="w-full basis-full text-xs text-text-secondary">
                           This CV draft is watermarked "Draft, not for submission." Any area we found no
-                          supporting evidence for in your CV is marked with a placeholder figure (e.g.
-                          "X%"), replace it with your real numbers before sending it.
+                          supporting evidence for in your CV is marked with a placeholder (e.g.
+                          "[X%]"), replace it with your real information before sending it.
                         </p>
                         {report?.updated ? (
                           <p className="w-full basis-full text-xs text-text-secondary">
-                            We added one line to your CV draft reflecting your follow up answer. Review
-                            it before sending.
+                            Your CV draft uses your follow up answer, which was not on your original CV.
+                            Check that part is accurate before sending.
                           </p>
                         ) : null}
                       </>

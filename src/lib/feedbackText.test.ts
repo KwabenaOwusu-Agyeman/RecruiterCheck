@@ -78,6 +78,11 @@ test('the fictional notice carries no dashes and names the action', () => {
   assert.match(FICTIONAL_SAMPLE_NOTICE, /real experience/i)
 })
 
+test('the fictional notice says the examples are not claims about the candidate', () => {
+  assert.match(FICTIONAL_SAMPLE_NOTICE, /not claims about your experience/i)
+  assert.match(FICTIONAL_SAMPLE_NOTICE, /replace them with your own details and results/i)
+})
+
 test('lowerFirstClause lowers an ordinary first word and drops trailing punctuation', () => {
   assert.equal(lowerFirstClause('Show how you applied Python.'), 'show how you applied Python')
   assert.equal(lowerFirstClause('  Strengthen evidence for stakeholder management  '), 'strengthen evidence for stakeholder management')

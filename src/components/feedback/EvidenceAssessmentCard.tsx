@@ -1,10 +1,16 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
+import { distinctRecruiterDoubts, isCandidateReportedEvidence } from '@/lib/evidenceAssessment'
+import { CANDIDATE_REPORTED_LABEL } from '@/lib/evidenceFollowUp'
 import type { EvidenceStrength, RequirementEvidenceRow } from '@/types'
 import { cn } from '@/utils/cn'
 
 interface EvidenceAssessmentCardProps {
   requirementEvidence: RequirementEvidenceRow[]
   recruiterDoubts: string[]
+  // The CV only assessment's rows, and the answer only when a follow up raised
+  // the score: together they tell a quote from the answer apart from CV text.
+  originalRequirementEvidence: RequirementEvidenceRow[]
+  candidateAnswer: string | null
   // Follows the results container, same convention as EvidenceFollowUpCard.
   dark: boolean
 }
@@ -37,7 +43,13 @@ const STRENGTH_SECTION_LABEL: Record<EvidenceStrength, string> = {
  * Historical checks with no data (requirement_evidence.length === 0) render
  * nothing, the same pattern EvidenceFollowUpCard uses for !canAnswer.
  */
-export function EvidenceAssessmentCard({ requirementEvidence, recruiterDoubts, dark }: EvidenceAssessmentCardProps) {
+export function EvidenceAssessmentCard({
+  requirementEvidence,
+  recruiterDoubts,
+  originalRequirementEvidence,
+  candidateAnswer,
+  dark,
+}: EvidenceAssessmentCardProps) {
   if (requirementEvidence.length === 0) return null
 
   const cardTone = dark ? 'nested' : 'nested-light'
@@ -61,6 +73,10 @@ export function EvidenceAssessmentCard({ requirementEvidence, recruiterDoubts, d
     none: 'bg-error',
   }
 
+  const provenance = { originalRows: originalRequirementEvidence, candidateAnswer }
+  const candidateReported = new Set(requirementEvidence.filter((row) => isCandidateReportedEvidence(row, provenance)))
+  const doubts = distinctRecruiterDoubts(recruiterDoubts, requirementEvidence).slice(0, 3)
+
   const groups = STRENGTH_ORDER.map((strength) => ({
     strength,
     rows: requirementEvidence.filter((row) => row.evidence_strength === strength),
@@ -72,6 +88,9 @@ export function EvidenceAssessmentCard({ requirementEvidence, recruiterDoubts, d
         <h2 className={cn('text-base font-semibold', c.heading)}>How a recruiter reads your CV</h2>
         <p className={cn('mt-0.5 text-xs', c.sub)}>
           We checked the important requirements in the job description against the evidence in your CV.
+          {candidateReported.size > 0
+            ? ' Evidence from your follow up answer is marked separately and weighed with more caution than evidence in your CV.'
+            : null}
         </p>
       </CardHeader>
       <CardContent className="px-5 py-4">
@@ -93,10 +112,19 @@ export function EvidenceAssessmentCard({ requirementEvidence, recruiterDoubts, d
                   className={cn('mt-3', rowIndex > 0 && cn('border-t pt-3', c.rule))}
                 >
                   <h4 className={cn('text-sm font-semibold', c.heading)}>{row.requirement}</h4>
-                  <div className="mt-1.5">
-                    <p className={cn('text-xs font-medium uppercase tracking-wider', c.faint)}>CV evidence</p>
-                    <p className={cn('mt-0.5 text-sm leading-snug', c.body)}>{row.evidence_found}</p>
-                  </div>
+                  {candidateReported.has(row) ? (
+                    <div className="mt-1.5">
+                      <p className={cn('text-xs font-medium uppercase tracking-wider', c.accent)}>
+                        {CANDIDATE_REPORTED_LABEL}
+                      </p>
+                      <p className={cn('mt-0.5 text-sm italic leading-snug', c.body)}>&quot;{row.evidence_found}&quot;</p>
+                    </div>
+                  ) : (
+                    <div className="mt-1.5">
+                      <p className={cn('text-xs font-medium uppercase tracking-wider', c.faint)}>CV evidence</p>
+                      <p className={cn('mt-0.5 text-sm leading-snug', c.body)}>{row.evidence_found}</p>
+                    </div>
+                  )}
                   <div className="mt-1.5">
                     <p className={cn('text-xs font-medium uppercase tracking-wider', c.faint)}>Recruiter read</p>
                     <p className={cn('mt-0.5 text-sm leading-snug', c.body)}>{row.recruiter_interpretation}</p>
@@ -113,13 +141,13 @@ export function EvidenceAssessmentCard({ requirementEvidence, recruiterDoubts, d
           </div>
         ))}
 
-        {recruiterDoubts.length > 0 ? (
+        {doubts.length > 0 ? (
           <div className={cn('mt-5 border-t pt-4', c.rule)}>
             <p className={cn('text-xs font-medium uppercase tracking-wider', c.faint)}>
               What may make a recruiter hesitate
             </p>
             <ul className="mt-2 space-y-2">
-              {recruiterDoubts.slice(0, 3).map((doubt) => (
+              {doubts.map((doubt) => (
                 <li key={doubt} className="flex gap-2">
                   <span className={c.accent} aria-hidden="true">
                     •
