@@ -211,11 +211,14 @@ doing it.
   model does produce one, no further frontend work is needed for it to show
   correctly. Recorded 2026-09-23, updated 2026-09-24.
 - **Founder action, a credited follow up needs one real end to end check.**
-  No live OpenAI call has been made for PR #182 (credited answer woven into
-  the CV draft) or for branch `feature/feedback-report-evidence-distinction`
-  (Gap Analysis, verdict gated and capped reassessment, one plain question):
-  both are confirmed by code, tests and invented data rendered through the
-  real components, not by real model output. Founder action: run one real
+  Both are live but have never had a live OpenAI call: PR #182 (credited
+  answer woven into the CV draft) and PR #184 (Gap Analysis, verdict gated
+  and capped reassessment, one plain question, fixed example; deployed
+  2026-09-26). Both are confirmed by code, tests and invented data rendered
+  through the real components, not by real model output. If the follow up
+  reassessment's new strict `follow_up_verdict` schema were rejected, every
+  answer would fail safely: the original result stays and the candidate can
+  retry. Founder action: run one real
   Needs Improvement check to its follow up and confirm (1) Gap Analysis shows
   the one gap and the follow up below it shows one plain question, the
   example and the answer box; (2) pasting the example is refused before
@@ -455,10 +458,12 @@ The PR stays a draft until the founder's manual checks in Open items.
 **Next technical step.** None beyond the founder items.
 
 **Commit or PR.** `0bb59fa` on branch
-`feature/feedback-report-evidence-distinction`, pushed to `origin` and
-`personal` 2026-09-26, draft
-[#184](https://github.com/fullcircleAI/RecruiterCheck/pull/184). Not merged:
-waits on the founder's manual checks.
+`feature/feedback-report-evidence-distinction`,
+[#184](https://github.com/fullcircleAI/RecruiterCheck/pull/184), merged at
+the founder's request as `306ac64` on 2026-09-26, before the manual checks
+in Open items. Deploy run `36198663693`: Validate and Deploy both green, all
+30 Edge Functions deployed (`_shared/` changed); Vercel production
+deployment completed. DEC-8's page records the merge.
 
 ---
 
