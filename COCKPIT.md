@@ -468,8 +468,11 @@ model call; see Open items.
 
 **Next technical step.** None beyond the founder items.
 
-**Commit or PR.** Branch `feature/feedback-report-evidence-distinction`,
-committed locally, not pushed.
+**Commit or PR.** `0bb59fa` on branch
+`feature/feedback-report-evidence-distinction`, pushed to `origin` and
+`personal` 2026-09-26, draft
+[#184](https://github.com/fullcircleAI/RecruiterCheck/pull/184). Not merged:
+waits on the DEC-8 amendment.
 
 ---
 
@@ -537,9 +540,10 @@ noted that storage policy "Users can update own CVs" (initial schema) lets a
 candidate replace their stored CV before answering; the new gate and cap
 bound the effect, and a separate investigation was offered.
 
-**Commit or PR.** Branch `feature/feedback-report-evidence-distinction`,
-committed locally in two commits, not pushed (founder asked for no push or
-deploy).
+**Commit or PR.** `148de68` and `9ad9897` on branch
+`feature/feedback-report-evidence-distinction`, in draft
+[#184](https://github.com/fullcircleAI/RecruiterCheck/pull/184) with the
+2026-09-26 entry above.
 
 ---
 
