@@ -1,5 +1,6 @@
 // Run with: npx tsx src/lib/evidenceFollowUp.test.ts
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import {
   answerProblem,
   canSubmitAnswer,
@@ -16,6 +17,7 @@ import {
   FOLLOW_UP_MAX_SCORE,
   UPDATED_REPORT_NOTE,
   CANDIDATE_REPORTED_LABEL,
+  FOLLOW_UP_ANSWER_HINT,
   FOLLOW_UP_HEADING,
   FOLLOW_UP_WORKING_MESSAGE,
 } from './evidenceFollowUp'
@@ -77,6 +79,27 @@ await test('the copy has no dashes and promises the score never goes down', () =
     assert.doesNotMatch(text, /[-–—]/, text)
   }
   assert.match(UPDATED_REPORT_NOTE, /not on your CV/)
+})
+
+await test('the answer hint is guidance only: situation, action, outcome, no invented figure, never submitted', () => {
+  assert.match(FOLLOW_UP_ANSWER_HINT, /situation/)
+  assert.match(FOLLOW_UP_ANSWER_HINT, /what you did/)
+  assert.match(FOLLOW_UP_ANSWER_HINT, /what happened/)
+  assert.match(FOLLOW_UP_ANSWER_HINT, /a number if you have one/)
+  assert.doesNotMatch(FOLLOW_UP_ANSWER_HINT, /\d|[-–—]/)
+  // The card submits only what the candidate typed.
+  const card = readFileSync('src/components/feedback/EvidenceFollowUpCard.tsx', 'utf8')
+  assert.match(card, /submitEvidenceFollowUp\(followUp\.check_id, answer\.trim\(\)\)/)
+  assert.equal(card.match(/FOLLOW_UP_ANSWER_HINT/g)?.length, 2, 'imported and rendered, used nowhere else')
+})
+
+await test('the card shows the requirement once, then one question, then the hint', () => {
+  const card = readFileSync('src/components/feedback/EvidenceFollowUpCard.tsx', 'utf8')
+  const pending = card.slice(card.indexOf('About this requirement'))
+  assert.ok(pending.indexOf('{followUp.gap_requirement}') < pending.indexOf('{followUp.question}'))
+  assert.ok(pending.indexOf('{followUp.question}') < pending.indexOf('{FOLLOW_UP_ANSWER_HINT}'))
+  assert.equal(card.match(/followUp\.gap_requirement/g)?.length, 1)
+  assert.doesNotMatch(card, /gap_summary/)
 })
 
 // ---------------------------------------------------------------------------

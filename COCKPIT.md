@@ -210,45 +210,35 @@ doing it.
   wording bullet exactly as well as the old unquantified style, so once the
   model does produce one, no further frontend work is needed for it to show
   correctly. Recorded 2026-09-23, updated 2026-09-24.
+- **Founder action, amend DEC-8 before branch
+  `feature/feedback-report-evidence-distinction` merges.** The branch adds a
+  code-enforced +3 point cap on a follow up gain and a meaningful evidence
+  gate (`applyFollowUpScoreLimits` in
+  `supabase/functions/_shared/follow-up-result.ts`, replacing
+  `applyFollowUpFloor`). DEC-8 and the Scoring Methodology's Evidence Follow
+  Up exception (both 2026-09-22) still describe a floor with no ceiling, so
+  merging first would leave code and methodology in disagreement. Founder
+  approved the cap in conversation 2026-09-25 and asked for draft amendment
+  text (supplied in that session's report); the Decision Log and Scoring
+  Methodology pages themselves are the founder's to update. Recorded
+  2026-09-25.
 - **Founder action, a credited follow up needs one real end to end check.**
-  PR #182 makes `generate-documents` append a credited Evidence Follow Up
-  answer to the CV text (the same `buildFollowUpCvText` addendum the
-  reassessment already uses) and tells the model to write it as an ordinary,
-  unlabelled `tailored_cv` bullet. Branch
-  `feature/feedback-report-evidence-distinction` (2026-09-25, not yet
-  pushed) labels a reassessed Evidence Assessment row whose quoted evidence
-  comes from the answer as "Candidate reported, not on your CV" rather than
-  "CV evidence". No live OpenAI call was made to build or verify either
-  (same access limits as the sample wording item above): both are confirmed
-  by reading the code, the test suite, and invented data rendered through
-  the real components, not by real model output. Founder action: run one
-  real Needs Improvement check through to a credited follow up and confirm
-  (1) the Evidence Assessment row for the followed up requirement shows the
-  candidate reported label, not "CV evidence"; (2) Generate produces a
-  CV.pdf with one natural bullet reflecting the answer and no mention of a
-  follow up question or self reporting; (3) the note "Your CV draft uses
-  your follow up answer, which was not on your original CV..." appears only
-  in that credited case. Also **MANUAL CHECK REQUIRED** (no browser test
-  tooling in this repo): confirm on `localhost:5173` that generating a CV,
-  then answering and getting credited on the follow up, clears the stale CV
-  button and prompts a fresh Generate, per PR #182's `onAssessed` fix.
-  Recorded 2026-09-24, updated 2026-09-25.
-- **Founder decision, duplication that only a backend change can remove.**
-  Found 2026-09-25 while applying the report's no duplication principle
-  under a frontend only brief. (1) The Evidence Follow Up question repeats
-  what sits directly above it: `selectEvidenceGap` in
-  `supabase/functions/analyze-check/evidence-follow-up.ts` builds it as "The
-  job asks for {requirement}. {gap_note} Have you done this...?", so the
-  requirement name appears twice in a row under "About this requirement",
-  and the `gap_note` clause restates the Evidence Assessment card's "Gap"
-  line. Removing it means changing that template (an Edge Function; the
-  stored `question` of existing rows would keep the old wording) or
-  trimming it at display time, which would show the candidate a different
-  question from the one the reassessment prompt receives. (2) Recruiter
-  Doubts are required by the RECRUITER DOUBTS prompt section to be grounded
-  in partial or none requirements, so they paraphrase the same gaps; the
-  card now drops only exact repeats (`distinctRecruiterDoubts`). Reducing
-  paraphrased overlap is a prompt change. Recorded 2026-09-25.
+  No live OpenAI call has been made for PR #182 (credited answer woven into
+  the CV draft) or for branch `feature/feedback-report-evidence-distinction`
+  (Gap Analysis, verdict gated and capped reassessment, one plain question):
+  both are confirmed by code, tests and invented data rendered through the
+  real components, not by real model output. Founder action: run one real
+  Needs Improvement check to its follow up and confirm (1) the question is
+  the plain one sentence version under "About this requirement"; (2) a
+  vague answer leaves the score unchanged; (3) a strong Situation, action,
+  outcome answer raises it by at most 3 points, and Gap Analysis then shows
+  that answer as "Candidate reported, not on your CV" beside what the CV
+  shows; (4) Generate produces a CV.pdf with one natural bullet from the
+  answer and no mention of a follow up; (5) the Recommendation note about
+  the follow up appears only in the credited case. Also **MANUAL CHECK
+  REQUIRED** on `localhost:5173`: generating a CV, then getting credited,
+  clears the stale CV button (PR #182's `onAssessed` fix). Recorded
+  2026-09-24, updated 2026-09-25.
 - **Founder action.** Verify a real Google sign-in end to end after the move
   to the `myrecruitercheck` Cloud project, then delete the old `RecruiterCheck`
   OAuth client in `theorycoach-ai`. Recorded 2026-09-07.
@@ -431,57 +421,73 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
-## 2026-09-25 — Feedback report: candidate reported evidence labelled apart from CV evidence
+## 2026-09-25 — Gap Analysis, one plain follow up question, verdict gated and capped reassessment
 
-**Objective.** Founder brief: keep the Areas to Improve fictional examples
-but make clear they are not claims about the candidate; keep CV evidence,
-fictional examples and candidate reported evidence distinct; the Follow Up
-card should name the requirement, not restate the gap; presentation and
-copy only, DEC-8 and every Edge Function unchanged.
+**Objective.** Two founder briefs on the same branch: keep CV evidence,
+fictional examples and candidate reported evidence distinct; then rebuild
+the evidence flow as Gap Analysis, one highest impact gap, one question, and
+a reassessment that only meaningful new evidence can move, by at most 3
+points. Checked against DEC-8 and the Scoring Methodology first; the cap, a
+worked example, the evidence gate and gap ranking each conflicted or needed
+a choice, and the founder decided each in conversation: build the cap and
+draft the Notion amendment; a fixed structure hint instead of an invented
+example (DEC-8's integrity rule unchanged); a model verdict plus code gate;
+rank by largest potential score gain.
 
-**Completed.** `FICTIONAL_SAMPLE_NOTICE` (`src/lib/feedbackText.ts`) now
-says the examples are "not claims about your experience" and to replace
-them with the candidate's own details; the landing preview (`VerdictCard`)
-shares the constant. Found and fixed a real conflation: after a credited
-follow up, `EvidenceAssessmentCard` shows the reassessed matrix, whose
-`evidence_found` can quote the candidate's answer (the reassessment grounds
-`cv_evidence` against `buildFollowUpCvText` output), yet every row was
-labelled "CV evidence". New `src/lib/evidenceAssessment.ts`:
-`isCandidateReportedEvidence` treats an excerpt the original, CV only
-assessment already quoted as CV text, and otherwise labels one anchored in,
-or sharing at least half its content words with, the answer as "Candidate
-reported, not on your CV" (italic, quoted, accent label), with a subtitle
-line saying such evidence is weighed with more caution.
-`distinctRecruiterDoubts` drops a doubt that repeats a recruiter read or
-gap word for word. Recommendation card copy: placeholders described as
-bracketed ("[X%]") and to be replaced with "your real information", not
-"real numbers"; the credited follow up note now says the answer "was not on
-your original CV" and no longer claims exactly one line was added. The
-Follow Up card already showed "About this requirement" and
-`gap_requirement` and never `gap_summary` (PR #159); unchanged.
+**Completed.** Frontend: `EvidenceAssessmentCard` became `GapAnalysisCard`
+("Gap Analysis": Requirement, What your CV shows, Recruiter read, Gap; no
+strength sections, no recruiter doubts, strong requirements left to
+Strengths; the follow up's gap listed first), built by
+`buildGapAnalysisRows` in `src/lib/gapAnalysis.ts`. After a credited follow
+up, a row whose excerpt came from the answer is shown with the CV only
+assessment's own evidence under "What your CV shows" and the answer under
+"Candidate reported, not on your CV" (`isCandidateReportedEvidence`; see
+`memory/2026-09-25-reassessed-evidence-can-quote-the-candidate-answer.md`).
+Follow Up card: "Question" label and `FOLLOW_UP_ANSWER_HINT`, a fixed line
+never submitted. `FICTIONAL_SAMPLE_NOTICE` says examples are not claims
+about the candidate; Recommendation copy says placeholders are bracketed
+and to be replaced with real information. Backend: `selectEvidenceGap`
+ranks critical first, then `followUpPotentialGain` (importance weight times
+missing credit, from `logic.ts`'s own constants), and asks one fixed
+question per category with no requirement name or `gap_note`;
+`buildFollowUpCvText` now carries the requirement separately, so the
+question the candidate sees is the one reassessment reads (also used by
+`generate-documents`). Follow up reassessments request
+`FOLLOW_UP_ANALYSIS_RESPONSE_FORMAT` with a strict `follow_up_verdict`
+(normal checks unchanged byte for byte); `applyFollowUpScoreLimits` keeps
+the original unless `isMeaningfulFollowUpEvidence` (relevance, situation,
+action, outcome, newness, credibility; a number never required), then
+floors and caps at +3. Applied at write time only: follow ups assessed
+before this keep their stored score. No migration, no `PROMPT_VERSION`
+change (it is stored only for normal checks, whose prompt is unchanged).
 
-**Verified.** `npm run lint` (0 errors, 2 pre-existing warnings), `npm run
-typecheck` (clean), `npm run test:unit` (25/25 files, 296 assertions; new
-`evidenceAssessment.test.ts` with 11 tests, one new assertion in
-`feedbackText.test.ts`), `npm run build` (81 CSP hashes unchanged, sitemap
-43 urls; new notice present in `dist/index.html`, old one gone). Rendered
-the real `FeedbackBullet`, `EvidenceAssessmentCard` and
-`EvidenceFollowUpCard` with invented data in the navy Needs Improvement
-container through a throwaway route on `localhost:5173` (deleted, never
-committed): the answer quoting row is labelled candidate reported, CV rows
-keep "CV evidence", an exact repeat doubt is hidden, no console errors.
-**UNVERIFIED:** a real reassessment's rows; see Open items. No Edge
-Function, migration, scoring, floor or follow up logic touched.
+**Verified.** lint (0 errors, 2 pre-existing warnings), typecheck,
+`test:scoring` (6/6 files, 254 assertions; `scoring-regression.test.ts`
+unchanged), mutation check (14/14 caught), `test:unit` (25/25, 303),
+`test:edge` (30/30, 518), build (81 CSP hashes unchanged). `deno check
+--no-config` on the three changed functions: no new errors (6 and 8
+pre-existing `SupabaseClient` errors in `analyze-check` and
+`generate-documents`, as recorded before). Mandatory security review: no
+findings. Existing tests that pinned the old ranking (partial before
+missing) and the old question wording were rewritten to the new rules, as
+decided. Real components rendered with invented data on `localhost:5173`
+(throwaway route, deleted): Gap Analysis before and after a credited
+answer, the new Follow Up card, no console errors. **UNVERIFIED:** any
+live model call; see Open items.
 
-**Blockers.** None technical.
+**Blockers.** DEC-8 and the Scoring Methodology must be amended before
+merge; see Open items.
 
-**Founder action required.** See Open items: one real credited follow up
-check, and the duplication decision (question text, doubts).
+**Founder action required.** See Open items.
 
-**Next technical step.** None beyond the founder items.
+**Next technical step.** None beyond the founder items. The review also
+noted that storage policy "Users can update own CVs" (initial schema) lets a
+candidate replace their stored CV before answering; the new gate and cap
+bound the effect, and a separate investigation was offered.
 
 **Commit or PR.** Branch `feature/feedback-report-evidence-distinction`,
-committed locally, not pushed (founder asked for no push or deploy).
+committed locally in two commits, not pushed (founder asked for no push or
+deploy).
 
 ---
 

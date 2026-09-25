@@ -8,6 +8,7 @@ import {
   canSubmitAnswer,
   createSubmissionGuard,
   CANDIDATE_REPORTED_LABEL,
+  FOLLOW_UP_ANSWER_HINT,
   FOLLOW_UP_HEADING,
   FOLLOW_UP_INTEGRITY_NOTE,
   FOLLOW_UP_OPTIONAL_NOTE,
@@ -136,9 +137,13 @@ export function EvidenceFollowUpCard({ followUp, updated, dark, onAssessed }: Ev
         </div>
 
         <div>
-          <label htmlFor="evidence-follow-up-answer" className={cn('block text-sm font-semibold leading-snug', c.heading)}>
+          <p className={cn('text-xs font-medium uppercase tracking-wider', c.faint)}>Question</p>
+          <label htmlFor="evidence-follow-up-answer" className={cn('mt-1 block text-sm font-semibold leading-snug', c.heading)}>
             {followUp.question}
           </label>
+          <p id="evidence-follow-up-hint" className={cn('mt-1 text-xs leading-snug', c.faint)}>
+            {FOLLOW_UP_ANSWER_HINT}
+          </p>
           <Textarea
             id="evidence-follow-up-answer"
             className="mt-2 min-h-[120px]"
@@ -146,7 +151,7 @@ export function EvidenceFollowUpCard({ followUp, updated, dark, onAssessed }: Ev
             maxLength={MAX_ANSWER_CHARS}
             disabled={submitting}
             onChange={(event) => setAnswer(event.target.value)}
-            aria-describedby="evidence-follow-up-note"
+            aria-describedby="evidence-follow-up-hint evidence-follow-up-note"
             aria-invalid={problem !== null}
           />
           {problem ? <p className={cn('mt-1 text-xs', c.faint)}>{problem}</p> : null}

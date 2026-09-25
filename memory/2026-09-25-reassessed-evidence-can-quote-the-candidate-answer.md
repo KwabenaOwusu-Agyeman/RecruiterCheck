@@ -20,7 +20,7 @@ Verified correct rule
 Excerpt text from a reassessed result (`final_requirement_evidence` and the
 matrix behind it) may be the candidate's answer. Any surface that labels it
 as CV evidence must rule that out first. `isCandidateReportedEvidence` in
-`src/lib/evidenceAssessment.ts` does this: an excerpt the original, CV only
+`src/lib/gapAnalysis.ts` does this: an excerpt the original, CV only
 assessment already quoted is CV text; otherwise one anchored in, or sharing
 at least half its content words with, the answer is candidate reported.
 
@@ -32,8 +32,8 @@ fix is the reassessment recording provenance per excerpt, an Edge Function
 and prompt change for the founder to decide.
 
 Affected files or systems
-`src/components/feedback/EvidenceAssessmentCard.tsx`,
-`src/lib/evidenceAssessment.ts`. Checked 2026-09-25 that no other surface
+`src/components/feedback/GapAnalysisCard.tsx` (formerly
+`EvidenceAssessmentCard.tsx`), `src/lib/gapAnalysis.ts`. Checked 2026-09-25 that no other surface
 renders requirement evidence: `admin/src` never reads it, and
 `generate-documents` passes an empty array.
 
@@ -43,4 +43,4 @@ built with `buildFollowUpCvText`); `supabase/functions/analyze-check/logic.ts`
 (`buildRequirementEvidenceTable` maps `cv_evidence` to `evidence_found`,
 `isGroundedInCv`); `supabase/functions/analyze-check/prompt.ts`
 (`FOLLOW_UP_ADDENDUM`); invented data rendered through the real card on
-localhost:5173.
+localhost:5173; `src/lib/gapAnalysis.test.ts`.

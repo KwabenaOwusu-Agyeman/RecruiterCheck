@@ -22,7 +22,7 @@
 // window as analyze-check (see RATE_LIMIT_* in analyze-check/runtime.ts).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
-import { applyFollowUpFloor, isFollowUpEligibleScore } from '../_shared/follow-up-result.ts'
+import { applyFollowUpScoreLimits, isFollowUpEligibleScore, isMeaningfulFollowUpEvidence } from '../_shared/follow-up-result.ts'
 import { isOwnStoragePath } from '../_shared/storage-path.ts'
 import { buildFollowUpCvText, buildWhatChanged, validateFollowUpAnswer } from '../analyze-check/evidence-follow-up.ts'
 import { classifyValidationFailure } from '../analyze-check/logic.ts'
@@ -127,7 +127,7 @@ Deno.serve(async (req) => {
 
     const { data: followUp, error: followUpError } = await adminClient
       .from('evidence_follow_ups')
-      .select('id, status, question, answered_at')
+      .select('id, status, gap_requirement, question, answered_at')
       .eq('check_id', checkId)
       .maybeSingle()
     if (followUpError) {
@@ -212,7 +212,7 @@ Deno.serve(async (req) => {
     try {
       result = await generateFeedback(
         openaiApiKey,
-        buildFollowUpCvText(cvText, followUp.question, answer),
+        buildFollowUpCvText(cvText, followUp.gap_requirement, followUp.question, answer),
         check.job_description,
         { jobTitle: check.job_title, companyName: check.company_name, followUp: true },
       )
@@ -230,12 +230,16 @@ Deno.serve(async (req) => {
     }
 
     const analysis = result.analysis
-    // One score, and it never falls: the reassessment only replaces the
-    // original when it is strictly higher (see applyFollowUpFloor). When it
-    // is not, the row records that the answer was assessed, keeps the
-    // original score, and carries no feedback of its own, so the report keeps
-    // showing exactly the findings it had.
-    const outcome = applyFollowUpFloor(check.interview_probability_score, analysis.interview_probability_score)
+    // One score: the reassessment only replaces the original when the answer
+    // is meaningful new evidence and the capped score is strictly higher (see
+    // applyFollowUpScoreLimits). Otherwise the row records that the answer was
+    // assessed, keeps the original score, and carries no feedback of its own,
+    // so the report keeps showing exactly the findings it had.
+    const outcome = applyFollowUpScoreLimits(
+      check.interview_probability_score,
+      analysis.interview_probability_score,
+      isMeaningfulFollowUpEvidence(analysis.follow_up_verdict),
+    )
     const { data: saved, error: saveError } = await adminClient
       .from('evidence_follow_ups')
       .update({

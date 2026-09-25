@@ -183,7 +183,7 @@ Deno.serve(async (req) => {
     // higher, assessed result). The completed check row is never touched.
     const { data: followUpRow, error: followUpError } = await adminClient
       .from('evidence_follow_ups')
-      .select('status, final_score, final_strengths, final_improvements, final_prospects, question, candidate_answer')
+      .select('status, final_score, final_strengths, final_improvements, final_prospects, gap_requirement, question, candidate_answer')
       .eq('check_id', checkId)
       .maybeSingle()
     if (followUpError) {
@@ -209,8 +209,12 @@ Deno.serve(async (req) => {
     // here, matching DEC-8: an answer that did not move the score is never
     // rewarded anywhere, documents included.
     const followUpEvidence =
-      result.updated && followUpRow?.question && followUpRow?.candidate_answer
-        ? { question: followUpRow.question as string, answer: followUpRow.candidate_answer as string }
+      result.updated && followUpRow?.gap_requirement && followUpRow?.question && followUpRow?.candidate_answer
+        ? {
+            requirement: followUpRow.gap_requirement as string,
+            question: followUpRow.question as string,
+            answer: followUpRow.candidate_answer as string,
+          }
         : null
 
     const entitlement = getDocumentEntitlement(fundingPackId, result.score)
@@ -245,7 +249,7 @@ Deno.serve(async (req) => {
     // follow up answer can ground a real CV bullet exactly like a fact
     // stated in the CV, never a fact the document generator invented.
     const effectiveCvText = followUpEvidence
-      ? buildFollowUpCvText(cvText, followUpEvidence.question, followUpEvidence.answer)
+      ? buildFollowUpCvText(cvText, followUpEvidence.requirement, followUpEvidence.question, followUpEvidence.answer)
       : cvText
 
     const generated = await generateDocuments(openaiApiKey, effectiveCvText, check.job_description.slice(0, MAX_JOB_DESCRIPTION_CHARS), {

@@ -25,11 +25,6 @@ export interface EvidenceGap {
 
 const MAX_REQUIREMENT_CHARS = 120
 
-const IMPORTANCE_ORDER = { must_have: 0, important: 1, nice_to_have: 2 } as const
-// Within one importance tier a partial match ranks first: the CV already
-// gestures at it, so evidence that exists but was not shown is most likely.
-const STRENGTH_ORDER = { partial: 0, none: 1, strong: 2 } as const
-
 function displayName(requirement: string, clean: (text: string) => string): string {
   const trimmed = clean(requirement.trim().replace(/[.!?]+$/, ''))
   return trimmed.length > MAX_REQUIREMENT_CHARS ? `${trimmed.slice(0, MAX_REQUIREMENT_CHARS).trimEnd()}` : trimmed
@@ -46,15 +41,18 @@ function displayName(requirement: string, clean: (text: string) => string): stri
  * is at least "important": a missing nice to have is never worth the
  * candidate's one question.
  *
- * Ranking: critical gaps first, then must have before important, then a
- * partial match before no match, then the order the model listed them.
+ * Ranking: critical gaps first, then the largest potential score gain (the
+ * score's own importance weight times the credit still missing, supplied by
+ * the caller so this module never holds a second copy of the weights), then
+ * the order the model listed them.
  */
 export function selectEvidenceGap(
   requirements: RawRequirement[],
+  potentialGain: (requirement: RawRequirement) => number,
   clean: (text: string) => string = (text) => text,
 ): EvidenceGap | null {
   const candidates = requirements
-    .map((requirement, index) => ({ requirement, index }))
+    .map((requirement, index) => ({ requirement, index, gain: potentialGain(requirement) }))
     .filter(
       ({ requirement }) =>
         requirement.match_strength !== 'strong' &&
@@ -63,47 +61,20 @@ export function selectEvidenceGap(
     )
     .sort(
       (a, b) =>
-        Number(b.requirement.critical) - Number(a.requirement.critical) ||
-        IMPORTANCE_ORDER[a.requirement.importance] - IMPORTANCE_ORDER[b.requirement.importance] ||
-        STRENGTH_ORDER[a.requirement.match_strength] - STRENGTH_ORDER[b.requirement.match_strength] ||
-        a.index - b.index,
+        Number(b.requirement.critical) - Number(a.requirement.critical) || b.gain - a.gain || a.index - b.index,
     )
 
   const top = candidates[0]?.requirement
   if (!top) return null
 
   const name = displayName(top.requirement, clean)
-  // Short on purpose: this sits as a small framing line above the question
-  // itself, which carries the actual detail. Still draws the same partial
-  // versus no evidence distinction as before, just in a handful of words.
   const summary = top.match_strength === 'partial' ? `Some evidence for ${name}, not enough.` : `No evidence for ${name} yet.`
-  // `name` is the model's own extracted requirement text (raw RawRequirement.
-  // requirement), and the extraction prompt's own examples show it is
-  // routinely a full phrase such as "Experience with Salesforce" or "5+
-  // years in B2B product marketing", never guaranteed to be a bare skill or
-  // activity name. A template that embeds `name` as the grammatical object
-  // of "used" or "experience of" breaks on that phrasing (a live check
-  // produced "Have you used Experience with SQL for reporting in a
-  // project..."). Both branches below instead open with "The job asks for
-  // ${name}", the same safe pattern the "no evidence" summary above already
-  // uses, so the sentence stays grammatical for any phrasing the model
-  // produces. Still exactly one question mark, and still names no example
-  // answer. Kept short on purpose: one short opening statement, then one
-  // short question.
-  // gap_note (new in prompt v7) is one short, direct sentence naming exactly
-  // what's missing. When present, splice it in as a lead-in clause so the
-  // one question DEC-8 already asks is worded more specifically — nothing
-  // about which requirement is picked, how many questions are asked (still
-  // exactly one), or the floor/band logic changes. When gap_note is absent
-  // (undefined/null/empty), gapNoteClause is '' and the resulting string is
-  // byte identical to the pre-v7 question.
-  const gapNote = typeof top.gap_note === 'string' ? clean(top.gap_note.trim()) : ''
-  const gapNoteClause = gapNote ? ` ${gapNote}` : ''
-
+  // The report shows the requirement above the question and the reassessment
+  // receives it separately, so the question names neither it nor the gap.
   const question =
     top.category === 'skills'
-      ? `The job asks for ${name}.${gapNoteClause} Have you done this in a project, internship, course or job that your CV does not show, and if so what did you do?`
-      : `The job asks for ${name}.${gapNoteClause} Have you done this in a job, project, course or volunteering role that your CV does not show, and if so what was it and what did you do?`
+      ? 'Have you used this in a job, project, internship or course that your CV does not currently show?'
+      : 'Have you done this in a job, project, course or volunteering role that your CV does not currently show?'
 
   return { requirement: name, summary, question }
 }
@@ -158,13 +129,16 @@ export const CANDIDATE_REPORTED_FOOTER = '=== END CANDIDATE-REPORTED ADDITIONAL 
  * The follow up addendum in prompt.ts tells the model how to treat the
  * section; the labels here are what it keys on.
  */
-export function buildFollowUpCvText(cvText: string, question: string, answer: string): string {
+export function buildFollowUpCvText(cvText: string, requirement: string, question: string, answer: string): string {
+  // The requirement comes from the job description the candidate pasted, so it cannot close the section either.
+  const withoutMarkers = (text: string) => text.replace(/={3,}/g, ' ')
   return [
     cvText,
     '',
     CANDIDATE_REPORTED_HEADER,
     'This section is not part of the CV document. It is the candidate\'s self reported, unverified answer to one follow up question.',
-    `Follow up question: ${question}`,
+    `Requirement: ${withoutMarkers(requirement)}`,
+    `Follow up question: ${withoutMarkers(question)}`,
     `Candidate answer: ${answer}`,
     CANDIDATE_REPORTED_FOOTER,
   ].join('\n')
@@ -174,7 +148,7 @@ export function buildFollowUpCvText(cvText: string, question: string, answer: st
  * The "what changed" lines shown with an updated report. They name no score:
  * the report shows one score, and the one it replaced is never shown again.
  * The follow up can only raise the score or leave it unchanged (see
- * applyFollowUpFloor), so there are exactly two cases. Nothing here claims
+ * applyFollowUpScoreLimits), so there are exactly two cases. Nothing here claims
  * the answer earned the movement beyond what the score itself shows, and
  * nothing implies a score is owed.
  */

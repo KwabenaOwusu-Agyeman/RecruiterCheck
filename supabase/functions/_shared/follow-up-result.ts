@@ -11,7 +11,7 @@
 // here); a test in supabase/functions/_shared/follow-up-result.test.ts runs
 // both against the same cases so they cannot drift.
 
-import type { RequirementEvidenceRow } from '../analyze-check/logic.ts'
+import type { FollowUpVerdict, RequirementEvidenceRow } from '../analyze-check/logic.ts'
 
 // The Needs Improvement band. Below it (Not a Fit) one answer rarely closes
 // the gap; above it (Likely Interview Candidate) there is little to gain.
@@ -35,17 +35,36 @@ export interface FollowUpScoreOutcome {
   improved: boolean
 }
 
+// The most one follow up answer can add: it sharpens one requirement, it does not rewrite the score.
+export const MAX_FOLLOW_UP_GAIN = 3
+
+/** Situation, action and outcome are the core; a measurable result is welcome but never required. */
+export function isMeaningfulFollowUpEvidence(verdict: FollowUpVerdict | null | undefined): boolean {
+  return Boolean(
+    verdict &&
+      verdict.addresses_requirement &&
+      verdict.situation &&
+      verdict.action &&
+      verdict.outcome &&
+      verdict.new_information &&
+      verdict.credible,
+  )
+}
+
 /**
- * The floor. An answer is added evidence and the CV is unchanged, and every
- * follow up re-runs the whole assessment, so a lower result is almost always
- * model variation, not something the answer revealed. The score therefore
- * can rise or stay the same and never falls. Applied in code, not only in a
- * prompt.
+ * Every follow up re-runs the whole assessment, so a different result is often
+ * model variation rather than something the answer revealed. Applied in code,
+ * not only in a prompt: without meaningful new evidence the original score
+ * stands; with it the score can rise by at most MAX_FOLLOW_UP_GAIN and never falls.
  */
-export function applyFollowUpFloor(initialScore: number, reassessedScore: number): FollowUpScoreOutcome {
-  return reassessedScore > initialScore
-    ? { score: reassessedScore, improved: true }
-    : { score: initialScore, improved: false }
+export function applyFollowUpScoreLimits(
+  initialScore: number,
+  reassessedScore: number,
+  meaningfulEvidence: boolean,
+): FollowUpScoreOutcome {
+  if (!meaningfulEvidence) return { score: initialScore, improved: false }
+  const score = Math.min(Math.max(reassessedScore, initialScore), initialScore + MAX_FOLLOW_UP_GAIN)
+  return { score, improved: score > initialScore }
 }
 
 export interface ReportResult {
