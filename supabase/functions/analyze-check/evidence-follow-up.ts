@@ -85,14 +85,42 @@ export const MAX_ANSWER_CHARS = 1500
 
 export type AnswerValidation = { ok: true; answer: string } | { ok: false; message: string }
 
+// The example the follow up card shows above the answer box (mirrored in
+// src/lib/evidenceFollowUp.ts, kept equal by a test). It is guidance, never
+// evidence: it is not sent anywhere, and an answer that copies it is refused
+// here, so its invented figures cannot reach a reassessment or a document.
+export const FOLLOW_UP_EXAMPLE =
+  'Users were dropping off during onboarding. I simplified the signup process, increasing completion from 62% to 78%.'
+export const FOLLOW_UP_EXAMPLE_COPY_MESSAGE = 'That is our example. Describe your own experience in your own words.'
+
+const EXAMPLE_STOPWORDS = new Set(['were', 'from', 'during', 'with', 'that', 'this', 'have', 'into', 'over', 'they', 'their', 'then', 'than'])
+const EXAMPLE_COPY_SHARE = 0.7
+
+function exampleTokens(text: string): Set<string> {
+  return new Set(
+    text
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((token) => /^\d+$/.test(token) || (token.length >= 4 && !EXAMPLE_STOPWORDS.has(token))),
+  )
+}
+
+/** True when an answer holds most of the example's distinctive words and figures. */
+export function copiesFollowUpExample(answer: string): boolean {
+  const example = [...exampleTokens(FOLLOW_UP_EXAMPLE)]
+  const tokens = exampleTokens(answer)
+  return example.filter((token) => tokens.has(token)).length / example.length >= EXAMPLE_COPY_SHARE
+}
+
 /**
  * Cleans and bounds the candidate's answer before it goes anywhere near a
  * model. Control characters and the section marker used by
  * buildFollowUpCvText are removed so an answer cannot close the labelled
  * section early and pass off its own text as CV content.
  *
- * A one line reply cannot contain evidence, so it is refused here, before
- * any API call is made and before the candidate's one opportunity is used.
+ * A one line reply cannot contain evidence, and a copy of the example is not
+ * the candidate's evidence, so both are refused here, before any API call is
+ * made and before the candidate's one opportunity is used.
  * The frontend applies the same rule so the message appears without a
  * round trip; this is the authoritative copy.
  */
@@ -115,6 +143,7 @@ export function validateFollowUpAnswer(raw: unknown): AnswerValidation {
       message: 'Add a little more detail about what you did, so the recruiter has something specific to assess.',
     }
   }
+  if (copiesFollowUpExample(answer)) return { ok: false, message: FOLLOW_UP_EXAMPLE_COPY_MESSAGE }
   return { ok: true, answer }
 }
 

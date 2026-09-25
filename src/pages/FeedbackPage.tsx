@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { FeedbackBullet } from '@/components/feedback/FeedbackBullet'
 import { getVerdictColor } from '@/components/feedback/verdictColor'
 import { FICTIONAL_SAMPLE_NOTICE, hasSampleWording, lowerFirstClause, splitFinding } from '@/lib/feedbackText'
+import { GapAnalysisCard } from '@/components/feedback/GapAnalysisCard'
 import { EvidenceFollowUpCard } from '@/components/feedback/EvidenceFollowUpCard'
 import { SentimentPrompt } from '@/components/feedback/SentimentPrompt'
 import { TrustpilotResultsLink } from '@/components/feedback/TrustpilotResultsLink'
@@ -17,6 +18,7 @@ import { usePageMeta } from '@/hooks/usePageMeta'
 import { getResultTone, getScoreLabel, sanitizeScore } from '@/lib/scoring'
 import { trackEvent } from '@/lib/analytics'
 import { isFollowUpEligibleScore, resolveEffectiveResult, UPDATED_REPORT_NOTE } from '@/lib/evidenceFollowUp'
+import { buildGapAnalysisItem } from '@/lib/gapAnalysis'
 import { getDocumentEntitlement, LIKELY_INTERVIEW_CANDIDATE_MIN_SCORE } from '@/lib/documentEntitlement'
 import {
   analyzeCheck,
@@ -286,6 +288,9 @@ export function FeedbackPage() {
   // The lists to show: the effective report, or, for a legacy check with no
   // valid score, the stored feedback exactly as before.
   const lists = report ?? feedback
+  // Gap Analysis and the follow up appear together or not at all: the one gap is the one the follow up asks about.
+  const showFollowUp = followUp !== null && (followUp.status === 'assessed' || isFollowUpEligibleScore(originalScore))
+  const gapAnalysisItem = showFollowUp ? buildGapAnalysisItem(feedback?.requirement_evidence ?? [], followUp.gap_requirement) : null
   const shownStrengths = lists?.strengths ?? []
   const visibleImprovements = lists
     ? score === 100
@@ -472,9 +477,12 @@ export function FeedbackPage() {
               </CardContent>
             </Card> : null}
 
-            {followUp && (followUp.status === 'assessed' || isFollowUpEligibleScore(originalScore)) ? (
+            <GapAnalysisCard gap={gapAnalysisItem} dark={isDark} />
+
+            {showFollowUp ? (
               <EvidenceFollowUpCard
                 followUp={followUp}
+                updated={report?.updated ?? false}
                 dark={isDark}
                 onAssessed={(next) => {
                   setFollowUp(next)

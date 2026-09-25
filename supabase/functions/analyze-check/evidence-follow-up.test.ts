@@ -10,6 +10,8 @@ import {
   buildWhatChanged,
   CANDIDATE_REPORTED_FOOTER,
   CANDIDATE_REPORTED_HEADER,
+  FOLLOW_UP_EXAMPLE,
+  FOLLOW_UP_EXAMPLE_COPY_MESSAGE,
   MAX_ANSWER_CHARS,
   MIN_ANSWER_CHARS,
   MIN_ANSWER_WORDS,
@@ -18,6 +20,8 @@ import {
 } from './evidence-follow-up.ts'
 import {
   answerProblem as clientAnswerProblem,
+  FOLLOW_UP_EXAMPLE as CLIENT_FOLLOW_UP_EXAMPLE,
+  FOLLOW_UP_EXAMPLE_COPY_MESSAGE as CLIENT_FOLLOW_UP_EXAMPLE_COPY_MESSAGE,
   MAX_ANSWER_CHARS as CLIENT_MAX_ANSWER_CHARS,
   MIN_ANSWER_CHARS as CLIENT_MIN_ANSWER_CHARS,
   MIN_ANSWER_WORDS as CLIENT_MIN_ANSWER_WORDS,
@@ -239,10 +243,35 @@ test('an answer cannot close the labelled section early', () => {
   if (result.ok) assert.ok(!result.answer.includes('==='))
 })
 
+const EXAMPLE_COPIES = [
+  FOLLOW_UP_EXAMPLE,
+  'Users were dropping off during onboarding. I simplified the signup process, increasing completion from 40% to 55%.',
+  'Users dropped off during onboarding, so I simplified signup and completion went from 62% to 78%.',
+  `At my last job: ${FOLLOW_UP_EXAMPLE}`,
+]
+const SIMILAR_BUT_OWN = [
+  'At Brightwell our trial users stalled in onboarding, so I cut the setup to 2 screens and trial conversion rose by 30%.',
+  'I grew weekly active users from 62 to 78 by sending a reminder email to people who had not logged in.',
+]
+
+test('an answer that copies the example is refused before any API call, so it can never be credited', () => {
+  for (const answer of EXAMPLE_COPIES) {
+    assert.deepEqual(validateFollowUpAnswer(answer), { ok: false, message: FOLLOW_UP_EXAMPLE_COPY_MESSAGE }, answer)
+  }
+})
+
+test('an answer in a similar situation, in the candidate own words, is not mistaken for the example', () => {
+  for (const answer of SIMILAR_BUT_OWN) {
+    assert.equal(validateFollowUpAnswer(answer).ok, true, answer)
+  }
+})
+
 test('the browser and the server apply the same answer rules', () => {
   assert.equal(CLIENT_MIN_ANSWER_CHARS, MIN_ANSWER_CHARS)
   assert.equal(CLIENT_MIN_ANSWER_WORDS, MIN_ANSWER_WORDS)
   assert.equal(CLIENT_MAX_ANSWER_CHARS, MAX_ANSWER_CHARS)
+  assert.equal(CLIENT_FOLLOW_UP_EXAMPLE, FOLLOW_UP_EXAMPLE, 'the example shown is the example refused')
+  assert.equal(CLIENT_FOLLOW_UP_EXAMPLE_COPY_MESSAGE, FOLLOW_UP_EXAMPLE_COPY_MESSAGE)
   const samples = [
     'Yes',
     "I'm very good at Python",
@@ -251,6 +280,8 @@ test('the browser and the server apply the same answer rules', () => {
     'word '.repeat(MAX_ANSWER_CHARS),
     'I built a churn model with pandas and scikit-learn for my university project.',
     'Used SQL daily in my internship to build weekly sales reports for the team.',
+    ...EXAMPLE_COPIES,
+    ...SIMILAR_BUT_OWN,
   ]
   for (const sample of samples) {
     assert.equal(

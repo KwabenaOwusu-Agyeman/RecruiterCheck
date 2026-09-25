@@ -220,25 +220,31 @@ doing it.
   merging first would leave code and methodology in disagreement. Founder
   approved the cap in conversation 2026-09-25 and asked for draft amendment
   text (supplied in that session's report); the Decision Log and Scoring
-  Methodology pages themselves are the founder's to update. Recorded
-  2026-09-25.
+  Methodology pages themselves are the founder's to update. Since 2026-09-26
+  the amendment must also cover the fixed example answer the follow up card
+  now shows (`FOLLOW_UP_EXAMPLE`, founder's own wording, with figures):
+  DEC-8's integrity rule says the question must never suggest what a good
+  answer contains, and the 2026-09-22 agreement not to prompt the answer for
+  a number is superseded by it. Recorded 2026-09-25, updated 2026-09-26.
 - **Founder action, a credited follow up needs one real end to end check.**
   No live OpenAI call has been made for PR #182 (credited answer woven into
   the CV draft) or for branch `feature/feedback-report-evidence-distinction`
   (Gap Analysis, verdict gated and capped reassessment, one plain question):
   both are confirmed by code, tests and invented data rendered through the
   real components, not by real model output. Founder action: run one real
-  Needs Improvement check to its follow up and confirm (1) the question is
-  the plain one sentence version under "About this requirement"; (2) a
-  vague answer leaves the score unchanged; (3) a strong Situation, action,
-  outcome answer raises it by at most 3 points, and the answered Gap
-  Analysis section shows that answer labelled "Candidate reported, not on
-  your CV"; (4) Generate produces a CV.pdf with one natural bullet from the
-  answer and no mention of a follow up; (5) the Recommendation note about
-  the follow up appears only in the credited case. Also **MANUAL CHECK
-  REQUIRED** on `localhost:5173`: generating a CV, then getting credited,
-  clears the stale CV button (PR #182's `onAssessed` fix). Recorded
-  2026-09-24, updated 2026-09-25.
+  Needs Improvement check to its follow up and confirm (1) Gap Analysis shows
+  the one gap and the follow up below it shows one plain question, the
+  example and the answer box; (2) pasting the example is refused before
+  anything is assessed; (3) a vague answer leaves the score unchanged;
+  (4) a strong situation, action, outcome answer raises it by at most 3
+  points and is shown as "Candidate reported, not on your CV"; (5) Generate
+  produces a CV.pdf with one natural bullet from the answer and no mention of
+  a follow up; (6) the Recommendation note about the follow up appears only
+  in the credited case. Also **MANUAL CHECK REQUIRED** on `localhost:5173`:
+  the two cards' layout (2026-09-26 was checked by server rendering only, the
+  Chrome connector being disconnected), and generating a CV, then getting
+  credited, clears the stale CV button (PR #182's `onAssessed` fix).
+  Recorded 2026-09-24, updated 2026-09-26.
 - **Founder action.** Verify a real Google sign-in end to end after the move
   to the `myrecruitercheck` Cloud project, then delete the old `RecruiterCheck`
   OAuth client in `theorycoach-ai`. Recorded 2026-09-07.
@@ -421,6 +427,52 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-26 — Gap Analysis and Evidence Follow Up simplified to one gap and one example
+
+**Objective.** Founder: Gap Analysis is a title, a short explanation and the
+one identified gap; the follow up is a title, one short explanation, one
+example (the founder's exact wording) and the answer box.
+
+**Completed.** `GapAnalysisCard` now shows only the follow up's gap
+(`buildGapAnalysisItem` in `src/lib/gapAnalysis.ts`): the requirement and
+one line of what is missing, from the CV only assessment, never the
+reassessment, so a candidate reported quote can no longer reach it and the
+provenance heuristic (`isCandidateReportedEvidence`) was removed. It renders
+only with the follow up (`showFollowUp` in `FeedbackPage.tsx`), so Not a Fit
+and Likely Interview reports show neither. `EvidenceFollowUpCard`'s pending
+state: title, the stored question as its one line, "Example:" with
+`FOLLOW_UP_EXAMPLE`, the answer box, and "Optional. Your score can only go
+up or stay the same." beside the button; "About this requirement", the
+answer hint and the long integrity note are gone. The example is never
+submitted, and `copiesFollowUpExample` (in `validateFollowUpAnswer`,
+authoritative, and mirrored in `answerProblem`) refuses an answer holding
+70% of its distinctive words and figures, before any API call. The assessed
+state is unchanged. Built on the working tree state of `9ad9897`: commit
+`0f46750` on this branch (an earlier single card version of the same
+request, no example) is kept in history and superseded by this one.
+
+**Verified.** lint (0 errors, 2 pre-existing warnings), typecheck,
+`test:scoring` (6/6 files, 256 assertions), mutation check (14/14),
+`test:unit` (25/25, 297), `test:edge` (30/30, 520), build (81 CSP hashes
+unchanged), `deno check --no-config` on `assess-evidence-follow-up` clean.
+Both cards server rendered through Vite with invented data, pending and
+credited: text and order as specified. Security review of the one request
+handling change (the copy refusal): it only refuses more input, is linear
+in the answer length, logs nothing and returns a fixed message.
+**UNVERIFIED:** visual layout (Chrome connector disconnected) and any live
+model call; see Open items.
+
+**Blockers.** DEC-8 amendment before merge; see Open items.
+
+**Founder action required.** See Open items.
+
+**Next technical step.** None beyond the founder items.
+
+**Commit or PR.** Branch `feature/feedback-report-evidence-distinction`,
+committed locally, not pushed.
+
+---
+
 ## 2026-09-25 — Gap Analysis, one plain follow up question, verdict gated and capped reassessment
 
 **Objective.** Two founder briefs on the same branch: keep CV evidence,
@@ -432,25 +484,19 @@ worked example, the evidence gate and gap ranking each conflicted or needed
 a choice, and the founder decided each in conversation: build the cap and
 draft the Notion amendment; a fixed structure hint instead of an invented
 example (DEC-8's integrity rule unchanged); a model verdict plus code gate;
-rank by largest potential score gain. The founder then asked for Gap
-Analysis to be simplified to a title, a short explanation, the question and
-an answer box, with no example.
+rank by largest potential score gain.
 
-**Completed.** Frontend: the evidence card ("How a recruiter reads your
-CV") is gone and Gap Analysis is now `EvidenceFollowUpCard` itself: "Gap
-Analysis", one line of explanation, the follow up's one requirement, the
-question, the answer box, and "Optional. Your score can only go up or stay
-the same." beside the button. Once answered it shows the answer labelled
-"Candidate reported, not on your CV" and the what changed lines. It hides
-when there is no follow up to offer, as the follow up card always did. The
-per requirement evidence rows, strength groups, recruiter doubts, answer
-hint and long integrity note are no longer displayed; the matrix and doubts
-data are still generated and stored. An intermediate multi gap version
-(`GapAnalysisCard`, `src/lib/gapAnalysis.ts`, commit `9ad9897`) labelled
-answer quotes in reassessed rows as candidate reported; it was removed when
-the section was simplified (see
+**Completed.** Frontend: `EvidenceAssessmentCard` became `GapAnalysisCard`
+("Gap Analysis": Requirement, What your CV shows, Recruiter read, Gap; no
+strength sections, no recruiter doubts, strong requirements left to
+Strengths; the follow up's gap listed first), built by
+`buildGapAnalysisRows` in `src/lib/gapAnalysis.ts`. After a credited follow
+up, a row whose excerpt came from the answer is shown with the CV only
+assessment's own evidence under "What your CV shows" and the answer under
+"Candidate reported, not on your CV" (`isCandidateReportedEvidence`; see
 `memory/2026-09-25-reassessed-evidence-can-quote-the-candidate-answer.md`).
-`FICTIONAL_SAMPLE_NOTICE` says examples are not claims
+Follow Up card: "Question" label and `FOLLOW_UP_ANSWER_HINT`, a fixed line
+never submitted. `FICTIONAL_SAMPLE_NOTICE` says examples are not claims
 about the candidate; Recommendation copy says placeholders are bracketed
 and to be replaced with real information. Backend: `selectEvidenceGap`
 ranks critical first, then `followUpPotentialGain` (importance weight times
@@ -469,17 +515,17 @@ change (it is stored only for normal checks, whose prompt is unchanged).
 
 **Verified.** lint (0 errors, 2 pre-existing warnings), typecheck,
 `test:scoring` (6/6 files, 254 assertions; `scoring-regression.test.ts`
-unchanged), mutation check (14/14 caught), `test:unit` (24/24, 287, after
-the simplification), `test:edge` (30/30, 518), build (81 CSP hashes
-unchanged). `deno check --no-config` on the three changed functions: no new
-errors (6 and 8 pre-existing `SupabaseClient` errors in `analyze-check` and
+unchanged), mutation check (14/14 caught), `test:unit` (25/25, 303),
+`test:edge` (30/30, 518), build (81 CSP hashes unchanged). `deno check
+--no-config` on the three changed functions: no new errors (6 and 8
+pre-existing `SupabaseClient` errors in `analyze-check` and
 `generate-documents`, as recorded before). Mandatory security review: no
 findings. Existing tests that pinned the old ranking (partial before
 missing) and the old question wording were rewritten to the new rules, as
 decided. Real components rendered with invented data on `localhost:5173`
-(throwaway route, deleted): the simplified Gap Analysis unanswered and
-answered, no console errors. **UNVERIFIED:** any live model call; see Open
-items.
+(throwaway route, deleted): Gap Analysis before and after a credited
+answer, the new Follow Up card, no console errors. **UNVERIFIED:** any
+live model call; see Open items.
 
 **Blockers.** DEC-8 and the Scoring Methodology must be amended before
 merge; see Open items.
@@ -492,8 +538,8 @@ candidate replace their stored CV before answering; the new gate and cap
 bound the effect, and a separate investigation was offered.
 
 **Commit or PR.** Branch `feature/feedback-report-evidence-distinction`,
-committed locally in three commits, not pushed (founder asked for no push
-or deploy).
+committed locally in two commits, not pushed (founder asked for no push or
+deploy).
 
 ---
 

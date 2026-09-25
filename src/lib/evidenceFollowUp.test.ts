@@ -4,8 +4,10 @@ import { readFileSync } from 'node:fs'
 import {
   answerProblem,
   canSubmitAnswer,
+  copiesFollowUpExample,
   createSubmissionGuard,
-  FOLLOW_UP_EXPLANATION,
+  FOLLOW_UP_EXAMPLE,
+  FOLLOW_UP_EXAMPLE_COPY_MESSAGE,
   FOLLOW_UP_OPTIONAL_NOTE,
   FOLLOW_UP_POLL_MAX_MS,
   FOLLOW_UP_UNCONFIRMED_MESSAGE,
@@ -57,18 +59,19 @@ await test('an over long answer is refused', () => {
   assert.ok(answerProblem('word '.repeat(MAX_ANSWER_CHARS)))
 })
 
-await test('Gap Analysis copy is short, optional, and promises the score never goes down', () => {
-  assert.equal(FOLLOW_UP_HEADING, 'Gap Analysis')
-  assert.match(FOLLOW_UP_EXPLANATION, /does not yet clearly show evidence for this key requirement/)
-  assert.match(FOLLOW_UP_OPTIONAL_NOTE, /^Optional\./)
-  assert.match(FOLLOW_UP_OPTIONAL_NOTE, /only go up or stay the same/)
+await test('the copy says the answer is optional, cannot lower the score, and labels a reported answer', () => {
+  assert.equal(FOLLOW_UP_OPTIONAL_NOTE, 'Optional. Your score can only go up or stay the same.')
   assert.match(CANDIDATE_REPORTED_LABEL, /not on your CV/)
   assert.match(UPDATED_REPORT_NOTE, /not on your CV/)
+})
+
+await test('the copy has no dashes', () => {
   for (const text of [
-    FOLLOW_UP_HEADING,
-    FOLLOW_UP_EXPLANATION,
     FOLLOW_UP_OPTIONAL_NOTE,
+    FOLLOW_UP_HEADING,
     FOLLOW_UP_WORKING_MESSAGE,
+    FOLLOW_UP_EXAMPLE,
+    FOLLOW_UP_EXAMPLE_COPY_MESSAGE,
     CANDIDATE_REPORTED_LABEL,
     UPDATED_REPORT_NOTE,
   ]) {
@@ -76,30 +79,54 @@ await test('Gap Analysis copy is short, optional, and promises the score never g
   }
 })
 
-// No browser test framework here, and tsx cannot resolve the @/ alias, so
-// these read the source the way researchConsent.test.ts reads PrivacyPage.
-const CARD = readFileSync('src/components/feedback/EvidenceFollowUpCard.tsx', 'utf8')
-const PAGE = readFileSync('src/pages/FeedbackPage.tsx', 'utf8')
+await test('the example is the one the founder gave: situation, action, outcome and a figure', () => {
+  assert.equal(
+    FOLLOW_UP_EXAMPLE,
+    'Users were dropping off during onboarding. I simplified the signup process, increasing completion from 62% to 78%.',
+  )
+})
 
-await test('Gap Analysis is the title, a short explanation, the one gap, the question and the answer box, in that order', () => {
-  const pending = CARD.slice(CARD.indexOf('if (!followUp.canAnswer)'))
-  const order = ['{FOLLOW_UP_HEADING}', '{explanation}', '{followUp.question}', '<Textarea']
+await test('the card is a title, one short line, one example and the answer box, and names no requirement', () => {
+  const card = readFileSync('src/components/feedback/EvidenceFollowUpCard.tsx', 'utf8')
+  const pending = card.slice(card.indexOf('Unanswered, and the original CV is gone'))
+  const order = ['{FOLLOW_UP_HEADING}', '{followUp.question}', 'Example:', '{FOLLOW_UP_EXAMPLE}', '<Textarea']
   const positions = order.map((marker) => pending.indexOf(marker))
-  assert.ok(positions.every((position) => position >= 0), `missing: ${order.filter((_, i) => positions[i] < 0).join(', ')}`)
-  assert.deepEqual([...positions].sort((a, b) => a - b), positions)
-  const explanation = CARD.slice(CARD.indexOf('const explanation'), CARD.indexOf('if (followUp.status'))
-  assert.ok(explanation.indexOf('{FOLLOW_UP_EXPLANATION}') < explanation.indexOf('{followUp.gap_requirement}'))
+  assert.ok(positions.every((position) => position > 0), `all present: ${order.join(', ')}`)
+  assert.deepEqual([...positions].sort((a, b) => a - b), positions, 'in this order')
+  // Gap Analysis above names the requirement; the card never repeats it or the gap.
+  for (const repeated of [/gap_requirement/, /gap_summary/, /About this requirement/]) {
+    assert.doesNotMatch(card, repeated)
+  }
 })
 
-await test('no example, hint, gap summary or second question, and only the typed answer is submitted', () => {
-  assert.doesNotMatch(CARD, /Example|HINT|gap_summary|gap_note|About this requirement/)
-  assert.equal(CARD.match(/\{followUp\.question\}/g)?.length, 1)
-  assert.match(CARD, /submitEvidenceFollowUp\(followUp\.check_id, answer\.trim\(\)\)/)
+await test('the example is guidance only: never submitted, only the candidate typed answer is', () => {
+  const card = readFileSync('src/components/feedback/EvidenceFollowUpCard.tsx', 'utf8')
+  assert.match(card, /submitEvidenceFollowUp\(followUp\.check_id, answer\.trim\(\)\)/)
+  assert.equal(card.match(/FOLLOW_UP_EXAMPLE/g)?.length, 2, 'imported and rendered, used nowhere else')
+  assert.doesNotMatch(card, /placeholder=/, 'never prefilled into the answer box')
 })
 
-await test('the report has one Gap Analysis section and no separate evidence list', () => {
-  assert.equal(PAGE.match(/<EvidenceFollowUpCard/g)?.length, 1)
-  assert.doesNotMatch(PAGE, /GapAnalysisCard|EvidenceAssessmentCard|How a recruiter reads your CV|Strong evidence|Moderate evidence/)
+await test('an answer that copies the example is refused, and a genuine one is not', () => {
+  const copies = [
+    FOLLOW_UP_EXAMPLE,
+    'Users were dropping off during onboarding. I simplified the signup process, increasing completion from 40% to 55%.',
+    'Users dropped off during onboarding, so I simplified signup and completion went from 62% to 78%.',
+    `At my last job: ${FOLLOW_UP_EXAMPLE}`,
+  ]
+  for (const draft of copies) {
+    assert.equal(answerProblem(draft), FOLLOW_UP_EXAMPLE_COPY_MESSAGE, draft)
+    assert.equal(canSubmitAnswer(draft), false, draft)
+    assert.equal(copiesFollowUpExample(draft), true, draft)
+  }
+  const genuine = [
+    GOOD,
+    'At Brightwell our trial users stalled in onboarding, so I cut the setup to 2 screens and trial conversion rose by 30%.',
+    'I grew weekly active users from 62 to 78 by sending a reminder email to people who had not logged in.',
+  ]
+  for (const draft of genuine) {
+    assert.equal(answerProblem(draft), null, draft)
+    assert.equal(copiesFollowUpExample(draft), false, draft)
+  }
 })
 
 // ---------------------------------------------------------------------------

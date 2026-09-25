@@ -6,9 +6,14 @@
 
 import type { RequirementEvidenceRow } from '@/types'
 
-export const FOLLOW_UP_HEADING = 'Gap Analysis'
-export const FOLLOW_UP_EXPLANATION = 'Your CV does not yet clearly show evidence for this key requirement of the job.'
+export const FOLLOW_UP_HEADING = 'One question before you finish'
 export const FOLLOW_UP_OPTIONAL_NOTE = 'Optional. Your score can only go up or stay the same.'
+// Guidance only: never sent with the answer, and an answer that copies it is
+// refused. The server keeps an identical copy for that check (same name, in
+// supabase/functions/analyze-check/evidence-follow-up.ts); a test keeps them equal.
+export const FOLLOW_UP_EXAMPLE =
+  'Users were dropping off during onboarding. I simplified the signup process, increasing completion from 62% to 78%.'
+export const FOLLOW_UP_EXAMPLE_COPY_MESSAGE = 'That is our example. Describe your own experience in your own words.'
 export const FOLLOW_UP_SUBMIT_LABEL = 'Update Recruiter Check'
 export const FOLLOW_UP_SUBMITTING_LABEL = 'Updating...'
 export const FOLLOW_UP_WORKING_MESSAGE =
@@ -31,6 +36,26 @@ export function countWords(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length
 }
 
+// Same rule as copiesFollowUpExample on the server: an answer holding most of the
+// example's distinctive words and figures is the example, not evidence.
+const EXAMPLE_STOPWORDS = new Set(['were', 'from', 'during', 'with', 'that', 'this', 'have', 'into', 'over', 'they', 'their', 'then', 'than'])
+const EXAMPLE_COPY_SHARE = 0.7
+
+function exampleTokens(text: string): Set<string> {
+  return new Set(
+    text
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((token) => /^\d+$/.test(token) || (token.length >= 4 && !EXAMPLE_STOPWORDS.has(token))),
+  )
+}
+
+export function copiesFollowUpExample(answer: string): boolean {
+  const example = [...exampleTokens(FOLLOW_UP_EXAMPLE)]
+  const tokens = exampleTokens(answer)
+  return example.filter((token) => tokens.has(token)).length / example.length >= EXAMPLE_COPY_SHARE
+}
+
 /** null when the draft may be submitted, otherwise the reason it may not. */
 export function answerProblem(draft: string): string | null {
   const trimmed = draft.trim()
@@ -39,6 +64,7 @@ export function answerProblem(draft: string): string | null {
   if (trimmed.length < MIN_ANSWER_CHARS || countWords(trimmed) < MIN_ANSWER_WORDS) {
     return 'Add a little more detail about what you did, so the recruiter has something specific to assess.'
   }
+  if (copiesFollowUpExample(trimmed)) return FOLLOW_UP_EXAMPLE_COPY_MESSAGE
   return null
 }
 
