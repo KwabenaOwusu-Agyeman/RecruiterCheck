@@ -6,13 +6,9 @@
 
 import type { RequirementEvidenceRow } from '@/types'
 
-export const FOLLOW_UP_HEADING = 'One question before you finish'
-export const FOLLOW_UP_OPTIONAL_NOTE = 'Optional. You can skip this and your result stays as it is.'
-export const FOLLOW_UP_INTEGRITY_NOTE =
-  'Only answer if this is genuinely true for you. This is a chance to show evidence you already have, not to add anything new. What you write is self reported, so it is weighed with more caution than evidence in your CV, and it does not change your score unless it is specific and relevant. Your score can go up or stay the same. It never goes down.'
-// Guidance only, a fixed UI string: never sent with the answer and never a model of one to copy.
-export const FOLLOW_UP_ANSWER_HINT =
-  'A useful answer says what the situation was, what you did, and what happened, with a number if you have one.'
+export const FOLLOW_UP_HEADING = 'Gap Analysis'
+export const FOLLOW_UP_EXPLANATION = 'Your CV does not yet clearly show evidence for this key requirement of the job.'
+export const FOLLOW_UP_OPTIONAL_NOTE = 'Optional. Your score can only go up or stay the same.'
 export const FOLLOW_UP_SUBMIT_LABEL = 'Update Recruiter Check'
 export const FOLLOW_UP_SUBMITTING_LABEL = 'Updating...'
 export const FOLLOW_UP_WORKING_MESSAGE =

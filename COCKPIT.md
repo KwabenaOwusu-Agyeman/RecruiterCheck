@@ -231,9 +231,9 @@ doing it.
   Needs Improvement check to its follow up and confirm (1) the question is
   the plain one sentence version under "About this requirement"; (2) a
   vague answer leaves the score unchanged; (3) a strong Situation, action,
-  outcome answer raises it by at most 3 points, and Gap Analysis then shows
-  that answer as "Candidate reported, not on your CV" beside what the CV
-  shows; (4) Generate produces a CV.pdf with one natural bullet from the
+  outcome answer raises it by at most 3 points, and the answered Gap
+  Analysis section shows that answer labelled "Candidate reported, not on
+  your CV"; (4) Generate produces a CV.pdf with one natural bullet from the
   answer and no mention of a follow up; (5) the Recommendation note about
   the follow up appears only in the credited case. Also **MANUAL CHECK
   REQUIRED** on `localhost:5173`: generating a CV, then getting credited,
@@ -432,19 +432,25 @@ worked example, the evidence gate and gap ranking each conflicted or needed
 a choice, and the founder decided each in conversation: build the cap and
 draft the Notion amendment; a fixed structure hint instead of an invented
 example (DEC-8's integrity rule unchanged); a model verdict plus code gate;
-rank by largest potential score gain.
+rank by largest potential score gain. The founder then asked for Gap
+Analysis to be simplified to a title, a short explanation, the question and
+an answer box, with no example.
 
-**Completed.** Frontend: `EvidenceAssessmentCard` became `GapAnalysisCard`
-("Gap Analysis": Requirement, What your CV shows, Recruiter read, Gap; no
-strength sections, no recruiter doubts, strong requirements left to
-Strengths; the follow up's gap listed first), built by
-`buildGapAnalysisRows` in `src/lib/gapAnalysis.ts`. After a credited follow
-up, a row whose excerpt came from the answer is shown with the CV only
-assessment's own evidence under "What your CV shows" and the answer under
-"Candidate reported, not on your CV" (`isCandidateReportedEvidence`; see
+**Completed.** Frontend: the evidence card ("How a recruiter reads your
+CV") is gone and Gap Analysis is now `EvidenceFollowUpCard` itself: "Gap
+Analysis", one line of explanation, the follow up's one requirement, the
+question, the answer box, and "Optional. Your score can only go up or stay
+the same." beside the button. Once answered it shows the answer labelled
+"Candidate reported, not on your CV" and the what changed lines. It hides
+when there is no follow up to offer, as the follow up card always did. The
+per requirement evidence rows, strength groups, recruiter doubts, answer
+hint and long integrity note are no longer displayed; the matrix and doubts
+data are still generated and stored. An intermediate multi gap version
+(`GapAnalysisCard`, `src/lib/gapAnalysis.ts`, commit `9ad9897`) labelled
+answer quotes in reassessed rows as candidate reported; it was removed when
+the section was simplified (see
 `memory/2026-09-25-reassessed-evidence-can-quote-the-candidate-answer.md`).
-Follow Up card: "Question" label and `FOLLOW_UP_ANSWER_HINT`, a fixed line
-never submitted. `FICTIONAL_SAMPLE_NOTICE` says examples are not claims
+`FICTIONAL_SAMPLE_NOTICE` says examples are not claims
 about the candidate; Recommendation copy says placeholders are bracketed
 and to be replaced with real information. Backend: `selectEvidenceGap`
 ranks critical first, then `followUpPotentialGain` (importance weight times
@@ -463,17 +469,17 @@ change (it is stored only for normal checks, whose prompt is unchanged).
 
 **Verified.** lint (0 errors, 2 pre-existing warnings), typecheck,
 `test:scoring` (6/6 files, 254 assertions; `scoring-regression.test.ts`
-unchanged), mutation check (14/14 caught), `test:unit` (25/25, 303),
-`test:edge` (30/30, 518), build (81 CSP hashes unchanged). `deno check
---no-config` on the three changed functions: no new errors (6 and 8
-pre-existing `SupabaseClient` errors in `analyze-check` and
+unchanged), mutation check (14/14 caught), `test:unit` (24/24, 287, after
+the simplification), `test:edge` (30/30, 518), build (81 CSP hashes
+unchanged). `deno check --no-config` on the three changed functions: no new
+errors (6 and 8 pre-existing `SupabaseClient` errors in `analyze-check` and
 `generate-documents`, as recorded before). Mandatory security review: no
 findings. Existing tests that pinned the old ranking (partial before
 missing) and the old question wording were rewritten to the new rules, as
 decided. Real components rendered with invented data on `localhost:5173`
-(throwaway route, deleted): Gap Analysis before and after a credited
-answer, the new Follow Up card, no console errors. **UNVERIFIED:** any
-live model call; see Open items.
+(throwaway route, deleted): the simplified Gap Analysis unanswered and
+answered, no console errors. **UNVERIFIED:** any live model call; see Open
+items.
 
 **Blockers.** DEC-8 and the Scoring Methodology must be amended before
 merge; see Open items.
@@ -486,8 +492,8 @@ candidate replace their stored CV before answering; the new gate and cap
 bound the effect, and a separate investigation was offered.
 
 **Commit or PR.** Branch `feature/feedback-report-evidence-distinction`,
-committed locally in two commits, not pushed (founder asked for no push or
-deploy).
+committed locally in three commits, not pushed (founder asked for no push
+or deploy).
 
 ---
 

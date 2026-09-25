@@ -8,9 +8,8 @@ import {
   canSubmitAnswer,
   createSubmissionGuard,
   CANDIDATE_REPORTED_LABEL,
-  FOLLOW_UP_ANSWER_HINT,
+  FOLLOW_UP_EXPLANATION,
   FOLLOW_UP_HEADING,
-  FOLLOW_UP_INTEGRITY_NOTE,
   FOLLOW_UP_OPTIONAL_NOTE,
   FOLLOW_UP_SUBMIT_LABEL,
   FOLLOW_UP_SUBMITTING_LABEL,
@@ -24,27 +23,19 @@ import { cn } from '@/utils/cn'
 
 interface EvidenceFollowUpCardProps {
   followUp: EvidenceFollowUp
-  // True when the follow up raised the score and the report above now shows
-  // the updated score and findings. No score is shown here: a report has one.
-  updated: boolean
   // Follows the results container: navy while there is work to do, otherwise light.
   dark: boolean
   onAssessed: (followUp: EvidenceFollowUp) => void
 }
 
 /**
- * The optional Evidence Follow Up. Sits below the initial results as part of
- * the same Recruiter Check, not a chat: one question, one text box, one
- * button. Answering is optional and never nagged; skipping leaves the row
- * pending and this card simply stays as it is.
- *
- * The card only ever appears for a check that has a follow up row, and the
- * form only while the original CV still exists (see canAnswer). Once
- * assessed it shows no score at all: the report has one score, already
- * updated, and this card says what happened and labels the answer as
- * candidate reported.
+ * Gap Analysis: the single most important gap, one question about it and one
+ * answer box. Answering is optional and never nagged; skipping leaves the row
+ * pending. Shown only while the original CV exists (see canAnswer), and once
+ * assessed it shows the answer, labelled candidate reported, and what changed,
+ * never a score: the report above has one.
  */
-export function EvidenceFollowUpCard({ followUp, updated, dark, onAssessed }: EvidenceFollowUpCardProps) {
+export function EvidenceFollowUpCard({ followUp, dark, onAssessed }: EvidenceFollowUpCardProps) {
   const [answer, setAnswer] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -54,11 +45,9 @@ export function EvidenceFollowUpCard({ followUp, updated, dark, onAssessed }: Ev
   const cardTone = dark ? 'nested' : 'nested-light'
   const c = {
     heading: dark ? 'text-white' : 'text-text-primary',
-    sub: dark ? 'text-white/75' : 'text-text-secondary',
     faint: dark ? 'text-white/65' : 'text-text-secondary',
     body: dark ? 'text-white/85' : 'text-text-secondary',
     accent: dark ? 'text-blue-light' : 'text-blue',
-    rule: dark ? 'border-white/10' : 'border-border',
   }
 
   async function handleSubmit() {
@@ -81,14 +70,29 @@ export function EvidenceFollowUpCard({ followUp, updated, dark, onAssessed }: Ev
     onAssessed(outcome.value)
   }
 
+  const explanation = (
+    <div>
+      <p className={cn('text-sm leading-snug', c.body)}>{FOLLOW_UP_EXPLANATION}</p>
+      <p className={cn('mt-1 text-sm font-semibold leading-snug', c.heading)}>{followUp.gap_requirement}</p>
+    </div>
+  )
+
   if (followUp.status === 'assessed') {
     return (
       <Card tone={cardTone}>
         <CardHeader tone={cardTone} className="px-5 py-3">
-          <h2 className={cn('text-base font-semibold', c.heading)}>Your follow up</h2>
-          <p className={cn('mt-0.5 text-xs', c.sub)}>Reassessed once with your answer.</p>
+          <h2 className={cn('text-base font-semibold', c.heading)}>{FOLLOW_UP_HEADING}</h2>
         </CardHeader>
         <CardContent className="space-y-4 px-5 py-4">
+          {explanation}
+          {followUp.candidate_answer ? (
+            <div>
+              <p className={cn('text-xs font-semibold', c.accent)}>{CANDIDATE_REPORTED_LABEL}</p>
+              <p className={cn('mt-1 whitespace-pre-line text-sm italic leading-snug', c.body)}>
+                &quot;{followUp.candidate_answer}&quot;
+              </p>
+            </div>
+          ) : null}
           {followUp.what_changed.length > 0 ? (
             <ul className="space-y-2">
               {followUp.what_changed.map((line) => (
@@ -100,19 +104,6 @@ export function EvidenceFollowUpCard({ followUp, updated, dark, onAssessed }: Ev
                 </li>
               ))}
             </ul>
-          ) : null}
-          {followUp.candidate_answer ? (
-            <div className={cn('border-t pt-4', c.rule)}>
-              <p className={cn('text-xs font-semibold', c.accent)}>{CANDIDATE_REPORTED_LABEL}</p>
-              <p className={cn('mt-1 whitespace-pre-line text-sm italic leading-snug', c.body)}>
-                &quot;{followUp.candidate_answer}&quot;
-              </p>
-            </div>
-          ) : null}
-          {updated ? (
-            <p className={cn('text-xs leading-snug', c.faint)}>
-              The score and findings above include this answer.
-            </p>
           ) : null}
         </CardContent>
       </Card>
@@ -128,22 +119,14 @@ export function EvidenceFollowUpCard({ followUp, updated, dark, onAssessed }: Ev
     <Card tone={cardTone}>
       <CardHeader tone={cardTone} className="px-5 py-3">
         <h2 className={cn('text-xl font-semibold', c.heading)}>{FOLLOW_UP_HEADING}</h2>
-        <p className={cn('mt-0.5 text-xs', c.sub)}>{FOLLOW_UP_OPTIONAL_NOTE}</p>
       </CardHeader>
       <CardContent className="space-y-4 px-5 py-4">
-        <div>
-          <p className={cn('text-xs font-medium uppercase tracking-wider', c.faint)}>About this requirement</p>
-          <p className={cn('mt-1 text-sm font-semibold leading-snug', c.heading)}>{followUp.gap_requirement}</p>
-        </div>
+        {explanation}
 
         <div>
-          <p className={cn('text-xs font-medium uppercase tracking-wider', c.faint)}>Question</p>
-          <label htmlFor="evidence-follow-up-answer" className={cn('mt-1 block text-sm font-semibold leading-snug', c.heading)}>
+          <label htmlFor="evidence-follow-up-answer" className={cn('block text-sm leading-snug', c.heading)}>
             {followUp.question}
           </label>
-          <p id="evidence-follow-up-hint" className={cn('mt-1 text-xs leading-snug', c.faint)}>
-            {FOLLOW_UP_ANSWER_HINT}
-          </p>
           <Textarea
             id="evidence-follow-up-answer"
             className="mt-2 min-h-[120px]"
@@ -151,20 +134,17 @@ export function EvidenceFollowUpCard({ followUp, updated, dark, onAssessed }: Ev
             maxLength={MAX_ANSWER_CHARS}
             disabled={submitting}
             onChange={(event) => setAnswer(event.target.value)}
-            aria-describedby="evidence-follow-up-hint evidence-follow-up-note"
+            aria-describedby="evidence-follow-up-note"
             aria-invalid={problem !== null}
           />
           {problem ? <p className={cn('mt-1 text-xs', c.faint)}>{problem}</p> : null}
-          <p id="evidence-follow-up-note" className={cn('mt-2 text-xs leading-snug', c.faint)}>
-            {FOLLOW_UP_INTEGRITY_NOTE}
-          </p>
         </div>
 
         {error ? <Alert variant="error">{error}</Alert> : null}
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className={cn('text-xs', c.faint)} role="status" aria-live="polite">
-            {submitting ? FOLLOW_UP_WORKING_MESSAGE : ''}
+          <p id="evidence-follow-up-note" className={cn('text-xs', c.faint)} role="status" aria-live="polite">
+            {submitting ? FOLLOW_UP_WORKING_MESSAGE : FOLLOW_UP_OPTIONAL_NOTE}
           </p>
           <Button
             size="sm"

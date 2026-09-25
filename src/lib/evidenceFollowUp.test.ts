@@ -5,7 +5,7 @@ import {
   answerProblem,
   canSubmitAnswer,
   createSubmissionGuard,
-  FOLLOW_UP_INTEGRITY_NOTE,
+  FOLLOW_UP_EXPLANATION,
   FOLLOW_UP_OPTIONAL_NOTE,
   FOLLOW_UP_POLL_MAX_MS,
   FOLLOW_UP_UNCONFIRMED_MESSAGE,
@@ -17,7 +17,6 @@ import {
   FOLLOW_UP_MAX_SCORE,
   UPDATED_REPORT_NOTE,
   CANDIDATE_REPORTED_LABEL,
-  FOLLOW_UP_ANSWER_HINT,
   FOLLOW_UP_HEADING,
   FOLLOW_UP_WORKING_MESSAGE,
 } from './evidenceFollowUp'
@@ -58,48 +57,49 @@ await test('an over long answer is refused', () => {
   assert.ok(answerProblem('word '.repeat(MAX_ANSWER_CHARS)))
 })
 
-await test('the copy never invites invention and carries the integrity note', () => {
-  assert.match(FOLLOW_UP_INTEGRITY_NOTE, /genuinely true/)
-  assert.match(FOLLOW_UP_INTEGRITY_NOTE, /self reported/)
-  assert.match(FOLLOW_UP_INTEGRITY_NOTE, /does not change your score unless it is specific and relevant/)
-  assert.match(FOLLOW_UP_OPTIONAL_NOTE, /Optional/)
+await test('Gap Analysis copy is short, optional, and promises the score never goes down', () => {
+  assert.equal(FOLLOW_UP_HEADING, 'Gap Analysis')
+  assert.match(FOLLOW_UP_EXPLANATION, /does not yet clearly show evidence for this key requirement/)
+  assert.match(FOLLOW_UP_OPTIONAL_NOTE, /^Optional\./)
+  assert.match(FOLLOW_UP_OPTIONAL_NOTE, /only go up or stay the same/)
   assert.match(CANDIDATE_REPORTED_LABEL, /not on your CV/)
-})
-
-await test('the copy has no dashes and promises the score never goes down', () => {
-  assert.match(FOLLOW_UP_INTEGRITY_NOTE, /never goes down/)
+  assert.match(UPDATED_REPORT_NOTE, /not on your CV/)
   for (const text of [
-    FOLLOW_UP_INTEGRITY_NOTE,
-    FOLLOW_UP_OPTIONAL_NOTE,
     FOLLOW_UP_HEADING,
+    FOLLOW_UP_EXPLANATION,
+    FOLLOW_UP_OPTIONAL_NOTE,
     FOLLOW_UP_WORKING_MESSAGE,
     CANDIDATE_REPORTED_LABEL,
     UPDATED_REPORT_NOTE,
   ]) {
     assert.doesNotMatch(text, /[-–—]/, text)
   }
-  assert.match(UPDATED_REPORT_NOTE, /not on your CV/)
 })
 
-await test('the answer hint is guidance only: situation, action, outcome, no invented figure, never submitted', () => {
-  assert.match(FOLLOW_UP_ANSWER_HINT, /situation/)
-  assert.match(FOLLOW_UP_ANSWER_HINT, /what you did/)
-  assert.match(FOLLOW_UP_ANSWER_HINT, /what happened/)
-  assert.match(FOLLOW_UP_ANSWER_HINT, /a number if you have one/)
-  assert.doesNotMatch(FOLLOW_UP_ANSWER_HINT, /\d|[-–—]/)
-  // The card submits only what the candidate typed.
-  const card = readFileSync('src/components/feedback/EvidenceFollowUpCard.tsx', 'utf8')
-  assert.match(card, /submitEvidenceFollowUp\(followUp\.check_id, answer\.trim\(\)\)/)
-  assert.equal(card.match(/FOLLOW_UP_ANSWER_HINT/g)?.length, 2, 'imported and rendered, used nowhere else')
+// No browser test framework here, and tsx cannot resolve the @/ alias, so
+// these read the source the way researchConsent.test.ts reads PrivacyPage.
+const CARD = readFileSync('src/components/feedback/EvidenceFollowUpCard.tsx', 'utf8')
+const PAGE = readFileSync('src/pages/FeedbackPage.tsx', 'utf8')
+
+await test('Gap Analysis is the title, a short explanation, the one gap, the question and the answer box, in that order', () => {
+  const pending = CARD.slice(CARD.indexOf('if (!followUp.canAnswer)'))
+  const order = ['{FOLLOW_UP_HEADING}', '{explanation}', '{followUp.question}', '<Textarea']
+  const positions = order.map((marker) => pending.indexOf(marker))
+  assert.ok(positions.every((position) => position >= 0), `missing: ${order.filter((_, i) => positions[i] < 0).join(', ')}`)
+  assert.deepEqual([...positions].sort((a, b) => a - b), positions)
+  const explanation = CARD.slice(CARD.indexOf('const explanation'), CARD.indexOf('if (followUp.status'))
+  assert.ok(explanation.indexOf('{FOLLOW_UP_EXPLANATION}') < explanation.indexOf('{followUp.gap_requirement}'))
 })
 
-await test('the card shows the requirement once, then one question, then the hint', () => {
-  const card = readFileSync('src/components/feedback/EvidenceFollowUpCard.tsx', 'utf8')
-  const pending = card.slice(card.indexOf('About this requirement'))
-  assert.ok(pending.indexOf('{followUp.gap_requirement}') < pending.indexOf('{followUp.question}'))
-  assert.ok(pending.indexOf('{followUp.question}') < pending.indexOf('{FOLLOW_UP_ANSWER_HINT}'))
-  assert.equal(card.match(/followUp\.gap_requirement/g)?.length, 1)
-  assert.doesNotMatch(card, /gap_summary/)
+await test('no example, hint, gap summary or second question, and only the typed answer is submitted', () => {
+  assert.doesNotMatch(CARD, /Example|HINT|gap_summary|gap_note|About this requirement/)
+  assert.equal(CARD.match(/\{followUp\.question\}/g)?.length, 1)
+  assert.match(CARD, /submitEvidenceFollowUp\(followUp\.check_id, answer\.trim\(\)\)/)
+})
+
+await test('the report has one Gap Analysis section and no separate evidence list', () => {
+  assert.equal(PAGE.match(/<EvidenceFollowUpCard/g)?.length, 1)
+  assert.doesNotMatch(PAGE, /GapAnalysisCard|EvidenceAssessmentCard|How a recruiter reads your CV|Strong evidence|Moderate evidence/)
 })
 
 // ---------------------------------------------------------------------------

@@ -9,7 +9,6 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { FeedbackBullet } from '@/components/feedback/FeedbackBullet'
 import { getVerdictColor } from '@/components/feedback/verdictColor'
 import { FICTIONAL_SAMPLE_NOTICE, hasSampleWording, lowerFirstClause, splitFinding } from '@/lib/feedbackText'
-import { GapAnalysisCard } from '@/components/feedback/GapAnalysisCard'
 import { EvidenceFollowUpCard } from '@/components/feedback/EvidenceFollowUpCard'
 import { SentimentPrompt } from '@/components/feedback/SentimentPrompt'
 import { TrustpilotResultsLink } from '@/components/feedback/TrustpilotResultsLink'
@@ -18,7 +17,6 @@ import { usePageMeta } from '@/hooks/usePageMeta'
 import { getResultTone, getScoreLabel, sanitizeScore } from '@/lib/scoring'
 import { trackEvent } from '@/lib/analytics'
 import { isFollowUpEligibleScore, resolveEffectiveResult, UPDATED_REPORT_NOTE } from '@/lib/evidenceFollowUp'
-import { buildGapAnalysisRows } from '@/lib/gapAnalysis'
 import { getDocumentEntitlement, LIKELY_INTERVIEW_CANDIDATE_MIN_SCORE } from '@/lib/documentEntitlement'
 import {
   analyzeCheck,
@@ -288,18 +286,6 @@ export function FeedbackPage() {
   // The lists to show: the effective report, or, for a legacy check with no
   // valid score, the stored feedback exactly as before.
   const lists = report ?? feedback
-  // report carries these two camelCase (from resolveEffectiveResult, see
-  // src/lib/evidenceFollowUp.ts) while raw feedback carries them snake_case
-  // straight off the DB row (see src/types/index.ts), so lists.xxx cannot be
-  // used uniformly for these two the way it can for strengths/improvements/
-  // prospects, which share the same field name in both shapes.
-  const requirementEvidence = report?.requirementEvidence ?? feedback?.requirement_evidence ?? []
-  // Only a credited answer can have reached the rows above, so only then is there provenance to check.
-  const gapAnalysisRows = buildGapAnalysisRows(requirementEvidence, {
-    originalRows: feedback?.requirement_evidence ?? [],
-    candidateAnswer: report?.updated ? (followUp?.candidate_answer ?? null) : null,
-    selectedRequirement: followUp?.gap_requirement ?? null,
-  })
   const shownStrengths = lists?.strengths ?? []
   const visibleImprovements = lists
     ? score === 100
@@ -486,12 +472,9 @@ export function FeedbackPage() {
               </CardContent>
             </Card> : null}
 
-            <GapAnalysisCard rows={gapAnalysisRows} dark={isDark} />
-
             {followUp && (followUp.status === 'assessed' || isFollowUpEligibleScore(originalScore)) ? (
               <EvidenceFollowUpCard
                 followUp={followUp}
-                updated={report?.updated ?? false}
                 dark={isDark}
                 onAssessed={(next) => {
                   setFollowUp(next)
