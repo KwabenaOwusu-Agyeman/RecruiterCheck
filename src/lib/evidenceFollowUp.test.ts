@@ -1,10 +1,13 @@
 // Run with: npx tsx src/lib/evidenceFollowUp.test.ts
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import {
   answerProblem,
   canSubmitAnswer,
+  copiesFollowUpExample,
   createSubmissionGuard,
-  FOLLOW_UP_INTEGRITY_NOTE,
+  FOLLOW_UP_EXAMPLE,
+  FOLLOW_UP_EXAMPLE_COPY_MESSAGE,
   FOLLOW_UP_OPTIONAL_NOTE,
   FOLLOW_UP_POLL_MAX_MS,
   FOLLOW_UP_UNCONFIRMED_MESSAGE,
@@ -56,27 +59,74 @@ await test('an over long answer is refused', () => {
   assert.ok(answerProblem('word '.repeat(MAX_ANSWER_CHARS)))
 })
 
-await test('the copy never invites invention and carries the integrity note', () => {
-  assert.match(FOLLOW_UP_INTEGRITY_NOTE, /genuinely true/)
-  assert.match(FOLLOW_UP_INTEGRITY_NOTE, /self reported/)
-  assert.match(FOLLOW_UP_INTEGRITY_NOTE, /does not change your score unless it is specific and relevant/)
-  assert.match(FOLLOW_UP_OPTIONAL_NOTE, /Optional/)
+await test('the copy says the answer is optional, cannot lower the score, and labels a reported answer', () => {
+  assert.equal(FOLLOW_UP_OPTIONAL_NOTE, 'Optional. Your score can only go up or stay the same.')
   assert.match(CANDIDATE_REPORTED_LABEL, /not on your CV/)
+  assert.match(UPDATED_REPORT_NOTE, /not on your CV/)
 })
 
-await test('the copy has no dashes and promises the score never goes down', () => {
-  assert.match(FOLLOW_UP_INTEGRITY_NOTE, /never goes down/)
+await test('the copy has no dashes', () => {
   for (const text of [
-    FOLLOW_UP_INTEGRITY_NOTE,
     FOLLOW_UP_OPTIONAL_NOTE,
     FOLLOW_UP_HEADING,
     FOLLOW_UP_WORKING_MESSAGE,
+    FOLLOW_UP_EXAMPLE,
+    FOLLOW_UP_EXAMPLE_COPY_MESSAGE,
     CANDIDATE_REPORTED_LABEL,
     UPDATED_REPORT_NOTE,
   ]) {
     assert.doesNotMatch(text, /[-–—]/, text)
   }
-  assert.match(UPDATED_REPORT_NOTE, /not on your CV/)
+})
+
+await test('the example is the one the founder gave: situation, action, outcome and a figure', () => {
+  assert.equal(
+    FOLLOW_UP_EXAMPLE,
+    'Users were dropping off during onboarding. I simplified the signup process, increasing completion from 62% to 78%.',
+  )
+})
+
+await test('the card is a title, one short line, one example and the answer box, and names no requirement', () => {
+  const card = readFileSync('src/components/feedback/EvidenceFollowUpCard.tsx', 'utf8')
+  const pending = card.slice(card.indexOf('Unanswered, and the original CV is gone'))
+  const order = ['{FOLLOW_UP_HEADING}', '{followUp.question}', 'Example:', '{FOLLOW_UP_EXAMPLE}', '<Textarea']
+  const positions = order.map((marker) => pending.indexOf(marker))
+  assert.ok(positions.every((position) => position > 0), `all present: ${order.join(', ')}`)
+  assert.deepEqual([...positions].sort((a, b) => a - b), positions, 'in this order')
+  // Gap Analysis above names the requirement; the card never repeats it or the gap.
+  for (const repeated of [/gap_requirement/, /gap_summary/, /About this requirement/]) {
+    assert.doesNotMatch(card, repeated)
+  }
+})
+
+await test('the example is guidance only: never submitted, only the candidate typed answer is', () => {
+  const card = readFileSync('src/components/feedback/EvidenceFollowUpCard.tsx', 'utf8')
+  assert.match(card, /submitEvidenceFollowUp\(followUp\.check_id, answer\.trim\(\)\)/)
+  assert.equal(card.match(/FOLLOW_UP_EXAMPLE/g)?.length, 2, 'imported and rendered, used nowhere else')
+  assert.doesNotMatch(card, /placeholder=/, 'never prefilled into the answer box')
+})
+
+await test('an answer that copies the example is refused, and a genuine one is not', () => {
+  const copies = [
+    FOLLOW_UP_EXAMPLE,
+    'Users were dropping off during onboarding. I simplified the signup process, increasing completion from 40% to 55%.',
+    'Users dropped off during onboarding, so I simplified signup and completion went from 62% to 78%.',
+    `At my last job: ${FOLLOW_UP_EXAMPLE}`,
+  ]
+  for (const draft of copies) {
+    assert.equal(answerProblem(draft), FOLLOW_UP_EXAMPLE_COPY_MESSAGE, draft)
+    assert.equal(canSubmitAnswer(draft), false, draft)
+    assert.equal(copiesFollowUpExample(draft), true, draft)
+  }
+  const genuine = [
+    GOOD,
+    'At Brightwell our trial users stalled in onboarding, so I cut the setup to 2 screens and trial conversion rose by 30%.',
+    'I grew weekly active users from 62 to 78 by sending a reminder email to people who had not logged in.',
+  ]
+  for (const draft of genuine) {
+    assert.equal(answerProblem(draft), null, draft)
+    assert.equal(copiesFollowUpExample(draft), false, draft)
+  }
 })
 
 // ---------------------------------------------------------------------------

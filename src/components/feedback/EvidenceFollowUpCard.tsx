@@ -8,8 +8,8 @@ import {
   canSubmitAnswer,
   createSubmissionGuard,
   CANDIDATE_REPORTED_LABEL,
+  FOLLOW_UP_EXAMPLE,
   FOLLOW_UP_HEADING,
-  FOLLOW_UP_INTEGRITY_NOTE,
   FOLLOW_UP_OPTIONAL_NOTE,
   FOLLOW_UP_SUBMIT_LABEL,
   FOLLOW_UP_SUBMITTING_LABEL,
@@ -123,43 +123,38 @@ export function EvidenceFollowUpCard({ followUp, updated, dark, onAssessed }: Ev
 
   const problem = answer.trim().length > 0 ? answerProblem(answer) : null
 
+  // The requirement is named by the Gap Analysis card directly above, so this card does not repeat it.
   return (
     <Card tone={cardTone}>
       <CardHeader tone={cardTone} className="px-5 py-3">
         <h2 className={cn('text-xl font-semibold', c.heading)}>{FOLLOW_UP_HEADING}</h2>
-        <p className={cn('mt-0.5 text-xs', c.sub)}>{FOLLOW_UP_OPTIONAL_NOTE}</p>
       </CardHeader>
       <CardContent className="space-y-4 px-5 py-4">
-        <div>
-          <p className={cn('text-xs font-medium uppercase tracking-wider', c.faint)}>About this requirement</p>
-          <p className={cn('mt-1 text-sm font-semibold leading-snug', c.heading)}>{followUp.gap_requirement}</p>
-        </div>
-
         <div>
           <label htmlFor="evidence-follow-up-answer" className={cn('block text-sm font-semibold leading-snug', c.heading)}>
             {followUp.question}
           </label>
+          <p id="evidence-follow-up-example" className={cn('mt-2 text-sm leading-snug', c.accent)}>
+            <span className="font-semibold">Example:</span> <span className="italic">&quot;{FOLLOW_UP_EXAMPLE}&quot;</span>
+          </p>
           <Textarea
             id="evidence-follow-up-answer"
-            className="mt-2 min-h-[120px]"
+            className="mt-3 min-h-[120px]"
             value={answer}
             maxLength={MAX_ANSWER_CHARS}
             disabled={submitting}
             onChange={(event) => setAnswer(event.target.value)}
-            aria-describedby="evidence-follow-up-note"
+            aria-describedby="evidence-follow-up-example evidence-follow-up-note"
             aria-invalid={problem !== null}
           />
           {problem ? <p className={cn('mt-1 text-xs', c.faint)}>{problem}</p> : null}
-          <p id="evidence-follow-up-note" className={cn('mt-2 text-xs leading-snug', c.faint)}>
-            {FOLLOW_UP_INTEGRITY_NOTE}
-          </p>
         </div>
 
         {error ? <Alert variant="error">{error}</Alert> : null}
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className={cn('text-xs', c.faint)} role="status" aria-live="polite">
-            {submitting ? FOLLOW_UP_WORKING_MESSAGE : ''}
+          <p id="evidence-follow-up-note" className={cn('text-xs', c.faint)} role="status" aria-live="polite">
+            {submitting ? FOLLOW_UP_WORKING_MESSAGE : FOLLOW_UP_OPTIONAL_NOTE}
           </p>
           <Button
             size="sm"

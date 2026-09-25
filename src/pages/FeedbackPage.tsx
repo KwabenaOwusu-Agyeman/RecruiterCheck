@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { FeedbackBullet } from '@/components/feedback/FeedbackBullet'
 import { getVerdictColor } from '@/components/feedback/verdictColor'
 import { FICTIONAL_SAMPLE_NOTICE, hasSampleWording, lowerFirstClause, splitFinding } from '@/lib/feedbackText'
-import { EvidenceAssessmentCard } from '@/components/feedback/EvidenceAssessmentCard'
+import { GapAnalysisCard } from '@/components/feedback/GapAnalysisCard'
 import { EvidenceFollowUpCard } from '@/components/feedback/EvidenceFollowUpCard'
 import { SentimentPrompt } from '@/components/feedback/SentimentPrompt'
 import { TrustpilotResultsLink } from '@/components/feedback/TrustpilotResultsLink'
@@ -18,6 +18,7 @@ import { usePageMeta } from '@/hooks/usePageMeta'
 import { getResultTone, getScoreLabel, sanitizeScore } from '@/lib/scoring'
 import { trackEvent } from '@/lib/analytics'
 import { isFollowUpEligibleScore, resolveEffectiveResult, UPDATED_REPORT_NOTE } from '@/lib/evidenceFollowUp'
+import { buildGapAnalysisItem } from '@/lib/gapAnalysis'
 import { getDocumentEntitlement, LIKELY_INTERVIEW_CANDIDATE_MIN_SCORE } from '@/lib/documentEntitlement'
 import {
   analyzeCheck,
@@ -287,13 +288,9 @@ export function FeedbackPage() {
   // The lists to show: the effective report, or, for a legacy check with no
   // valid score, the stored feedback exactly as before.
   const lists = report ?? feedback
-  // report carries these two camelCase (from resolveEffectiveResult, see
-  // src/lib/evidenceFollowUp.ts) while raw feedback carries them snake_case
-  // straight off the DB row (see src/types/index.ts), so lists.xxx cannot be
-  // used uniformly for these two the way it can for strengths/improvements/
-  // prospects, which share the same field name in both shapes.
-  const requirementEvidence = report?.requirementEvidence ?? feedback?.requirement_evidence ?? []
-  const recruiterDoubts = report?.recruiterDoubts ?? feedback?.recruiter_doubts ?? []
+  // Gap Analysis and the follow up appear together or not at all: the one gap is the one the follow up asks about.
+  const showFollowUp = followUp !== null && (followUp.status === 'assessed' || isFollowUpEligibleScore(originalScore))
+  const gapAnalysisItem = showFollowUp ? buildGapAnalysisItem(feedback?.requirement_evidence ?? [], followUp.gap_requirement) : null
   const shownStrengths = lists?.strengths ?? []
   const visibleImprovements = lists
     ? score === 100
@@ -480,13 +477,9 @@ export function FeedbackPage() {
               </CardContent>
             </Card> : null}
 
-            <EvidenceAssessmentCard
-              requirementEvidence={requirementEvidence}
-              recruiterDoubts={recruiterDoubts}
-              dark={isDark}
-            />
+            <GapAnalysisCard gap={gapAnalysisItem} dark={isDark} />
 
-            {followUp && (followUp.status === 'assessed' || isFollowUpEligibleScore(originalScore)) ? (
+            {showFollowUp ? (
               <EvidenceFollowUpCard
                 followUp={followUp}
                 updated={report?.updated ?? false}
@@ -514,9 +507,9 @@ export function FeedbackPage() {
                 <h2 className="text-base font-semibold text-text-primary">Recommendation</h2>
                 <p className="mt-1 text-xs text-text-secondary">
                   {documentEntitlement.cv && documentEntitlement.coverLetter
-                    ? 'An improved CV draft, cover letter, and recruiter message based on your feedback. Your CV draft may include placeholder figures (e.g. "X%") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with real numbers before submitting.'
+                    ? 'An improved CV draft, cover letter, and recruiter message based on your feedback. Your CV draft may include placeholders (e.g. "[X%]") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with your real information before submitting.'
                     : documentEntitlement.cv
-                      ? 'An improved CV draft based on your feedback. Your CV draft may include placeholder figures (e.g. "X%") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with real numbers before submitting.'
+                      ? 'An improved CV draft based on your feedback. Your CV draft may include placeholders (e.g. "[X%]") for areas with no supporting evidence in your CV, and is watermarked as a draft, replace any placeholders with your real information before submitting.'
                       : documentEntitlement.coverLetter
                         ? 'A cover letter and recruiter message based on your feedback. Your Interview Score is already strong for this role, so we do not generate a CV draft at this score.'
                         : 'This check includes your Interview Score and Recruiter Feedback only.'}
@@ -548,13 +541,13 @@ export function FeedbackPage() {
                         </a>
                         <p className="w-full basis-full text-xs text-text-secondary">
                           This CV draft is watermarked "Draft, not for submission." Any area we found no
-                          supporting evidence for in your CV is marked with a placeholder figure (e.g.
-                          "X%"), replace it with your real numbers before sending it.
+                          supporting evidence for in your CV is marked with a placeholder (e.g.
+                          "[X%]"), replace it with your real information before sending it.
                         </p>
                         {report?.updated ? (
                           <p className="w-full basis-full text-xs text-text-secondary">
-                            We added one line to your CV draft reflecting your follow up answer. Review
-                            it before sending.
+                            Your CV draft uses your follow up answer, which was not on your original CV.
+                            Check that part is accurate before sending.
                           </p>
                         ) : null}
                       </>

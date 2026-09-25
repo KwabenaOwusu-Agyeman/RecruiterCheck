@@ -24,7 +24,7 @@ export const SAMPLE_WORDING_DISPLAY_LABEL = 'Example'
 // Shown once per Areas to Improve card, above the sample wording. Copy
 // convention: no dashes anywhere in user facing text.
 export const FICTIONAL_SAMPLE_NOTICE =
-  'These are fictional examples. Adapt them using your real experience and results before adding them to your CV.'
+  'These are fictional examples, not claims about your experience. Use them to identify relevant evidence from your real experience, then replace them with your own details and results before adding anything to your CV.'
 
 export interface SplitFinding {
   title: string

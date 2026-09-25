@@ -250,6 +250,35 @@ export interface RawAnalysis {
   // RawRequirement/EvidenceLevel and call the pure scoring functions
   // directly), so this is safe to make required with zero fixture changes.
   recruiter_doubts: string[]
+  // Only in an Evidence Follow Up reassessment (FOLLOW_UP_ANALYSIS_RESPONSE_FORMAT).
+  follow_up_verdict?: FollowUpVerdict
+}
+
+// The reassessment's judgement of the candidate's follow up answer for the
+// selected requirement. Code, not the model, decides what it means for the score.
+export interface FollowUpVerdict {
+  addresses_requirement: boolean
+  situation: boolean
+  action: boolean
+  outcome: boolean
+  measurable_result: boolean
+  new_information: boolean
+  credible: boolean
+}
+
+// Anything but a literal true reads as false, so a malformed verdict can never credit an answer.
+function normalizeFollowUpVerdict(value: unknown): FollowUpVerdict | null {
+  if (!value || typeof value !== 'object') return null
+  const v = value as Record<string, unknown>
+  return {
+    addresses_requirement: v.addresses_requirement === true,
+    situation: v.situation === true,
+    action: v.action === true,
+    outcome: v.outcome === true,
+    measurable_result: v.measurable_result === true,
+    new_information: v.new_information === true,
+    credible: v.credible === true,
+  }
 }
 
 // One entry per rubric subcriterion. `level` is present for every holistic
@@ -329,6 +358,8 @@ export interface AnalysisResult {
   // requirement matrix the score uses; never feeds back into scoring.
   requirement_evidence: RequirementEvidenceRow[]
   recruiter_doubts: string[]
+  // Null outside a follow up reassessment. Never feeds into this score.
+  follow_up_verdict: FollowUpVerdict | null
 }
 
 // This app is English only — every check must produce English output
@@ -579,6 +610,11 @@ const MATCH_VALUE: Record<MatchStrength, number> = {
   strong: 1,
   partial: 0.5,
   none: 0,
+}
+
+/** The requirement matrix credit still missing for a requirement, in the score's own weights. */
+export function followUpPotentialGain(requirement: Pick<RawRequirement, 'importance' | 'match_strength'>): number {
+  return IMPORTANCE_WEIGHT[requirement.importance] * (1 - MATCH_VALUE[requirement.match_strength])
 }
 
 const EVIDENCE_LEVEL_SCORE: Record<EvidenceLevel, number> = {
@@ -2048,6 +2084,7 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string, meta: { mode
     evidence_references: evidenceReferences,
     evidence_gap: selectEvidenceGap(
       dedupedRequirements.filter((requirement) => verificationStage(requirement) === 'cv'),
+      followUpPotentialGain,
       stripDashes,
     ),
     // Deliberate design note, not a bug: unlike selectEvidenceGap above
@@ -2060,5 +2097,6 @@ export function normalizeAnalysis(raw: RawAnalysis, cvText: string, meta: { mode
     // items already appear elsewhere in the report today.
     requirement_evidence: buildRequirementEvidenceTable(dedupedRequirements),
     recruiter_doubts: sanitizeStrings(raw.recruiter_doubts).slice(0, 3),
+    follow_up_verdict: normalizeFollowUpVerdict(raw.follow_up_verdict),
   }
 }

@@ -6,10 +6,12 @@
 // the band to the document entitlement bands. No model, network or data.
 import assert from 'node:assert/strict'
 import {
-  applyFollowUpFloor,
+  applyFollowUpScoreLimits,
   FOLLOW_UP_MAX_SCORE,
   FOLLOW_UP_MIN_SCORE,
   isFollowUpEligibleScore,
+  isMeaningfulFollowUpEvidence,
+  MAX_FOLLOW_UP_GAIN,
   resolveEffectiveResult,
   type StoredFollowUp,
 } from './follow-up-result.ts'
@@ -51,22 +53,59 @@ test('non numbers are never eligible', () => {
   }
 })
 
-test('the floor: a higher reassessment replaces the score, anything else keeps the original', () => {
-  assert.deepEqual(applyFollowUpFloor(72, 78), { score: 78, improved: true })
-  assert.deepEqual(applyFollowUpFloor(72, 72), { score: 72, improved: false })
-  assert.deepEqual(applyFollowUpFloor(72, 65), { score: 72, improved: false })
-  assert.deepEqual(applyFollowUpFloor(72, 0), { score: 72, improved: false })
+test('score protection: the brief\'s four cases', () => {
+  assert.equal(MAX_FOLLOW_UP_GAIN, 3)
+  assert.deepEqual(applyFollowUpScoreLimits(72, 74, true), { score: 74, improved: true })
+  assert.deepEqual(applyFollowUpScoreLimits(72, 80, true), { score: 75, improved: true })
+  assert.deepEqual(applyFollowUpScoreLimits(72, 71, true), { score: 72, improved: false })
+  assert.deepEqual(applyFollowUpScoreLimits(72, 80, false), { score: 72, improved: false })
 })
 
-test('the score can never fall, for every pair of scores', () => {
-  for (let initial = 0; initial <= 100; initial += 5) {
-    for (let reassessed = 0; reassessed <= 100; reassessed += 5) {
-      const outcome = applyFollowUpFloor(initial, reassessed)
-      assert.ok(outcome.score >= initial)
-      assert.equal(outcome.score, Math.max(initial, reassessed))
-      assert.equal(outcome.improved, reassessed > initial)
+test('an equal or lower reassessment keeps the original, meaningful or not', () => {
+  for (const meaningful of [true, false]) {
+    assert.deepEqual(applyFollowUpScoreLimits(72, 72, meaningful), { score: 72, improved: false })
+    assert.deepEqual(applyFollowUpScoreLimits(72, 0, meaningful), { score: 72, improved: false })
+  }
+})
+
+test('for every pair of scores: never falls, never rises more than 3, never moves without meaningful evidence', () => {
+  for (let initial = 0; initial <= 100; initial += 1) {
+    for (let reassessed = 0; reassessed <= 100; reassessed += 1) {
+      const outcome = applyFollowUpScoreLimits(initial, reassessed, true)
+      assert.equal(outcome.score, Math.min(Math.max(initial, reassessed), initial + MAX_FOLLOW_UP_GAIN))
+      assert.ok(outcome.score >= initial && outcome.score <= initial + MAX_FOLLOW_UP_GAIN)
+      assert.equal(outcome.improved, outcome.score > initial)
+      assert.deepEqual(applyFollowUpScoreLimits(initial, reassessed, false), { score: initial, improved: false })
     }
   }
+})
+
+test('skipping the question leaves the original result, on the server and in the browser', () => {
+  const skipped: StoredFollowUp = { status: 'pending', final_score: null }
+  for (const resolve of [resolveEffectiveResult, clientResolve]) {
+    const result = resolve({ score: 72, strengths: ['s0'], improvements: ['i0'], prospects: ['p0'], requirementEvidence: [], recruiterDoubts: [] }, skipped)
+    assert.equal(result.score, 72)
+    assert.equal(result.updated, false)
+  }
+})
+
+test('meaningful evidence needs relevance, situation, action, outcome, newness and credibility, but never a number', () => {
+  const all = {
+    addresses_requirement: true,
+    situation: true,
+    action: true,
+    outcome: true,
+    measurable_result: true,
+    new_information: true,
+    credible: true,
+  }
+  assert.equal(isMeaningfulFollowUpEvidence(all), true)
+  assert.equal(isMeaningfulFollowUpEvidence({ ...all, measurable_result: false }), true)
+  for (const key of ['addresses_requirement', 'situation', 'action', 'outcome', 'new_information', 'credible'] as const) {
+    assert.equal(isMeaningfulFollowUpEvidence({ ...all, [key]: false }), false, key)
+  }
+  assert.equal(isMeaningfulFollowUpEvidence(null), false)
+  assert.equal(isMeaningfulFollowUpEvidence(undefined), false)
 })
 
 const BASE = {
