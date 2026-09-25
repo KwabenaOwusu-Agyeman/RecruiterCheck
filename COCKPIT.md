@@ -210,17 +210,6 @@ doing it.
   wording bullet exactly as well as the old unquantified style, so once the
   model does produce one, no further frontend work is needed for it to show
   correctly. Recorded 2026-09-23, updated 2026-09-24.
-- **Founder action, amend the Scoring Methodology before PR #184 merges.**
-  PR #184 adds a code-enforced +3 point cap on a follow up gain, a
-  meaningful evidence gate (`applyFollowUpScoreLimits` in
-  `supabase/functions/_shared/follow-up-result.ts`, replacing
-  `applyFollowUpFloor`) and a fixed example answer (`FOLLOW_UP_EXAMPLE`).
-  DEC-8 was amended to match on 2026-09-26, at the founder's request, as a
-  dated section on its page ("Evidence Follow Up: one optional question,
-  floor, and Needs Improvement only", Decision Log). The Scoring
-  Methodology's Evidence Follow Up exception still describes a floor with no
-  ceiling, so merging before it is updated would leave code and methodology
-  in disagreement. Recorded 2026-09-25, updated 2026-09-26.
 - **Founder action, a credited follow up needs one real end to end check.**
   No live OpenAI call has been made for PR #182 (credited answer woven into
   the CV draft) or for branch `feature/feedback-report-evidence-distinction`
@@ -457,7 +446,9 @@ in the answer length, logs nothing and returns a fixed message.
 **UNVERIFIED:** visual layout (Chrome connector disconnected) and any live
 model call; see Open items.
 
-**Blockers.** DEC-8 amendment before merge; see Open items.
+**Blockers.** None. DEC-8 and the Scoring Methodology's Evidence Follow Up
+exception were amended to match on 2026-09-26, at the founder's request.
+The PR stays a draft until the founder's manual checks in Open items.
 
 **Founder action required.** See Open items.
 
@@ -467,7 +458,7 @@ model call; see Open items.
 `feature/feedback-report-evidence-distinction`, pushed to `origin` and
 `personal` 2026-09-26, draft
 [#184](https://github.com/fullcircleAI/RecruiterCheck/pull/184). Not merged:
-waits on the DEC-8 amendment.
+waits on the founder's manual checks.
 
 ---
 
