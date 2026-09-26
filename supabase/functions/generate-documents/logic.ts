@@ -38,6 +38,9 @@ export interface TailoredCv {
   education: EducationEntry[]
   languages: string[]
   section_labels: SectionLabels
+  // One line from a credited Evidence Follow Up answer, printed under
+  // FOLLOW_UP_SECTION_HEADING. Absent or empty when there is none.
+  follow_up_bullet?: string
 }
 
 export interface CoverLetter {
@@ -286,9 +289,29 @@ export function stripExampleClause(text: string): string {
 export interface ValidationScope {
   coverLetter: boolean
   recruiterMessage: boolean
+  // True when the CV is entitled and a credited follow up answer was sent: the
+  // CV must then carry its one follow up bullet. Otherwise any bullet is dropped.
+  followUpBullet?: boolean
 }
 
 const VALIDATE_EVERYTHING: ValidationScope = { coverLetter: true, recruiterMessage: true }
+
+// Fixed in code, never written by the model, like the draft watermark.
+export const FOLLOW_UP_SECTION_HEADING = 'Additional Relevant Experience'
+
+// Added to tailored_cv's schema only when a credited follow up answer is sent,
+// so every other generation requests exactly the schema it always did.
+export const FOLLOW_UP_BULLET_SCHEMA = {
+  type: 'string',
+  description: "One CV bullet built only from the candidate's follow up answer; see the CANDIDATE-REPORTED instructions.",
+} as const
+
+// Appended to the system prompt only alongside FOLLOW_UP_BULLET_SCHEMA. The
+// answer's facts go into that one bullet, printed under its own heading, so
+// they are never mixed into the CV's employment history or restated elsewhere.
+export const FOLLOW_UP_DOCUMENT_ADDENDUM = `
+The original CV text below ends with a section headed "=== CANDIDATE-REPORTED ADDITIONAL EVIDENCE ===". It holds the candidate's own answer to one follow up question about the requirement it names, already assessed as specific and credible. Turn that answer into exactly one CV bullet in tailored_cv.follow_up_bullet: past tense, first person implied, no subject pronoun, roughly 15 to 35 words, using only the facts the answer states. Keep every number, tool and outcome the answer gives; never add a number, date, employer, tool or outcome it does not state, and never use brackets or placeholders. Never mention a follow up question, that the answer is self reported, or MyRecruiterCheck. The application prints this bullet under its own heading, so do not repeat the answer's facts in any experience bullet, the professional summary, cover_letter or recruiter_message. If an area to improve below is answered by this section, classify it as case (A) and add no placeholder bullet for it: follow_up_bullet is the bullet that addresses it. For new_claims_introduced, facts in follow_up_bullet count as present in the source only when that section states them; every other field must still trace to the CV itself.
+`
 
 export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VALIDATE_EVERYTHING): RawDocuments {
   const cv = raw.tailored_cv
@@ -343,6 +366,16 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
   if (!fullName) throw new Error('Tailored CV is missing a name')
   if (!professionalSummary) throw new Error('Tailored CV is missing a professional summary')
   if (experience.length === 0) throw new Error('Tailored CV is missing experience')
+
+  // Required, and retried when missing, only when a credited answer was sent;
+  // otherwise dropped, so a bullet the model invents on its own is never printed.
+  const followUpBullet = scope.followUpBullet ? stripDashes((cv?.follow_up_bullet ?? '').trim()) : ''
+  if (scope.followUpBullet) {
+    if (!followUpBullet) throw new Error('Tailored CV is missing the follow up bullet')
+    if (containsPlaceholder(followUpBullet)) {
+      throw new Error("Follow up bullet contains a placeholder instead of the candidate's own facts")
+    }
+  }
   if (scope.coverLetter) {
     if (!salutation) throw new Error('Cover letter is missing a salutation')
     if (!introParagraph) throw new Error('Cover letter is missing an introduction')
@@ -388,7 +421,7 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
   // Language is a property of the whole response, so this reads every
   // document whatever the scope: a CV summary alone is too short for the
   // heuristic, and narrowing it would fail CV only requests more often.
-  const combinedDocContent = [professionalSummary, introParagraph, ...bodyParagraphs, conclusionParagraph, messageBody].join(' ')
+  const combinedDocContent = [professionalSummary, followUpBullet, introParagraph, ...bodyParagraphs, conclusionParagraph, messageBody].join(' ')
   if (!looksLikeEnglish(combinedDocContent)) {
     throw new Error('Document content did not look like English')
   }
@@ -476,6 +509,7 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
       languages: (Array.isArray(cv.languages) ? cv.languages : [])
         .map((language) => language.trim())
         .filter(Boolean),
+      follow_up_bullet: followUpBullet,
     },
     cover_letter: {
       company_location: (letter?.company_location ?? '').trim(),

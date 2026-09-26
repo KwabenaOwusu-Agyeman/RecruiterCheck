@@ -9,6 +9,9 @@ import { fileExtensionForLog, isOwnStoragePath } from '../_shared/storage-path.t
 import { buildFollowUpCvText } from '../analyze-check/evidence-follow-up.ts'
 import {
   classifyGenerationError,
+  FOLLOW_UP_BULLET_SCHEMA,
+  FOLLOW_UP_DOCUMENT_ADDENDUM,
+  FOLLOW_UP_SECTION_HEADING,
   getDocumentEntitlement,
   isRetryableGenerationError,
   stripExampleClause,
@@ -244,12 +247,13 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Could not read text from this CV file' }, 400)
     }
 
-    // Same labelled, delimited addendum the reassessment itself appends to
-    // the CV text (see assess-evidence-follow-up), reused here so a credited
-    // follow up answer can ground a real CV bullet exactly like a fact
-    // stated in the CV, never a fact the document generator invented.
-    const effectiveCvText = followUpEvidence
-      ? buildFollowUpCvText(cvText, followUpEvidence.requirement, followUpEvidence.question, followUpEvidence.answer)
+    // A credited answer becomes one line of the CV draft, so it is sent only
+    // when a CV draft will be printed; the cover letter and recruiter message
+    // never use it. It travels in the same labelled, delimited section the
+    // reassessment itself reads (see assess-evidence-follow-up).
+    const cvFollowUp = entitlement.cv ? followUpEvidence : null
+    const effectiveCvText = cvFollowUp
+      ? buildFollowUpCvText(cvText, cvFollowUp.requirement, cvFollowUp.question, cvFollowUp.answer)
       : cvText
 
     const generated = await generateDocuments(openaiApiKey, effectiveCvText, check.job_description.slice(0, MAX_JOB_DESCRIPTION_CHARS), {
@@ -264,8 +268,12 @@ Deno.serve(async (req) => {
       // document: strip the clause before this reaches the generator.
       improvements: result.improvements.map(stripExampleClause),
       prospects: result.prospects,
-      hasFollowUpEvidence: followUpEvidence !== null,
-    }, { coverLetter: entitlement.coverLetter, recruiterMessage: entitlement.recruiterMessage })
+      hasFollowUpEvidence: cvFollowUp !== null,
+    }, {
+      coverLetter: entitlement.coverLetter,
+      recruiterMessage: entitlement.recruiterMessage,
+      followUpBullet: cvFollowUp !== null,
+    })
 
     // The standard PDF font can only draw Windows-1252 text; see toPdfSafeText.
     const docs = toPdfSafe(generated)
@@ -483,17 +491,6 @@ async function generateDocuments(
   throw new Error(`All attempts failed: ${attemptReasons.join(', ')}`)
 }
 
-// Appended to systemPrompt only when the effective CV text carries a
-// credited Evidence Follow Up answer (see evidence-follow-up.ts's
-// CANDIDATE_REPORTED_HEADER). Mirrors analyze-check's own FOLLOW_UP_ADDENDUM
-// integrity rules, adapted for writing a real document instead of scoring:
-// the fact is real and usable, but the document must never say where it
-// came from, since a recruiter reading the finished CV should see an
-// ordinary bullet, not a reference to how this product works.
-const FOLLOW_UP_DOCUMENT_ADDENDUM = `
-The original CV text below may end with a section headed "=== CANDIDATE-REPORTED ADDITIONAL EVIDENCE ===". When present, it holds the candidate's own answer to one follow up question, already assessed as specific and credible, not a bare unverified claim. For tailored_cv only, treat a fact stated there exactly as a fact stated in the CV itself: valid grounds for a case (A) or (B) rewrite, and present in the source for the traceability rule above and the new_claims_introduced self check below. Never treat it as a case (C) gap, and never mark a bullet built from it is_placeholder: true, since it is real, not a placeholder. Write anything drawn from it in ordinary CV language, in the same voice as every other bullet: never mention a follow up question, that something is self reported, or how MyRecruiterCheck works, anywhere in tailored_cv. Never add a number, date, employer, or outcome that section does not literally state. Do not use this section for cover_letter or recruiter_message: write those two exactly as you would without it.
-`
-
 async function callOpenAI(
   apiKey: string,
   cvText: string,
@@ -650,6 +647,7 @@ ${cvText}`
                     },
                   },
                   languages: { type: 'array', items: { type: 'string' } },
+                  ...(context.hasFollowUpEvidence ? { follow_up_bullet: FOLLOW_UP_BULLET_SCHEMA } : {}),
                 },
                 required: [
                   'full_name',
@@ -659,6 +657,7 @@ ${cvText}`
                   'experience',
                   'education',
                   'languages',
+                  ...(context.hasFollowUpEvidence ? ['follow_up_bullet'] : []),
                 ],
                 additionalProperties: false,
               },
@@ -864,6 +863,13 @@ function layoutCv(
       if (lines.length > 0) lines[lines.length - 1].advance += index < cv.experience.length - 1 ? gapMedium : gapSection
       totalHeight += index < cv.experience.length - 1 ? gapMedium : gapSection
     })
+  }
+
+  if (cv.follow_up_bullet) {
+    addLeft(FOLLOW_UP_SECTION_HEADING, headingSize, fonts.bold, BLACK, gapSmall)
+    addBullet(cv.follow_up_bullet, bodySize, fonts.regular, BLACK)
+    if (lines.length > 0) lines[lines.length - 1].advance += gapSection
+    totalHeight += gapSection
   }
 
   if (cv.languages.length > 0) {

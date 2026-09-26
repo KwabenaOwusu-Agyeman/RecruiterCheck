@@ -224,10 +224,13 @@ doing it.
   example and the answer box; (2) pasting the example is refused before
   anything is assessed; (3) a vague answer leaves the score unchanged;
   (4) a strong situation, action, outcome answer raises it by at most 3
-  points and is shown as "Candidate reported, not on your CV"; (5) Generate
-  produces a CV.pdf with one natural bullet from the answer and no mention of
-  a follow up; (6) the Recommendation note about the follow up appears only
-  in the credited case. Also **MANUAL CHECK REQUIRED** on `localhost:5173`:
+  points and is shown as "Candidate reported, not on your CV"; (5) once
+  branch `feature/follow-up-cv-dedicated-line` is live, Generate produces a
+  one page CV.pdf with an "Additional Relevant Experience" section holding
+  one bullet from the answer, its own figures kept, nothing added, no mention
+  of a follow up, and the answer's facts not repeated in the job entries;
+  (6) the Recommendation note naming that section appears only in the
+  credited case. Also **MANUAL CHECK REQUIRED** on `localhost:5173`:
   the two cards' layout (2026-09-26 was checked by server rendering only, the
   Chrome connector being disconnected), and generating a CV, then getting
   credited, clears the stale CV button (PR #182's `onAssessed` fix).
@@ -411,6 +414,48 @@ Its Keyword Scan reservation design was never adopted by the live
 reservation functions are dropped by `20260922170000`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-26 — A credited follow up answer gets its own line in the CV draft
+
+**Objective.** Founder: make a relevant follow up answer reliably fit in the
+CV draft. Before this, PR #182 only let the generator weave the answer into
+experience bullets if it chose to, with nothing checking it did, the 4
+bullet cap able to drop it, and the report note promising it regardless.
+
+**Completed.** `generate-documents`: when the CV draft is entitled and the
+follow up was credited, the request adds `follow_up_bullet` to the
+`tailored_cv` schema (`FOLLOW_UP_BULLET_SCHEMA`) and the rewritten
+`FOLLOW_UP_DOCUMENT_ADDENDUM` (both moved to `logic.ts`): exactly one bullet
+from the answer's facts only, figures kept, no brackets, never mentioning a
+follow up, not repeated in job entries, summary, cover letter or recruiter
+message, and an area to improve it answers counts as case (A) with no
+placeholder. Every other generation sends the same request as before.
+`validateDocuments` (`scope.followUpBullet`) requires a non empty,
+placeholder free bullet, else the existing retry loop runs, and drops any
+bullet otherwise. `layoutCv` prints it under the code owned heading
+`FOLLOW_UP_SECTION_HEADING` ("Additional Relevant Experience") after Work
+Experience, outside the 4 bullet cap; the renderer's scale steps keep one
+page. The answer is no longer sent at all when only a cover letter and
+recruiter message are entitled. `FeedbackPage.tsx` note names the section.
+
+**Verified.** lint (0 errors), typecheck, `test:edge` (30/30, 528; 8 new
+tests in `generate-documents/logic.test.ts`), `test:unit` (25/25, 297),
+build (81 CSP hashes unchanged), `deno check --no-config` on
+`generate-documents` (the same 8 pre-existing `SupabaseClient` errors).
+Mandatory security review: no findings. **UNVERIFIED:** a real PDF (the
+renderer is private to `index.ts`, and no live model call is possible
+here); see Open items.
+
+**Blockers.** None.
+
+**Founder action required.** See Open items: the real check now includes
+the CV line.
+
+**Next technical step.** None.
+
+**Commit or PR.** Branch `feature/follow-up-cv-dedicated-line`.
 
 ---
 
