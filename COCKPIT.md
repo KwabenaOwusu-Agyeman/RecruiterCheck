@@ -257,6 +257,23 @@ doing it.
   in success. Fixed on branch `fix/follow-up-repeats-never-fail-generation`.
   Still to confirm: (1) to (4) as seen, (6), and a Generate after that fix
   is live.
+- **Founder decision, document checks still able to fail every attempt.**
+  From the 2026-09-27 audit of `validateDocuments`; each is a product call,
+  so none was built. (1) `new_claims_introduced`: the prompt's self audit
+  must list any job title, employer or skill not on the CV, yet the letter
+  must name the role and employer applied to and paragraph 3 asks for soft
+  skills, so an honest audit fails. Proposed: excuse the role and employer
+  applied to when they are absent from the tailored CV. (2) A CV with no
+  roles fails `cv_missing_experience` every time, while Scoring Methodology
+  says "Do not punish lack of paid employment". (3) A missing follow up line
+  (`cv_missing_follow_up_bullet`) could be dropped on the last draft instead
+  of failing. (4) A missing name or a non English CV ends in "try again in a
+  moment" (500), not a message saying why. Also: record in the Decision Log
+  that a last draft ships with fewer case (C) placeholder bullets than case
+  (C) areas (`case_c_shortfall_accepted`), decided in session 2026-09-27.
+  After this is live, a failed or repaired Generate logs one code per check
+  (`generate-documents error`, `generate-documents: last draft repaired`);
+  send those lines to rank (1) to (4). Recorded 2026-09-27.
 - **Founder action.** Verify a real Google sign-in end to end after the move
   to the `myrecruitercheck` Cloud project, then delete the old `RecruiterCheck`
   OAuth client in `theorycoach-ai`. Recorded 2026-09-07.
@@ -436,6 +453,54 @@ Its Keyword Scan reservation design was never adopted by the live
 reservation functions are dropped by `20260922170000`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-27 — No document check can fail a generation on every attempt by itself
+
+**Objective.** Audit every remaining reject only check in `validateDocuments`
+(`generate-documents/logic.ts`) after #189 showed that one can fail every
+attempt, and apply the fixes the founder approved: the safe ones, plus
+accepting a case (C) shortfall on the last draft.
+
+**Completed.** Reproduced with invented drafts and fixed:
+- `citesStatistic`: digits in the stored job title or company name, or in a
+  word starting with a letter (HTML5, S3), are no statistic. "Level 2 Support
+  Engineer" used to fail every attempt.
+- `containsName`: matches capitals only. A name part the job, the CV's titles,
+  employers or schools also use does not count; the full name always does.
+  "I will" used to fail a candidate called Will.
+- `printedBullets`: the placeholder check and the case (C) count read printed
+  bullets only, and the cap keeps a placeholder bullet ahead of the last real
+  one. A case (C) bullet added as a fifth bullet used to be cut after passing
+  the count.
+- Three body paragraphs joined by blank lines are split.
+- `lineOr` defaults: an empty or bracketed salutation, thank you line, greeting
+  or closing line gets the prompt's own example. Those four were never
+  checked for placeholders before.
+- `scope.repair` on the last draft: drops unflagged placeholder bullets,
+  removes sentences with a placeholder or a figure, accepts two body
+  paragraphs, and accepts a case (C) shortfall (founder decision in session,
+  2026-09-27).
+- `index.ts` keeps every rejected draft and repairs them newest first.
+  `retryCorrection` tells each retry which rule broke, with fixed text that
+  never quotes the claims. `classifyGenerationError` gives one code per check.
+- Never repaired: unverified claims, the name, the summary, experience, the
+  follow up line, English.
+
+**Verified.** lint (0 errors), typecheck, `test:edge` (30/30, 561; 16 new
+tests and 3 corrected assertions in `generate-documents/logic.test.ts`),
+`deno check --node-modules-dir=none` on `generate-documents/index.ts` (the
+same 8 `SupabaseClient` errors as `main`). Security review: logs carry codes
+only, corrections are fixed text. **UNVERIFIED:** a live generation.
+
+**Blockers.** None.
+
+**Founder action required.** See Open items: document check decisions.
+
+**Next technical step.** Read the new reason codes once live; see Open items.
+
+**Commit or PR.** Branch `fix/document-checks-never-fail-generation`.
 
 ---
 

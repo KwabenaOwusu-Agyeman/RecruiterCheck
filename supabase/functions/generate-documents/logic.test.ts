@@ -1,7 +1,7 @@
 // Run with: npx tsx supabase/functions/generate-documents/logic.test.ts
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { answerOnlyFacts, repeatedAnswerFacts, classifyGenerationError, containsName, containsPlaceholder, FOLLOW_UP_BULLET_SCHEMA, FOLLOW_UP_DOCUMENT_ADDENDUM, FOLLOW_UP_SECTION_HEADING, FollowUpRepeatedError, followUpRepeatedCorrection, getDocumentEntitlement, isRetryableGenerationError, PACK_DISPLAY_NAMES, looksLikeEnglish, splitSentences, statedInAnswer, stripDashes, stripExampleClause, toPdfSafe, toPdfSafeText, validateDocuments, type RawDocuments } from './logic.ts'
+import { answerOnlyFacts, repeatedAnswerFacts, citesStatistic, classifyGenerationError, containsName, containsPlaceholder, retryCorrection, FOLLOW_UP_BULLET_SCHEMA, FOLLOW_UP_DOCUMENT_ADDENDUM, FOLLOW_UP_SECTION_HEADING, FollowUpRepeatedError, followUpRepeatedCorrection, getDocumentEntitlement, isRetryableGenerationError, PACK_DISPLAY_NAMES, looksLikeEnglish, splitSentences, statedInAnswer, stripDashes, stripExampleClause, toPdfSafe, toPdfSafeText, validateDocuments, type RawDocuments } from './logic.ts'
 
 let passed = 0
 function test(name: string, fn: () => void) {
@@ -451,7 +451,7 @@ test('LOGS: failure reasons are fixed codes and never echo the message', () => {
   assert.equal(classifyGenerationError('OpenAI API error: 401'), 'openai_http_401')
   assert.equal(classifyGenerationError('OpenAI request timed out after 45000ms'), 'timeout')
   assert.equal(classifyGenerationError('Unexpected token < in JSON at position 0'), 'invalid_json')
-  assert.equal(classifyGenerationError('Cover letter is written in third person instead of first person'), 'cover_letter_invalid')
+  assert.equal(classifyGenerationError('Cover letter is written in third person instead of first person'), 'cover_letter_third_person')
   assert.equal(classifyGenerationError('WinAnsi cannot encode "Ł" (0x0141)'), 'pdf_encoding')
   assert.equal(classifyGenerationError('something about Jamie Rivera'), 'other')
 })
@@ -486,7 +486,7 @@ test('FOLLOW UP: a missing bullet fails validation so the generation is retried'
   for (const bullet of [undefined, '', '   ']) {
     assert.throws(() => validateDocuments(withFollowUpBullet(bullet), FOLLOW_UP_SCOPE), /missing the follow up bullet/)
   }
-  assert.equal(classifyGenerationError('Tailored CV is missing the follow up bullet'), 'cv_incomplete')
+  assert.equal(classifyGenerationError('Tailored CV is missing the follow up bullet'), 'cv_missing_follow_up_bullet')
 })
 
 test('FOLLOW UP: a placeholder in the bullet fails validation, since the answer is real', () => {
@@ -649,7 +649,8 @@ test('FOLLOW UP: the retry is told which facts to keep in the line, and the log 
   const source = readFileSync('supabase/functions/generate-documents/index.ts', 'utf8')
   assert.match(source, /answer: cvFollowUp\.answer,\s*cvText,\s*jobTitle: check\.job_title,\s*companyName: check\.company_name,\s*jobDescription: check\.job_description,/)
   assert.match(source, /callOpenAI\(apiKey, cvText, jobDescription, context, correction\)/)
-  assert.match(source, /repeatingDraft = raw\s*correction = followUpRepeatedCorrection\(error\.repeated\)/)
+  assert.match(source, /if \(raw\) rejectedDrafts\.push\(raw\)\s*correction = raw \? retryCorrection\(error\) : null/)
+  assert.equal(retryCorrection(new FollowUpRepeatedError(['1500', 'Cloud Run'])), followUpRepeatedCorrection(['1500', 'Cloud Run']))
   assert.match(source, /\.\.\.\(correction \? \[\{ role: 'user', content: correction \}\] : \[\]\)/)
 })
 
@@ -755,6 +756,265 @@ test('FOLLOW UP: removal still fails a summary made of nothing but the answer, t
 test('FOLLOW UP: without a credited answer, removal mode changes nothing', () => {
   const plain = validateDocuments(baseRaw(), { coverLetter: true, recruiterMessage: true, followUpRepeats: 'remove' })
   assert.deepEqual(plain, validateDocuments(baseRaw()))
+})
+
+// ---------------------------------------------------------------------------
+// LAST DRAFT: a check the model fails on every attempt does not fail the
+// generation. Invented names, roles and employers throughout; each case below
+// failed every retry before, since its cause was in the input, not the draft.
+// ---------------------------------------------------------------------------
+
+const REPAIR = { coverLetter: true, recruiterMessage: true, repair: true }
+
+function withMessage(body: string): RawDocuments {
+  const raw = baseRaw()
+  raw.recruiter_message.body = body
+  return raw
+}
+
+function named(fullName: string, edit: (raw: RawDocuments) => void = () => {}): RawDocuments {
+  const raw = baseRaw()
+  raw.tailored_cv.full_name = fullName
+  edit(raw)
+  return raw
+}
+
+function fiveBullets(last: { text: string; is_placeholder: boolean }) {
+  const filler = Array.from({ length: 4 }, (_, i) => ({ text: `Shipped release ${i + 1} of the reporting service on schedule.`, is_placeholder: false }))
+  return [...filler, last]
+}
+
+test('STATISTIC: digits in the role or employer applied to, or in a name like HTML5, are not a statistic', () => {
+  const scope = { coverLetter: true, recruiterMessage: true, job: { jobTitle: 'Level 2 Support Engineer', companyName: '1Password' } }
+  for (const body of [
+    'I have applied for the Level 2 Support Engineer role. I admire how 1Password treats privacy. My help desk background fits this team well.',
+    'I have applied for the support role. I am excited by your product. My experience building accessible HTML5 interfaces on S3 fits this role.',
+  ]) {
+    assert.doesNotThrow(() => validateDocuments(withMessage(body), scope), body)
+  }
+  for (const body of [
+    'I have applied for the support role. I cut the ticket backlog by 15 percent in my last role.',
+    'I have applied for the support role. I resolved tickets 3x faster than my team.',
+    'I have applied for the support role. I administered Microsoft 365 for a growing office.',
+  ]) {
+    assert.throws(() => validateDocuments(withMessage(body), scope), /statistic/, body)
+  }
+  assert.equal(citesStatistic('I have applied for the Level 2 Support Engineer role.'), true, 'only the role applied to is exempt')
+  assert.equal(citesStatistic('I have applied for the Tier 2 Analyst role.', { jobTitle: 'Tier-2 Analyst' }), false, 'dashes are removed before printing')
+  assert.equal(citesStatistic('I resolved tickets x3 faster.'), true, 'a multiplier is a figure')
+})
+
+test('STATISTIC: on the last draft the sentence with a figure is removed whole, never reworded', () => {
+  const raw = withMessage('I have applied for the Senior Backend Engineer role. I am excited to join Acme. I cut latency by 40 percent last year.')
+  assert.throws(() => validateDocuments(raw), /statistic/)
+  const repairs: string[] = []
+  const result = validateDocuments(raw, REPAIR, repairs)
+  assert.equal(result.recruiter_message.body, 'I have applied for the Senior Backend Engineer role. I am excited to join Acme.')
+  assert.deepEqual(repairs, ['statistic_sentence_removed'])
+  assert.throws(() => validateDocuments(withMessage('I cut latency by 40 percent.'), REPAIR), /too short/, 'nothing left worth sending still fails')
+})
+
+test('THIRD PERSON: a name that is also a word, a tool or the employer does not fail every draft', () => {
+  const scope = {
+    coverLetter: true,
+    recruiterMessage: true,
+    job: { jobTitle: 'Backend Engineer', companyName: 'JPMorgan Chase', jobDescription: 'You will build services in Ruby on Rails.' },
+  }
+  const drafts = [
+    named('Will Carter', (raw) => {
+      raw.cover_letter.conclusion_paragraph = 'I will bring the same care to your team and would welcome a conversation.'
+    }),
+    named('Can Yilmaz'), // the base letter says "how I can contribute"
+    named('Mei Chase', (raw) => {
+      raw.cover_letter.intro_paragraph = 'I am excited to apply for the Backend Engineer role at JPMorgan Chase.'
+    }),
+    named('Ruby Okafor', (raw) => {
+      raw.cover_letter.body_paragraphs[0] = 'I built three internal tools in Ruby on Rails for the support team.'
+    }),
+  ]
+  for (const raw of drafts) assert.doesNotThrow(() => validateDocuments(raw, scope), raw.tailored_cv.full_name)
+  assert.equal(containsName('I will bring care.', 'Will Carter'), false)
+})
+
+test('THIRD PERSON: the candidate named as the subject still fails, however the CV writes the name', () => {
+  const scope = { coverLetter: true, recruiterMessage: true, job: { jobTitle: 'Backend Engineer', companyName: 'JPMorgan Chase', jobDescription: 'You will build services.' } }
+  const drafts = [
+    named('Will Carter', (raw) => {
+      raw.cover_letter.intro_paragraph = 'Will is excited to apply for the Backend Engineer role.'
+    }),
+    named('jamie rivera', (raw) => {
+      raw.cover_letter.intro_paragraph = 'Jamie is excited to apply for the Backend Engineer role.'
+    }),
+    named('Jean-Luc Moreau', (raw) => {
+      raw.recruiter_message.body = 'I have applied for the role. Jean-Luc brings strong backend experience to any team.'
+    }),
+    // The full name counts even when the employer shares a part of it.
+    named('Mei Chase', (raw) => {
+      raw.cover_letter.intro_paragraph = 'Mei Chase is excited to apply for the Backend Engineer role.'
+    }),
+  ]
+  for (const raw of drafts) assert.throws(() => validateDocuments(raw, scope), /third person/, raw.tailored_cv.full_name)
+})
+
+test('PLACEHOLDER: a bullet the CV never prints cannot fail the generation', () => {
+  const raw = baseRaw()
+  raw.tailored_cv.experience[0].bullets = fiveBullets({ text: 'Supported the [internal billing] migration.', is_placeholder: false })
+  const bullets = validateDocuments(raw).tailored_cv.experience[0].bullets
+  assert.equal(bullets.length, 4)
+  assert.ok(!bullets.some((bullet) => bullet.text.includes('[')))
+})
+
+test('PLACEHOLDER: on the last draft an unflagged bullet with a placeholder is dropped whole', () => {
+  const raw = baseRaw()
+  raw.tailored_cv.experience[0].bullets.push({ text: 'Raised retention by [X%] across the region.', is_placeholder: false })
+  assert.throws(() => validateDocuments(raw), /without being marked as one/)
+  const repairs: string[] = []
+  const bullets = validateDocuments(raw, REPAIR, repairs).tailored_cv.experience[0].bullets.map((bullet) => bullet.text)
+  assert.deepEqual(bullets, baseRaw().tailored_cv.experience[0].bullets.map((bullet) => bullet.text))
+  assert.deepEqual(repairs, ['placeholder_bullet_removed'])
+})
+
+test('PLACEHOLDER: on the last draft a sentence with a placeholder is removed from the summary, letter and message', () => {
+  const raw = baseRaw()
+  raw.tailored_cv.professional_summary =
+    'Backend engineer with 6 years of experience in distributed systems. Improved uptime by [X%] across services. Delivers reliable services.'
+  raw.cover_letter.body_paragraphs[2] = 'I grew the [relevant community] programme.'
+  raw.recruiter_message.body = `${baseRaw().recruiter_message.body} I bring [X years] of leadership.`
+  assert.throws(() => validateDocuments(raw), /placeholder/)
+  const repairs: string[] = []
+  const result = validateDocuments(raw, REPAIR, repairs)
+  assert.equal(result.tailored_cv.professional_summary, 'Backend engineer with 6 years of experience in distributed systems. Delivers reliable services.')
+  assert.equal(result.cover_letter.body_paragraphs.length, 2, 'a paragraph made only of the placeholder is dropped, and still counts')
+  assert.equal(result.recruiter_message.body, baseRaw().recruiter_message.body)
+  assert.deepEqual(repairs, ['placeholder_sentence_removed'])
+  const onlyPlaceholder = baseRaw()
+  onlyPlaceholder.tailored_cv.professional_summary = 'Improved uptime by [X%] across services.'
+  assert.throws(() => validateDocuments(onlyPlaceholder, REPAIR), /placeholder/, 'a summary with nothing else in it still fails')
+})
+
+test('CASE C: the placeholder bullet is printed even when its entry already has four bullets', () => {
+  const raw = baseRaw({ improvement_classifications: [{ case: 'C' }] })
+  raw.tailored_cv.experience[0].bullets = fiveBullets({ text: 'Completed a [relevant cloud certification] to strengthen deployment skills.', is_placeholder: true })
+  const bullets = validateDocuments(raw).tailored_cv.experience[0].bullets
+  assert.equal(bullets.length, 4)
+  assert.equal(bullets[3].is_placeholder, true, 'the last real bullet is cut instead')
+  assert.equal(bullets[2].text, 'Shipped release 3 of the reporting service on schedule.')
+})
+
+test('CASE C: a blank or unprinted placeholder bullet no longer counts toward the case C areas', () => {
+  const blank = baseRaw({ improvement_classifications: [{ case: 'C' }] })
+  blank.tailored_cv.experience[0].bullets.push({ text: '   ', is_placeholder: true })
+  assert.throws(() => validateDocuments(blank), /case C/)
+  const fifthEntry = baseRaw({ improvement_classifications: [{ case: 'C' }] })
+  const entry = fifthEntry.tailored_cv.experience[0]
+  fifthEntry.tailored_cv.experience = [entry, entry, entry, entry, { ...entry, bullets: [{ text: 'Completed a [relevant course].', is_placeholder: true }] }]
+  assert.throws(() => validateDocuments(fifthEntry), /case C/)
+})
+
+test('CASE C: on the last draft a shortfall ships, with no bullet written or flagged in code, and is recorded', () => {
+  const raw = baseRaw({ improvement_classifications: [{ case: 'B' }, { case: 'C' }] })
+  assert.throws(() => validateDocuments(raw), /case C/)
+  const repairs: string[] = []
+  const result = validateDocuments(raw, REPAIR, repairs)
+  assert.deepEqual(result.tailored_cv.experience, validateDocuments(baseRaw()).tailored_cv.experience)
+  assert.deepEqual(repairs, ['case_c_shortfall_accepted'])
+})
+
+test('PARAGRAPHS: three paragraphs in one string count as three, and the last draft may have two', () => {
+  const joined = baseRaw()
+  joined.cover_letter.body_paragraphs = [joined.cover_letter.body_paragraphs.join('\n\n')]
+  assert.equal(validateDocuments(joined).cover_letter.body_paragraphs.length, 3)
+  const two = baseRaw()
+  two.cover_letter.body_paragraphs = two.cover_letter.body_paragraphs.slice(0, 2)
+  assert.throws(() => validateDocuments(two), /exactly 3 body paragraphs/)
+  const repairs: string[] = []
+  assert.equal(validateDocuments(two, REPAIR, repairs).cover_letter.body_paragraphs.length, 2)
+  assert.deepEqual(repairs, ['two_body_paragraphs_accepted'])
+  for (const count of [1, 4]) {
+    const raw = baseRaw()
+    raw.cover_letter.body_paragraphs = Array.from({ length: count }, (_, i) => `I delivered project ${i + 1} for the operations team on time.`)
+    assert.throws(() => validateDocuments(raw, REPAIR), /exactly 3 body paragraphs/, `${count} paragraphs`)
+  }
+})
+
+test('FIXED LINES: an empty or placeholder salutation, greeting, thank you or closing line gets the prompt\'s own example', () => {
+  const raw = baseRaw()
+  raw.cover_letter.salutation = 'Dear [Hiring Manager Name],'
+  raw.cover_letter.thank_you_line = ''
+  raw.recruiter_message.greeting = "Hi [Recruiter's Name],"
+  raw.recruiter_message.closing_line = '   '
+  const result = validateDocuments(raw)
+  const lines = [result.cover_letter.salutation, result.cover_letter.thank_you_line, result.recruiter_message.greeting, result.recruiter_message.closing_line]
+  assert.deepEqual(lines, ['Dear Hiring Team,', 'Thank you for considering my application.', 'Hi,', 'I look forward to hearing from you.'])
+  assert.doesNotMatch(lines.join(' '), /[-–—]/)
+  const own = baseRaw()
+  own.cover_letter.salutation = 'Dear Acme Hiring Team,'
+  assert.equal(validateDocuments(own).cover_letter.salutation, 'Dear Acme Hiring Team,', 'a real line is kept')
+})
+
+test('LAST DRAFT: a clean draft is unchanged, and claims, a missing name or role, or another language are never repaired', () => {
+  assert.deepEqual(validateDocuments(baseRaw(), REPAIR), validateDocuments(baseRaw()))
+  assert.throws(() => validateDocuments(baseRaw({ new_claims_introduced: ['Led a team of 40'] }), REPAIR), /unverified claims/)
+  assert.throws(() => validateDocuments(named(''), REPAIR), /missing a name/)
+  const noExperience = baseRaw()
+  noExperience.tailored_cv.experience = []
+  assert.throws(() => validateDocuments(noExperience, REPAIR), /missing experience/)
+  const dutch = baseRaw()
+  dutch.tailored_cv.professional_summary = 'Ervaren backend ontwikkelaar. Levert betrouwbare diensten. Werkt graag in teams.'
+  dutch.cover_letter.intro_paragraph = 'Ik solliciteer graag naar deze functie.'
+  dutch.cover_letter.body_paragraphs = ['Ik bouwde diensten voor betalingen.', 'Daarnaast leidde ik een klein team.', 'Tot slot past uw cultuur goed bij mij.']
+  dutch.cover_letter.conclusion_paragraph = 'Ik hoor graag van u.'
+  dutch.recruiter_message.body = 'Ik heb gesolliciteerd naar de functie. Ik ben enthousiast over uw bedrijf.'
+  assert.throws(() => validateDocuments(dutch, REPAIR), /English/)
+})
+
+test('LOGS: every document check has its own reason code', () => {
+  const codes = [
+    'Tailored CV is missing a name',
+    'Tailored CV is missing a professional summary',
+    'Tailored CV is missing experience',
+    'Tailored CV is missing the follow up bullet',
+    "Follow up bullet contains a placeholder instead of the candidate's own facts",
+    'Cover letter is missing an introduction',
+    'Cover letter must have exactly 3 body paragraphs',
+    'Cover letter is written in third person instead of first person',
+    'Recruiter message output is too short',
+    'Recruiter message is written in third person instead of first person',
+    'Recruiter message contains a statistic instead of a qualitative reason',
+    'CV bullet contains an unfilled example placeholder (e.g. "X%") without being marked as one',
+    'Model classified 2 area(s) to improve as case C but only produced 1 placeholder bullet(s)',
+    'Document contains an unfilled example placeholder (e.g. "X%") instead of real or omitted content',
+    'Document content did not look like English',
+  ].map(classifyGenerationError)
+  assert.equal(new Set(codes).size, codes.length, codes.join(', '))
+  assert.ok(!codes.includes('other'))
+})
+
+test('CORRECTIONS: each failed check tells the retry its rule, never the draft\'s own words', () => {
+  const note = retryCorrection(new Error('Model reported unverified claims not present in the original CV: ["Led Jamie Rivera\'s team at Acme"]'))
+  assert.match(note ?? '', /only facts the original CV states/)
+  assert.doesNotMatch(note ?? '', /Jamie|Acme/)
+  for (const [message, rule] of [
+    ['Recruiter message contains a statistic instead of a qualitative reason', /no number/],
+    ['Cover letter is written in third person instead of first person', /first person/],
+    ['Cover letter must have exactly 3 body paragraphs', /exactly 3 paragraphs/],
+    ['Document content did not look like English', /entirely in English/],
+    ['Model classified 1 area(s) to improve as case C but only produced 0 placeholder bullet(s)', /one such bullet for each case \(C\) area/],
+  ] as const) {
+    assert.match(retryCorrection(new Error(message)) ?? '', rule, message)
+  }
+  // Nothing to tell the model, or nothing it may be pressed for: an invented name or role is worse than a retry.
+  for (const message of ['Tailored CV is missing a name', 'Tailored CV is missing experience', 'OpenAI API error: 500', 'OpenAI request timed out after 45000ms']) {
+    assert.equal(retryCorrection(new Error(message)), null, message)
+  }
+})
+
+test('LAST DRAFT: the generator repairs its rejected drafts newest first, and logs only codes', () => {
+  const source = readFileSync('supabase/functions/generate-documents/index.ts', 'utf8')
+  assert.match(source, /const lastDraftScope: ValidationScope = \{ \.\.\.scope, followUpRepeats: 'remove', repair: true \}/)
+  assert.match(source, /for \(const draft of \[\.\.\.rejectedDrafts\]\.reverse\(\)\)/)
+  assert.match(source, /console\.log\('generate-documents: last draft repaired', \{ reasons: attemptReasons, repairs \}\)/)
+  assert.match(source, /job: \{\s*jobTitle: check\.job_title,\s*companyName: check\.company_name,\s*jobDescription: check\.job_description,\s*\}/)
 })
 
 console.log(`\n${passed} tests passed`)

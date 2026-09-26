@@ -12,10 +12,9 @@ import {
   FOLLOW_UP_BULLET_SCHEMA,
   FOLLOW_UP_DOCUMENT_ADDENDUM,
   FOLLOW_UP_SECTION_HEADING,
-  FollowUpRepeatedError,
-  followUpRepeatedCorrection,
   getDocumentEntitlement,
   isRetryableGenerationError,
+  retryCorrection,
   stripExampleClause,
   toPdfSafe,
   toPdfSafeText,
@@ -274,6 +273,13 @@ Deno.serve(async (req) => {
     }, {
       coverLetter: entitlement.coverLetter,
       recruiterMessage: entitlement.recruiterMessage,
+      // The role, employer and job ad applied to: their own digits and words
+      // are never the candidate's statistic or name.
+      job: {
+        jobTitle: check.job_title,
+        companyName: check.company_name,
+        jobDescription: check.job_description,
+      },
       followUpBullet: cvFollowUp !== null,
       // The CV as uploaded, without the answer, so the answer's own facts can be
       // told apart, and the job, whose role, employer and figures stay free to use.
@@ -487,13 +493,15 @@ async function generateDocuments(
   // Reason codes only, so the final error is safe to log.
   const attemptReasons: string[] = []
   const startedAt = Date.now()
-  // Set only after a draft repeated a credited answer outside its own line:
-  // the retry is told which facts to leave out. It goes to the model, never a log.
+  // Set after a rejected draft: the retry is told which rule it broke, and
+  // which facts to leave out after a credited answer was repeated outside its
+  // own line. It goes to the model, never a log.
   let correction: string | null = null
-  // The latest draft rejected for repeating a credited answer. If no attempt
-  // succeeds outright, it is used with those sentences removed, so keeping the
-  // answer in its own line never costs the candidate their documents.
-  let repeatingDraft: RawDocuments | null = null
+  // Every draft that arrived but failed validation, oldest first. If no attempt
+  // succeeds outright, each is tried again, newest first, as a last draft
+  // (scope.repair), so a check the model fails on every attempt does not by
+  // itself cost the candidate their documents.
+  const rejectedDrafts: RawDocuments[] = []
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     if (attempt > 0 && Date.now() - startedAt > GENERATION_DEADLINE_MS) break
@@ -504,21 +512,19 @@ async function generateDocuments(
     } catch (error) {
       const reason = classifyGenerationError(error instanceof Error ? error.message : String(error))
       attemptReasons.push(reason)
-      if (error instanceof FollowUpRepeatedError) {
-        repeatingDraft = raw
-        correction = followUpRepeatedCorrection(error.repeated)
-      } else {
-        correction = null
-      }
+      if (raw) rejectedDrafts.push(raw)
+      correction = raw ? retryCorrection(error) : null
       // A rejected key or a malformed request fails the same way every time.
       if (!isRetryableGenerationError(reason)) break
     }
   }
 
-  if (repeatingDraft) {
+  const lastDraftScope: ValidationScope = { ...scope, followUpRepeats: 'remove', repair: true }
+  for (const draft of [...rejectedDrafts].reverse()) {
+    const repairs: string[] = []
     try {
-      const documents = validateDocuments(repeatingDraft, { ...scope, followUpRepeats: 'remove' })
-      console.log('generate-documents: answer repeats removed from the last draft', { attempts: attemptReasons.length })
+      const documents = validateDocuments(draft, lastDraftScope, repairs)
+      console.log('generate-documents: last draft repaired', { reasons: attemptReasons, repairs })
       return documents
     } catch (error) {
       attemptReasons.push(classifyGenerationError(error instanceof Error ? error.message : String(error)))

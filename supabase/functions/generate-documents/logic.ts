@@ -214,18 +214,30 @@ export function splitSentences(text: string): string[] {
     .filter(Boolean)
 }
 
+// "jamie" or "JAMIE" as a name reads "Jamie"; "McKenzie" keeps its own capitals.
+function capitalised(part: string): string {
+  return part === part.toLowerCase() || part === part.toUpperCase()
+    ? part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+    : part
+}
+
 /**
  * Checks whether any name part (first, last, etc, each 3+ letters to avoid
  * false positives on short/common words) from fullName appears as a whole
  * word inside text — a signal the letter was written about the candidate in
  * the third person instead of in their own first-person voice.
+ *
+ * A part counts only with its capital, so "I will" and "I can" never match a
+ * candidate called Will or Can, and not at all when context has it too: the
+ * role, employer and job ad applied to, and the CV's own titles, employers and
+ * schools, so "JPMorgan Chase" or "Ruby on Rails" is not third person for a
+ * candidate called Chase or Ruby. Retrying never fixed either, since the name
+ * is the same on every draft. The full name always counts.
  */
-export function containsName(text: string, fullName: string): boolean {
-  const nameParts = fullName.split(/\s+/).filter((part) => part.length >= 3)
-  return nameParts.some((part) => {
-    const escaped = part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    return new RegExp(`\\b${escaped}\\b`, 'i').test(text)
-  })
+export function containsName(text: string, fullName: string, context = ''): boolean {
+  const nameParts = fullName.split(/[\s\-–—]+/).filter((part) => part.length >= 3).map(capitalised)
+  if (nameParts.length > 1 && mentions(text, nameParts.join(' '), true)) return true
+  return nameParts.some((part) => !mentions(context, part, true) && mentions(text, part, true))
 }
 
 /**
@@ -301,6 +313,29 @@ export interface ValidationScope {
   // drops the sentences and bullets that repeat them, so the check can never be
   // the reason a generation fails. The caller uses 'remove' on its last draft.
   followUpRepeats?: 'reject' | 'remove'
+  // The role, employer and job ad applied to. Their own digits and words are
+  // never the candidate's statistic or name: see citesStatistic and containsName.
+  job?: JobContext
+  // True for a last draft, once no retry is left: a check that a deterministic
+  // fix can satisfy fixes the draft instead of rejecting it, so the model
+  // failing that check on every attempt is not by itself why a generation
+  // fails. A fix only ever removes a whole sentence or bullet the model wrote;
+  // it never writes one. Each fix applied is recorded in validateDocuments'
+  // repairs list as a fixed code, safe to log.
+  repair?: boolean
+}
+
+// Lines with a fixed fallback, each taken from the prompt's own examples and
+// stating no fact. One the model left empty, or wrote with a placeholder in it
+// ("Dear [Hiring Manager Name],"), is replaced rather than failing the draft,
+// as closing_phrase and sign_off already were.
+const DEFAULT_SALUTATION = 'Dear Hiring Team,'
+const DEFAULT_THANK_YOU_LINE = 'Thank you for considering my application.'
+const DEFAULT_GREETING = 'Hi,'
+const DEFAULT_CLOSING_LINE = 'I look forward to hearing from you.'
+
+function lineOr(line: string, fallback: string): string {
+  return line && !containsPlaceholder(line) ? line : fallback
 }
 
 const VALIDATE_EVERYTHING: ValidationScope = { coverLetter: true, recruiterMessage: true }
@@ -369,13 +404,18 @@ function namedTermsIn(text: string): string[] {
   return names.filter(Boolean)
 }
 
-// True when text names phrase as whole words; in any case unless caseSensitive.
-function mentions(text: string, phrase: string, caseSensitive = false): boolean {
+// phrase as whole words, with any run of spaces between them.
+function wholePhrase(phrase: string, flags: string): RegExp {
   const pattern = phrase
     .split(/\s+/)
     .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
     .join('\\s+')
-  return new RegExp(`(?:^|[^A-Za-z0-9])${pattern}(?![A-Za-z0-9])`, caseSensitive ? '' : 'i').test(text.replace(/[-–—]/g, ' '))
+  return new RegExp(`(?:^|[^A-Za-z0-9])${pattern}(?![A-Za-z0-9])`, flags)
+}
+
+// True when text names phrase as whole words; in any case unless caseSensitive.
+function mentions(text: string, phrase: string, caseSensitive = false): boolean {
+  return wholePhrase(phrase, caseSensitive ? '' : 'i').test(text.replace(/[-–—]/g, ' '))
 }
 
 // What the documents must be free to name whatever the answer says: the role
@@ -428,6 +468,47 @@ export function withoutRepeatedFacts(text: string, facts: { figures: string[]; n
     .join(' ')
 }
 
+/** text without the sentences drop picks; text itself, untouched, when it picks none. */
+function withoutSentencesWhere(text: string, drop: (sentence: string) => boolean): string {
+  const sentences = sentencesOf(text)
+  const kept = sentences.filter((sentence) => !drop(sentence))
+  return kept.length === sentences.length ? text : kept.join(' ')
+}
+
+/**
+ * Whether a recruiter message body cites a figure. Digits that belong to a
+ * name are not a statistic, and retrying never removed them, since the prompt
+ * asks the message to name the role: the role and employer applied to, as the
+ * check stores them ("Level 2 Support Engineer", "3M"), and a word that starts
+ * with a letter ("HTML5", "S3", "B2B"), except a multiplier ("x3"). Any other
+ * number still counts, a product's own ("Microsoft 365") included.
+ */
+export function citesStatistic(text: string, job: JobContext = {}): boolean {
+  let rest = text
+  for (const name of [job.jobTitle, job.companyName]) {
+    const printed = stripDashes((name ?? '').trim())
+    if (/\d/.test(printed)) rest = rest.replace(wholePhrase(printed, 'gi'), ' ')
+  }
+  rest = rest.replace(/(?<![A-Za-z0-9])[A-Za-z]+\d[A-Za-z0-9]*/g, (word) => (/^x\d/i.test(word) ? word : ' '))
+  return /\d/.test(rest)
+}
+
+/**
+ * An entry's bullets as printed: non empty, dashes removed, at most
+ * MAX_BULLETS_PER_ENTRY, in their own order. A placeholder bullet is kept ahead
+ * of the last real ones. The prompt asks for 3 to 4 bullets and then one more
+ * for each case (C) area, and cutting that one printed a CV without it while
+ * the case (C) count, which read the uncut list, passed.
+ */
+function printedBullets(bullets: ExperienceBullet[] | undefined): ExperienceBullet[] {
+  const all = (Array.isArray(bullets) ? bullets : [])
+    .map((bullet) => ({ text: stripDashes((bullet?.text ?? '').trim()), is_placeholder: Boolean(bullet?.is_placeholder) }))
+    .filter((bullet) => bullet.text.length > 0)
+  let placeholderRoom = MAX_BULLETS_PER_ENTRY
+  let realRoom = MAX_BULLETS_PER_ENTRY - Math.min(all.filter((bullet) => bullet.is_placeholder).length, MAX_BULLETS_PER_ENTRY)
+  return all.filter((bullet) => (bullet.is_placeholder ? placeholderRoom-- : realRoom--) > 0)
+}
+
 const CLAIM_FILLER_WORDS = new Set(['a', 'an', 'and', 'around', 'at', 'by', 'for', 'from', 'i', 'in', 'my', 'of', 'on', 'or', 'over', 'per', 'the', 'to', 'using', 'with'])
 
 function claimWords(text: string): string[] {
@@ -465,7 +546,12 @@ export function followUpRepeatedCorrection(repeated: string[]): string {
   return `Your previous draft repeated facts from the CANDIDATE-REPORTED section outside tailored_cv.follow_up_bullet: ${quoted}. Write every document again with those facts only in follow_up_bullet, and nowhere in the professional summary, any experience entry, cover_letter or recruiter_message.`
 }
 
-export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VALIDATE_EVERYTHING): RawDocuments {
+export function validateDocuments(
+  raw: RawDocuments,
+  scope: ValidationScope = VALIDATE_EVERYTHING,
+  // Filled with a fixed code for each fix scope.repair applied, for the log.
+  repairs: string[] = [],
+): RawDocuments {
   const cv = raw.tailored_cv
   const letter = raw.cover_letter
   const message = raw.recruiter_message
@@ -514,7 +600,10 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
   let introParagraph = stripDashes((letter?.intro_paragraph ?? '').trim())
   let conclusionParagraph = stripDashes((letter?.conclusion_paragraph ?? '').trim())
   let thankYouLine = stripDashes((letter?.thank_you_line ?? '').trim())
+  // A blank line inside one entry still starts a paragraph, so three paragraphs
+  // returned as one string count as three rather than failing every retry.
   let bodyParagraphs = (Array.isArray(letter?.body_paragraphs) ? letter.body_paragraphs : [])
+    .flatMap((paragraph) => (paragraph ?? '').split(/\n\s*\n/))
     .map((paragraph) => stripDashes(paragraph.trim()))
     .filter(Boolean)
   const salutation = (letter?.salutation ?? '').trim()
@@ -572,10 +661,7 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
         ...experience.slice(0, MAX_EXPERIENCE_ENTRIES).flatMap((entry) => [
           stripDashes((entry?.title ?? '').trim()),
           (entry?.company_location ?? '').trim(),
-          ...(Array.isArray(entry?.bullets) ? entry.bullets : [])
-            .map((bullet) => stripDashes((bullet?.text ?? '').trim()))
-            .filter(Boolean)
-            .slice(0, MAX_BULLETS_PER_ENTRY),
+          ...printedBullets(entry?.bullets).map((bullet) => bullet.text),
         ]),
         ...(scope.coverLetter ? [introParagraph, ...bodyParagraphs, conclusionParagraph, thankYouLine] : []),
         ...(scope.recruiterMessage ? [greeting, messageBody, closingLine] : []),
@@ -584,36 +670,90 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
       if (repeated.length > 0) throw new FollowUpRepeatedError(repeated)
     }
   }
+  // The last draft: what removing a whole bullet or sentence can make safe is
+  // removed here instead of failing the generation, since no retry is left.
+  // Nothing is reworded, so nothing prints that the model did not write, and
+  // every check below still applies to what is left.
+  if (scope.repair) {
+    const note = (code: string, applied: boolean) => {
+      if (applied && !repairs.includes(code)) repairs.push(code)
+    }
+    const drop = (text: string, picks: (sentence: string) => boolean, code: string) => {
+      const kept = withoutSentencesWhere(text, picks)
+      note(code, kept !== text)
+      return kept
+    }
+    // An unflagged bullet with placeholder text goes whole: stripping only the
+    // brackets would turn "[X%]" into a figure nobody stated.
+    experience = experience.map((entry) => {
+      const bullets = Array.isArray(entry?.bullets) ? entry.bullets : []
+      const kept = bullets.filter((bullet) => bullet?.is_placeholder || !containsPlaceholder(stripDashes((bullet?.text ?? '').trim())))
+      note('placeholder_bullet_removed', kept.length < bullets.length)
+      return { ...entry, bullets: kept }
+    })
+    professionalSummary = drop(professionalSummary, containsPlaceholder, 'placeholder_sentence_removed')
+    if (!professionalSummary) {
+      throw new Error('Document contains an unfilled example placeholder (e.g. "X%") instead of real or omitted content')
+    }
+    if (scope.coverLetter) {
+      introParagraph = drop(introParagraph, containsPlaceholder, 'placeholder_sentence_removed')
+      conclusionParagraph = drop(conclusionParagraph, containsPlaceholder, 'placeholder_sentence_removed')
+      const kept = bodyParagraphs.map((paragraph) => drop(paragraph, containsPlaceholder, 'placeholder_sentence_removed')).filter(Boolean)
+      removedBodyParagraphs += bodyParagraphs.length - kept.length
+      bodyParagraphs = kept
+    }
+    if (scope.recruiterMessage) {
+      messageBody = drop(messageBody, containsPlaceholder, 'placeholder_sentence_removed')
+      // A figure is never spelled out or cut from its sentence: "fifteen percent"
+      // is still a statistic, and "by percent" is not a sentence.
+      messageBody = drop(messageBody, (sentence) => citesStatistic(sentence, scope.job), 'statistic_sentence_removed')
+    }
+  }
+
+  const salutationLine = lineOr(salutation, DEFAULT_SALUTATION)
+  thankYouLine = lineOr(thankYouLine, DEFAULT_THANK_YOU_LINE)
+  greeting = lineOr(greeting, DEFAULT_GREETING)
+  closingLine = lineOr(closingLine, DEFAULT_CLOSING_LINE)
+
   if (scope.coverLetter) {
-    if (!salutation) throw new Error('Cover letter is missing a salutation')
     if (!introParagraph) throw new Error('Cover letter is missing an introduction')
-    // Counts what the model wrote: a paragraph removed above for repeating the answer still counts.
-    if (bodyParagraphs.length + removedBodyParagraphs !== REQUIRED_BODY_PARAGRAPHS) {
-      throw new Error('Cover letter must have exactly 3 body paragraphs')
+    // Counts what the model wrote: a paragraph removed above still counts. The
+    // last draft may have one fewer: a letter already prints two after a removal.
+    const writtenParagraphs = bodyParagraphs.length + removedBodyParagraphs
+    if (writtenParagraphs !== REQUIRED_BODY_PARAGRAPHS) {
+      if (!scope.repair || writtenParagraphs !== REQUIRED_BODY_PARAGRAPHS - 1) {
+        throw new Error('Cover letter must have exactly 3 body paragraphs')
+      }
+      repairs.push('two_body_paragraphs_accepted')
     }
     if (!conclusionParagraph) throw new Error('Cover letter is missing a conclusion')
-    if (!thankYouLine) throw new Error('Cover letter is missing a thank you line')
   }
   if (scope.recruiterMessage) {
-    if (!greeting) throw new Error('Recruiter message is missing a greeting')
     if (messageBody.length < 20) throw new Error('Recruiter message output is too short')
-    if (!closingLine) throw new Error('Recruiter message is missing a closing line')
   }
 
   // The letter must be written in the candidate's own first-person voice, not
   // a third-person recommendation about them — reject and retry if the model
-  // slipped into naming the candidate anywhere in the letter body.
+  // slipped into naming the candidate anywhere in the letter body. A name part
+  // that the job or the CV itself also uses is not, on its own, the candidate.
+  const nameContext = [
+    scope.job?.jobTitle,
+    scope.job?.companyName,
+    scope.job?.jobDescription,
+    ...experience.flatMap((entry) => [entry?.title, entry?.company_location]),
+    ...education.map((entry) => entry?.institution),
+  ].filter(Boolean).join('\n')
   const letterBody = `${introParagraph} ${bodyParagraphs.join(' ')} ${conclusionParagraph}`
-  if (scope.coverLetter && containsName(letterBody, fullName)) {
+  if (scope.coverLetter && containsName(letterBody, fullName, nameContext)) {
     throw new Error('Cover letter is written in third person instead of first person')
   }
-  if (scope.recruiterMessage && containsName(messageBody, fullName)) {
+  if (scope.recruiterMessage && containsName(messageBody, fullName, nameContext)) {
     throw new Error('Recruiter message is written in third person instead of first person')
   }
 
   // The recruiter message must stay qualitative, not cite statistics (the
   // prompt asks for this, but the model can still slip in a number).
-  if (scope.recruiterMessage && /\d/.test(messageBody)) {
+  if (scope.recruiterMessage && citesStatistic(messageBody, scope.job)) {
     throw new Error('Recruiter message contains a statistic instead of a qualitative reason')
   }
 
@@ -652,16 +792,18 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
   // it only produced repeated real failures — confirmed live, twice — where
   // the model correctly flagged a bullet but couldn't force it into the
   // "X%"/bracket shape, exhausted all retries, and the user saw a 500.
-  for (const entry of experience) {
-    const rawBullets = Array.isArray(entry.bullets) ? entry.bullets : []
-    for (const bullet of rawBullets) {
-      const text = stripDashes((bullet?.text ?? '').trim())
-      if (!text) continue
-      const flagged = Boolean(bullet?.is_placeholder)
-      if (!flagged && containsPlaceholder(text)) {
-        throw new Error('CV bullet contains an unfilled example placeholder (e.g. "X%") without being marked as one')
-      }
-    }
+  //
+  // Only printed bullets count here and in the case-(C) count below: a bullet
+  // the caps cut can neither leak a placeholder nor disclose a missing fact.
+  const printedExperience = experience.slice(0, MAX_EXPERIENCE_ENTRIES).map((entry) => ({
+    title: stripDashes((entry?.title ?? '').trim()),
+    company_location: (entry?.company_location ?? '').trim(),
+    dates: (entry?.dates ?? '').trim(),
+    bullets: printedBullets(entry?.bullets),
+  }))
+  const printedBulletList = printedExperience.flatMap((entry) => entry.bullets)
+  if (printedBulletList.some((bullet) => !bullet.is_placeholder && containsPlaceholder(bullet.text))) {
+    throw new Error('CV bullet contains an unfilled example placeholder (e.g. "X%") without being marked as one')
   }
 
   // The model can silently skip the forced case-(C) placeholder bullet
@@ -672,17 +814,20 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
   // of its A/B/C/D decisions (required by the schema), so cross-check it
   // against what was actually produced and retry (via generateDocuments'
   // loop) if fewer placeholder bullets exist than case-(C) entries demand.
+  //
+  // On the last draft a shortfall ships instead, recorded in repairs: founder
+  // decision, 2026-09-27, that a CV missing a placeholder bullet is better than
+  // no documents. It only ever omits; no bullet is written or flagged in code.
   const classifications = Array.isArray(raw.improvement_classifications) ? raw.improvement_classifications : []
   const caseCCount = classifications.filter((entry) => entry?.case === 'C').length
-  const placeholderBulletCount = experience.reduce(
-    (count, entry) =>
-      count + (Array.isArray(entry.bullets) ? entry.bullets.filter((bullet) => bullet?.is_placeholder).length : 0),
-    0,
-  )
+  const placeholderBulletCount = printedBulletList.filter((bullet) => bullet.is_placeholder).length
   if (placeholderBulletCount < caseCCount) {
-    throw new Error(
-      `Model classified ${caseCCount} area(s) to improve as case C but only produced ${placeholderBulletCount} placeholder bullet(s)`,
-    )
+    if (!scope.repair) {
+      throw new Error(
+        `Model classified ${caseCCount} area(s) to improve as case C but only produced ${placeholderBulletCount} placeholder bullet(s)`,
+      )
+    }
+    repairs.push('case_c_shortfall_accepted')
   }
 
   const placeholderCheckText = deliveredText
@@ -698,18 +843,7 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
       contact_line: contactLine,
       section_labels: sectionLabels,
       professional_summary: professionalSummary,
-      experience: experience.slice(0, MAX_EXPERIENCE_ENTRIES).map((entry) => ({
-        title: stripDashes((entry.title ?? '').trim()),
-        company_location: (entry.company_location ?? '').trim(),
-        dates: (entry.dates ?? '').trim(),
-        bullets: (Array.isArray(entry.bullets) ? entry.bullets : [])
-          .map((bullet) => ({
-            text: stripDashes((bullet?.text ?? '').trim()),
-            is_placeholder: Boolean(bullet?.is_placeholder),
-          }))
-          .filter((bullet) => bullet.text.length > 0)
-          .slice(0, MAX_BULLETS_PER_ENTRY),
-      })),
+      experience: printedExperience,
       education: education.slice(0, MAX_EDUCATION_ENTRIES).map((entry) => ({
         degree: (entry.degree ?? '').trim(),
         institution: (entry.institution ?? '').trim(),
@@ -722,7 +856,7 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
     },
     cover_letter: {
       company_location: (letter?.company_location ?? '').trim(),
-      salutation,
+      salutation: salutationLine,
       intro_paragraph: introParagraph,
       body_paragraphs: bodyParagraphs,
       conclusion_paragraph: conclusionParagraph,
@@ -807,22 +941,78 @@ export function toPdfSafe<T>(value: T): T {
 // candidate's details (the model's own list of claims, fragments of its
 // output). Logs get a fixed reason code, never the message, the same rule
 // analyze-check follows with classifyValidationFailure.
+// One code per validateDocuments check, so a log says which check failed.
+const VALIDATION_REASONS: [prefix: string, reason: string][] = [
+  ['Tailored CV is missing a name', 'cv_missing_name'],
+  ['Tailored CV is missing a professional summary', 'cv_missing_summary'],
+  ['Tailored CV is missing experience', 'cv_missing_experience'],
+  ['Tailored CV is missing the follow up bullet', 'cv_missing_follow_up_bullet'],
+  ['Follow up bullet contains a placeholder', 'follow_up_bullet_placeholder'],
+  ['Cover letter is written in third person', 'cover_letter_third_person'],
+  ['Cover letter must have exactly', 'cover_letter_paragraphs'],
+  ['Cover letter', 'cover_letter_incomplete'],
+  ['Recruiter message is written in third person', 'recruiter_message_third_person'],
+  ['Recruiter message contains a statistic', 'recruiter_message_statistic'],
+  ['Recruiter message', 'recruiter_message_incomplete'],
+  ['CV bullet contains an unfilled example placeholder', 'placeholder_bullet'],
+  ['Model classified', 'case_c_shortfall'],
+  ['Document contains an unfilled example placeholder', 'placeholder_text'],
+  ['Document content did not look like English', 'not_english'],
+]
+
 export function classifyGenerationError(message: string): string {
   // First: its message lists the candidate's own words, which could match a rule below.
   if (message.startsWith(FOLLOW_UP_REPEATED_ERROR)) return 'follow_up_repeated'
   if (message.startsWith('Model reported unverified claims')) return 'unverified_claims'
+  const validation = VALIDATION_REASONS.find(([prefix]) => message.startsWith(prefix))
+  if (validation) return validation[1]
   const http = /^OpenAI API error: (\d{3})/.exec(message)
   if (http) return `openai_http_${http[1]}`
   if (message.includes('timed out')) return 'timeout'
   if (message.startsWith('Empty response')) return 'empty_response'
   if (message.includes('JSON')) return 'invalid_json'
-  if (message.startsWith('Tailored CV')) return 'cv_incomplete'
-  if (message.startsWith('Cover letter')) return 'cover_letter_invalid'
-  if (message.startsWith('Recruiter message')) return 'recruiter_message_invalid'
-  if (message.includes('placeholder')) return 'placeholder'
-  if (message.includes('did not look like English')) return 'not_english'
   if (message.includes('WinAnsi')) return 'pdf_encoding'
   return 'other'
+}
+
+// Sent with the retry that follows a rejected draft, to the same model only,
+// so a check the model failed is not failed again for want of being told.
+// Fixed text naming the rule, never the draft's words: the self reported
+// claims are not quoted back, since a list the model is shown invites it to
+// leave them off its audit rather than out of the documents. No correction
+// presses for a name or an experience entry: a CV that has none must never be
+// answered with an invented one.
+const RETRY_CORRECTIONS: Record<string, string> = {
+  unverified_claims:
+    'Your previous draft introduced details that the original CV does not state. Write every document again using only facts the original CV states, and complete new_claims_introduced as honestly as before.',
+  cv_missing_summary: 'Your previous draft left tailored_cv.professional_summary empty. Write it as instructed.',
+  cv_missing_follow_up_bullet:
+    'Your previous draft left tailored_cv.follow_up_bullet empty. Write it from the CANDIDATE-REPORTED section as instructed.',
+  follow_up_bullet_placeholder:
+    'Your previous draft put a bracket or placeholder in tailored_cv.follow_up_bullet. Write it again using only facts the CANDIDATE-REPORTED section states, with no brackets or placeholders.',
+  cover_letter_incomplete: 'Your previous draft left part of cover_letter empty. Write every cover_letter field as instructed.',
+  cover_letter_paragraphs:
+    'Your previous draft did not give cover_letter.body_paragraphs exactly 3 entries. Write exactly 3 paragraphs, one per array entry.',
+  cover_letter_third_person:
+    "Your previous draft named the candidate in the cover letter. Write intro_paragraph, body_paragraphs and conclusion_paragraph in the first person throughout, never using the candidate's name.",
+  recruiter_message_incomplete: 'Your previous draft left recruiter_message.body too short. Write it as instructed.',
+  recruiter_message_third_person:
+    "Your previous draft named the candidate in recruiter_message.body. Write it in the first person throughout, never using the candidate's name.",
+  recruiter_message_statistic:
+    'Your previous draft put a number in recruiter_message.body. Write it again with no number, percentage or other statistic, giving the reason in words.',
+  placeholder_bullet:
+    'Your previous draft put bracketed or placeholder text, such as [X%], in an experience bullet not marked is_placeholder: true. Write every such bullet with no brackets or placeholders.',
+  case_c_shortfall:
+    'Your previous draft classified more areas to improve as case (C) than it wrote experience bullets marked is_placeholder: true. Write exactly one such bullet for each case (C) area, and keep every entry to at most 4 bullets including it.',
+  placeholder_text:
+    'Your previous draft put bracketed or placeholder text, such as [X%], in the professional summary, cover_letter or recruiter_message. Write them again with no brackets or placeholders, leaving out anything the original CV does not state.',
+  not_english: 'Your previous draft was not written in English. Write every document entirely in English.',
+}
+
+/** The correction for the retry after error, or null when the model has nothing to change. */
+export function retryCorrection(error: unknown): string | null {
+  if (error instanceof FollowUpRepeatedError) return followUpRepeatedCorrection(error.repeated)
+  return RETRY_CORRECTIONS[classifyGenerationError(error instanceof Error ? error.message : String(error))] ?? null
 }
 
 /** A model error worth retrying: timeouts, rate limits, server errors, bad output. */
