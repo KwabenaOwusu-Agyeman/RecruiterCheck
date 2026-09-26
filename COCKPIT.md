@@ -226,8 +226,8 @@ doing it.
   points and is shown as "Candidate reported, not on your CV"; (5) Generate
   produces a one page CV.pdf with an "Additional Relevant Experience"
   section holding one bullet from the answer, its own figures kept, nothing
-  added, no mention of a follow up, and the answer's facts not repeated in
-  the job entries;
+  added, no mention of a follow up, and the answer's facts in no other part
+  of the CV, cover letter or recruiter message;
   (6) the Recommendation note naming that section appears only in the
   credited case. Also **MANUAL CHECK REQUIRED** on `localhost:5173`:
   the two cards' layout (2026-09-26 was checked by server rendering only, the
@@ -244,6 +244,14 @@ doing it.
   if it reads "both attempts invalid"). Assumption, to test against that
   line: two failures in one evening point at the 45 second per attempt
   model timeout (`OPENAI_TIMEOUT_MS` in `analyze-check/runtime.ts`).
+  Second run, 2026-09-26 around 23:30, after PRs #186 and #187 went live:
+  the answer was credited, and Generate failed once ("Could not generate
+  your documents", reason code not collected) and then passed. Verified
+  from the downloaded PDFs: (5) held for CV.pdf's own line, one page, the
+  section and one exact bullet; but the answer's facts also appeared in the
+  cover letter, the CV summary and the recruiter message, fixed on branch
+  `fix/follow-up-answer-stays-in-cv-line`. Still to confirm: (1) to (4) as
+  seen, (6), and a Generate after that fix is live.
 - **Founder action.** Verify a real Google sign-in end to end after the move
   to the `myrecruitercheck` Cloud project, then delete the old `RecruiterCheck`
   OAuth client in `theorycoach-ai`. Recorded 2026-09-07.
@@ -423,6 +431,50 @@ Its Keyword Scan reservation design was never adopted by the live
 reservation functions are dropped by `20260922170000`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-26 — A credited follow up answer stays in its own CV line
+
+**Objective.** Founder, after the live run of PR #186: CV.pdf's Additional
+Relevant Experience line was exactly right, but the answer's facts also
+appeared in the cover letter, the CV summary and the recruiter message
+(its figure and its tool, the tool with "Google" added). Founder decision:
+the answer appears only in that line, enforced in code.
+
+**Completed.** `generate-documents/logic.ts`: `answerOnlyFacts` takes the
+answer's figures (two or more digits) and capitalised names that the
+original CV text does not contain; `validateDocuments` throws
+`FollowUpRepeatedError` when the summary, a printed experience entry, or a
+delivered cover letter or recruiter message repeats one, and the retry loop
+in `index.ts` sends `followUpRepeatedCorrection`, naming them, with the
+next attempt only. The self reported `new_claims_introduced` now excuses a
+claim every word of which the answer states (`statedInAnswer`), since those
+facts are the line's source; any other claim still fails as before.
+`classifyGenerationError` logs `follow_up_repeated`. The addendum no longer
+lets case (A) surface the answer outside its line: the base prompt's case
+(A) surfaces a supporting fact in any document, which is how the cover
+letter got it. Every generation without a credited answer is unchanged.
+Left to the prompt, not caught by code: a figure in words, a single digit,
+a lowercase tool.
+
+**Verified.** lint (0 errors), typecheck, `test:edge` (30/30, 536; 8 new
+tests in `generate-documents/logic.test.ts`, modelled on the live run with
+invented details), `deno check --no-config` on `generate-documents` (the
+same 8 `SupabaseClient` errors). **UNVERIFIED:** a live generation with the
+check in place. The mandatory security review and an empirical stress test
+of the check were still running when the founder asked for the merge; their
+results are recorded in the next Cockpit update.
+
+**Blockers.** None.
+
+**Founder action required.** See Open items: Generate again on a credited
+check once this is live.
+
+**Next technical step.** None.
+
+**Commit or PR.** Branch `fix/follow-up-answer-stays-in-cv-line`, merged at
+the founder's request before the security review reported.
 
 ---
 

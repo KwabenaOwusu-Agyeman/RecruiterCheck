@@ -12,6 +12,8 @@ import {
   FOLLOW_UP_BULLET_SCHEMA,
   FOLLOW_UP_DOCUMENT_ADDENDUM,
   FOLLOW_UP_SECTION_HEADING,
+  FollowUpRepeatedError,
+  followUpRepeatedCorrection,
   getDocumentEntitlement,
   isRetryableGenerationError,
   stripExampleClause,
@@ -273,6 +275,8 @@ Deno.serve(async (req) => {
       coverLetter: entitlement.coverLetter,
       recruiterMessage: entitlement.recruiterMessage,
       followUpBullet: cvFollowUp !== null,
+      // The CV as uploaded, without the answer, so the answer's own facts can be told apart.
+      followUpSource: cvFollowUp ? { answer: cvFollowUp.answer, cvText } : undefined,
     })
 
     // The standard PDF font can only draw Windows-1252 text; see toPdfSafeText.
@@ -474,17 +478,21 @@ async function generateDocuments(
   // Reason codes only, so the final error is safe to log.
   const attemptReasons: string[] = []
   const startedAt = Date.now()
+  // Set only after a draft repeated a credited answer outside its own line:
+  // the retry is told which facts to leave out. It goes to the model, never a log.
+  let correction: string | null = null
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     if (attempt > 0 && Date.now() - startedAt > GENERATION_DEADLINE_MS) break
     try {
-      const raw = await callOpenAI(apiKey, cvText, jobDescription, context)
+      const raw = await callOpenAI(apiKey, cvText, jobDescription, context, correction)
       return validateDocuments(raw, scope)
     } catch (error) {
       const reason = classifyGenerationError(error instanceof Error ? error.message : String(error))
       attemptReasons.push(reason)
       // A rejected key or a malformed request fails the same way every time.
       if (!isRetryableGenerationError(reason)) break
+      correction = error instanceof FollowUpRepeatedError ? followUpRepeatedCorrection(error.repeated) : null
     }
   }
 
@@ -503,6 +511,7 @@ async function callOpenAI(
     prospects: string[]
     hasFollowUpEvidence: boolean
   },
+  correction: string | null = null,
 ): Promise<RawDocuments> {
   const systemPrompt = `You are an expert career writer helping a candidate present their strongest possible application for a specific role. Using their CV and the job description, produce three documents. Write as if the candidate is seeing their application the way a recruiter would, and use the recruiter's own assessment (strengths, areas to improve, and prospects) to sharpen the framing — lean into the strengths, and address the improvement areas constructively without being defensive. Do not invent experience, employers, dates, or credentials that are not in the original CV.
 
@@ -582,6 +591,7 @@ ${cvText}`
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
+        ...(correction ? [{ role: 'user', content: correction }] : []),
       ],
       response_format: {
         type: 'json_schema',
