@@ -211,24 +211,23 @@ doing it.
   model does produce one, no further frontend work is needed for it to show
   correctly. Recorded 2026-09-23, updated 2026-09-24.
 - **Founder action, a credited follow up needs one real end to end check.**
-  Both are live but have never had a live OpenAI call: PR #182 (credited
-  answer woven into the CV draft) and PR #184 (Gap Analysis, verdict gated
-  and capped reassessment, one plain question, fixed example; deployed
-  2026-09-26). Both are confirmed by code, tests and invented data rendered
-  through the real components, not by real model output. If the follow up
-  reassessment's new strict `follow_up_verdict` schema were rejected, every
-  answer would fail safely: the original result stays and the candidate can
-  retry. Founder action: run one real
+  All live, deployed 2026-09-26, and confirmed by code, tests and invented
+  data rendered through the real components, not yet by a complete real
+  run: PR #184 (Gap Analysis, verdict gated and capped reassessment, fixed
+  example), PR #186 (a credited answer's own CV line, replacing PR #182's
+  woven bullet) and PR #187 (the question names the gap). A failed
+  reassessment fails safely: the original result stays and the candidate
+  can retry. Founder action: run one real
   Needs Improvement check to its follow up and confirm (1) Gap Analysis shows
   the one gap and the follow up below it shows one question naming it, the
   example and the answer box; (2) pasting the example is refused before
   anything is assessed; (3) a vague answer leaves the score unchanged;
   (4) a strong situation, action, outcome answer raises it by at most 3
-  points and is shown as "Candidate reported, not on your CV"; (5) once
-  branch `feature/follow-up-cv-dedicated-line` is live, Generate produces a
-  one page CV.pdf with an "Additional Relevant Experience" section holding
-  one bullet from the answer, its own figures kept, nothing added, no mention
-  of a follow up, and the answer's facts not repeated in the job entries;
+  points and is shown as "Candidate reported, not on your CV"; (5) Generate
+  produces a one page CV.pdf with an "Additional Relevant Experience"
+  section holding one bullet from the answer, its own figures kept, nothing
+  added, no mention of a follow up, and the answer's facts not repeated in
+  the job entries;
   (6) the Recommendation note naming that section appears only in the
   credited case. Also **MANUAL CHECK REQUIRED** on `localhost:5173`:
   the two cards' layout (2026-09-26 was checked by server rendering only, the
@@ -464,7 +463,9 @@ and the log line for the failed follow up submit.
 
 **Commit or PR.** `237c859` on branch `feature/follow-up-question-names-gap`,
 [#187](https://github.com/fullcircleAI/RecruiterCheck/pull/187), merged at
-the founder's request after #186.
+the founder's request as `ea6cb05` on 2026-09-26, after #186. Frontend
+only: no Edge Function deploy run; Vercel production deployment completed.
+DEC-8's page records the merge.
 
 ---
 
@@ -508,7 +509,10 @@ the CV line.
 
 **Commit or PR.** `74ca727` on branch `feature/follow-up-cv-dedicated-line`,
 [#186](https://github.com/fullcircleAI/RecruiterCheck/pull/186), merged at
-the founder's request as `5c93eff` on 2026-09-26.
+the founder's request as `5c93eff` on 2026-09-26, before the real check in
+Open items. Deploy run `36272680294`: Validate and Deploy both green,
+`generate-documents` the only function deployed; Vercel production
+deployment completed.
 
 ---
 
