@@ -1,7 +1,7 @@
 // Run with: npx tsx supabase/functions/generate-documents/logic.test.ts
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { answerOnlyFacts, repeatedAnswerFacts, classifyGenerationError, containsName, containsPlaceholder, FOLLOW_UP_BULLET_SCHEMA, FOLLOW_UP_DOCUMENT_ADDENDUM, FOLLOW_UP_SECTION_HEADING, FollowUpRepeatedError, followUpRepeatedCorrection, getDocumentEntitlement, isRetryableGenerationError, PACK_DISPLAY_NAMES, looksLikeEnglish, splitSentences, statedInAnswer, stripDashes, stripExampleClause, toPdfSafe, toPdfSafeText, validateDocuments, type RawDocuments } from './logic.ts'
+import { answerOnlyFacts, repeatedAnswerFacts, withoutRepeatedFacts, classifyGenerationError, containsName, containsPlaceholder, FOLLOW_UP_BULLET_SCHEMA, FOLLOW_UP_DOCUMENT_ADDENDUM, FOLLOW_UP_SECTION_HEADING, FollowUpRepeatedError, followUpRepeatedCorrection, getDocumentEntitlement, isRetryableGenerationError, PACK_DISPLAY_NAMES, looksLikeEnglish, splitSentences, statedInAnswer, stripDashes, stripExampleClause, toPdfSafe, toPdfSafeText, validateDocuments, type RawDocuments } from './logic.ts'
 
 let passed = 0
 function test(name: string, fn: () => void) {
@@ -732,7 +732,7 @@ test('FOLLOW UP: removal takes out exactly the sentences that repeat the answer,
   assert.equal(result.tailored_cv.follow_up_bullet, LINE)
 })
 
-test('FOLLOW UP: removal drops a repeating bullet but keeps a placeholder bullet, which is already flagged for review', () => {
+test('FOLLOW UP: removal drops every bullet that repeats the answer, a placeholder too, and the case C count still holds', () => {
   const raw = credited((draft) => {
     draft.tailored_cv.experience[0].bullets.push(
       { text: 'Containerised services with Docker for faster releases.', is_placeholder: false },
@@ -741,8 +741,49 @@ test('FOLLOW UP: removal drops a repeating bullet but keeps a placeholder bullet
     draft.improvement_classifications = [{ case: 'C' }]
   })
   const bullets = validateDocuments(raw, REMOVE_SCOPE).tailored_cv.experience[0].bullets.map((bullet) => bullet.text)
-  assert.ok(!bullets.some((text) => text.includes('Docker')))
-  assert.ok(bullets.some((text) => text.includes('[X]')))
+  assert.ok(!bullets.some((text) => text.includes('Docker') || text.includes('Cloud Run')), bullets.join(' | '))
+  assert.equal(bullets.length, 2, 'the two original bullets stay')
+})
+
+test('FOLLOW UP: every printed field is checked, and a repeat removal cannot reach still fails', () => {
+  const inTitle = credited((draft) => {
+    draft.tailored_cv.experience[0].title = 'Cloud Run Platform Engineer'
+  })
+  assert.deepEqual(repeatedIn(inTitle), ['Cloud Run'])
+  assert.throws(() => validateDocuments(inTitle, REMOVE_SCOPE), FollowUpRepeatedError)
+  const elsewhere: Array<(draft: RawDocuments) => void> = [
+    (draft) => { draft.tailored_cv.experience[0].company_location = 'Docker, Amsterdam' },
+    (draft) => { draft.tailored_cv.experience[0].dates = '1500 to Present' },
+    (draft) => { draft.tailored_cv.education[0].degree = 'Certificate in Docker' },
+    (draft) => { draft.tailored_cv.languages = ['English', 'Cloud Run'] },
+  ]
+  for (const edit of elsewhere) assert.equal(repeatedIn(credited(edit)).length, 1)
+})
+
+test('FOLLOW UP: the letter\'s salutation and address line name the employer, so they are never checked', () => {
+  const raw = credited((draft) => {
+    draft.cover_letter.salutation = 'Dear Docker Hiring Team,'
+    draft.cover_letter.company_location = 'Cloud Run Offices, Amsterdam'
+  })
+  assert.deepEqual(repeatedIn(raw), [])
+})
+
+test('FOLLOW UP: removal fails rather than print a cover letter with no body paragraph left', () => {
+  const raw = credited((draft) => {
+    draft.cover_letter.body_paragraphs = [
+      'I deployed services on Cloud Run.',
+      'I handled around 1,500 requests per day.',
+      'I containerised them with Docker.',
+    ]
+  })
+  assert.throws(() => validateDocuments(raw, REMOVE_SCOPE), FollowUpRepeatedError)
+})
+
+test('FOLLOW UP: removal takes whole sentences, past abbreviations and closing quotes, leaving no fragment', () => {
+  const facts = answerOnlyFacts(ANSWER, ORIGINAL_CV)
+  assert.equal(withoutRepeatedFacts('I used tools, e.g. Docker, daily. I write tests.', facts), 'I write tests.')
+  assert.equal(withoutRepeatedFacts('My lead said "It ran on Cloud Run." Then I moved teams.', facts), 'Then I moved teams.')
+  assert.equal(withoutRepeatedFacts('I write tests. No stop at the end', facts), 'I write tests. No stop at the end')
 })
 
 test('FOLLOW UP: removal still fails a summary made of nothing but the answer, the one case it cannot fix', () => {

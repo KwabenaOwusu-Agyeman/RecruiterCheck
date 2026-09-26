@@ -416,9 +416,19 @@ export function repeatedAnswerFacts(text: string, facts: { figures: string[]; na
   ]
 }
 
-// Sentences, keeping any trailing fragment with no full stop.
+const ABBREVIATION_END = /\b(?:e\.g|i\.e|etc|vs|approx|incl|Mr|Mrs|Ms|Dr|St)\.$/i
+
+// Sentences, keeping any trailing fragment with no full stop. A stop may be
+// followed by a closing quote or bracket, and an abbreviation ("e.g.") does not
+// end a sentence, so removing one never leaves a broken fragment behind.
 function sentencesOf(text: string): string[] {
-  return text.split(/(?<=[.!?])\s+/).map((sentence) => sentence.trim()).filter(Boolean)
+  const sentences: string[] = []
+  for (const piece of text.split(/(?<=[.!?]["”’')\]]?)\s+/).map((part) => part.trim()).filter(Boolean)) {
+    const last = sentences.length - 1
+    if (last >= 0 && ABBREVIATION_END.test(sentences[last])) sentences[last] = `${sentences[last]} ${piece}`
+    else sentences.push(piece)
+  }
+  return sentences
 }
 
 /** text without the sentences that repeat one of the facts. */
@@ -534,28 +544,34 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
     }
   }
   // The answer's own figures and names belong in the follow up bullet alone.
-  // 'reject' fails a draft that repeats them elsewhere, so the next attempt,
-  // told which facts, can rewrite it. 'remove' drops the sentences and bullets
-  // that repeat them instead, so on the last draft this check does not fail the
-  // generation; only a summary made of nothing but those facts still would.
+  // 'reject' fails a draft that prints them anywhere else, so the next attempt,
+  // told which facts, can rewrite it. 'remove' first drops the sentences and
+  // bullets that repeat them, then checks the same way: only a repeat it cannot
+  // remove (a job title, a date, an education line) or one that would empty the
+  // summary or every body paragraph still fails the generation.
   let removedBodyParagraphs = 0
+  let removedPlaceholderBullets = 0
   if (followUpSource) {
     const facts = answerOnlyFacts(followUpSource.answer, followUpSource.cvText, followUpSource)
+    const repeats = (text: string) => repeatedAnswerFacts(text, facts).length > 0
     if (scope.followUpRepeats === 'remove') {
       const clean = (text: string) => withoutRepeatedFacts(text, facts)
       professionalSummary = clean(professionalSummary)
-      // A placeholder bullet stays: it is already printed as one to review.
-      experience = experience.map((entry) => ({
-        ...entry,
-        bullets: (Array.isArray(entry?.bullets) ? entry.bullets : []).filter(
-          (bullet) => bullet?.is_placeholder || repeatedAnswerFacts(stripDashes((bullet?.text ?? '').trim()), facts).length === 0,
-        ),
-      }))
+      if (!professionalSummary) throw new FollowUpRepeatedError(repeatedAnswerFacts(cv?.professional_summary ?? '', facts))
+      // A placeholder bullet goes too: it would print the fact, flagged or not.
+      experience = experience.map((entry) => {
+        const bullets = Array.isArray(entry?.bullets) ? entry.bullets : []
+        const kept = bullets.filter((bullet) => !repeats(stripDashes((bullet?.text ?? '').trim())))
+        removedPlaceholderBullets +=
+          bullets.filter((bullet) => bullet?.is_placeholder).length - kept.filter((bullet) => bullet?.is_placeholder).length
+        return { ...entry, bullets: kept }
+      })
       if (scope.coverLetter) {
         introParagraph = clean(introParagraph)
         conclusionParagraph = clean(conclusionParagraph)
         thankYouLine = clean(thankYouLine)
         const kept = bodyParagraphs.map(clean).filter(Boolean)
+        if (kept.length === 0) throw new FollowUpRepeatedError(repeatedAnswerFacts(bodyParagraphs.join('\n'), facts))
         removedBodyParagraphs = bodyParagraphs.length - kept.length
         bodyParagraphs = kept
       }
@@ -564,25 +580,30 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
         messageBody = clean(messageBody)
         closingLine = clean(closingLine)
       }
-      if (!professionalSummary) throw new FollowUpRepeatedError(repeatedAnswerFacts(cv?.professional_summary ?? '', facts))
-    } else {
-      // Only what is printed: the same entry and bullet caps, and dashes removed, as in the result below.
-      const elsewhere = [
-        professionalSummary,
-        ...experience.slice(0, MAX_EXPERIENCE_ENTRIES).flatMap((entry) => [
-          stripDashes((entry?.title ?? '').trim()),
-          (entry?.company_location ?? '').trim(),
-          ...(Array.isArray(entry?.bullets) ? entry.bullets : [])
-            .map((bullet) => stripDashes((bullet?.text ?? '').trim()))
-            .filter(Boolean)
-            .slice(0, MAX_BULLETS_PER_ENTRY),
-        ]),
-        ...(scope.coverLetter ? [introParagraph, ...bodyParagraphs, conclusionParagraph, thankYouLine] : []),
-        ...(scope.recruiterMessage ? [greeting, messageBody, closingLine] : []),
-      ].join('\n')
-      const repeated = repeatedAnswerFacts(elsewhere, facts)
-      if (repeated.length > 0) throw new FollowUpRepeatedError(repeated)
     }
+    // Everything printed apart from the follow up line: the same entry, bullet
+    // and education caps, and dashes removed, as in the result below.
+    const printed = [
+      professionalSummary,
+      ...experience.slice(0, MAX_EXPERIENCE_ENTRIES).flatMap((entry) => [
+        stripDashes((entry?.title ?? '').trim()),
+        (entry?.company_location ?? '').trim(),
+        (entry?.dates ?? '').trim(),
+        ...(Array.isArray(entry?.bullets) ? entry.bullets : [])
+          .map((bullet) => stripDashes((bullet?.text ?? '').trim()))
+          .filter(Boolean)
+          .slice(0, MAX_BULLETS_PER_ENTRY),
+      ]),
+      ...education.slice(0, MAX_EDUCATION_ENTRIES).flatMap((entry) => [entry?.degree ?? '', entry?.institution ?? '', entry?.dates ?? '']),
+      ...(Array.isArray(cv?.languages) ? cv.languages.map(String) : []),
+      // Not the salutation or the letter's address line: they name the employer
+      // and claim nothing about the candidate, and a city from the job ad there
+      // must never fail a generation.
+      ...(scope.coverLetter ? [introParagraph, ...bodyParagraphs, conclusionParagraph, thankYouLine] : []),
+      ...(scope.recruiterMessage ? [greeting, messageBody, closingLine] : []),
+    ].join('\n')
+    const repeated = repeatedAnswerFacts(printed, facts)
+    if (repeated.length > 0) throw new FollowUpRepeatedError(repeated)
   }
   if (scope.coverLetter) {
     if (!salutation) throw new Error('Cover letter is missing a salutation')
@@ -679,7 +700,8 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
       count + (Array.isArray(entry.bullets) ? entry.bullets.filter((bullet) => bullet?.is_placeholder).length : 0),
     0,
   )
-  if (placeholderBulletCount < caseCCount) {
+  // A placeholder bullet removed above for repeating a credited answer still counts.
+  if (placeholderBulletCount + removedPlaceholderBullets < caseCCount) {
     throw new Error(
       `Model classified ${caseCCount} area(s) to improve as case C but only produced ${placeholderBulletCount} placeholder bullet(s)`,
     )
