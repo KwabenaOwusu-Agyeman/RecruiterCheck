@@ -623,19 +623,34 @@ test('FOLLOW UP: an experience bullet repeating the answer fails, unless it is c
   assert.deepEqual(repeatedIn(cut), [])
 })
 
-test('FOLLOW UP: a self reported claim the answer itself states is excused, anything added to it is not', () => {
+test('FOLLOW UP: a self reported claim the answer itself states is excused', () => {
   const stated = credited((draft) => {
     draft.new_claims_introduced = ['1,500 requests per day', 'Docker', 'Cloud Run', 'three months', 'FastAPI services']
   })
   assert.equal(validateDocuments(stated, SOURCE_SCOPE).tailored_cv.follow_up_bullet, LINE)
-  const added = credited((draft) => {
-    draft.new_claims_introduced = ['Google Cloud Run']
-  })
-  assert.throws(() => validateDocuments(added, SOURCE_SCOPE), /unverified claims/)
-  assert.equal(statedInAnswer('Google Cloud Run', ANSWER), false)
   // Without a credited answer every self reported claim still fails, as before.
   assert.throws(() => validateDocuments(stated, FOLLOW_UP_SCOPE), /unverified claims/)
   assert.throws(() => validateDocuments({ ...baseRaw(), new_claims_introduced: ['Docker'] }), /unverified claims/)
+})
+
+test('FOLLOW UP: a claim about the answer\'s own facts is excused even reworded, one adding a figure or about anything else is not', () => {
+  // The model tends to list the follow up line itself, reworded: statedInAnswer
+  // alone rejected these, failing every attempt, as on the live runs.
+  const reworded = credited((draft) => {
+    draft.new_claims_introduced = [
+      'Built and deployed a FastAPI service using Docker and Cloud Run, handling around 1,500 requests per day for three months.',
+      'Google Cloud Run',
+      'deployment on cloud run',
+    ]
+  })
+  assert.equal(statedInAnswer('Google Cloud Run', ANSWER), false)
+  assert.equal(validateDocuments(reworded, SOURCE_SCOPE).tailored_cv.follow_up_bullet, LINE)
+  for (const claim of ['Led a team of 12 engineers on the Cloud Run migration', 'AWS Solutions Architect certification', 'Kubernetes']) {
+    const added = credited((draft) => {
+      draft.new_claims_introduced = [claim]
+    })
+    assert.throws(() => validateDocuments(added, SOURCE_SCOPE), /unverified claims/, claim)
+  }
 })
 
 test('FOLLOW UP: the retry is told which facts to keep in the line, and the log only ever gets the reason code', () => {

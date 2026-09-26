@@ -451,6 +451,30 @@ function claimWords(text: string): string[] {
     .map((word) => (word.length > 3 ? word.replace(/s$/, '') : word))
 }
 
+/**
+ * A self reported "new claim" about the credited answer's own facts: it names
+ * one of them (a figure, or a name in any case), and every figure it gives is
+ * the answer's or the CV's. The model tends to list the follow up line itself,
+ * reworded ("handling" for "handled", "Google Cloud Run" for "Cloud Run"),
+ * which statedInAnswer below cannot excuse. Where those facts may appear is
+ * enforced separately (repeatedAnswerFacts), so excusing them here only stops
+ * the line's own source failing every generation; a claim adding a figure, or
+ * one about anything else, still fails.
+ */
+export function concernsAnswerFacts(
+  claim: string,
+  facts: { figures: string[]; names: string[] },
+  answer: string,
+  cvText: string,
+): boolean {
+  const claimFigures = figuresIn(claim)
+  const known = figuresIn(`${answer}\n${cvText}`)
+  return (
+    [...claimFigures].every((figure) => known.has(figure)) &&
+    (facts.figures.some((figure) => claimFigures.has(figure)) || facts.names.some((name) => mentions(claim, name)))
+  )
+}
+
 /** A self reported "new claim" every word of which the candidate's own answer states. */
 export function statedInAnswer(claim: string, answer: string): boolean {
   const answerWords = new Set(claimWords(answer))
@@ -486,13 +510,25 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
   // (new_claims_introduced, required by the schema). Rather than trusting the
   // "never invent a metric" prompt instructions alone, a non-empty report is
   // treated as a failed generation and retried — see generateDocuments' loop.
-  // A claim the credited answer itself states is not new: it is the follow up
-  // bullet's source, and where it may appear is checked separately below.
+  // A claim the credited answer itself states, or one about its own facts that
+  // adds no figure, is not new: it is the follow up bullet's source, and where
+  // those facts may appear is checked separately below.
   const followUpSource = scope.followUpSource
+  const answerFacts = followUpSource
+    ? answerOnlyFacts(followUpSource.answer, followUpSource.cvText, followUpSource)
+    : null
   const newClaims = (Array.isArray(raw.new_claims_introduced)
     ? raw.new_claims_introduced.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
     : []
-  ).filter((claim) => !followUpSource || !statedInAnswer(claim, followUpSource.answer))
+  ).filter(
+    (claim) =>
+      !followUpSource ||
+      !answerFacts ||
+      !(
+        statedInAnswer(claim, followUpSource.answer) ||
+        concernsAnswerFacts(claim, answerFacts, followUpSource.answer, followUpSource.cvText)
+      ),
+  )
   if (newClaims.length > 0) {
     throw new Error(`Model reported unverified claims not present in the original CV: ${JSON.stringify(newClaims)}`)
   }
