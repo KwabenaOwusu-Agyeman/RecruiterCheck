@@ -439,6 +439,45 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-27 — The answer check reads every printed field, and removal re-checks
+
+**Objective.** Close what the security re-review of PR #190 found.
+
+**Completed.** `validateDocuments` in `generate-documents/logic.ts`:
+- Both modes check one list of printed text. It adds entry dates, education
+  and languages to what #190 read. The cover letter's salutation and
+  address line stay out, since they name the employer.
+- Remove mode now checks again after removing, so a repeat it cannot remove
+  (a job title, a date, an education line) fails instead of printing.
+- It removes a placeholder bullet that repeats the answer, which the case C
+  count still credits.
+- It removes whole items built from the answer, as it removes a sentence:
+  a language, an education entry, and an experience entry whose title,
+  company or dates repeat it, as long as one entry remains. A third review
+  found that the wider check would otherwise fail every generation where
+  the model added the answer's language or certificate to the CV.
+- It fails rather than print a cover letter with no body paragraph left.
+- `sentencesOf` ends a sentence only before a capital, a digit or a quote,
+  so "Acme Inc. and" stays whole. It treats a closing quote after a stop as
+  the end, and never splits after "e.g." and similar abbreviations.
+
+**Verified.** lint (0 errors), typecheck, `test:edge` (30/30, 550; 5 new
+tests, and the placeholder test corrected: it asserted a repeating
+placeholder bullet stays, which printed the fact), `deno check
+--no-config` (the same 8 `SupabaseClient` errors). Security review, third
+round: the medium finding above and a low one on abbreviations, both fixed
+here.
+
+**Blockers.** None.
+
+**Founder action required.** See Open items.
+
+**Next technical step.** None.
+
+**Commit or PR.** Branch `fix/follow-up-repeats-every-printed-field`.
+
+---
+
 ## 2026-09-27 — Keeping the answer in its line can no longer fail a generation
 
 **Objective.** After PR #189 went live the founder's Generate failed again,
@@ -463,17 +502,24 @@ excuses a claim with no readable words; the correction note quotes at most
 
 **Verified.** lint (0 errors), typecheck, `test:edge` (30/30, 545; 9 new
 tests in `generate-documents/logic.test.ts`), `deno check --no-config` on
-`generate-documents` (the same 8 `SupabaseClient` errors). Security
-re-review: see Commit or PR. **UNVERIFIED:** a live generation.
+`generate-documents` (the same 8 `SupabaseClient` errors). The security
+re-review, which reported after the merge, confirmed all seven earlier
+findings fixed and no validation skipped by the remove path. It found remove
+mode could still print an answer fact in a job title, a company field or a
+placeholder bullet (medium), and three low gaps. All are fixed in the entry
+above. **UNVERIFIED:** a live generation.
 
 **Blockers.** None.
 
-**Founder action required.** See Open items: Generate on a credited check
-once this is live.
+**Founder action required.** See Open items.
 
 **Next technical step.** None.
 
-**Commit or PR.** Branch `fix/follow-up-repeats-never-fail-generation`.
+**Commit or PR.** `48af4fa` on branch `fix/follow-up-repeats-never-fail-generation`,
+[#190](https://github.com/fullcircleAI/RecruiterCheck/pull/190), merged at
+the founder's request as `57dc32b` on 2026-09-27, before the security
+re-review reported. Deploy run `36275237489`: Validate and Deploy both
+green, `generate-documents` the only function deployed.
 
 ---
 
