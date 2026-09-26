@@ -784,6 +784,29 @@ test('FOLLOW UP: removal takes whole sentences, past abbreviations and closing q
   assert.equal(withoutRepeatedFacts('I used tools, e.g. Docker, daily. I write tests.', facts), 'I write tests.')
   assert.equal(withoutRepeatedFacts('My lead said "It ran on Cloud Run." Then I moved teams.', facts), 'Then I moved teams.')
   assert.equal(withoutRepeatedFacts('I write tests. No stop at the end', facts), 'I write tests. No stop at the end')
+  assert.equal(withoutRepeatedFacts('I joined Acme Inc. and shipped Docker tooling. I write tests.', facts), 'I write tests.')
+  assert.equal(withoutRepeatedFacts('I grew the U.S. market with Docker images. I write tests.', facts), 'I write tests.')
+})
+
+// Invented: a language gap answered from a call centre job the CV does not show.
+const SPANISH = { ...FOLLOW_UP_SCOPE, followUpSource: { answer: 'At a Madrid call centre I handled Spanish calls, around 60 a day, for 18 months.', cvText: ORIGINAL_CV } }
+
+test('FOLLOW UP: removal drops a language, an education entry or a whole job built from the answer', () => {
+  const draft = credited((raw) => {
+    raw.tailored_cv.languages = ['English', 'Spanish (fluent)']
+    raw.tailored_cv.education.push({ degree: 'Spanish Language Certificate', institution: 'Instituto Cervantes', dates: '2024' })
+    raw.tailored_cv.experience.push({
+      title: 'Spanish Support Agent',
+      company_location: 'Call centre, Madrid',
+      dates: '2023 to 2024',
+      bullets: [{ text: 'Handled customer calls every day.', is_placeholder: false }],
+    })
+  })
+  assert.ok(repeatedIn(draft, SPANISH).includes('Spanish'), 'rejected while retries remain')
+  const result = validateDocuments(draft, { ...SPANISH, followUpRepeats: 'remove' })
+  assert.deepEqual(result.tailored_cv.languages, ['English'])
+  assert.deepEqual(result.tailored_cv.education.map((entry) => entry.degree), ['BSc Computer Science'])
+  assert.deepEqual(result.tailored_cv.experience.map((entry) => entry.title), ['Senior Backend Engineer'])
 })
 
 test('FOLLOW UP: removal still fails a summary made of nothing but the answer, the one case it cannot fix', () => {

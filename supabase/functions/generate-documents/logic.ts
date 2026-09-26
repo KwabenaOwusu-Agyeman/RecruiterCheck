@@ -418,12 +418,14 @@ export function repeatedAnswerFacts(text: string, facts: { figures: string[]; na
 
 const ABBREVIATION_END = /\b(?:e\.g|i\.e|etc|vs|approx|incl|Mr|Mrs|Ms|Dr|St)\.$/i
 
-// Sentences, keeping any trailing fragment with no full stop. A stop may be
-// followed by a closing quote or bracket, and an abbreviation ("e.g.") does not
-// end a sentence, so removing one never leaves a broken fragment behind.
+// Sentences, keeping any trailing fragment with no full stop. A sentence ends
+// at a stop, perhaps followed by a closing quote or bracket, only where the next
+// one opens with a capital, a digit or a quote, so "Acme Inc. and" or "the U.S.
+// market" stays whole; and an abbreviation ("e.g.") never ends one. Removing a
+// sentence therefore never leaves a broken fragment behind.
 function sentencesOf(text: string): string[] {
   const sentences: string[] = []
-  for (const piece of text.split(/(?<=[.!?]["”’')\]]?)\s+/).map((part) => part.trim()).filter(Boolean)) {
+  for (const piece of text.split(/(?<=[.!?]["”’')\]]?)\s+(?=["“‘(]?[A-Z0-9])/).map((part) => part.trim()).filter(Boolean)) {
     const last = sentences.length - 1
     if (last >= 0 && ABBREVIATION_END.test(sentences[last])) sentences[last] = `${sentences[last]} ${piece}`
     else sentences.push(piece)
@@ -519,7 +521,8 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
     .slice(0, 3)
     .join(' ')
   let experience = Array.isArray(cv?.experience) ? cv.experience : []
-  const education = Array.isArray(cv?.education) ? cv.education : []
+  let education = Array.isArray(cv?.education) ? cv.education : []
+  let languages = (Array.isArray(cv?.languages) ? cv.languages : []).map((language) => String(language).trim()).filter(Boolean)
 
   let introParagraph = stripDashes((letter?.intro_paragraph ?? '').trim())
   let conclusionParagraph = stripDashes((letter?.conclusion_paragraph ?? '').trim())
@@ -558,6 +561,20 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
       const clean = (text: string) => withoutRepeatedFacts(text, facts)
       professionalSummary = clean(professionalSummary)
       if (!professionalSummary) throw new FollowUpRepeatedError(repeatedAnswerFacts(cv?.professional_summary ?? '', facts))
+      // Whole items built from the answer go the way a sentence does: a language,
+      // an education entry, an experience entry whose title, company or dates
+      // repeat it (as long as one entry remains; otherwise the check below fails).
+      const countPlaceholders = (entries: typeof experience) =>
+        entries.reduce((count, entry) => count + (Array.isArray(entry?.bullets) ? entry.bullets.filter((bullet) => bullet?.is_placeholder).length : 0), 0)
+      const keptEntries = experience.filter(
+        (entry) => !repeats(`${stripDashes((entry?.title ?? '').trim())}\n${entry?.company_location ?? ''}\n${entry?.dates ?? ''}`),
+      )
+      if (keptEntries.length > 0) {
+        removedPlaceholderBullets += countPlaceholders(experience) - countPlaceholders(keptEntries)
+        experience = keptEntries
+      }
+      education = education.filter((entry) => !repeats(`${entry?.degree ?? ''}\n${entry?.institution ?? ''}\n${entry?.dates ?? ''}`))
+      languages = languages.filter((language) => !repeats(language))
       // A placeholder bullet goes too: it would print the fact, flagged or not.
       experience = experience.map((entry) => {
         const bullets = Array.isArray(entry?.bullets) ? entry.bullets : []
@@ -595,7 +612,7 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
           .slice(0, MAX_BULLETS_PER_ENTRY),
       ]),
       ...education.slice(0, MAX_EDUCATION_ENTRIES).flatMap((entry) => [entry?.degree ?? '', entry?.institution ?? '', entry?.dates ?? '']),
-      ...(Array.isArray(cv?.languages) ? cv.languages.map(String) : []),
+      ...languages,
       // Not the salutation or the letter's address line: they name the employer
       // and claim nothing about the candidate, and a city from the job ad there
       // must never fail a generation.
@@ -737,9 +754,7 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
         institution: (entry.institution ?? '').trim(),
         dates: (entry.dates ?? '').trim(),
       })),
-      languages: (Array.isArray(cv.languages) ? cv.languages : [])
-        .map((language) => language.trim())
-        .filter(Boolean),
+      languages,
       follow_up_bullet: followUpBullet,
     },
     cover_letter: {

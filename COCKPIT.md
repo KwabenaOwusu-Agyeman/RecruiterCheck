@@ -451,14 +451,22 @@ For current behaviour go to the migration, the function and the database.
   (a job title, a date, an education line) fails instead of printing.
 - It removes a placeholder bullet that repeats the answer, which the case C
   count still credits.
+- It removes whole items built from the answer, as it removes a sentence:
+  a language, an education entry, and an experience entry whose title,
+  company or dates repeat it, as long as one entry remains. A third review
+  found that the wider check would otherwise fail every generation where
+  the model added the answer's language or certificate to the CV.
 - It fails rather than print a cover letter with no body paragraph left.
-- `sentencesOf` treats a closing quote or bracket after a stop as the
-  sentence end, and does not split after "e.g." and similar abbreviations.
+- `sentencesOf` ends a sentence only before a capital, a digit or a quote,
+  so "Acme Inc. and" stays whole. It treats a closing quote after a stop as
+  the end, and never splits after "e.g." and similar abbreviations.
 
-**Verified.** lint (0 errors), typecheck, `test:edge` (30/30, 549; 4 new
+**Verified.** lint (0 errors), typecheck, `test:edge` (30/30, 550; 5 new
 tests, and the placeholder test corrected: it asserted a repeating
 placeholder bullet stays, which printed the fact), `deno check
---no-config` (the same 8 `SupabaseClient` errors).
+--no-config` (the same 8 `SupabaseClient` errors). Security review, third
+round: the medium finding above and a low one on abbreviations, both fixed
+here.
 
 **Blockers.** None.
 
