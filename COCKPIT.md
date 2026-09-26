@@ -459,7 +459,9 @@ and the log line for the failed follow up submit.
 
 **Next technical step.** None for this change.
 
-**Commit or PR.** Branch `feature/follow-up-question-names-gap`.
+**Commit or PR.** `237c859` on branch `feature/follow-up-question-names-gap`,
+[#187](https://github.com/fullcircleAI/RecruiterCheck/pull/187), awaiting
+the founder's merge decision.
 
 ---
 
