@@ -20,7 +20,9 @@ import {
   UPDATED_REPORT_NOTE,
   CANDIDATE_REPORTED_LABEL,
   FOLLOW_UP_HEADING,
+  FOLLOW_UP_QUESTION_LEAD,
   FOLLOW_UP_WORKING_MESSAGE,
+  followUpQuestionText,
 } from './evidenceFollowUp'
 
 let passed = 0
@@ -86,16 +88,57 @@ await test('the example is the one the founder gave: situation, action, outcome 
   )
 })
 
-await test('the card is a title, one short line, one example and the answer box, and names no requirement', () => {
+await test('the card is a title, the question naming the requirement, one example and the answer box', () => {
   const card = readFileSync('src/components/feedback/EvidenceFollowUpCard.tsx', 'utf8')
   const pending = card.slice(card.indexOf('Unanswered, and the original CV is gone'))
-  const order = ['{FOLLOW_UP_HEADING}', '{followUp.question}', 'Example:', '{FOLLOW_UP_EXAMPLE}', '<Textarea']
+  const order = [
+    '{FOLLOW_UP_HEADING}',
+    '{followUpQuestionText(followUp.gap_requirement, followUp.question)}',
+    'Example:',
+    '{FOLLOW_UP_EXAMPLE}',
+    '<Textarea',
+  ]
   const positions = order.map((marker) => pending.indexOf(marker))
   assert.ok(positions.every((position) => position > 0), `all present: ${order.join(', ')}`)
   assert.deepEqual([...positions].sort((a, b) => a - b), positions, 'in this order')
-  // Gap Analysis above names the requirement; the card never repeats it or the gap.
-  for (const repeated of [/gap_requirement/, /gap_summary/, /About this requirement/]) {
+  // The question names the requirement; the gap itself is explained once, in Gap Analysis above.
+  for (const repeated of [/gap_summary/, /About this requirement/]) {
     assert.doesNotMatch(card, repeated)
+  }
+})
+
+const SKILL_QUESTION = 'Have you used this in a job, project, internship or course that your CV does not currently show?'
+const OTHER_QUESTION = 'Have you done this in a job, project, course or volunteering role that your CV does not currently show?'
+
+await test('the question names the requirement in its own opening sentence, then asks the stored question unchanged', () => {
+  assert.equal(
+    followUpQuestionText('Google Cloud Run', SKILL_QUESTION),
+    `The job asks for Google Cloud Run. ${SKILL_QUESTION}`,
+  )
+  assert.equal(
+    followUpQuestionText('Operating backend services at production scale', OTHER_QUESTION),
+    `The job asks for Operating backend services at production scale. ${OTHER_QUESTION}`,
+  )
+})
+
+await test('the named question is still one question, with no dash and no doubled full stop', () => {
+  for (const requirement of ['Google Cloud Run', 'Experience with SQL for reporting.', '  Python  ', 'Stakeholder management;']) {
+    const text = followUpQuestionText(requirement, SKILL_QUESTION)
+    assert.equal(text.match(/\?/g)?.length, 1, text)
+    assert.doesNotMatch(text, /\.\.|[.;:,] *\./, text)
+    assert.doesNotMatch(text, /[–—]| - /, text)
+    assert.ok(text.startsWith(`${FOLLOW_UP_QUESTION_LEAD} `), text)
+  }
+})
+
+await test('a follow up whose stored question already names the requirement is shown as stored, never named twice', () => {
+  const older = 'The job asks for Python. Have you done this in a project, internship, course or job that your CV does not show, and if so what did you do?'
+  assert.equal(followUpQuestionText('Python', older), older)
+})
+
+await test('with no requirement the stored question is shown alone, never an empty opening sentence', () => {
+  for (const requirement of ['', '   ', null, undefined]) {
+    assert.equal(followUpQuestionText(requirement, SKILL_QUESTION), SKILL_QUESTION)
   }
 })
 
