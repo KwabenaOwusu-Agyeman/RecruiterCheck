@@ -254,9 +254,14 @@ doing it.
   ("Could not generate your documents"); reason code not collected. Most
   likely `follow_up_repeated` on every attempt, the model naming the answer's
   tool again each time: #189 only rejected and retried, with no way to end
-  in success. Fixed on branch `fix/follow-up-repeats-never-fail-generation`.
-  Still to confirm: (1) to (4) as seen, (6), and a Generate after that fix
-  is live.
+  in success. Fixed by PR #190 and hardened by #191. Fourth and fifth runs,
+  2026-09-27 at 00:21 and 00:26, after #191 was live: Generate still failed.
+  Reason code not collected. Leading hypothesis: `unverified_claims` on
+  every attempt, the model listing the line itself reworded, which runs
+  before the leak handling. Fix on branch
+  `fix/follow-up-claims-about-the-answer`. Founder action: send the
+  `generate-documents error` log line's `reason` from 00:26. Still to
+  confirm: (1) to (4) as seen, (6), and a Generate that succeeds.
 - **Founder action.** Verify a real Google sign-in end to end after the move
   to the `myrecruitercheck` Cloud project, then delete the old `RecruiterCheck`
   OAuth client in `theorycoach-ai`. Recorded 2026-09-07.
@@ -436,6 +441,48 @@ Its Keyword Scan reservation design was never adopted by the live
 reservation functions are dropped by `20260922170000`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-27 — A reworded claim about the answer's own facts no longer fails every generation
+
+**Objective.** Generate kept failing after PR #191 went live, at 00:21 and
+00:26. The reason code is not collected yet. The leading hypothesis is
+`unverified_claims` on every attempt: the model lists the follow up line
+itself in `new_claims_introduced`, reworded ("handling" for "handled",
+"Google Cloud Run"). `statedInAnswer` cannot excuse that, and it runs
+before any leak handling, so #190's fallback never receives a draft.
+
+**Completed.** `concernsAnswerFacts` in `generate-documents/logic.ts`
+excuses a self reported claim in two cases:
+- every word of it is in the answer or the follow up line;
+- it names one of the answer's own facts, and every other word is in the
+  answer, the line or the CV. A single digit is allowed, and so is a vendor
+  name (`VENDOR_NAMES`) directly before the fact, as in "Google Cloud Run".
+
+`claimWords` applies a light `stem` to both sides ("deployment" matches
+"deployed"). A word whose stem would fall under four letters stays whole.
+Where the answer's facts may appear stays enforced by `repeatedAnswerFacts`.
+"Kubernetes and Docker", "Led the platform team on the Cloud Run migration"
+and a claim adding a figure still fail, as does every claim without a
+credited answer. The security reviewer ran three rounds on this rule; each
+round tightened it.
+
+**Verified.** lint (0 errors), typecheck, `test:edge` (30/30, 552),
+`deno check --no-config` (the same 8 `SupabaseClient` errors). Test
+corrected: it asserted that a self reported "Google Cloud Run" fails. That
+now counts as a claim about the answer's own tool, and its placement is
+policed by the leak check. **UNVERIFIED:** the cause, until the log line
+arrives.
+
+**Blockers.** The reason code for the failures at 00:21 and 00:26.
+
+**Founder action required.** See Open items.
+
+**Next technical step.** If the log says `timeout` instead, the fix is the
+generation time limits, not this.
+
+**Commit or PR.** Branch `fix/follow-up-claims-about-the-answer`.
 
 ---
 

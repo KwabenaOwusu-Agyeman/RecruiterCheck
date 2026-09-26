@@ -623,19 +623,60 @@ test('FOLLOW UP: an experience bullet repeating the answer fails, unless it is c
   assert.deepEqual(repeatedIn(cut), [])
 })
 
-test('FOLLOW UP: a self reported claim the answer itself states is excused, anything added to it is not', () => {
+test('FOLLOW UP: a self reported claim the answer itself states is excused', () => {
   const stated = credited((draft) => {
     draft.new_claims_introduced = ['1,500 requests per day', 'Docker', 'Cloud Run', 'three months', 'FastAPI services']
   })
   assert.equal(validateDocuments(stated, SOURCE_SCOPE).tailored_cv.follow_up_bullet, LINE)
-  const added = credited((draft) => {
-    draft.new_claims_introduced = ['Google Cloud Run']
-  })
-  assert.throws(() => validateDocuments(added, SOURCE_SCOPE), /unverified claims/)
-  assert.equal(statedInAnswer('Google Cloud Run', ANSWER), false)
   // Without a credited answer every self reported claim still fails, as before.
   assert.throws(() => validateDocuments(stated, FOLLOW_UP_SCOPE), /unverified claims/)
   assert.throws(() => validateDocuments({ ...baseRaw(), new_claims_introduced: ['Docker'] }), /unverified claims/)
+})
+
+test('FOLLOW UP: a claim about the answer\'s own facts is excused even reworded, one adding a figure or about anything else is not', () => {
+  // The model tends to list the follow up line itself, reworded: statedInAnswer
+  // alone rejected these, failing every attempt, as on the live runs.
+  const reworded = credited((draft) => {
+    draft.new_claims_introduced = [
+      'Built and deployed a FastAPI service using Docker and Cloud Run, handling around 1,500 requests per day for three months.',
+      'Google Cloud Run',
+      'deployment on cloud run',
+    ]
+  })
+  assert.equal(statedInAnswer('Google Cloud Run', ANSWER), false)
+  assert.equal(validateDocuments(reworded, SOURCE_SCOPE).tailored_cv.follow_up_bullet, LINE)
+  for (const claim of [
+    'Led a team of 12 engineers on the Cloud Run migration',
+    'AWS Solutions Architect certification',
+    'Kubernetes',
+    'Kubernetes and Docker',
+    'Docker and kubernetes',
+    'Docker. Kubernetes',
+    'Docker: Terraform',
+    'Led the platform team on the Cloud Run migration',
+    'Kubernetes Docker',
+    'Cloud Run Kubernetes Migration',
+    'Docker-Kubernetes',
+  ]) {
+    const added = credited((draft) => {
+      draft.new_claims_introduced = [claim]
+    })
+    assert.throws(() => validateDocuments(added, SOURCE_SCOPE), /unverified claims/, claim)
+  }
+})
+
+test('FOLLOW UP: a claim made of the line\'s own words is excused, digits for words and lowercase tools included', () => {
+  const digits = withFollowUpBullet('Built and deployed a FastAPI service using Docker and Cloud Run, handling around 1,500 requests per day for 3 months.')
+  digits.new_claims_introduced = ['3 months', 'handling around 1,500 requests per day']
+  assert.ok(validateDocuments(digits, SOURCE_SCOPE).tailored_cv.follow_up_bullet)
+  // Invented: an answer naming its tools in lowercase, so it has no capitalised facts at all.
+  const answer = 'At university I built a churn model with pandas and scikit-learn, reaching an AUC of 0.82 on held out data.'
+  const lowercase = withFollowUpBullet('Built a churn model with pandas and scikit learn, reaching an AUC of 0.82 on held out data.')
+  lowercase.new_claims_introduced = ['churn model built with pandas and scikit learn', 'AUC of 0.82']
+  const scope = { ...FOLLOW_UP_SCOPE, followUpSource: { answer, cvText: ORIGINAL_CV } }
+  assert.ok(validateDocuments(lowercase, scope).tailored_cv.follow_up_bullet)
+  lowercase.new_claims_introduced = ['churn model built with TensorFlow']
+  assert.throws(() => validateDocuments(lowercase, scope), /unverified claims/)
 })
 
 test('FOLLOW UP: the retry is told which facts to keep in the line, and the log only ever gets the reason code', () => {

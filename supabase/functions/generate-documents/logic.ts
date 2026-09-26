@@ -440,7 +440,20 @@ export function withoutRepeatedFacts(text: string, facts: { figures: string[]; n
     .join(' ')
 }
 
+const VENDOR_NAMES = 'Google|Microsoft|Amazon|AWS|Azure|Apache|Adobe|Oracle|IBM|Salesforce|Atlassian|Meta|Apple|SAP'
+
 const CLAIM_FILLER_WORDS = new Set(['a', 'an', 'and', 'around', 'at', 'by', 'for', 'from', 'i', 'in', 'my', 'of', 'on', 'or', 'over', 'per', 'the', 'to', 'using', 'with'])
+
+// A light stem, the same on both sides, so a reworded claim ("deployment",
+// "handling", "services") matches its source ("deployed", "handled", "service").
+// A word whose stem would be under four letters stays whole, so short words
+// never merge ("fees" and "feed", "us" and "used").
+function stem(word: string): string {
+  if (word.length <= 3 || /\d/.test(word)) return word
+  const suffixless = word.replace(/(?:ments?|ing|ed)$/, '')
+  const base = (suffixless !== word ? suffixless : word.replace(/(?<!s)e?s$/, '')).replace(/(?<=.{4})e$/, '')
+  return base.length >= 4 ? base : word
+}
 
 function claimWords(text: string): string[] {
   return text
@@ -448,7 +461,47 @@ function claimWords(text: string): string[] {
     .replace(/(\d),(?=\d{3}(?!\d))/g, '$1')
     .split(/[^a-z0-9]+/)
     .filter((word) => word && !CLAIM_FILLER_WORDS.has(word))
-    .map((word) => (word.length > 3 ? word.replace(/s$/, '') : word))
+    .map(stem)
+}
+
+/**
+ * A self reported "new claim" about the credited answer's own facts, which the
+ * model tends to list, reworded ("handling" for "handled", "3 months" for
+ * "three months", "Google Cloud Run" for "Cloud Run"). Such a claim is excused
+ * when either every word of it is in the answer or in the follow up line built
+ * from it, or it names one of the answer's own facts and every other word is
+ * in the answer, the line or the CV, a single digit aside. The one exception
+ * is a word inside a capitalised name holding an answer fact, like "Google" in
+ * "Google Cloud Run". So "Kubernetes and Docker" or "Led the platform team on
+ * the Cloud Run migration" still fails when only the tool is the answer's.
+ *
+ * Where the answer's facts may appear is enforced separately
+ * (repeatedAnswerFacts). What can still slip is an invented qualifier inside
+ * the follow up line itself, which the Feedback page tells the candidate to
+ * check before sending.
+ */
+export function concernsAnswerFacts(
+  claim: string,
+  facts: { figures: string[]; names: string[] },
+  source: { answer: string; cvText: string; line: string },
+): boolean {
+  const words = claimWords(claim)
+  const sourceWords = new Set(claimWords(`${source.answer}\n${source.line}`))
+  if (words.length > 0 && words.every((word) => sourceWords.has(word))) return true
+  const claimFigures = figuresIn(claim)
+  const namesAnswerFact =
+    facts.figures.some((figure) => claimFigures.has(figure)) || facts.names.some((name) => mentions(claim, name))
+  if (!namesAnswerFact) return false
+  const known = new Set(claimWords(`${source.answer}\n${source.line}\n${source.cvText}`))
+  // Only a vendor's name directly before an answer fact is vouched for, as in
+  // "Google Cloud Run" for "Cloud Run": never other words in the same run.
+  const qualifiers = new Set(
+    facts.names.flatMap((fact) =>
+      [...claim.matchAll(new RegExp(`\\b(${VENDOR_NAMES})\\s+(?=${fact.split(/\s+/).map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+')}(?![A-Za-z0-9]))`, 'gi'))]
+        .map((match) => stem(match[1].toLowerCase())),
+    ),
+  )
+  return words.every((word) => /^\d$/.test(word) || known.has(word) || qualifiers.has(word))
 }
 
 /** A self reported "new claim" every word of which the candidate's own answer states. */
@@ -486,13 +539,26 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
   // (new_claims_introduced, required by the schema). Rather than trusting the
   // "never invent a metric" prompt instructions alone, a non-empty report is
   // treated as a failed generation and retried — see generateDocuments' loop.
-  // A claim the credited answer itself states is not new: it is the follow up
-  // bullet's source, and where it may appear is checked separately below.
+  // A claim the credited answer itself states, or one about its own facts that
+  // adds no figure, is not new: it is the follow up bullet's source, and where
+  // those facts may appear is checked separately below.
   const followUpSource = scope.followUpSource
+  const answerFacts = followUpSource
+    ? answerOnlyFacts(followUpSource.answer, followUpSource.cvText, followUpSource)
+    : null
+  const claimSource = followUpSource
+    ? { answer: followUpSource.answer, cvText: followUpSource.cvText, line: stripDashes((cv?.follow_up_bullet ?? '').trim()) }
+    : null
   const newClaims = (Array.isArray(raw.new_claims_introduced)
     ? raw.new_claims_introduced.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
     : []
-  ).filter((claim) => !followUpSource || !statedInAnswer(claim, followUpSource.answer))
+  ).filter(
+    (claim) =>
+      !followUpSource ||
+      !answerFacts ||
+      !claimSource ||
+      !(statedInAnswer(claim, followUpSource.answer) || concernsAnswerFacts(claim, answerFacts, claimSource)),
+  )
   if (newClaims.length > 0) {
     throw new Error(`Model reported unverified claims not present in the original CV: ${JSON.stringify(newClaims)}`)
   }
