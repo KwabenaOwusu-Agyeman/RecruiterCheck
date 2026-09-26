@@ -292,9 +292,15 @@ export interface ValidationScope {
   // True when the CV is entitled and a credited follow up answer was sent: the
   // CV must then carry its one follow up bullet. Otherwise any bullet is dropped.
   followUpBullet?: boolean
-  // That credited answer and the original CV text it was not on. When present,
-  // the answer's own facts may appear only in the follow up bullet.
-  followUpSource?: { answer: string; cvText: string }
+  // That credited answer, the original CV text it was not on, and the job it is
+  // for. When present, the answer's own facts may appear only in the follow up
+  // bullet: see answerOnlyFacts.
+  followUpSource?: { answer: string; cvText: string } & JobContext
+  // What to do with a draft that repeats them elsewhere: 'reject' (the default)
+  // throws FollowUpRepeatedError so the next attempt can rewrite it; 'remove'
+  // drops the sentences and bullets that repeat them, so the check can never be
+  // the reason a generation fails. The caller uses 'remove' on its last draft.
+  followUpRepeats?: 'reject' | 'remove'
 }
 
 const VALIDATE_EVERYTHING: ValidationScope = { coverLetter: true, recruiterMessage: true }
@@ -325,60 +331,101 @@ function figuresIn(text: string): Set<string> {
   return new Set(text.replace(/(\d),(?=\d{3}(?!\d))/g, '$1').match(/\d+(?:\.\d+)?/g) ?? [])
 }
 
-const NAME_WORD = String.raw`[A-Z][A-Za-z0-9+#]*(?:\.[A-Za-z0-9]+)*`
+const NAME_WORD = String.raw`[A-Z][A-Za-z0-9+#]*(?:[.\-][A-Za-z0-9]+)*`
 const NAME_SEQUENCE = new RegExp(`${NAME_WORD}(?:[ \\t]+${NAME_WORD})*`, 'g')
-const LEADING_FUNCTION_WORDS = new Set([
+const FUNCTION_WORDS = new Set([
   'a', 'after', 'also', 'an', 'and', 'as', 'at', 'before', 'but', 'by', 'during', 'for', 'from', 'here', 'i',
   'in', 'it', 'my', 'of', 'on', 'or', 'our', 'over', 'since', 'so', 'that', 'the', 'then', 'there', 'these',
   'this', 'those', 'to', 'we', 'when', 'while', 'with',
 ])
 
-// Capitalised names in the answer: tools, products, employers, places. A capital
-// that only opens a sentence says nothing, so that word is dropped unless it is
-// plainly a name anyway ("FastAPI", "AWS", "S3"), as are leading function words.
+// Where a capital says nothing: the start of the text, of a line, of a
+// sentence, or of a list item ("- Reduced", "• Managed", "1) Led").
+function opensSentence(before: string): boolean {
+  return /(^|\n)[ \t]*([-–—•·*]|\d+[.)])?[ \t]*$/.test(before) || /[.!?:;"“(\-–—•·*][ \t]*$/.test(before)
+}
+
+// Capitalised names in the answer: tools, products, employers, places. A word
+// capitalised only because it opens a sentence is dropped unless it is plainly
+// a name anyway ("FastAPI", "AWS", "S3"). Function words, "I" included, split a
+// run ("Using Docker I built" gives "Docker"). A name under three characters
+// ("Go", "UX") is too common to tell apart unless it holds a digit or symbol.
 function namedTermsIn(text: string): string[] {
   const names: string[] = []
   for (const match of text.matchAll(NAME_SEQUENCE)) {
     const words = match[0].split(/[ \t]+/)
-    const before = text.slice(0, match.index).trimEnd()
-    if ((before === '' || /[.!?:;"“(]$/.test(before)) && !/.[A-Z0-9]/.test(words[0])) words.shift()
-    while (words.length > 0 && LEADING_FUNCTION_WORDS.has(words[0].toLowerCase())) words.shift()
-    if (words.length > 0) names.push(words.join(' '))
+    if (opensSentence(text.slice(0, match.index)) && !/.[A-Z0-9]/.test(words[0])) words.shift()
+    let run: string[] = []
+    for (const word of [...words, 'i']) {
+      if (!FUNCTION_WORDS.has(word.toLowerCase())) {
+        run.push(word)
+        continue
+      }
+      const name = run.join(' ').replace(/-/g, ' ')
+      if (name.length >= 3 || /[0-9+#]/.test(name)) names.push(name)
+      run = []
+    }
   }
-  return names
+  return names.filter(Boolean)
 }
 
-// True when text names phrase as whole words, in any case.
-function mentions(text: string, phrase: string): boolean {
+// True when text names phrase as whole words; in any case unless caseSensitive.
+function mentions(text: string, phrase: string, caseSensitive = false): boolean {
   const pattern = phrase
     .split(/\s+/)
     .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
     .join('\\s+')
-  return new RegExp(`(?:^|[^A-Za-z0-9])${pattern}(?![A-Za-z0-9])`, 'i').test(text)
+  return new RegExp(`(?:^|[^A-Za-z0-9])${pattern}(?![A-Za-z0-9])`, caseSensitive ? '' : 'i').test(text.replace(/[-–—]/g, ' '))
+}
+
+// What the documents must be free to name whatever the answer says: the role
+// and the employer the candidate is applying to, and the job ad's own figures.
+export interface JobContext {
+  jobTitle?: string | null
+  companyName?: string | null
+  jobDescription?: string | null
 }
 
 /**
  * The facts a credited answer adds that the CV itself does not show: its
  * figures and its capitalised names. They may appear only in the follow up
- * bullet. Deliberately narrow, so a false alarm cannot fail generations: a
- * single digit (too common to tell apart), a figure in words ("three months")
- * or a lowercase tool is left to the prompt.
+ * bullet. Deliberately narrow, so a false alarm is rare: the role and the
+ * employer applied to are never counted, nor a figure the job ad itself gives,
+ * and a single digit, a figure in words ("three months") or a lowercase tool is
+ * left to the prompt.
  */
-export function answerOnlyFacts(answer: string, cvText: string): { figures: string[]; names: string[] } {
-  const cvFigures = figuresIn(cvText)
+export function answerOnlyFacts(answer: string, cvText: string, job: JobContext = {}): { figures: string[]; names: string[] } {
+  const known = figuresIn(`${cvText}\n${job.jobTitle ?? ''}\n${job.companyName ?? ''}\n${job.jobDescription ?? ''}`)
+  const applyingTo = `${job.jobTitle ?? ''}\n${job.companyName ?? ''}`
   return {
-    figures: [...figuresIn(answer)].filter((figure) => figure.replace('.', '').length >= 2 && !cvFigures.has(figure)),
-    names: [...new Set(namedTermsIn(answer))].filter((name) => !mentions(cvText, name)),
+    figures: [...figuresIn(answer)].filter((figure) => figure.replace('.', '').length >= 2 && !known.has(figure)),
+    names: [...new Set(namedTermsIn(answer))].filter((name) => !mentions(cvText, name) && !mentions(applyingTo, name)),
   }
 }
 
-/** Which of those facts text repeats. */
+/**
+ * Which of those facts text repeats. A name must match its capitals here, so
+ * ordinary words ("I excel", "go live", "cross functional teams") never count;
+ * the CV check above ignores case, so a name the CV has in any case is free.
+ */
 export function repeatedAnswerFacts(text: string, facts: { figures: string[]; names: string[] }): string[] {
   const textFigures = figuresIn(text)
   return [
     ...facts.figures.filter((figure) => textFigures.has(figure)),
-    ...facts.names.filter((name) => mentions(text, name)),
+    ...facts.names.filter((name) => mentions(text, name, true)),
   ]
+}
+
+// Sentences, keeping any trailing fragment with no full stop.
+function sentencesOf(text: string): string[] {
+  return text.split(/(?<=[.!?])\s+/).map((sentence) => sentence.trim()).filter(Boolean)
+}
+
+/** text without the sentences that repeat one of the facts. */
+export function withoutRepeatedFacts(text: string, facts: { figures: string[]; names: string[] }): string {
+  return sentencesOf(text)
+    .filter((sentence) => repeatedAnswerFacts(sentence, facts).length === 0)
+    .join(' ')
 }
 
 const CLAIM_FILLER_WORDS = new Set(['a', 'an', 'and', 'around', 'at', 'by', 'for', 'from', 'i', 'in', 'my', 'of', 'on', 'or', 'over', 'per', 'the', 'to', 'using', 'with'])
@@ -395,7 +442,9 @@ function claimWords(text: string): string[] {
 /** A self reported "new claim" every word of which the candidate's own answer states. */
 export function statedInAnswer(claim: string, answer: string): boolean {
   const answerWords = new Set(claimWords(answer))
-  return claimWords(claim).every((word) => answerWords.has(word))
+  const words = claimWords(claim)
+  // A claim with no words this can read ("€", another script) is never excused.
+  return words.length > 0 && words.every((word) => answerWords.has(word))
 }
 
 export const FOLLOW_UP_REPEATED_ERROR = 'Follow up answer repeated outside its own line'
@@ -412,7 +461,8 @@ export class FollowUpRepeatedError extends Error {
 
 /** Sent with the retry that follows a FollowUpRepeatedError, to the same model only. */
 export function followUpRepeatedCorrection(repeated: string[]): string {
-  return `Your previous draft repeated facts from the CANDIDATE-REPORTED section outside tailored_cv.follow_up_bullet: ${repeated.join(', ')}. Write every document again with those facts only in follow_up_bullet, and nowhere in the professional summary, any experience entry, cover_letter or recruiter_message.`
+  const quoted = repeated.slice(0, 10).map((fact) => `"${fact.slice(0, 60)}"`).join(', ')
+  return `Your previous draft repeated facts from the CANDIDATE-REPORTED section outside tailored_cv.follow_up_bullet: ${quoted}. Write every document again with those facts only in follow_up_bullet, and nowhere in the professional summary, any experience entry, cover_letter or recruiter_message.`
 }
 
 export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VALIDATE_EVERYTHING): RawDocuments {
@@ -442,9 +492,10 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
     languages: (cv?.section_labels?.languages ?? '').trim() || 'Languages',
   }
 
-  const greeting = stripDashes((message?.greeting ?? '').trim())
-  const messageBody = stripDashes((message?.body ?? '').trim())
-  const closingLine = stripDashes((message?.closing_line ?? '').trim())
+  // let, not const: a credited answer's facts may be removed from these below.
+  let greeting = stripDashes((message?.greeting ?? '').trim())
+  let messageBody = stripDashes((message?.body ?? '').trim())
+  let closingLine = stripDashes((message?.closing_line ?? '').trim())
   const signOff = (message?.sign_off ?? '').trim() || 'Kind regards,'
 
   const fullName = (cv?.full_name ?? '').trim()
@@ -452,18 +503,18 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
   // Cap at 3 sentences regardless of what the model returns (the prompt asks
   // for exactly 3 via the Evidence, Strength, Employer Value framework, but
   // this guarantees it deterministically rather than trusting compliance).
-  const professionalSummary = splitSentences(
+  let professionalSummary = splitSentences(
     stripDashes((cv?.professional_summary ?? '').trim()),
   )
     .slice(0, 3)
     .join(' ')
-  const experience = Array.isArray(cv?.experience) ? cv.experience : []
+  let experience = Array.isArray(cv?.experience) ? cv.experience : []
   const education = Array.isArray(cv?.education) ? cv.education : []
 
-  const introParagraph = stripDashes((letter?.intro_paragraph ?? '').trim())
-  const conclusionParagraph = stripDashes((letter?.conclusion_paragraph ?? '').trim())
-  const thankYouLine = stripDashes((letter?.thank_you_line ?? '').trim())
-  const bodyParagraphs = (Array.isArray(letter?.body_paragraphs) ? letter.body_paragraphs : [])
+  let introParagraph = stripDashes((letter?.intro_paragraph ?? '').trim())
+  let conclusionParagraph = stripDashes((letter?.conclusion_paragraph ?? '').trim())
+  let thankYouLine = stripDashes((letter?.thank_you_line ?? '').trim())
+  let bodyParagraphs = (Array.isArray(letter?.body_paragraphs) ? letter.body_paragraphs : [])
     .map((paragraph) => stripDashes(paragraph.trim()))
     .filter(Boolean)
   const salutation = (letter?.salutation ?? '').trim()
@@ -483,29 +534,61 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
     }
   }
   // The answer's own figures and names belong in the follow up bullet alone.
-  // Any other delivered text repeating them fails, and the retry is told which.
+  // 'reject' fails a draft that repeats them elsewhere, so the next attempt,
+  // told which facts, can rewrite it. 'remove' drops the sentences and bullets
+  // that repeat them instead, so on the last draft this check does not fail the
+  // generation; only a summary made of nothing but those facts still would.
+  let removedBodyParagraphs = 0
   if (followUpSource) {
-    // Only what is printed: the same entry and bullet caps as the result below.
-    const elsewhere = [
-      professionalSummary,
-      ...experience.slice(0, MAX_EXPERIENCE_ENTRIES).flatMap((entry) => [
-        entry?.title ?? '',
-        entry?.company_location ?? '',
-        ...(Array.isArray(entry?.bullets) ? entry.bullets : [])
-          .map((bullet) => (bullet?.text ?? '').trim())
-          .filter(Boolean)
-          .slice(0, MAX_BULLETS_PER_ENTRY),
-      ]),
-      ...(scope.coverLetter ? [introParagraph, ...bodyParagraphs, conclusionParagraph, thankYouLine] : []),
-      ...(scope.recruiterMessage ? [greeting, messageBody, closingLine] : []),
-    ].join('\n')
-    const repeated = repeatedAnswerFacts(elsewhere, answerOnlyFacts(followUpSource.answer, followUpSource.cvText))
-    if (repeated.length > 0) throw new FollowUpRepeatedError(repeated)
+    const facts = answerOnlyFacts(followUpSource.answer, followUpSource.cvText, followUpSource)
+    if (scope.followUpRepeats === 'remove') {
+      const clean = (text: string) => withoutRepeatedFacts(text, facts)
+      professionalSummary = clean(professionalSummary)
+      // A placeholder bullet stays: it is already printed as one to review.
+      experience = experience.map((entry) => ({
+        ...entry,
+        bullets: (Array.isArray(entry?.bullets) ? entry.bullets : []).filter(
+          (bullet) => bullet?.is_placeholder || repeatedAnswerFacts(stripDashes((bullet?.text ?? '').trim()), facts).length === 0,
+        ),
+      }))
+      if (scope.coverLetter) {
+        introParagraph = clean(introParagraph)
+        conclusionParagraph = clean(conclusionParagraph)
+        thankYouLine = clean(thankYouLine)
+        const kept = bodyParagraphs.map(clean).filter(Boolean)
+        removedBodyParagraphs = bodyParagraphs.length - kept.length
+        bodyParagraphs = kept
+      }
+      if (scope.recruiterMessage) {
+        greeting = clean(greeting)
+        messageBody = clean(messageBody)
+        closingLine = clean(closingLine)
+      }
+      if (!professionalSummary) throw new FollowUpRepeatedError(repeatedAnswerFacts(cv?.professional_summary ?? '', facts))
+    } else {
+      // Only what is printed: the same entry and bullet caps, and dashes removed, as in the result below.
+      const elsewhere = [
+        professionalSummary,
+        ...experience.slice(0, MAX_EXPERIENCE_ENTRIES).flatMap((entry) => [
+          stripDashes((entry?.title ?? '').trim()),
+          (entry?.company_location ?? '').trim(),
+          ...(Array.isArray(entry?.bullets) ? entry.bullets : [])
+            .map((bullet) => stripDashes((bullet?.text ?? '').trim()))
+            .filter(Boolean)
+            .slice(0, MAX_BULLETS_PER_ENTRY),
+        ]),
+        ...(scope.coverLetter ? [introParagraph, ...bodyParagraphs, conclusionParagraph, thankYouLine] : []),
+        ...(scope.recruiterMessage ? [greeting, messageBody, closingLine] : []),
+      ].join('\n')
+      const repeated = repeatedAnswerFacts(elsewhere, facts)
+      if (repeated.length > 0) throw new FollowUpRepeatedError(repeated)
+    }
   }
   if (scope.coverLetter) {
     if (!salutation) throw new Error('Cover letter is missing a salutation')
     if (!introParagraph) throw new Error('Cover letter is missing an introduction')
-    if (bodyParagraphs.length !== REQUIRED_BODY_PARAGRAPHS) {
+    // Counts what the model wrote: a paragraph removed above for repeating the answer still counts.
+    if (bodyParagraphs.length + removedBodyParagraphs !== REQUIRED_BODY_PARAGRAPHS) {
       throw new Error('Cover letter must have exactly 3 body paragraphs')
     }
     if (!conclusionParagraph) throw new Error('Cover letter is missing a conclusion')
