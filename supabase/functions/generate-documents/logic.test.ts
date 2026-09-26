@@ -1,6 +1,7 @@
 // Run with: npx tsx supabase/functions/generate-documents/logic.test.ts
 import assert from 'node:assert/strict'
-import { classifyGenerationError, containsName, containsPlaceholder, getDocumentEntitlement, isRetryableGenerationError, PACK_DISPLAY_NAMES, looksLikeEnglish, splitSentences, stripDashes, stripExampleClause, toPdfSafe, toPdfSafeText, validateDocuments, type RawDocuments } from './logic.ts'
+import { readFileSync } from 'node:fs'
+import { classifyGenerationError, containsName, containsPlaceholder, FOLLOW_UP_BULLET_SCHEMA, FOLLOW_UP_DOCUMENT_ADDENDUM, FOLLOW_UP_SECTION_HEADING, getDocumentEntitlement, isRetryableGenerationError, PACK_DISPLAY_NAMES, looksLikeEnglish, splitSentences, stripDashes, stripExampleClause, toPdfSafe, toPdfSafeText, validateDocuments, type RawDocuments } from './logic.ts'
 
 let passed = 0
 function test(name: string, fn: () => void) {
@@ -462,6 +463,84 @@ test('RETRY: only failures that can succeed on a second attempt are retried', ()
   for (const reason of ['openai_http_400', 'openai_http_401', 'openai_http_403', 'openai_http_404']) {
     assert.equal(isRetryableGenerationError(reason), false, reason)
   }
+})
+
+// ---------------------------------------------------------------------------
+// FOLLOW UP: a credited answer becomes one dedicated CV line
+// ---------------------------------------------------------------------------
+
+const FOLLOW_UP_SCOPE = { coverLetter: true, recruiterMessage: true, followUpBullet: true }
+const ANSWER_BULLET = 'Cut trial setup to 2 screens at Brightwell, lifting trial conversion by 30% in one quarter.'
+
+function withFollowUpBullet(bullet: string | undefined): RawDocuments {
+  const raw = baseRaw()
+  return { ...raw, tailored_cv: { ...raw.tailored_cv, follow_up_bullet: bullet } }
+}
+
+test('FOLLOW UP: a credited answer\'s bullet is kept, with its own figures', () => {
+  const result = validateDocuments(withFollowUpBullet(ANSWER_BULLET), FOLLOW_UP_SCOPE)
+  assert.equal(result.tailored_cv.follow_up_bullet, ANSWER_BULLET)
+})
+
+test('FOLLOW UP: a missing bullet fails validation so the generation is retried', () => {
+  for (const bullet of [undefined, '', '   ']) {
+    assert.throws(() => validateDocuments(withFollowUpBullet(bullet), FOLLOW_UP_SCOPE), /missing the follow up bullet/)
+  }
+  assert.equal(classifyGenerationError('Tailored CV is missing the follow up bullet'), 'cv_incomplete')
+})
+
+test('FOLLOW UP: a placeholder in the bullet fails validation, since the answer is real', () => {
+  assert.throws(
+    () => validateDocuments(withFollowUpBullet('Cut trial setup at Brightwell, lifting conversion by [X%].'), FOLLOW_UP_SCOPE),
+    /placeholder/,
+  )
+})
+
+test('FOLLOW UP: without a credited answer, a bullet the model wrote anyway is never printed', () => {
+  const result = validateDocuments(withFollowUpBullet(ANSWER_BULLET))
+  assert.equal(result.tailored_cv.follow_up_bullet, '')
+  assert.equal(validateDocuments(baseRaw()).tailored_cv.follow_up_bullet, '')
+})
+
+test('FOLLOW UP: the bullet is never cut, however full the experience entries are', () => {
+  const raw = withFollowUpBullet(ANSWER_BULLET)
+  const fullBullets = Array.from({ length: 6 }, (_, i) => ({ text: `Shipped release ${i + 1} of the reporting service on schedule.`, is_placeholder: false }))
+  raw.tailored_cv.experience = [{ ...raw.tailored_cv.experience[0], bullets: fullBullets }]
+  const result = validateDocuments(raw, FOLLOW_UP_SCOPE)
+  assert.equal(result.tailored_cv.experience[0].bullets.length, 4, 'experience is still capped')
+  assert.equal(result.tailored_cv.follow_up_bullet, ANSWER_BULLET, 'the follow up line is separate and survives')
+})
+
+test('FOLLOW UP: dashes are removed like every other CV line', () => {
+  const result = validateDocuments(withFollowUpBullet('Rebuilt the self-serve signup flow, lifting completion by 16%.'), FOLLOW_UP_SCOPE)
+  assert.doesNotMatch(result.tailored_cv.follow_up_bullet ?? '', /[-–—]/)
+})
+
+test('FOLLOW UP: the prompt asks for one bullet from the answer only, and for no repetition elsewhere', () => {
+  for (const rule of [
+    /exactly one CV bullet in tailored_cv\.follow_up_bullet/,
+    /using only the facts the answer states/,
+    /never add a number, date, employer, tool or outcome it does not state/,
+    /never use brackets or placeholders/,
+    /Never mention a follow up question, that the answer is self reported, or MyRecruiterCheck/,
+    /do not repeat the answer's facts in any experience bullet, the professional summary, cover_letter or recruiter_message/,
+    /classify it as case \(A\) and add no placeholder bullet for it/,
+  ]) {
+    assert.match(FOLLOW_UP_DOCUMENT_ADDENDUM, rule)
+  }
+  assert.equal(FOLLOW_UP_BULLET_SCHEMA.type, 'string')
+  assert.equal(FOLLOW_UP_SECTION_HEADING, 'Additional Relevant Experience')
+  assert.doesNotMatch(FOLLOW_UP_SECTION_HEADING + FOLLOW_UP_DOCUMENT_ADDENDUM, /[–—]/)
+})
+
+test('FOLLOW UP: the request only changes when a credited answer is sent, and only for an entitled CV', () => {
+  const source = readFileSync('supabase/functions/generate-documents/index.ts', 'utf8')
+  assert.match(source, /\.\.\.\(context\.hasFollowUpEvidence \? \{ follow_up_bullet: FOLLOW_UP_BULLET_SCHEMA \} : \{\}\)/)
+  assert.match(source, /\.\.\.\(context\.hasFollowUpEvidence \? \['follow_up_bullet'\] : \[\]\)/)
+  assert.match(source, /\$\{context\.hasFollowUpEvidence \? FOLLOW_UP_DOCUMENT_ADDENDUM : ''\}/)
+  assert.match(source, /const cvFollowUp = entitlement\.cv \? followUpEvidence : null/)
+  assert.match(source, /followUpBullet: cvFollowUp !== null/)
+  assert.match(source, /if \(cv\.follow_up_bullet\) \{\s*addLeft\(FOLLOW_UP_SECTION_HEADING/)
 })
 
 console.log(`\n${passed} tests passed`)

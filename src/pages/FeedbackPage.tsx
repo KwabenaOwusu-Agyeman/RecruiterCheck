@@ -546,8 +546,8 @@ export function FeedbackPage() {
                         </p>
                         {report?.updated ? (
                           <p className="w-full basis-full text-xs text-text-secondary">
-                            Your CV draft uses your follow up answer, which was not on your original CV.
-                            Check that part is accurate before sending.
+                            Your CV draft has a line under Additional Relevant Experience from your follow
+                            up answer, which was not on your original CV. Check it is accurate before sending.
                           </p>
                         ) : null}
                       </>
