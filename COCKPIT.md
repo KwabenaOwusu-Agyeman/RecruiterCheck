@@ -474,7 +474,12 @@ here.
 
 **Next technical step.** None.
 
-**Commit or PR.** Branch `fix/follow-up-repeats-every-printed-field`.
+**Commit or PR.** `783ea45` and `73eb2d4` on branch
+`fix/follow-up-repeats-every-printed-field`,
+[#191](https://github.com/fullcircleAI/RecruiterCheck/pull/191), merged at
+the founder's request as `a6ae5be` on 2026-09-27; the security review's
+final check of `73eb2d4` came back clean. Deploy run `36275910162`: Validate
+and Deploy both green, `generate-documents` the only function deployed.
 
 ---
 
