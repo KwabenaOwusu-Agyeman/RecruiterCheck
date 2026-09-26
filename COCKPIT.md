@@ -249,9 +249,14 @@ doing it.
   your documents", reason code not collected) and then passed. Verified
   from the downloaded PDFs: (5) held for CV.pdf's own line, one page, the
   section and one exact bullet; but the answer's facts also appeared in the
-  cover letter, the CV summary and the recruiter message, fixed on branch
-  `fix/follow-up-answer-stays-in-cv-line`. Still to confirm: (1) to (4) as
-  seen, (6), and a Generate after that fix is live.
+  cover letter, the CV summary and the recruiter message, fixed by PR #189.
+  Third run, 2026-09-26 around 23:57, after #189 went live: Generate failed
+  ("Could not generate your documents"); reason code not collected. Most
+  likely `follow_up_repeated` on every attempt, the model naming the answer's
+  tool again each time: #189 only rejected and retried, with no way to end
+  in success. Fixed on branch `fix/follow-up-repeats-never-fail-generation`.
+  Still to confirm: (1) to (4) as seen, (6), and a Generate after that fix
+  is live.
 - **Founder action.** Verify a real Google sign-in end to end after the move
   to the `myrecruitercheck` Cloud project, then delete the old `RecruiterCheck`
   OAuth client in `theorycoach-ai`. Recorded 2026-09-07.
@@ -434,6 +439,44 @@ For current behaviour go to the migration, the function and the database.
 
 ---
 
+## 2026-09-27 — Keeping the answer in its line can no longer fail a generation
+
+**Objective.** After PR #189 went live the founder's Generate failed again,
+most likely because every attempt repeated the answer's tool and #189 could
+only reject and retry. The security review of #189, finished after its
+merge, also found three medium false alarms.
+
+**Completed.** `generate-documents`: the retry loop in `index.ts` keeps the
+latest draft rejected with `FollowUpRepeatedError` and, if no attempt
+succeeds outright, validates it with `followUpRepeats: 'remove'`, which
+drops the sentences (`withoutRepeatedFacts`) and non placeholder bullets
+that repeat the answer; the cover letter's 3 paragraph rule counts a
+removed paragraph, and only a summary made of nothing but the answer still
+fails. Review fixes in `logic.ts`: the role, the employer and the job ad's
+figures are never the answer's facts (`JobContext`, passed from the
+check); names match case sensitively in the documents; list markers and
+line starts open a sentence (`opensSentence`); function words, "I"
+included, split a name; names under 3 characters without a digit or symbol
+are ignored; dashes are normalised before matching; `statedInAnswer` never
+excuses a claim with no readable words; the correction note quotes at most
+10 facts of 60 characters.
+
+**Verified.** lint (0 errors), typecheck, `test:edge` (30/30, 545; 9 new
+tests in `generate-documents/logic.test.ts`), `deno check --no-config` on
+`generate-documents` (the same 8 `SupabaseClient` errors). Security
+re-review: see Commit or PR. **UNVERIFIED:** a live generation.
+
+**Blockers.** None.
+
+**Founder action required.** See Open items: Generate on a credited check
+once this is live.
+
+**Next technical step.** None.
+
+**Commit or PR.** Branch `fix/follow-up-repeats-never-fail-generation`.
+
+---
+
 ## 2026-09-26 — A credited follow up answer stays in its own CV line
 
 **Objective.** Founder, after the live run of PR #186: CV.pdf's Additional
@@ -462,19 +505,23 @@ a lowercase tool.
 tests in `generate-documents/logic.test.ts`, modelled on the live run with
 invented details), `deno check --no-config` on `generate-documents` (the
 same 8 `SupabaseClient` errors). **UNVERIFIED:** a live generation with the
-check in place. The mandatory security review and an empirical stress test
-of the check were still running when the founder asked for the merge; their
-results are recorded in the next Cockpit update.
+check in place. The mandatory security review was still running when the
+founder asked for the merge. It reported afterwards: no privacy leak and no
+regex risk, but three medium false alarms (the role or employer named in
+the answer, ordinary words matched in any case, list style answers) and
+three low ones. All are fixed in the entry above.
 
 **Blockers.** None.
 
-**Founder action required.** See Open items: Generate again on a credited
-check once this is live.
+**Founder action required.** See Open items.
 
 **Next technical step.** None.
 
-**Commit or PR.** Branch `fix/follow-up-answer-stays-in-cv-line`, merged at
-the founder's request before the security review reported.
+**Commit or PR.** `36c50c5` on branch `fix/follow-up-answer-stays-in-cv-line`,
+[#189](https://github.com/fullcircleAI/RecruiterCheck/pull/189), merged at
+the founder's request as `4e73a2c` on 2026-09-26, before the security review
+reported. Deploy run `36274603485`: Validate and Deploy both green,
+`generate-documents` the only function deployed.
 
 ---
 

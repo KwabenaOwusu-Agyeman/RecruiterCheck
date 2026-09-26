@@ -27,12 +27,22 @@ correction sent on the retry, not left to the prompt. The addendum keeps case
 self reported claim that the answer itself states is excused in code
 (`statedInAnswer`).
 
+Second mistake, 2026-09-26, the same evening: the first version of that
+check (PR #189) only rejected and retried. The model repeated the answer's
+tool on every attempt, so the founder's Generate failed outright. That was
+the same mistake `validateDocuments` already records for `is_placeholder`
+bullets and `stripDashes`. Since 2026-09-27 the last draft rejected for
+repeating the answer is used with those sentences removed
+(`followUpRepeats: 'remove'`).
+
 How to prevent recurrence
 When an addendum reuses one of the base prompt's classifications (A, B, C or
 D), reread what that classification tells the model to do in every document
 and override it explicitly. Any rule about which document may contain which
 fact needs a check in `validateDocuments` and a test, never only a prompt
-sentence or the model's self audit.
+sentence or the model's self audit. A check the model may keep failing must
+end in a deterministic fix of the last draft, never in retries alone. The
+candidate sees reject and retry with no fallback as a 500.
 
 Affected files or systems
 `supabase/functions/generate-documents/logic.ts` (`FOLLOW_UP_DOCUMENT_ADDENDUM`,

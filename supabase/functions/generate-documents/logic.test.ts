@@ -1,7 +1,7 @@
 // Run with: npx tsx supabase/functions/generate-documents/logic.test.ts
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { answerOnlyFacts, classifyGenerationError, containsName, containsPlaceholder, FOLLOW_UP_BULLET_SCHEMA, FOLLOW_UP_DOCUMENT_ADDENDUM, FOLLOW_UP_SECTION_HEADING, FollowUpRepeatedError, followUpRepeatedCorrection, getDocumentEntitlement, isRetryableGenerationError, PACK_DISPLAY_NAMES, looksLikeEnglish, splitSentences, statedInAnswer, stripDashes, stripExampleClause, toPdfSafe, toPdfSafeText, validateDocuments, type RawDocuments } from './logic.ts'
+import { answerOnlyFacts, repeatedAnswerFacts, classifyGenerationError, containsName, containsPlaceholder, FOLLOW_UP_BULLET_SCHEMA, FOLLOW_UP_DOCUMENT_ADDENDUM, FOLLOW_UP_SECTION_HEADING, FollowUpRepeatedError, followUpRepeatedCorrection, getDocumentEntitlement, isRetryableGenerationError, PACK_DISPLAY_NAMES, looksLikeEnglish, splitSentences, statedInAnswer, stripDashes, stripExampleClause, toPdfSafe, toPdfSafeText, validateDocuments, type RawDocuments } from './logic.ts'
 
 let passed = 0
 function test(name: string, fn: () => void) {
@@ -641,13 +641,120 @@ test('FOLLOW UP: a self reported claim the answer itself states is excused, anyt
 test('FOLLOW UP: the retry is told which facts to keep in the line, and the log only ever gets the reason code', () => {
   const note = followUpRepeatedCorrection(['1500', 'Cloud Run'])
   assert.match(note, /only in follow_up_bullet/)
-  assert.match(note, /1500, Cloud Run/)
+  assert.match(note, /"1500", "Cloud Run"/)
+  const long = followUpRepeatedCorrection(Array.from({ length: 30 }, (_, i) => `Fact ${i} ${'x'.repeat(100)}`))
+  assert.equal(long.match(/"Fact/g)?.length, 10, 'at most ten facts, each cut short')
+  assert.doesNotMatch(long, /x{61}/)
   assert.equal(classifyGenerationError(new FollowUpRepeatedError(['JSON', 'timed out']).message), 'follow_up_repeated')
   const source = readFileSync('supabase/functions/generate-documents/index.ts', 'utf8')
-  assert.match(source, /followUpSource: cvFollowUp \? \{ answer: cvFollowUp\.answer, cvText \} : undefined/)
+  assert.match(source, /answer: cvFollowUp\.answer,\s*cvText,\s*jobTitle: check\.job_title,\s*companyName: check\.company_name,\s*jobDescription: check\.job_description,/)
   assert.match(source, /callOpenAI\(apiKey, cvText, jobDescription, context, correction\)/)
-  assert.match(source, /correction = error instanceof FollowUpRepeatedError \? followUpRepeatedCorrection\(error\.repeated\) : null/)
+  assert.match(source, /repeatingDraft = raw\s*correction = followUpRepeatedCorrection\(error\.repeated\)/)
   assert.match(source, /\.\.\.\(correction \? \[\{ role: 'user', content: correction \}\] : \[\]\)/)
+})
+
+// ---------------------------------------------------------------------------
+// FOLLOW UP: what the security review of the first version found
+// ---------------------------------------------------------------------------
+
+test('FOLLOW UP: the role and employer applied to, and the job ad\'s own figures, are never the answer\'s facts', () => {
+  const job = { jobTitle: 'Senior Data Analyst', companyName: 'Stripe', jobDescription: 'Join our 24/7 support analytics team.' }
+  const answer = 'As a Data Analyst at Stripe I built Looker dashboards for 24/7 support, used by 300 agents.'
+  assert.deepEqual(answerOnlyFacts(answer, 'A CV with none of those words.', job), { figures: ['300'], names: ['Looker'] })
+  const raw = credited((draft) => {
+    draft.cover_letter.intro_paragraph = 'I am excited to apply for the Senior Data Analyst role at Stripe, supporting a 24/7 team.'
+  })
+  const scope = { ...FOLLOW_UP_SCOPE, followUpSource: { answer, cvText: 'A CV with none of those words.', ...job } }
+  assert.deepEqual(repeatedIn(raw, scope), [])
+})
+
+test('FOLLOW UP: a name repeats only with its capitals, so ordinary words never count', () => {
+  const facts = answerOnlyFacts('I used Excel and Microsoft Teams to track 40 orders a day.', 'A CV without either tool.')
+  assert.deepEqual(facts.names, ['Excel', 'Microsoft Teams'])
+  assert.deepEqual(repeatedAnswerFacts('I excel at working across teams and react quickly.', facts), [])
+  assert.deepEqual(repeatedAnswerFacts('Built weekly reports in Excel.', facts), ['Excel'])
+})
+
+test('FOLLOW UP: list markers open a sentence, "I" splits a run, and very short names are ignored', () => {
+  assert.deepEqual(answerOnlyFacts('- Reduced churn by 12% using Mixpanel - Managed a team of 4', '').names, ['Mixpanel'])
+  assert.deepEqual(answerOnlyFacts('• Reduced churn using Mixpanel\n• Managed the rollout', '').names, ['Mixpanel'])
+  assert.deepEqual(answerOnlyFacts('Using Docker I built the pipeline.', '').names, ['Docker'])
+  assert.deepEqual(answerOnlyFacts('At Acme I led the move.', 'Acme, Amsterdam').names, [])
+  assert.deepEqual(answerOnlyFacts('I write Go and R daily, and stored files in S3.', '').names, ['S3'])
+})
+
+test('FOLLOW UP: a dash in a printed line cannot hide a repeat, since dashes are removed before printing', () => {
+  const raw = credited((draft) => {
+    draft.tailored_cv.experience[0].bullets.push({ text: 'Deployed internal tools on Cloud-Run.', is_placeholder: false })
+  })
+  assert.deepEqual(repeatedIn(raw), ['Cloud Run'])
+})
+
+test('FOLLOW UP: a claim with no readable words is never excused', () => {
+  for (const claim of ['€', 'Москва', '   ']) assert.equal(statedInAnswer(claim, ANSWER), false, claim)
+})
+
+// ---------------------------------------------------------------------------
+// FOLLOW UP: the last draft has repeats removed rather than failing
+// ---------------------------------------------------------------------------
+
+const REMOVE_SCOPE = { ...SOURCE_SCOPE, followUpRepeats: 'remove' as const }
+
+// Invented, shaped like the live run's leaks: the summary, one cover letter
+// paragraph and the recruiter message each repeat the answer.
+function leakyDraft(): RawDocuments {
+  return credited((draft) => {
+    draft.tailored_cv.professional_summary =
+      'Backend engineer with 6 years of experience in distributed systems. Proficient in deploying services using Google Cloud Run and FastAPI. Delivers reliable services.'
+    draft.cover_letter.body_paragraphs[1] =
+      'Additionally, I have hands on experience deploying applications using Google Cloud Run. I built a FastAPI service that handled around 1,500 requests per day.'
+    draft.recruiter_message.body =
+      'I have applied for the Senior Backend Engineer role. With strong experience in Python and deployment on Google Cloud Run, I would be glad to talk. My background in distributed systems fits this role.'
+  })
+}
+
+test('FOLLOW UP: removal takes out exactly the sentences that repeat the answer, and keeps its own line', () => {
+  assert.ok(repeatedIn(leakyDraft()).length > 0, 'rejected when retries are still possible')
+  const result = validateDocuments(leakyDraft(), REMOVE_SCOPE)
+  const facts = answerOnlyFacts(ANSWER, ORIGINAL_CV)
+  const printed = [
+    result.tailored_cv.professional_summary,
+    ...result.tailored_cv.experience.flatMap((entry) => entry.bullets.map((bullet) => bullet.text)),
+    result.cover_letter.intro_paragraph,
+    ...result.cover_letter.body_paragraphs,
+    result.cover_letter.conclusion_paragraph,
+    result.recruiter_message.body,
+  ].join('\n')
+  assert.deepEqual(repeatedAnswerFacts(printed, facts), [])
+  assert.equal(result.tailored_cv.professional_summary, 'Backend engineer with 6 years of experience in distributed systems. Delivers reliable services.')
+  assert.equal(result.cover_letter.body_paragraphs.length, 2, 'the paragraph made only of the answer is dropped')
+  assert.match(result.recruiter_message.body, /My background in distributed systems fits this role\.$/)
+  assert.equal(result.tailored_cv.follow_up_bullet, LINE)
+})
+
+test('FOLLOW UP: removal drops a repeating bullet but keeps a placeholder bullet, which is already flagged for review', () => {
+  const raw = credited((draft) => {
+    draft.tailored_cv.experience[0].bullets.push(
+      { text: 'Containerised services with Docker for faster releases.', is_placeholder: false },
+      { text: 'Deployed a service on Cloud Run handling [X] requests.', is_placeholder: true },
+    )
+    draft.improvement_classifications = [{ case: 'C' }]
+  })
+  const bullets = validateDocuments(raw, REMOVE_SCOPE).tailored_cv.experience[0].bullets.map((bullet) => bullet.text)
+  assert.ok(!bullets.some((text) => text.includes('Docker')))
+  assert.ok(bullets.some((text) => text.includes('[X]')))
+})
+
+test('FOLLOW UP: removal still fails a summary made of nothing but the answer, the one case it cannot fix', () => {
+  const raw = credited((draft) => {
+    draft.tailored_cv.professional_summary = 'Deployed services using Google Cloud Run at 1,500 requests per day.'
+  })
+  assert.throws(() => validateDocuments(raw, REMOVE_SCOPE), FollowUpRepeatedError)
+})
+
+test('FOLLOW UP: without a credited answer, removal mode changes nothing', () => {
+  const plain = validateDocuments(baseRaw(), { coverLetter: true, recruiterMessage: true, followUpRepeats: 'remove' })
+  assert.deepEqual(plain, validateDocuments(baseRaw()))
 })
 
 console.log(`\n${passed} tests passed`)

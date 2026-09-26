@@ -275,8 +275,17 @@ Deno.serve(async (req) => {
       coverLetter: entitlement.coverLetter,
       recruiterMessage: entitlement.recruiterMessage,
       followUpBullet: cvFollowUp !== null,
-      // The CV as uploaded, without the answer, so the answer's own facts can be told apart.
-      followUpSource: cvFollowUp ? { answer: cvFollowUp.answer, cvText } : undefined,
+      // The CV as uploaded, without the answer, so the answer's own facts can be
+      // told apart, and the job, whose role, employer and figures stay free to use.
+      followUpSource: cvFollowUp
+        ? {
+          answer: cvFollowUp.answer,
+          cvText,
+          jobTitle: check.job_title,
+          companyName: check.company_name,
+          jobDescription: check.job_description,
+        }
+        : undefined,
     })
 
     // The standard PDF font can only draw Windows-1252 text; see toPdfSafeText.
@@ -481,18 +490,38 @@ async function generateDocuments(
   // Set only after a draft repeated a credited answer outside its own line:
   // the retry is told which facts to leave out. It goes to the model, never a log.
   let correction: string | null = null
+  // The latest draft rejected for repeating a credited answer. If no attempt
+  // succeeds outright, it is used with those sentences removed, so keeping the
+  // answer in its own line never costs the candidate their documents.
+  let repeatingDraft: RawDocuments | null = null
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     if (attempt > 0 && Date.now() - startedAt > GENERATION_DEADLINE_MS) break
+    let raw: RawDocuments | null = null
     try {
-      const raw = await callOpenAI(apiKey, cvText, jobDescription, context, correction)
+      raw = await callOpenAI(apiKey, cvText, jobDescription, context, correction)
       return validateDocuments(raw, scope)
     } catch (error) {
       const reason = classifyGenerationError(error instanceof Error ? error.message : String(error))
       attemptReasons.push(reason)
+      if (error instanceof FollowUpRepeatedError) {
+        repeatingDraft = raw
+        correction = followUpRepeatedCorrection(error.repeated)
+      } else {
+        correction = null
+      }
       // A rejected key or a malformed request fails the same way every time.
       if (!isRetryableGenerationError(reason)) break
-      correction = error instanceof FollowUpRepeatedError ? followUpRepeatedCorrection(error.repeated) : null
+    }
+  }
+
+  if (repeatingDraft) {
+    try {
+      const documents = validateDocuments(repeatingDraft, { ...scope, followUpRepeats: 'remove' })
+      console.log('generate-documents: answer repeats removed from the last draft', { attempts: attemptReasons.length })
+      return documents
+    } catch (error) {
+      attemptReasons.push(classifyGenerationError(error instanceof Error ? error.message : String(error)))
     }
   }
 
