@@ -455,7 +455,9 @@ the CV line.
 
 **Next technical step.** None.
 
-**Commit or PR.** Branch `feature/follow-up-cv-dedicated-line`.
+**Commit or PR.** `74ca727` on branch `feature/follow-up-cv-dedicated-line`,
+[#186](https://github.com/fullcircleAI/RecruiterCheck/pull/186), awaiting
+the founder's merge decision.
 
 ---
 
