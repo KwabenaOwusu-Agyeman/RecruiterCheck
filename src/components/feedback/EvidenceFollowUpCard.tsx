@@ -14,6 +14,7 @@ import {
   FOLLOW_UP_SUBMIT_LABEL,
   FOLLOW_UP_SUBMITTING_LABEL,
   FOLLOW_UP_WORKING_MESSAGE,
+  followUpQuestionText,
   MAX_ANSWER_CHARS,
 } from '@/lib/evidenceFollowUp'
 import { submitEvidenceFollowUp } from '@/services/checkService'
@@ -123,7 +124,7 @@ export function EvidenceFollowUpCard({ followUp, updated, dark, onAssessed }: Ev
 
   const problem = answer.trim().length > 0 ? answerProblem(answer) : null
 
-  // The requirement is named by the Gap Analysis card directly above, so this card does not repeat it.
+  // The question names the requirement so it reads on its own; Gap Analysis above still explains the gap.
   return (
     <Card tone={cardTone}>
       <CardHeader tone={cardTone} className="px-5 py-3">
@@ -132,7 +133,7 @@ export function EvidenceFollowUpCard({ followUp, updated, dark, onAssessed }: Ev
       <CardContent className="space-y-4 px-5 py-4">
         <div>
           <label htmlFor="evidence-follow-up-answer" className={cn('block text-sm font-semibold leading-snug', c.heading)}>
-            {followUp.question}
+            {followUpQuestionText(followUp.gap_requirement, followUp.question)}
           </label>
           <p id="evidence-follow-up-example" className={cn('mt-2 text-sm leading-snug', c.accent)}>
             <span className="font-semibold">Example:</span> <span className="italic">&quot;{FOLLOW_UP_EXAMPLE}&quot;</span>

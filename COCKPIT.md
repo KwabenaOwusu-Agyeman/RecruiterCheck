@@ -220,7 +220,7 @@ doing it.
   answer would fail safely: the original result stays and the candidate can
   retry. Founder action: run one real
   Needs Improvement check to its follow up and confirm (1) Gap Analysis shows
-  the one gap and the follow up below it shows one plain question, the
+  the one gap and the follow up below it shows one question naming it, the
   example and the answer box; (2) pasting the example is refused before
   anything is assessed; (3) a vague answer leaves the score unchanged;
   (4) a strong situation, action, outcome answer raises it by at most 3
@@ -231,7 +231,17 @@ doing it.
   the two cards' layout (2026-09-26 was checked by server rendering only, the
   Chrome connector being disconnected), and generating a CV, then getting
   credited, clears the stale CV button (PR #182's `onAssessed` fix).
-  Recorded 2026-09-24, updated 2026-09-26.
+  Recorded 2026-09-24, updated 2026-09-26. First run, 2026-09-26 around
+  23:00: the initial analysis failed once ("Could not complete this
+  analysis") and passed on Retry, then submitting the follow up answer
+  failed with "Could not update your Recruiter Check". Verified locally the
+  same evening: the follow up request's strict schema is valid and within
+  OpenAI's limits (82 properties, 3 levels), and OpenAI reported no
+  incident. Unconfirmed: the cause. Founder action: send the
+  `assess-evidence-follow-up` log line from around 23:05 (its `reasonCode`
+  if it reads "both attempts invalid"). Assumption, to test against that
+  line: two failures in one evening point at the 45 second per attempt
+  model timeout (`OPENAI_TIMEOUT_MS` in `analyze-check/runtime.ts`).
 - **Founder action.** Verify a real Google sign-in end to end after the move
   to the `myrecruitercheck` Cloud project, then delete the old `RecruiterCheck`
   OAuth client in `theorycoach-ai`. Recorded 2026-09-07.
@@ -411,6 +421,45 @@ Its Keyword Scan reservation design was never adopted by the live
 reservation functions are dropped by `20260922170000`. Treat every "nothing applied"
 statement in those files as describing the moment of writing, not the present.
 For current behaviour go to the migration, the function and the database.
+
+---
+
+## 2026-09-26 — The follow up question names the gap it asks about
+
+**Objective.** Founder, after the first live check of PR #184: the follow
+up question ("Have you done this in a job, project...") does not say what
+"this" is, and must name the gap. That reverses the DEC-8 bullet amended
+the same day ("The question no longer names the requirement or restates
+the gap"); the founder approved the reversal and DEC-8 was amended again.
+
+**Completed.** `followUpQuestionText` in `src/lib/evidenceFollowUp.ts`
+returns one opening sentence, "The job asks for {gap_requirement}.", then
+the stored question unchanged; `EvidenceFollowUpCard.tsx` renders it as the
+answer box's label. The requirement keeps the job description's own
+wording and gets a sentence of its own rather than being worked into the
+question (the old "Have you used Experience with SQL" grammar bug).
+Frontend only: `evidence_follow_ups.question` and the reassessment are
+unchanged, since the reassessment already receives the requirement on its
+own line (`buildFollowUpCvText`). So it applies to every unanswered follow
+up, including those created before today, and deploys through Vercel
+alone. A question created before PR #184, which already opens with that
+sentence, is shown as stored.
+
+**Verified.** lint (0 errors), typecheck, `test:unit` (25/25, 301). The
+card test in `src/lib/evidenceFollowUp.test.ts` asserted the card never
+names the requirement, which was the old decision; it now asserts the
+named question sits between the title and the example, and that the card
+still never shows the gap explanation (`gap_summary`). Four new tests cover
+the sentence. **MANUAL CHECK REQUIRED:** the card on a real check.
+
+**Blockers.** None.
+
+**Founder action required.** See Open items: the real end to end check,
+and the log line for the failed follow up submit.
+
+**Next technical step.** None for this change.
+
+**Commit or PR.** Branch `feature/follow-up-question-names-gap`.
 
 ---
 

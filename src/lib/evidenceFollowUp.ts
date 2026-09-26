@@ -22,6 +22,23 @@ export const CANDIDATE_REPORTED_LABEL = 'Candidate reported, not on your CV'
 export const UPDATED_REPORT_NOTE =
   'Updated after your follow up answer. Includes evidence you reported that is not on your CV.'
 export const FOLLOW_UP_FAILURE_PREFIX = 'Your original result is unchanged.'
+export const FOLLOW_UP_QUESTION_LEAD = 'The job asks for'
+
+/**
+ * The question as the candidate reads it: one opening sentence naming the
+ * requirement, then the stored question unchanged, so it makes sense without
+ * Gap Analysis. The requirement is the job description's own phrase, often
+ * "Experience with SQL" rather than a bare skill, so it gets a sentence of its
+ * own rather than being worked into the question, where it breaks the grammar.
+ * A follow up created before the question stopped naming the requirement
+ * already opens with this sentence, and is shown as stored.
+ */
+export function followUpQuestionText(requirement: string | null | undefined, question: string): string {
+  const asked = question.trim()
+  const name = (requirement ?? '').trim().replace(/[\s.!?,;:]+$/, '')
+  if (!name || asked.startsWith(FOLLOW_UP_QUESTION_LEAD)) return asked
+  return `${FOLLOW_UP_QUESTION_LEAD} ${name}. ${asked}`
+}
 
 // The same limits the server enforces (assess-evidence-follow-up validates
 // with validateFollowUpAnswer in supabase/functions/analyze-check/
