@@ -292,6 +292,9 @@ export interface ValidationScope {
   // True when the CV is entitled and a credited follow up answer was sent: the
   // CV must then carry its one follow up bullet. Otherwise any bullet is dropped.
   followUpBullet?: boolean
+  // That credited answer and the original CV text it was not on. When present,
+  // the answer's own facts may appear only in the follow up bullet.
+  followUpSource?: { answer: string; cvText: string }
 }
 
 const VALIDATE_EVERYTHING: ValidationScope = { coverLetter: true, recruiterMessage: true }
@@ -310,8 +313,107 @@ export const FOLLOW_UP_BULLET_SCHEMA = {
 // answer's facts go into that one bullet, printed under its own heading, so
 // they are never mixed into the CV's employment history or restated elsewhere.
 export const FOLLOW_UP_DOCUMENT_ADDENDUM = `
-The original CV text below ends with a section headed "=== CANDIDATE-REPORTED ADDITIONAL EVIDENCE ===". It holds the candidate's own answer to one follow up question about the requirement it names, already assessed as specific and credible. Turn that answer into exactly one CV bullet in tailored_cv.follow_up_bullet: past tense, first person implied, no subject pronoun, roughly 15 to 35 words, using only the facts the answer states. Keep every number, tool and outcome the answer gives; never add a number, date, employer, tool or outcome it does not state, and never use brackets or placeholders. Never mention a follow up question, that the answer is self reported, or MyRecruiterCheck. The application prints this bullet under its own heading, so do not repeat the answer's facts in any experience bullet, the professional summary, cover_letter or recruiter_message. If an area to improve below is answered by this section, classify it as case (A) and add no placeholder bullet for it: follow_up_bullet is the bullet that addresses it. For new_claims_introduced, facts in follow_up_bullet count as present in the source only when that section states them; every other field must still trace to the CV itself.
+The original CV text below ends with a section headed "=== CANDIDATE-REPORTED ADDITIONAL EVIDENCE ===". It holds the candidate's own answer to one follow up question about the requirement it names, already assessed as specific and credible. Turn that answer into exactly one CV bullet in tailored_cv.follow_up_bullet: past tense, first person implied, no subject pronoun, roughly 15 to 35 words, using only the facts the answer states. Keep every number, tool and outcome the answer gives; never add a number, date, employer, tool or outcome it does not state, and never use brackets or placeholders. Never mention a follow up question, that the answer is self reported, or MyRecruiterCheck. That bullet is the only place the answer may appear. The application prints it under its own heading and rejects any draft where a tool, number, project or outcome found only in that section appears anywhere else, so write the professional summary, every experience entry, cover_letter and recruiter_message exactly as you would without the section. If an area to improve below is answered by this section, classify it as case (A) and add no placeholder bullet for it, but do not surface the answer in cover_letter, recruiter_message or anywhere else in tailored_cv: follow_up_bullet alone addresses it. For new_claims_introduced, facts in follow_up_bullet count as present in the source only when that section states them; every other field must still trace to the CV itself.
 `
+
+// ---------------------------------------------------------------------------
+// A credited answer's facts stay in the follow up bullet
+// ---------------------------------------------------------------------------
+
+// Figures as written, with a thousands comma removed so "1,500" and "1500" match.
+function figuresIn(text: string): Set<string> {
+  return new Set(text.replace(/(\d),(?=\d{3}(?!\d))/g, '$1').match(/\d+(?:\.\d+)?/g) ?? [])
+}
+
+const NAME_WORD = String.raw`[A-Z][A-Za-z0-9+#]*(?:\.[A-Za-z0-9]+)*`
+const NAME_SEQUENCE = new RegExp(`${NAME_WORD}(?:[ \\t]+${NAME_WORD})*`, 'g')
+const LEADING_FUNCTION_WORDS = new Set([
+  'a', 'after', 'also', 'an', 'and', 'as', 'at', 'before', 'but', 'by', 'during', 'for', 'from', 'here', 'i',
+  'in', 'it', 'my', 'of', 'on', 'or', 'our', 'over', 'since', 'so', 'that', 'the', 'then', 'there', 'these',
+  'this', 'those', 'to', 'we', 'when', 'while', 'with',
+])
+
+// Capitalised names in the answer: tools, products, employers, places. A capital
+// that only opens a sentence says nothing, so that word is dropped unless it is
+// plainly a name anyway ("FastAPI", "AWS", "S3"), as are leading function words.
+function namedTermsIn(text: string): string[] {
+  const names: string[] = []
+  for (const match of text.matchAll(NAME_SEQUENCE)) {
+    const words = match[0].split(/[ \t]+/)
+    const before = text.slice(0, match.index).trimEnd()
+    if ((before === '' || /[.!?:;"“(]$/.test(before)) && !/.[A-Z0-9]/.test(words[0])) words.shift()
+    while (words.length > 0 && LEADING_FUNCTION_WORDS.has(words[0].toLowerCase())) words.shift()
+    if (words.length > 0) names.push(words.join(' '))
+  }
+  return names
+}
+
+// True when text names phrase as whole words, in any case.
+function mentions(text: string, phrase: string): boolean {
+  const pattern = phrase
+    .split(/\s+/)
+    .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .join('\\s+')
+  return new RegExp(`(?:^|[^A-Za-z0-9])${pattern}(?![A-Za-z0-9])`, 'i').test(text)
+}
+
+/**
+ * The facts a credited answer adds that the CV itself does not show: its
+ * figures and its capitalised names. They may appear only in the follow up
+ * bullet. Deliberately narrow, so a false alarm cannot fail generations: a
+ * single digit (too common to tell apart), a figure in words ("three months")
+ * or a lowercase tool is left to the prompt.
+ */
+export function answerOnlyFacts(answer: string, cvText: string): { figures: string[]; names: string[] } {
+  const cvFigures = figuresIn(cvText)
+  return {
+    figures: [...figuresIn(answer)].filter((figure) => figure.replace('.', '').length >= 2 && !cvFigures.has(figure)),
+    names: [...new Set(namedTermsIn(answer))].filter((name) => !mentions(cvText, name)),
+  }
+}
+
+/** Which of those facts text repeats. */
+export function repeatedAnswerFacts(text: string, facts: { figures: string[]; names: string[] }): string[] {
+  const textFigures = figuresIn(text)
+  return [
+    ...facts.figures.filter((figure) => textFigures.has(figure)),
+    ...facts.names.filter((name) => mentions(text, name)),
+  ]
+}
+
+const CLAIM_FILLER_WORDS = new Set(['a', 'an', 'and', 'around', 'at', 'by', 'for', 'from', 'i', 'in', 'my', 'of', 'on', 'or', 'over', 'per', 'the', 'to', 'using', 'with'])
+
+function claimWords(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/(\d),(?=\d{3}(?!\d))/g, '$1')
+    .split(/[^a-z0-9]+/)
+    .filter((word) => word && !CLAIM_FILLER_WORDS.has(word))
+    .map((word) => (word.length > 3 ? word.replace(/s$/, '') : word))
+}
+
+/** A self reported "new claim" every word of which the candidate's own answer states. */
+export function statedInAnswer(claim: string, answer: string): boolean {
+  const answerWords = new Set(claimWords(answer))
+  return claimWords(claim).every((word) => answerWords.has(word))
+}
+
+export const FOLLOW_UP_REPEATED_ERROR = 'Follow up answer repeated outside its own line'
+
+// Carries the repeated facts so the retry can be told exactly what to leave
+// out. The message holds the candidate's words, so it is never logged.
+export class FollowUpRepeatedError extends Error {
+  readonly repeated: string[]
+  constructor(repeated: string[]) {
+    super(`${FOLLOW_UP_REPEATED_ERROR}: ${repeated.join(', ')}`)
+    this.repeated = repeated
+  }
+}
+
+/** Sent with the retry that follows a FollowUpRepeatedError, to the same model only. */
+export function followUpRepeatedCorrection(repeated: string[]): string {
+  return `Your previous draft repeated facts from the CANDIDATE-REPORTED section outside tailored_cv.follow_up_bullet: ${repeated.join(', ')}. Write every document again with those facts only in follow_up_bullet, and nowhere in the professional summary, any experience entry, cover_letter or recruiter_message.`
+}
 
 export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VALIDATE_EVERYTHING): RawDocuments {
   const cv = raw.tailored_cv
@@ -322,9 +424,13 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
   // (new_claims_introduced, required by the schema). Rather than trusting the
   // "never invent a metric" prompt instructions alone, a non-empty report is
   // treated as a failed generation and retried — see generateDocuments' loop.
-  const newClaims = Array.isArray(raw.new_claims_introduced)
+  // A claim the credited answer itself states is not new: it is the follow up
+  // bullet's source, and where it may appear is checked separately below.
+  const followUpSource = scope.followUpSource
+  const newClaims = (Array.isArray(raw.new_claims_introduced)
     ? raw.new_claims_introduced.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
     : []
+  ).filter((claim) => !followUpSource || !statedInAnswer(claim, followUpSource.answer))
   if (newClaims.length > 0) {
     throw new Error(`Model reported unverified claims not present in the original CV: ${JSON.stringify(newClaims)}`)
   }
@@ -375,6 +481,26 @@ export function validateDocuments(raw: RawDocuments, scope: ValidationScope = VA
     if (containsPlaceholder(followUpBullet)) {
       throw new Error("Follow up bullet contains a placeholder instead of the candidate's own facts")
     }
+  }
+  // The answer's own figures and names belong in the follow up bullet alone.
+  // Any other delivered text repeating them fails, and the retry is told which.
+  if (followUpSource) {
+    // Only what is printed: the same entry and bullet caps as the result below.
+    const elsewhere = [
+      professionalSummary,
+      ...experience.slice(0, MAX_EXPERIENCE_ENTRIES).flatMap((entry) => [
+        entry?.title ?? '',
+        entry?.company_location ?? '',
+        ...(Array.isArray(entry?.bullets) ? entry.bullets : [])
+          .map((bullet) => (bullet?.text ?? '').trim())
+          .filter(Boolean)
+          .slice(0, MAX_BULLETS_PER_ENTRY),
+      ]),
+      ...(scope.coverLetter ? [introParagraph, ...bodyParagraphs, conclusionParagraph, thankYouLine] : []),
+      ...(scope.recruiterMessage ? [greeting, messageBody, closingLine] : []),
+    ].join('\n')
+    const repeated = repeatedAnswerFacts(elsewhere, answerOnlyFacts(followUpSource.answer, followUpSource.cvText))
+    if (repeated.length > 0) throw new FollowUpRepeatedError(repeated)
   }
   if (scope.coverLetter) {
     if (!salutation) throw new Error('Cover letter is missing a salutation')
@@ -599,6 +725,8 @@ export function toPdfSafe<T>(value: T): T {
 // output). Logs get a fixed reason code, never the message, the same rule
 // analyze-check follows with classifyValidationFailure.
 export function classifyGenerationError(message: string): string {
+  // First: its message lists the candidate's own words, which could match a rule below.
+  if (message.startsWith(FOLLOW_UP_REPEATED_ERROR)) return 'follow_up_repeated'
   if (message.startsWith('Model reported unverified claims')) return 'unverified_claims'
   const http = /^OpenAI API error: (\d{3})/.exec(message)
   if (http) return `openai_http_${http[1]}`

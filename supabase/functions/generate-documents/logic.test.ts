@@ -1,7 +1,7 @@
 // Run with: npx tsx supabase/functions/generate-documents/logic.test.ts
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { classifyGenerationError, containsName, containsPlaceholder, FOLLOW_UP_BULLET_SCHEMA, FOLLOW_UP_DOCUMENT_ADDENDUM, FOLLOW_UP_SECTION_HEADING, getDocumentEntitlement, isRetryableGenerationError, PACK_DISPLAY_NAMES, looksLikeEnglish, splitSentences, stripDashes, stripExampleClause, toPdfSafe, toPdfSafeText, validateDocuments, type RawDocuments } from './logic.ts'
+import { answerOnlyFacts, classifyGenerationError, containsName, containsPlaceholder, FOLLOW_UP_BULLET_SCHEMA, FOLLOW_UP_DOCUMENT_ADDENDUM, FOLLOW_UP_SECTION_HEADING, FollowUpRepeatedError, followUpRepeatedCorrection, getDocumentEntitlement, isRetryableGenerationError, PACK_DISPLAY_NAMES, looksLikeEnglish, splitSentences, statedInAnswer, stripDashes, stripExampleClause, toPdfSafe, toPdfSafeText, validateDocuments, type RawDocuments } from './logic.ts'
 
 let passed = 0
 function test(name: string, fn: () => void) {
@@ -523,8 +523,9 @@ test('FOLLOW UP: the prompt asks for one bullet from the answer only, and for no
     /never add a number, date, employer, tool or outcome it does not state/,
     /never use brackets or placeholders/,
     /Never mention a follow up question, that the answer is self reported, or MyRecruiterCheck/,
-    /do not repeat the answer's facts in any experience bullet, the professional summary, cover_letter or recruiter_message/,
-    /classify it as case \(A\) and add no placeholder bullet for it/,
+    /That bullet is the only place the answer may appear/,
+    /write the professional summary, every experience entry, cover_letter and recruiter_message exactly as you would without the section/,
+    /classify it as case \(A\) and add no placeholder bullet for it, but do not surface the answer in cover_letter, recruiter_message or anywhere else in tailored_cv/,
   ]) {
     assert.match(FOLLOW_UP_DOCUMENT_ADDENDUM, rule)
   }
@@ -541,6 +542,112 @@ test('FOLLOW UP: the request only changes when a credited answer is sent, and on
   assert.match(source, /const cvFollowUp = entitlement\.cv \? followUpEvidence : null/)
   assert.match(source, /followUpBullet: cvFollowUp !== null/)
   assert.match(source, /if \(cv\.follow_up_bullet\) \{\s*addLeft\(FOLLOW_UP_SECTION_HEADING/)
+})
+
+// ---------------------------------------------------------------------------
+// FOLLOW UP: the answer's own facts appear in its line and nowhere else
+// ---------------------------------------------------------------------------
+
+// Invented, modelled on the first live run: the answer added Docker, Cloud Run
+// and 1,500 requests a day; FastAPI was already on the CV.
+const ANSWER = 'In a personal project, I built and deployed a FastAPI service using Docker and Cloud Run. It handled around 1,500 requests per day for three months.'
+const ORIGINAL_CV = 'Jamie Rivera, Amsterdam. Senior Backend Engineer, Acme, January 2021 to Present: built REST APIs in Python and FastAPI; led a sales team to exceed annual revenue targets by 15 percent.'
+const LINE = 'Built and deployed a FastAPI service using Docker and Cloud Run, handling around 1,500 requests per day for three months.'
+const SOURCE_SCOPE = { ...FOLLOW_UP_SCOPE, followUpSource: { answer: ANSWER, cvText: ORIGINAL_CV } }
+
+function credited(edit: (raw: RawDocuments) => void = () => {}): RawDocuments {
+  const raw = withFollowUpBullet(LINE)
+  edit(raw)
+  return raw
+}
+
+function repeatedIn(raw: RawDocuments, scope = SOURCE_SCOPE): string[] {
+  try {
+    validateDocuments(raw, scope)
+    return []
+  } catch (error) {
+    assert.ok(error instanceof FollowUpRepeatedError, String(error))
+    return error.repeated
+  }
+}
+
+test('FOLLOW UP: the answer\'s own facts are its figures and names that the CV does not show', () => {
+  assert.deepEqual(answerOnlyFacts(ANSWER, ORIGINAL_CV), { figures: ['1500'], names: ['Docker', 'Cloud Run'] })
+})
+
+test('FOLLOW UP: sentence openers, pronouns and single digits are never counted as the answer\'s facts', () => {
+  assert.deepEqual(answerOnlyFacts('It went well. I shipped it with Terraform. Then we grew.', ''), { figures: [], names: ['Terraform'] })
+  assert.deepEqual(answerOnlyFacts('FastAPI was new to me, and I cut setup to 3 screens.', '').names, ['FastAPI'])
+  assert.deepEqual(answerOnlyFacts('I cut it to 3 screens in 2 weeks, lifting completion from 62% to 78%.', '').figures, ['62', '78'])
+})
+
+test('FOLLOW UP: a draft with the answer in its own line only passes, and the CV\'s own facts may appear anywhere', () => {
+  const raw = credited((draft) => {
+    draft.cover_letter.body_paragraphs[0] = 'I built REST APIs in Python and FastAPI, and led a sales team past its targets by 15 percent.'
+  })
+  assert.deepEqual(repeatedIn(raw), [])
+  assert.equal(validateDocuments(raw, SOURCE_SCOPE).tailored_cv.follow_up_bullet, LINE)
+})
+
+test('FOLLOW UP: the cover letter repeating the answer, as on the live run, fails and is retried', () => {
+  const raw = credited((draft) => {
+    draft.cover_letter.body_paragraphs[1] = 'I built and deployed a FastAPI service that handled around 1,500 requests per day, demonstrating my ability to manage production scale.'
+  })
+  assert.deepEqual(repeatedIn(raw), ['1500'])
+  const message = new FollowUpRepeatedError(['1500']).message
+  assert.equal(classifyGenerationError(message), 'follow_up_repeated')
+  assert.equal(isRetryableGenerationError('follow_up_repeated'), true)
+})
+
+test('FOLLOW UP: the summary or the recruiter message naming the answer\'s tool fails, "Google" or not', () => {
+  const summary = credited((draft) => {
+    draft.tailored_cv.professional_summary = 'Backend engineer. Proficient in deploying services using Google Cloud Run, Python, and FastAPI.'
+  })
+  assert.deepEqual(repeatedIn(summary), ['Cloud Run'])
+  const message = credited((draft) => {
+    draft.recruiter_message.body = 'I have applied for the Backend Engineer role. With strong experience in Python and deployment on Google Cloud Run, I would be glad to talk.'
+  })
+  assert.deepEqual(repeatedIn(message), ['Cloud Run'])
+  assert.deepEqual(repeatedIn(message, { ...SOURCE_SCOPE, recruiterMessage: false }), [], 'a message nobody receives is not checked')
+})
+
+test('FOLLOW UP: an experience bullet repeating the answer fails, unless it is cut from the printed CV', () => {
+  const inPrint = credited((draft) => {
+    draft.tailored_cv.experience[0].bullets.push({ text: 'Containerised services with Docker for faster releases.', is_placeholder: false })
+  })
+  assert.deepEqual(repeatedIn(inPrint), ['Docker'])
+  const cut = credited((draft) => {
+    const filler = Array.from({ length: 4 }, (_, i) => ({ text: `Shipped release ${i + 1} of the reporting service on schedule.`, is_placeholder: false }))
+    draft.tailored_cv.experience[0].bullets = [...filler, { text: 'Containerised services with Docker for faster releases.', is_placeholder: false }]
+  })
+  assert.deepEqual(repeatedIn(cut), [])
+})
+
+test('FOLLOW UP: a self reported claim the answer itself states is excused, anything added to it is not', () => {
+  const stated = credited((draft) => {
+    draft.new_claims_introduced = ['1,500 requests per day', 'Docker', 'Cloud Run', 'three months', 'FastAPI services']
+  })
+  assert.equal(validateDocuments(stated, SOURCE_SCOPE).tailored_cv.follow_up_bullet, LINE)
+  const added = credited((draft) => {
+    draft.new_claims_introduced = ['Google Cloud Run']
+  })
+  assert.throws(() => validateDocuments(added, SOURCE_SCOPE), /unverified claims/)
+  assert.equal(statedInAnswer('Google Cloud Run', ANSWER), false)
+  // Without a credited answer every self reported claim still fails, as before.
+  assert.throws(() => validateDocuments(stated, FOLLOW_UP_SCOPE), /unverified claims/)
+  assert.throws(() => validateDocuments({ ...baseRaw(), new_claims_introduced: ['Docker'] }), /unverified claims/)
+})
+
+test('FOLLOW UP: the retry is told which facts to keep in the line, and the log only ever gets the reason code', () => {
+  const note = followUpRepeatedCorrection(['1500', 'Cloud Run'])
+  assert.match(note, /only in follow_up_bullet/)
+  assert.match(note, /1500, Cloud Run/)
+  assert.equal(classifyGenerationError(new FollowUpRepeatedError(['JSON', 'timed out']).message), 'follow_up_repeated')
+  const source = readFileSync('supabase/functions/generate-documents/index.ts', 'utf8')
+  assert.match(source, /followUpSource: cvFollowUp \? \{ answer: cvFollowUp\.answer, cvText \} : undefined/)
+  assert.match(source, /callOpenAI\(apiKey, cvText, jobDescription, context, correction\)/)
+  assert.match(source, /correction = error instanceof FollowUpRepeatedError \? followUpRepeatedCorrection\(error\.repeated\) : null/)
+  assert.match(source, /\.\.\.\(correction \? \[\{ role: 'user', content: correction \}\] : \[\]\)/)
 })
 
 console.log(`\n${passed} tests passed`)
