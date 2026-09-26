@@ -454,13 +454,21 @@ itself in `new_claims_introduced`, reworded ("handling" for "handled",
 before any leak handling, so #190's fallback never receives a draft.
 
 **Completed.** `concernsAnswerFacts` in `generate-documents/logic.ts`
-excuses a self reported claim that names one of the answer's own facts (a
-figure, or a name in any case) and adds no figure beyond the answer and the
-CV. Where those facts may appear stays enforced by `repeatedAnswerFacts`.
-A claim adding a figure, or about anything else, still fails; so does
-every claim without a credited answer.
+excuses a self reported claim in two cases:
+- every word of it is in the answer or the follow up line;
+- it names one of the answer's own facts, and every other word is in the
+  answer, the line or the CV. A single digit is allowed, and so is a vendor
+  name (`VENDOR_NAMES`) directly before the fact, as in "Google Cloud Run".
 
-**Verified.** lint (0 errors), typecheck, `test:edge` (30/30, 551),
+`claimWords` applies a light `stem` to both sides ("deployment" matches
+"deployed"). A word whose stem would fall under four letters stays whole.
+Where the answer's facts may appear stays enforced by `repeatedAnswerFacts`.
+"Kubernetes and Docker", "Led the platform team on the Cloud Run migration"
+and a claim adding a figure still fail, as does every claim without a
+credited answer. The security reviewer ran three rounds on this rule; each
+round tightened it.
+
+**Verified.** lint (0 errors), typecheck, `test:edge` (30/30, 552),
 `deno check --no-config` (the same 8 `SupabaseClient` errors). Test
 corrected: it asserted that a self reported "Google Cloud Run" fails. That
 now counts as a claim about the answer's own tool, and its placement is
